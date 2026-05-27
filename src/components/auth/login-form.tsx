@@ -19,7 +19,7 @@ export function LoginForm() {
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
   );
 
-  async function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.SyntheticEvent<HTMLFormElement>) {
     e.preventDefault();
     setError(null);
     setLoading(true);
@@ -82,14 +82,21 @@ export function LoginForm() {
           autoComplete="email"
           required
         />
-        <Input
-          label="Contraseña"
-          type="password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          autoComplete="current-password"
-          required
-        />
+        <div>
+          <div className="flex items-center justify-between mb-1">
+            <span className="text-xs font-medium text-neutral-500">Contraseña</span>
+            <Link href="/forgot-password" className="text-xs text-tierra-700 hover:underline">
+              ¿Olvidaste tu contraseña?
+            </Link>
+          </div>
+          <Input
+            type="password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            autoComplete="current-password"
+            required
+          />
+        </div>
 
         {error && (
           <p className="text-sm text-danger text-center">{error}</p>

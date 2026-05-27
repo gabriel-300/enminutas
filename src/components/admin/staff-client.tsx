@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { cambiarRolStaff, revocarAccesoStaff, invitarStaff, crearUsuarioConPassword } from "@/app/(admin)/admin/staff/actions";
+import { cambiarRolStaff, revocarAccesoStaff, invitarStaff, crearUsuarioConPassword, resetearPasswordAdmin, enviarEmailRecuperacion } from "@/app/(admin)/admin/staff/actions";
 
 type StaffMember = {
   id:           string;
@@ -24,6 +24,96 @@ const ROLE_BADGE: Record<string, string> = {
   produccion: "bg-success-bg text-success",
 };
 
+function ResetPasswordPanel({ member, onClose }: { member: StaffMember; onClose: () => void }) {
+  const [mode, setMode]       = useState<"email" | "direct">("email");
+  const [password, setPassword] = useState("");
+  const [confirm,  setConfirm]  = useState("");
+  const [msg,  setMsg]  = useState<string | null>(null);
+  const [err,  setErr]  = useState<string | null>(null);
+  const [isPending, startTransition] = useTransition();
+
+  function handleEmail() {
+    setErr(null); setMsg(null);
+    startTransition(async () => {
+      try {
+        await enviarEmailRecuperacion(member.email);
+        setMsg(`Email de recuperación enviado a ${member.email}`);
+      } catch (e: any) { setErr(e.message); }
+    });
+  }
+
+  function handleDirect(e: React.SyntheticEvent<HTMLFormElement>) {
+    e.preventDefault();
+    if (password !== confirm) { setErr("Las contraseñas no coinciden"); return; }
+    setErr(null); setMsg(null);
+    startTransition(async () => {
+      try {
+        await resetearPasswordAdmin(member.id, password);
+        setMsg("Contraseña actualizada correctamente.");
+        setPassword(""); setConfirm("");
+      } catch (e: any) { setErr(e.message); }
+    });
+  }
+
+  const inputCls = "w-full px-3 py-2 text-sm border border-neutral-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-tierra-700/20 disabled:opacity-50";
+
+  return (
+    <div className="mt-2 p-3 bg-neutral-50 border border-neutral-200 rounded-xl text-sm space-y-3">
+      {/* Toggle */}
+      <div className="flex gap-2">
+        <button
+          type="button"
+          onClick={() => { setMode("email"); setErr(null); setMsg(null); }}
+          className={`px-2.5 py-1 rounded-lg text-xs transition-colors ${mode === "email" ? "bg-tierra-700 text-white" : "bg-white border border-neutral-200 text-neutral-600 hover:bg-neutral-100"}`}
+        >
+          Enviar email
+        </button>
+        <button
+          type="button"
+          onClick={() => { setMode("direct"); setErr(null); setMsg(null); }}
+          className={`px-2.5 py-1 rounded-lg text-xs transition-colors ${mode === "direct" ? "bg-tierra-700 text-white" : "bg-white border border-neutral-200 text-neutral-600 hover:bg-neutral-100"}`}
+        >
+          Poner contraseña
+        </button>
+        <button type="button" onClick={onClose} className="ml-auto text-xs text-neutral-400 hover:text-neutral-700">✕</button>
+      </div>
+
+      {mode === "email" ? (
+        <div className="space-y-2">
+          <p className="text-xs text-neutral-500">
+            Se enviará un link de recuperación a <strong>{member.email}</strong>.
+            El usuario puede hacer click para crear una nueva contraseña.
+          </p>
+          <button
+            onClick={handleEmail}
+            disabled={isPending}
+            className="px-3 py-1.5 text-xs rounded-lg bg-tierra-700 text-white hover:bg-tierra-800 disabled:opacity-50 transition-colors"
+          >
+            {isPending ? "Enviando…" : "Enviar email de recuperación"}
+          </button>
+        </div>
+      ) : (
+        <form onSubmit={handleDirect} className="space-y-2">
+          <p className="text-xs text-neutral-500">El usuario podrá ingresar inmediatamente con la nueva contraseña.</p>
+          <div className="grid grid-cols-2 gap-2">
+            <input type="password" value={password} onChange={e => setPassword(e.target.value)}
+              placeholder="Nueva contraseña" minLength={8} required disabled={isPending} className={inputCls} />
+            <input type="password" value={confirm} onChange={e => setConfirm(e.target.value)}
+              placeholder="Confirmar" minLength={8} required disabled={isPending} className={inputCls} />
+          </div>
+          <button type="submit" disabled={isPending}
+            className="px-3 py-1.5 text-xs rounded-lg bg-tierra-700 text-white hover:bg-tierra-800 disabled:opacity-50 transition-colors">
+            {isPending ? "Guardando…" : "Guardar contraseña"}
+          </button>
+        </form>
+      )}
+
+      {err && <p className="text-xs text-danger">{err}</p>}
+      {msg && <p className="text-xs text-success">{msg}</p>}
+    </div>
+  );
+}
+
 function StaffRow({
   member,
   isCurrentUser,
@@ -32,6 +122,7 @@ function StaffRow({
   isCurrentUser: boolean;
 }) {
   const [isPending, startTransition] = useTransition();
+  const [showReset, setShowReset]    = useState(false);
 
   function handleRoleChange(newRole: string) {
     if (newRole === member.role) return;
@@ -44,53 +135,67 @@ function StaffRow({
   }
 
   return (
-    <tr className="hover:bg-neutral-50 transition-colors">
-      <td className="px-4 py-3">
-        <p className="font-medium text-neutral-900">{member.name ?? member.email}</p>
-        {member.name && <p className="text-xs text-neutral-400 mt-0.5">{member.email}</p>}
-        {isCurrentUser && (
-          <span className="text-xs text-neutral-400 italic">Vos</span>
-        )}
-      </td>
-      <td className="px-4 py-3">
-        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${ROLE_BADGE[member.role] ?? "bg-neutral-100 text-neutral-600"}`}>
-          {ROLE_OPTIONS.find((r) => r.value === member.role)?.label ?? member.role}
-        </span>
-      </td>
-      <td className="px-4 py-3 text-xs text-neutral-400">
-        {member.last_sign_in
-          ? new Date(member.last_sign_in).toLocaleDateString("es-AR", {
-              day: "2-digit", month: "2-digit", year: "2-digit",
-              hour: "2-digit", minute: "2-digit",
-            })
-          : "Nunca"}
-      </td>
-      <td className="px-4 py-3">
-        {!isCurrentUser ? (
-          <div className="flex items-center gap-3">
-            <select
-              value={member.role}
-              onChange={(e) => handleRoleChange(e.target.value)}
-              disabled={isPending}
-              className="text-xs border border-neutral-200 rounded-lg px-2 py-1.5 bg-white text-neutral-700 disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-tierra-700/20"
-            >
-              {ROLE_OPTIONS.map((r) => (
-                <option key={r.value} value={r.value}>{r.label}</option>
-              ))}
-            </select>
-            <button
-              onClick={handleRevoke}
-              disabled={isPending}
-              className="text-xs text-danger hover:underline disabled:opacity-40"
-            >
-              Revocar
-            </button>
-          </div>
-        ) : (
-          <span className="text-xs text-neutral-300">—</span>
-        )}
-      </td>
-    </tr>
+    <>
+      <tr className="hover:bg-neutral-50 transition-colors">
+        <td className="px-4 py-3">
+          <p className="font-medium text-neutral-900">{member.name ?? member.email}</p>
+          {member.name && <p className="text-xs text-neutral-400 mt-0.5">{member.email}</p>}
+          {isCurrentUser && <span className="text-xs text-neutral-400 italic">Vos</span>}
+        </td>
+        <td className="px-4 py-3">
+          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${ROLE_BADGE[member.role] ?? "bg-neutral-100 text-neutral-600"}`}>
+            {ROLE_OPTIONS.find((r) => r.value === member.role)?.label ?? member.role}
+          </span>
+        </td>
+        <td className="px-4 py-3 text-xs text-neutral-400">
+          {member.last_sign_in
+            ? new Date(member.last_sign_in).toLocaleDateString("es-AR", {
+                day: "2-digit", month: "2-digit", year: "2-digit",
+                hour: "2-digit", minute: "2-digit",
+              })
+            : "Nunca"}
+        </td>
+        <td className="px-4 py-3">
+          {!isCurrentUser ? (
+            <div className="flex items-center gap-3">
+              <select
+                value={member.role}
+                onChange={(e) => handleRoleChange(e.target.value)}
+                disabled={isPending}
+                className="text-xs border border-neutral-200 rounded-lg px-2 py-1.5 bg-white text-neutral-700 disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-tierra-700/20"
+              >
+                {ROLE_OPTIONS.map((r) => (
+                  <option key={r.value} value={r.value}>{r.label}</option>
+                ))}
+              </select>
+              <button
+                onClick={() => setShowReset(!showReset)}
+                disabled={isPending}
+                className="text-xs text-neutral-500 hover:text-neutral-800 hover:underline disabled:opacity-40"
+              >
+                Contraseña
+              </button>
+              <button
+                onClick={handleRevoke}
+                disabled={isPending}
+                className="text-xs text-danger hover:underline disabled:opacity-40"
+              >
+                Revocar
+              </button>
+            </div>
+          ) : (
+            <span className="text-xs text-neutral-300">—</span>
+          )}
+        </td>
+      </tr>
+      {showReset && !isCurrentUser && (
+        <tr>
+          <td colSpan={4} className="px-4 pb-3">
+            <ResetPasswordPanel member={member} onClose={() => setShowReset(false)} />
+          </td>
+        </tr>
+      )}
+    </>
   );
 }
 

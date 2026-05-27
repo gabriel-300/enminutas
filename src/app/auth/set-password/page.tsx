@@ -13,7 +13,7 @@ export default function SetPasswordPage() {
   const [loading,  setLoading]  = useState(false);
   const router = useRouter();
 
-  async function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.SyntheticEvent<HTMLFormElement>) {
     e.preventDefault();
     setError(null);
 
@@ -39,7 +39,21 @@ export default function SetPasswordPage() {
       return;
     }
 
-    router.push("/admin/pedidos");
+    // Redirigir según rol
+    const { data: { session } } = await supabase.auth.getSession();
+    const jwt = session?.access_token ?? "";
+    const payload = jwt ? JSON.parse(atob(jwt.split(".")[1])) : {};
+    const role = payload.app_metadata?.role as string | undefined;
+
+    if (role === "admin" || role === "vendedor") {
+      router.push("/admin/pedidos");
+    } else if (role === "produccion") {
+      router.push("/admin/produccion");
+    } else if (role === "customer_b2b") {
+      router.push("/b2b/catalogo");
+    } else {
+      router.push("/tienda");
+    }
   }
 
   return (

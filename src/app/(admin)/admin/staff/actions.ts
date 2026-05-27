@@ -55,6 +55,30 @@ export async function invitarStaff(formData: FormData) {
   revalidatePath("/admin/staff");
 }
 
+export async function resetearPasswordAdmin(userId: string, newPassword: string) {
+  if (!newPassword || newPassword.length < 8)
+    throw new Error("La contraseña debe tener al menos 8 caracteres");
+
+  const supabase = createAdminClient();
+  const { error } = await supabase.auth.admin.updateUserById(userId, {
+    password: newPassword,
+  });
+  if (error) throw new Error(error.message);
+}
+
+export async function enviarEmailRecuperacion(email: string) {
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
+  const supabase = createAdminClient();
+
+  // generateLink no requiere sesión de usuario — usa service role
+  const { error } = await (supabase as any).auth.admin.generateLink({
+    type:       "recovery",
+    email,
+    options:    { redirectTo: `${appUrl}/auth/callback?next=/auth/set-password` },
+  });
+  if (error) throw new Error(error.message);
+}
+
 export async function crearUsuarioConPassword(formData: FormData) {
   const email    = (formData.get("email") as string).trim().toLowerCase();
   const password = formData.get("password") as string;
