@@ -1,0 +1,21 @@
+import { createClient } from "@/lib/supabase/server";
+import { AdminNav } from "@/components/admin/admin-nav";
+
+export default async function AdminLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  const role  = (user?.app_metadata?.role as string) ?? null;
+  const email = user?.email ?? null;
+  const name  = (user?.user_metadata?.full_name as string | null) ?? null;
+
+  return (
+    <div className="flex min-h-screen bg-neutral-50">
+      <AdminNav role={role} email={email} name={name} />
+      <main className="flex-1 overflow-auto">{children}</main>
+    </div>
+  );
+}
