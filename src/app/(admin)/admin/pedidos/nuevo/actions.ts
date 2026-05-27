@@ -35,14 +35,23 @@ export async function crearPedidoAdmin(payload: CrearPedidoPayload) {
   const { data: { user } } = await authClient.auth.getUser();
   if (!user) throw new Error("No autorizado");
 
-  // Número de pedido
-  const { count } = await adminClient
+  // Número de pedido — buscar el máximo existente e incrementar
+  const year = new Date().getFullYear();
+  const { data: maxOrder } = await adminClient
     .from("orders")
-    .select("*", { count: "exact", head: true })
-    .eq("channel", "b2b_mayorista");
+    .select("order_number")
+    .like("order_number", `B2B-${year}-%`)
+    .order("order_number", { ascending: false })
+    .limit(1)
+    .maybeSingle();
 
-  const seq      = String((count ?? 0) + 1).padStart(4, "0");
-  const orderNum = `B2B-${new Date().getFullYear()}-${seq}`;
+  let nextSeq = 1;
+  if ((maxOrder as any)?.order_number) {
+    const lastNum = parseInt((maxOrder as any).order_number.split("-").pop() ?? "0", 10);
+    if (!isNaN(lastNum)) nextSeq = lastNum + 1;
+  }
+
+  const orderNum = `B2B-${year}-${String(nextSeq).padStart(4, "0")}`;
 
   // Totales
   const subtotal         = items.reduce((s, i) => s + i.precio.total_civa * i.quantity, 0);

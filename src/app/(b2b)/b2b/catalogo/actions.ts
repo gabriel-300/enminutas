@@ -29,13 +29,22 @@ export async function confirmarPedidoB2B(items: CartItem[]) {
   const subtotal         = items.reduce((s, i) => s + i.precio.total_civa  * i.qty, 0);
   const commissionAmount = items.reduce((s, i) => s + i.precio.comision    * i.qty, 0);
 
-  const { count } = await supabase
+  const year = new Date().getFullYear();
+  const { data: maxOrder } = await supabase
     .from("orders")
-    .select("*", { count: "exact", head: true })
-    .eq("channel", "b2b_mayorista");
+    .select("order_number")
+    .like("order_number", `B2B-${year}-%`)
+    .order("order_number", { ascending: false })
+    .limit(1)
+    .maybeSingle();
 
-  const seq      = String((count ?? 0) + 1).padStart(4, "0");
-  const orderNum = `B2B-${new Date().getFullYear()}-${seq}`;
+  let nextSeq = 1;
+  if (maxOrder?.order_number) {
+    const lastNum = parseInt(maxOrder.order_number.split("-").pop() ?? "0", 10);
+    if (!isNaN(lastNum)) nextSeq = lastNum + 1;
+  }
+
+  const orderNum = `B2B-${year}-${String(nextSeq).padStart(4, "0")}`;
 
   const { data: order, error: orderError } = await supabase
     .from("orders")
