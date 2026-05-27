@@ -3,6 +3,8 @@ import { createClient, createAdminClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { ClientesBb2Client } from "@/components/admin/clientes-b2b-client";
 
+type Zona = { id: string; name: string };
+
 export const metadata: Metadata = { title: "Clientes B2B — Admin En Minutas" };
 export const revalidate = 0;
 
@@ -11,9 +13,12 @@ export default async function AdminClientesBb2Page() {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
+  const adminClient = createAdminClient();
+
   const [
     { data: clientes, error },
     { data: { users } },
+    { data: zonasRaw },
   ] = await Promise.all([
     supabase
       .from("profiles")
@@ -24,8 +29,11 @@ export default async function AdminClientesBb2Page() {
       .eq("role", "customer_b2b")
       .order("b2b_status")
       .order("created_at", { ascending: false }),
-    createAdminClient().auth.admin.listUsers({ perPage: 1000 }),
+    adminClient.auth.admin.listUsers({ perPage: 1000 }),
+    (adminClient as any).from("delivery_zones").select("id, name").order("name"),
   ]);
+
+  const zonas: Zona[] = (zonasRaw ?? []) as Zona[];
 
   if (error) {
     return (
@@ -53,7 +61,7 @@ export default async function AdminClientesBb2Page() {
         <p className="text-sm text-neutral-500 mt-1">{lista.length} cliente{lista.length !== 1 ? "s" : ""} registrado{lista.length !== 1 ? "s" : ""}</p>
       </div>
 
-      <ClientesBb2Client clientes={lista} pendingCount={pendingCount} />
+      <ClientesBb2Client clientes={lista} pendingCount={pendingCount} zonas={zonas} />
     </div>
   );
 }
