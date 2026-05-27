@@ -24,15 +24,30 @@ declare
   p_chipa_long  uuid;
 
 begin
-  -- ── 0. Limpiar datos del usuario anterior ───────────────────────────
+  -- ── 0. Limpiar todos los datos demo anteriores ──────────────────────
   select id into v_old_client from auth.users where email = 'lytwyn.gabriel@gmail.com';
-
   if v_old_client is not null then
     delete from public.order_lines
       where order_id in (select id from public.orders where customer_id = v_old_client);
     delete from public.orders where customer_id = v_old_client;
     delete from public.profiles where id = v_old_client;
     raise notice 'Datos demo anteriores eliminados para lytwyn.gabriel@gmail.com';
+  end if;
+
+  -- Limpiar pedidos previos de admin y noelia (por si el script se corrió antes)
+  select id into v_admin_id  from auth.users where email = 'admin@enminutas.com.ar';
+  select id into v_noelia_id from auth.users where email = 'noeliabeatrizmachado@gmail.com';
+
+  if v_admin_id is not null then
+    delete from public.order_lines
+      where order_id in (select id from public.orders where customer_id = v_admin_id);
+    delete from public.orders where customer_id = v_admin_id;
+  end if;
+
+  if v_noelia_id is not null then
+    delete from public.order_lines
+      where order_id in (select id from public.orders where customer_id = v_noelia_id);
+    delete from public.orders where customer_id = v_noelia_id;
   end if;
 
   -- ── 1. Obtener IDs ──────────────────────────────────────────────────
