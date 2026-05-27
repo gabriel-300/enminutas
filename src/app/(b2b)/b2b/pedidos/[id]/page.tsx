@@ -3,14 +3,15 @@ import { createClient } from "@/lib/supabase/server";
 import { redirect, notFound } from "next/navigation";
 import Link from "next/link";
 import { OrderStatusBadge } from "@/components/ui/badge";
+import { DeclararPagoButton } from "@/components/b2b/declarar-pago-button";
 
 export const metadata: Metadata = { title: "Detalle de pedido — Portal B2B En Minutas" };
 export const revalidate = 0;
 
 const STATUS_MSG: Record<string, { title: string; body: string; color: string }> = {
   pending_payment: {
-    title: "Pedido recibido — en revisión",
-    body:  "El equipo de En Minutas revisará tu pedido y te confirmará por WhatsApp o email.",
+    title: "Pedido recibido",
+    body:  "Realizá la transferencia con los datos de abajo y luego avisanos con el botón.",
     color: "bg-warning-bg border-warning/30 text-warning",
   },
   aprobado: {
@@ -59,6 +60,7 @@ export default async function B2BPedidoDetailPage({
     .from("orders")
     .select(`
       id, order_number, status, total, subtotal, created_at, notes,
+      payment_declared_at, payment_confirmed_at,
       lines:order_lines (id, quantity, unit_price, line_total, product_snapshot)
     `)
     .eq("id", id)
@@ -70,6 +72,13 @@ export default async function B2BPedidoDetailPage({
 
   const o = order as any;
   const msg = STATUS_MSG[o.status];
+
+  const bankCbu    = process.env.NEXT_PUBLIC_BANK_CBU   ?? "";
+  const bankAlias  = process.env.NEXT_PUBLIC_BANK_ALIAS ?? "";
+  const bankBanco  = "";
+  const bankTitular = process.env.NEXT_PUBLIC_BANK_HOLDER ?? "En Minutas";
+
+  const showBankInfo = o.status === "pending_payment" && (bankCbu || bankAlias);
 
   return (
     <div className="max-w-3xl mx-auto px-6 py-8">
@@ -99,6 +108,63 @@ export default async function B2BPedidoDetailPage({
         <div className={`mb-6 px-4 py-3 rounded-xl border text-sm font-medium ${msg.color}`}>
           <p className="font-semibold">{msg.title}</p>
           <p className="font-normal mt-0.5 opacity-90">{msg.body}</p>
+        </div>
+      )}
+
+      {/* Datos bancarios */}
+      {showBankInfo && (
+        <div className="mb-6 bg-white rounded-2xl border border-neutral-200 p-5">
+          <p className="text-xs font-semibold text-neutral-400 uppercase tracking-wide mb-4">
+            Datos para la transferencia
+          </p>
+          <div className="grid grid-cols-2 gap-x-8 gap-y-3 text-sm">
+            <div>
+              <p className="text-xs text-neutral-400 mb-0.5">Titular</p>
+              <p className="font-medium text-neutral-900">{bankTitular}</p>
+            </div>
+            {bankBanco && (
+              <div>
+                <p className="text-xs text-neutral-400 mb-0.5">Banco</p>
+                <p className="font-medium text-neutral-900">{bankBanco}</p>
+              </div>
+            )}
+            {bankCbu && (
+              <div>
+                <p className="text-xs text-neutral-400 mb-0.5">CBU</p>
+                <p className="font-mono font-medium text-neutral-900 tracking-wide">{bankCbu}</p>
+              </div>
+            )}
+            {bankAlias && (
+              <div>
+                <p className="text-xs text-neutral-400 mb-0.5">Alias</p>
+                <p className="font-medium text-neutral-900">{bankAlias}</p>
+              </div>
+            )}
+            <div className="col-span-2">
+              <p className="text-xs text-neutral-400 mb-0.5">Referencia / Concepto</p>
+              <p className="font-mono text-sm font-semibold text-tierra-700">{o.order_number}</p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Declarar pago */}
+      {o.status === "pending_payment" && (
+        <div className="mb-6">
+          {o.payment_declared_at ? (
+            <div className="flex items-center gap-2 px-4 py-3 bg-success-bg rounded-xl border border-success/30 text-sm text-success font-medium">
+              <span>✓</span>
+              <span>
+                Pago declarado el{" "}
+                {new Date(o.payment_declared_at).toLocaleString("es-AR", {
+                  day: "2-digit", month: "2-digit", year: "2-digit",
+                  hour: "2-digit", minute: "2-digit",
+                })}
+              </span>
+            </div>
+          ) : (
+            <DeclararPagoButton orderId={o.id} />
+          )}
         </div>
       )}
 
@@ -139,13 +205,21 @@ export default async function B2BPedidoDetailPage({
       </div>
 
       {/* Total */}
-      <div className="bg-white rounded-2xl border border-neutral-200 p-5 max-w-xs ml-auto">
+      <div className="bg-white rounded-2xl border border-neutral-200 p-5 max-w-xs ml-auto mb-4">
         <div className="flex justify-between font-semibold text-neutral-900">
           <span>Total c/IVA</span>
           <span className="tabular-nums">{fmt(Number(o.total))}</span>
         </div>
         <p className="text-xs text-neutral-400 mt-1">IVA (21%) incluido en todos los precios</p>
       </div>
+
+      {/* Nota del admin (si existe y es relevante para el cliente) */}
+      {o.notes && (
+        <div className="mt-2 bg-neutral-50 rounded-2xl border border-neutral-200 p-4">
+          <p className="text-xs font-medium text-neutral-500 mb-1">Observaciones</p>
+          <p className="text-sm text-neutral-700">{o.notes}</p>
+        </div>
+      )}
     </div>
   );
 }

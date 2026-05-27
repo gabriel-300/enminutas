@@ -5,6 +5,8 @@ import Link from "next/link";
 import { OrderStatusBadge } from "@/components/ui/badge";
 import { OrderStatusSelect } from "@/components/admin/order-status-select";
 import { AprobarPedidoButton } from "@/components/admin/aprobar-pedido-button";
+import { ConfirmarPagoButton } from "@/components/admin/confirmar-pago-button";
+import { NotasPedidoForm } from "@/components/admin/notas-pedido-form";
 
 export const metadata: Metadata = { title: "Detalle de pedido — Admin En Minutas" };
 export const revalidate = 0;
@@ -86,8 +88,11 @@ export default async function AdminPedidoDetailPage({
             })}
           </p>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 flex-wrap">
           <OrderStatusBadge status={o.status} />
+          {!o.payment_confirmed_at && (
+            <ConfirmarPagoButton orderId={o.id} />
+          )}
           {o.channel === "b2b_mayorista" && o.status === "pending_payment" && (
             <AprobarPedidoButton orderId={o.id} />
           )}
@@ -223,12 +228,36 @@ export default async function AdminPedidoDetailPage({
         </div>
       </div>
 
-      {o.notes && (
-        <div className="mt-4 bg-warning-bg rounded-2xl border border-warning/20 p-4">
-          <p className="text-xs font-medium text-warning mb-1">Nota del cliente</p>
-          <p className="text-sm text-neutral-700">{o.notes}</p>
+      {/* Pago confirmado */}
+      {o.payment_confirmed_at && (
+        <div className="mt-4 bg-success-bg rounded-2xl border border-success/20 p-4">
+          <p className="text-xs font-medium text-success">
+            Pago confirmado el{" "}
+            {new Date(o.payment_confirmed_at).toLocaleString("es-AR", {
+              day: "2-digit", month: "2-digit", year: "2-digit",
+              hour: "2-digit", minute: "2-digit",
+            })}
+          </p>
         </div>
       )}
+
+      {/* Pago declarado por el cliente */}
+      {o.payment_declared_at && !o.payment_confirmed_at && (
+        <div className="mt-4 bg-warning-bg rounded-2xl border border-warning/20 p-4">
+          <p className="text-xs font-medium text-warning">
+            El cliente declaró el pago el{" "}
+            {new Date(o.payment_declared_at).toLocaleString("es-AR", {
+              day: "2-digit", month: "2-digit", year: "2-digit",
+              hour: "2-digit", minute: "2-digit",
+            })}
+          </p>
+        </div>
+      )}
+
+      {/* Notas internas */}
+      <div className="mt-4">
+        <NotasPedidoForm orderId={o.id} initialNota={o.notes ?? null} />
+      </div>
     </div>
   );
 }

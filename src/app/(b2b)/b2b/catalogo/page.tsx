@@ -67,7 +67,7 @@ export default async function CatalogoB2BPage() {
     .single();
 
   const profile = profileRaw as any;
-  if (!profile || profile.b2b_status !== "activo") redirect("/pendiente");
+  if (!profile || profile.b2b_status !== "activo") redirect("/b2b/pendiente");
 
   const canal    = profile.canal as "dist" | "gastro" | "min" | null;
   const zona     = profile.zona as { flete_kg: number | null; name: string } | null;

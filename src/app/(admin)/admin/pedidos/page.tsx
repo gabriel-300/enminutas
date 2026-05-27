@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { createClient } from "@/lib/supabase/server";
+import { createClient, createAdminClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { PedidosClient } from "@/components/admin/pedidos-client";
 
@@ -13,15 +13,20 @@ export default async function AdminPedidosPage() {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
-  const { data: rawOrders, error } = await supabase
-    .from("orders")
-    .select(`
-      id, order_number, channel, status, total, payment_method, created_at,
-      guest_email,
-      customer:profiles!customer_id (full_name)
-    `)
-    .order("created_at", { ascending: false })
-    .limit(200);
+  const adminClient = createAdminClient();
+
+  const [{ data: rawOrders, error }, { data: { users } }] = await Promise.all([
+    supabase
+      .from("orders")
+      .select(`
+        id, order_number, channel, status, total, payment_method, created_at,
+        customer_id, guest_email,
+        customer:profiles!customer_id (full_name)
+      `)
+      .order("created_at", { ascending: false })
+      .limit(200),
+    adminClient.auth.admin.listUsers({ perPage: 1000 }),
+  ]);
 
   if (error) {
     return (
@@ -31,6 +36,10 @@ export default async function AdminPedidosPage() {
     );
   }
 
+  const emailMap: Record<string, string> = Object.fromEntries(
+    (users ?? []).map((u) => [u.id, u.email ?? ""])
+  );
+
   const orders = (rawOrders ?? []).map((o: any) => ({
     id: o.id,
     order_number: o.order_number,
@@ -39,7 +48,7 @@ export default async function AdminPedidosPage() {
     total: o.total,
     payment_method: o.payment_method,
     created_at: o.created_at,
-    customer_name: o.customer?.full_name ?? null,
+    customer_name: o.customer?.full_name ?? (o.customer_id ? emailMap[o.customer_id] : null) ?? null,
     customer_email: o.guest_email ?? null,
   }));
 
