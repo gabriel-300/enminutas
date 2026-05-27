@@ -1,6 +1,6 @@
 "use server";
 
-import { createClient } from "@/lib/supabase/server";
+import { createClient, createAdminClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { emailNuevoPedidoB2B } from "@/lib/email";
 
@@ -22,7 +22,8 @@ type CartItem = {
 export async function confirmarPedidoB2B(items: CartItem[]) {
   if (items.length === 0) throw new Error("Carrito vacío");
 
-  const supabase = await createClient();
+  const supabase      = await createClient();
+  const adminClient   = createAdminClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) throw new Error("No autorizado");
 
@@ -30,7 +31,7 @@ export async function confirmarPedidoB2B(items: CartItem[]) {
   const commissionAmount = items.reduce((s, i) => s + i.precio.comision    * i.qty, 0);
 
   const year = new Date().getFullYear();
-  const { data: maxOrder } = await supabase
+  const { data: maxOrder } = await adminClient
     .from("orders")
     .select("order_number")
     .like("order_number", `B2B-${year}-%`)
