@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { cambiarRolStaff, revocarAccesoStaff, invitarStaff } from "@/app/(admin)/admin/staff/actions";
+import { cambiarRolStaff, revocarAccesoStaff, invitarStaff, crearUsuarioConPassword } from "@/app/(admin)/admin/staff/actions";
 
 type StaffMember = {
   id:           string;
@@ -96,59 +96,76 @@ function StaffRow({
 
 function InviteForm() {
   const [isPending, startTransition] = useTransition();
-  const [error, setError]   = useState<string | null>(null);
-  const [success, setSuccess] = useState(false);
+  const [mode, setMode]       = useState<"invite" | "password">("password");
+  const [error, setError]     = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
 
-  function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+  function handleSubmit(e: React.SyntheticEvent<HTMLFormElement>) {
     e.preventDefault();
     const fd   = new FormData(e.currentTarget);
     const form = e.currentTarget;
     setError(null);
-    setSuccess(false);
+    setSuccess(null);
     startTransition(async () => {
       try {
-        await invitarStaff(fd);
-        setSuccess(true);
+        if (mode === "invite") {
+          await invitarStaff(fd);
+          setSuccess("Invitación enviada. El usuario recibirá un email para activar su cuenta.");
+        } else {
+          await crearUsuarioConPassword(fd);
+          setSuccess("Usuario creado. Ya puede ingresar con su email y contraseña.");
+        }
         form.reset();
       } catch (err: any) {
-        setError(err.message ?? "Error al invitar");
+        setError(err.message ?? "Error al crear usuario");
       }
     });
   }
 
+  const inputCls = "w-full px-3 py-2 text-sm border border-neutral-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-tierra-700/20 disabled:opacity-50";
+
   return (
     <div className="bg-white rounded-2xl border border-neutral-200 p-6">
-      <h2 className="text-sm font-semibold text-neutral-800 mb-4">Invitar nuevo miembro</h2>
+      <div className="flex items-center justify-between mb-4">
+        <h2 className="text-sm font-semibold text-neutral-800">Agregar miembro</h2>
+        {/* Toggle */}
+        <div className="flex rounded-lg border border-neutral-200 overflow-hidden text-xs">
+          <button
+            type="button"
+            onClick={() => { setMode("password"); setError(null); setSuccess(null); }}
+            className={`px-3 py-1.5 transition-colors ${mode === "password" ? "bg-tierra-700 text-white" : "text-neutral-500 hover:bg-neutral-50"}`}
+          >
+            Con contraseña
+          </button>
+          <button
+            type="button"
+            onClick={() => { setMode("invite"); setError(null); setSuccess(null); }}
+            className={`px-3 py-1.5 transition-colors ${mode === "invite" ? "bg-tierra-700 text-white" : "text-neutral-500 hover:bg-neutral-50"}`}
+          >
+            Invitar por email
+          </button>
+        </div>
+      </div>
+
+      <p className="text-xs text-neutral-400 mb-4">
+        {mode === "password"
+          ? "Creá el usuario directamente con una contraseña. No se envía ningún email."
+          : "El usuario recibirá un email de invitación para crear su contraseña."}
+      </p>
+
       <form onSubmit={handleSubmit} className="space-y-4">
         <div className="grid grid-cols-3 gap-3">
-          <div className="col-span-1">
+          <div>
             <label className="block text-xs font-medium text-neutral-500 mb-1">Nombre</label>
-            <input
-              name="name"
-              placeholder="Nombre completo"
-              className="w-full px-3 py-2 text-sm border border-neutral-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-tierra-700/20"
-              disabled={isPending}
-            />
+            <input name="name" placeholder="Nombre completo" className={inputCls} disabled={isPending} />
           </div>
-          <div className="col-span-1">
+          <div>
             <label className="block text-xs font-medium text-neutral-500 mb-1">Email *</label>
-            <input
-              name="email"
-              type="email"
-              required
-              placeholder="nombre@empresa.com"
-              className="w-full px-3 py-2 text-sm border border-neutral-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-tierra-700/20"
-              disabled={isPending}
-            />
+            <input name="email" type="email" required placeholder="nombre@empresa.com" className={inputCls} disabled={isPending} />
           </div>
           <div>
             <label className="block text-xs font-medium text-neutral-500 mb-1">Rol *</label>
-            <select
-              name="rol"
-              required
-              className="w-full px-3 py-2 text-sm border border-neutral-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-tierra-700/20"
-              disabled={isPending}
-            >
+            <select name="rol" required className={inputCls} disabled={isPending}>
               {ROLE_OPTIONS.map((r) => (
                 <option key={r.value} value={r.value}>{r.label} — {r.desc}</option>
               ))}
@@ -156,21 +173,30 @@ function InviteForm() {
           </div>
         </div>
 
-        {error && (
-          <p className="text-sm text-danger">{error}</p>
+        {mode === "password" && (
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-xs font-medium text-neutral-500 mb-1">Contraseña *</label>
+              <input name="password" type="password" required minLength={8} placeholder="Mínimo 8 caracteres" className={inputCls} disabled={isPending} />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-neutral-500 mb-1">Confirmar contraseña *</label>
+              <input name="password_confirm" type="password" required minLength={8} placeholder="Repetir contraseña" className={inputCls} disabled={isPending} />
+            </div>
+          </div>
         )}
-        {success && (
-          <p className="text-sm text-success">
-            Invitación enviada. El usuario recibirá un email para activar su cuenta.
-          </p>
-        )}
+
+        {error   && <p className="text-sm text-danger">{error}</p>}
+        {success && <p className="text-sm text-success">{success}</p>}
 
         <button
           type="submit"
           disabled={isPending}
           className="px-4 py-2 rounded-xl bg-tierra-700 text-white text-sm font-medium hover:bg-tierra-800 disabled:opacity-50 transition-colors"
         >
-          {isPending ? "Enviando…" : "Enviar invitación"}
+          {isPending
+            ? "Procesando…"
+            : mode === "password" ? "Crear usuario" : "Enviar invitación"}
         </button>
       </form>
     </div>
