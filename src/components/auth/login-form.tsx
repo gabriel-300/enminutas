@@ -45,6 +45,8 @@ export function LoginForm() {
       router.push("/admin/pedidos");
     } else if (role === "produccion") {
       router.push("/admin/produccion");
+    } else if (role === "distribucion") {
+      router.push("/admin/distribucion");
     } else if (role === "admin_enminutas" || role === "admin_ideaia") {
       router.push("/admin/pedidos");
     } else if (role === "repartidor") {
