@@ -16,41 +16,54 @@ export default async function AdminClientesBb2Page() {
   const adminClient = createAdminClient();
 
   const [
-    { data: clientes, error },
     { data: { users } },
     { data: zonasRaw },
   ] = await Promise.all([
-    (adminClient as any)
-      .from("profiles")
-      .select(`
-        id, full_name, canal, b2b_status, created_at,
-        zona:delivery_zones!zona_id (name)
-      `)
-      .eq("role", "customer_b2b")
-      .order("b2b_status")
-      .order("created_at", { ascending: false }),
     adminClient.auth.admin.listUsers({ perPage: 1000 }),
     (adminClient as any).from("delivery_zones").select("id, name").order("name"),
   ]);
 
   const zonas: Zona[] = (zonasRaw ?? []) as Zona[];
 
-  if (error) {
-    return (
-      <div className="p-8 text-sm text-danger">
-        Error al cargar clientes: {error.message}
-      </div>
-    );
-  }
+  // Filtrar clientes B2B por app_metadata (la columna role no existe en profiles)
+  const b2bUsers = (users ?? []).filter(
+    (u) => u.app_metadata?.role === "customer_b2b"
+  );
+  const b2bIds = b2bUsers.map((u) => u.id);
 
   const emailMap: Record<string, string | null> = Object.fromEntries(
-    (users ?? []).map((u) => [u.id, u.email ?? null])
+    b2bUsers.map((u) => [u.id, u.email ?? null])
   );
 
-  const lista = (clientes ?? []).map((c: any) => ({
-    ...c,
-    email: emailMap[c.id] ?? null,
-  }));
+  const { data: perfiles } = b2bIds.length > 0
+    ? await (adminClient as any)
+        .from("profiles")
+        .select(`id, full_name, canal, b2b_status, created_at, zona:delivery_zones!zona_id (name)`)
+        .in("id", b2bIds)
+        .order("b2b_status")
+        .order("created_at", { ascending: false })
+    : { data: [] };
+
+  // Incluir clientes que tienen auth pero no perfil aún
+  const profileMap: Record<string, any> = Object.fromEntries(
+    (perfiles ?? []).map((p: any) => [p.id, p])
+  );
+
+  const lista = b2bUsers.map((u) => {
+    const p = profileMap[u.id];
+    return {
+      id:         u.id,
+      full_name:  p?.full_name ?? null,
+      email:      emailMap[u.id] ?? null,
+      canal:      p?.canal ?? null,
+      b2b_status: p?.b2b_status ?? "pendiente",
+      created_at: p?.created_at ?? u.created_at,
+      zona:       p?.zona ?? null,
+    };
+  }).sort((a, b) => {
+    if (a.b2b_status !== b.b2b_status) return a.b2b_status.localeCompare(b.b2b_status);
+    return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+  });
 
   const pendingCount = lista.filter((c) => c.b2b_status === "pendiente").length;
 

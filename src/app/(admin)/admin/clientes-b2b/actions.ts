@@ -28,7 +28,6 @@ export async function crearClienteB2B(formData: FormData) {
   await (supabase as any).from("profiles").upsert({
     id:         data.user.id,
     full_name:  name || email,
-    role:       "customer_b2b",
     canal:      canal || null,
     zona_id:    zonaId,
     b2b_status: "activo",
@@ -62,7 +61,6 @@ export async function invitarClienteB2B(formData: FormData) {
   await (supabase as any).from("profiles").upsert({
     id:         data.user.id,
     full_name:  name || email,
-    role:       "customer_b2b",
     canal:      canal || null,
     zona_id:    zonaId,
     b2b_status: "activo",
