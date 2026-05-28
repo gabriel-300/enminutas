@@ -54,7 +54,9 @@ export default async function ReportesPage() {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
-  // Pedidos B2B confirmados (con pago confirmado o aprobados+)
+  // Pedidos B2B activos (aprobados o más avanzados — excluye pending y cancelados)
+  const ACTIVE_STATUSES = ["aprobado", "enviado_prod", "despachado", "delivered"];
+
   const { data: rawOrders } = await (adminClient as any)
     .from("orders")
     .select(`
@@ -63,7 +65,7 @@ export default async function ReportesPage() {
       customer:profiles!customer_id (canal)
     `)
     .eq("channel", "b2b_mayorista")
-    .neq("status", "cancelled")
+    .in("status", ACTIVE_STATUSES)
     .order("created_at", { ascending: false });
 
   const orders: OrderRow[] = (rawOrders ?? []).map((o: any) => ({
@@ -77,7 +79,7 @@ export default async function ReportesPage() {
     customer_canal:           o.customer?.canal ?? null,
   }));
 
-  const confirmed = orders.filter((o) => o.payment_confirmed_at);
+  const confirmed = orders;
 
   const totalGeneral    = confirmed.reduce((s, o) => s + o.total, 0);
   const totalComision   = confirmed.reduce((s, o) => s + o.ideaia_commission_amount, 0);
@@ -93,7 +95,7 @@ export default async function ReportesPage() {
       <div className="mb-6 flex items-start justify-between">
         <div>
           <h1 className="text-2xl font-semibold font-display text-neutral-900">Reportes</h1>
-          <p className="text-sm text-neutral-500 mt-1">Ventas B2B con pago confirmado</p>
+          <p className="text-sm text-neutral-500 mt-1">Ventas B2B aprobadas</p>
         </div>
         <div className="flex items-center gap-2">
           <p className="text-xs text-neutral-400 mr-1">Lista de precios:</p>
@@ -115,7 +117,7 @@ export default async function ReportesPage() {
         <div className="bg-white rounded-2xl border border-neutral-200 p-5">
           <p className="text-xs text-neutral-400 mb-1">Total facturado</p>
           <p className="text-2xl font-semibold font-display text-neutral-900">{fmt(totalGeneral)}</p>
-          <p className="text-xs text-neutral-400 mt-1">{confirmed.length} pedidos confirmados</p>
+          <p className="text-xs text-neutral-400 mt-1">{confirmed.length} pedidos aprobados</p>
         </div>
         <div className="bg-white rounded-2xl border border-neutral-200 p-5">
           <p className="text-xs text-neutral-400 mb-1">Este mes</p>
