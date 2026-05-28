@@ -104,11 +104,20 @@ export async function updateSession(request: NextRequest) {
       }
     }
 
-    // ── Redirigir cliente B2B fuera del portal al catálogo ─────────
-    if (user) {
+    // ── Redirigir usuarios según su rol al entrar al sitio ────────
+    if (user && !pathname.startsWith("/auth") && !pathname.startsWith("/login") && !pathname.startsWith("/admin") && !pathname.startsWith("/b2b")) {
       const role = user.app_metadata?.role as string | undefined;
-      if (role === "customer_b2b" && !pathname.startsWith("/b2b") && !pathname.startsWith("/auth") && !pathname.startsWith("/login")) {
+
+      // Cliente B2B → portal B2B
+      if (role === "customer_b2b") {
         return NextResponse.redirect(new URL("/b2b/catalogo", request.url));
+      }
+
+      // Staff → panel admin (con home apropiado por rol)
+      if (role && STAFF_ROLES.includes(role)) {
+        if (role === "produccion")   return NextResponse.redirect(new URL("/admin/produccion",   request.url));
+        if (role === "distribucion") return NextResponse.redirect(new URL("/admin/distribucion", request.url));
+        return NextResponse.redirect(new URL("/admin/dashboard", request.url));
       }
     }
 
