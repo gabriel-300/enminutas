@@ -3,7 +3,7 @@
 import { createAdminClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 
-const VALID_ROLES = ["admin", "vendedor", "produccion"] as const;
+const VALID_ROLES = ["admin", "vendedor", "produccion", "distribucion"] as const;
 type StaffRole = typeof VALID_ROLES[number];
 
 function isValidRole(r: unknown): r is StaffRole {

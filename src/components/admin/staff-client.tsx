@@ -13,15 +13,17 @@ type StaffMember = {
 };
 
 const ROLE_OPTIONS = [
-  { value: "admin",      label: "Administrador",  desc: "Acceso total" },
-  { value: "vendedor",   label: "Vendedor",        desc: "Pedidos, clientes y dashboard" },
-  { value: "produccion", label: "Producción",      desc: "Solo vista de producción" },
+  { value: "admin",        label: "Administrador",  desc: "Acceso total" },
+  { value: "vendedor",     label: "Vendedor",        desc: "Pedidos, clientes y dashboard" },
+  { value: "produccion",   label: "Producción",      desc: "Solo vista de producción" },
+  { value: "distribucion", label: "Distribución",    desc: "Solo vista de distribución" },
 ];
 
 const ROLE_BADGE: Record<string, string> = {
-  admin:      "bg-tierra-100 text-tierra-700",
-  vendedor:   "bg-info-bg text-info",
-  produccion: "bg-success-bg text-success",
+  admin:        "bg-tierra-100 text-tierra-700",
+  vendedor:     "bg-info-bg text-info",
+  produccion:   "bg-success-bg text-success",
+  distribucion: "bg-warning-bg text-warning",
 };
 
 function ResetPasswordPanel({ member, onClose }: { member: StaffMember; onClose: () => void }) {
@@ -348,7 +350,7 @@ export function StaffClient({
       </div>
 
       {/* Info de roles */}
-      <div className="grid grid-cols-3 gap-3">
+      <div className="grid grid-cols-4 gap-3">
         {ROLE_OPTIONS.map((r) => (
           <div key={r.value} className="bg-white rounded-xl border border-neutral-200 p-4">
             <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium mb-2 ${ROLE_BADGE[r.value]}`}>
@@ -373,6 +375,13 @@ export function StaffClient({
               {r.value === "produccion" && (
                 <>
                   <li>· Solo vista de producción</li>
+                  <li>· Dashboard</li>
+                  <li>· Sin acceso a pedidos ni clientes</li>
+                </>
+              )}
+              {r.value === "distribucion" && (
+                <>
+                  <li>· Solo vista de distribución</li>
                   <li>· Dashboard</li>
                   <li>· Sin acceso a pedidos ni clientes</li>
                 </>

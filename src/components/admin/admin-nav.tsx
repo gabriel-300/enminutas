@@ -5,9 +5,10 @@ import { usePathname, useRouter } from "next/navigation";
 import { createBrowserClient } from "@supabase/ssr";
 
 const NAV_ITEMS = [
-  { href: "/admin/dashboard",    label: "Dashboard",     roles: ["admin", "vendedor"] },
-  { href: "/admin/pedidos",      label: "Pedidos",       roles: ["admin", "vendedor"] },
-  { href: "/admin/produccion",   label: "Producción",    roles: ["admin", "vendedor", "produccion"] },
+  { href: "/admin/dashboard",      label: "Dashboard",     roles: ["admin", "vendedor", "produccion", "distribucion"] },
+  { href: "/admin/pedidos",        label: "Pedidos",       roles: ["admin", "vendedor"] },
+  { href: "/admin/produccion",     label: "Producción",    roles: ["admin", "vendedor", "produccion"] },
+  { href: "/admin/distribucion",   label: "Distribución",  roles: ["admin", "vendedor", "distribucion"] },
   { href: "/admin/productos",    label: "Productos",     roles: ["admin"] },
   { href: "/admin/categorias",   label: "Categorías",    roles: ["admin"] },
   { href: "/admin/zonas",        label: "Zonas",         roles: ["admin"] },
@@ -18,9 +19,10 @@ const NAV_ITEMS = [
 ];
 
 const ROLE_LABEL: Record<string, string> = {
-  admin:      "Administrador",
-  vendedor:   "Vendedor",
-  produccion: "Producción",
+  admin:        "Administrador",
+  vendedor:     "Vendedor",
+  produccion:   "Producción",
+  distribucion: "Distribución",
 };
 
 export function AdminNav({ role, email, name }: { role: string | null; email: string | null; name: string | null }) {

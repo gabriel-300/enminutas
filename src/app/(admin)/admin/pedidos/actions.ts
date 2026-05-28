@@ -88,6 +88,20 @@ export async function confirmarPago(orderId: string) {
   revalidatePath("/admin/dashboard");
 }
 
+export async function confirmarEntrega(orderId: string) {
+  const supabase = createAdminClient();
+  const { error } = await supabase
+    .from("orders")
+    .update({
+      status:        "delivered" as any,
+      entregado_at:  new Date().toISOString(),
+    })
+    .eq("id", orderId);
+  if (error) throw new Error(error.message);
+  revalidatePath("/admin/distribucion");
+  revalidatePath("/admin/dashboard");
+}
+
 export async function agregarNota(orderId: string, nota: string) {
   const supabase = createAdminClient();
   const { error } = await supabase

@@ -26,7 +26,7 @@ export default async function AdminStaffPage() {
   }
 
   // Filtrar solo staff (con role admin/vendedor/produccion en app_metadata)
-  const STAFF_ROLES = ["admin", "vendedor", "produccion"];
+  const STAFF_ROLES = ["admin", "vendedor", "produccion", "distribucion"];
   const staff = (users ?? [])
     .filter((u) => STAFF_ROLES.includes(u.app_metadata?.role))
     .map((u) => ({
@@ -38,7 +38,7 @@ export default async function AdminStaffPage() {
       last_sign_in: u.last_sign_in_at ?? null,
     }))
     .sort((a, b) => {
-      const order = { admin: 0, vendedor: 1, produccion: 2 };
+      const order = { admin: 0, vendedor: 1, produccion: 2, distribucion: 3 };
       return (order[a.role as keyof typeof order] ?? 9) - (order[b.role as keyof typeof order] ?? 9);
     });
 
