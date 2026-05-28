@@ -92,6 +92,14 @@ export async function updateSession(request: NextRequest) {
       }
     }
 
+    // ── Redirigir cliente B2B fuera del portal al catálogo ─────────
+    if (user) {
+      const role = user.app_metadata?.role as string | undefined;
+      if (role === "customer_b2b" && !pathname.startsWith("/b2b") && !pathname.startsWith("/auth") && !pathname.startsWith("/login")) {
+        return NextResponse.redirect(new URL("/b2b/catalogo", request.url));
+      }
+    }
+
     // ── Rutas genéricas protegidas ─────────────────────────────────
     const dashboardRoutes = ["/repartidor", "/mi-cuenta"];
     if (dashboardRoutes.some((r) => pathname.startsWith(r)) && !user) {
