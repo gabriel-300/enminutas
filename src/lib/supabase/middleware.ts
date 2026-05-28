@@ -20,9 +20,30 @@ const DISTRIBUCION_ALLOWED = [
   "/admin/distribucion",
 ];
 
+// Reads raw_app_meta_data via admin API, bypassing JWT claims.
+// The custom_access_token_hook overwrites app_metadata.role with profiles.role
+// for all users, making staff appear as customer_b2c in the JWT.
+// Admin API reads auth.users.raw_app_meta_data directly.
+async function getRealRole(
+  userId: string,
+  supabaseUrl: string,
+  serviceKey: string,
+): Promise<string | undefined> {
+  try {
+    const admin = createServerClient(supabaseUrl, serviceKey, {
+      cookies: { getAll: () => [], setAll: () => {} },
+    });
+    const { data: { user } } = await (admin as any).auth.admin.getUserById(userId);
+    return user?.app_metadata?.role as string | undefined;
+  } catch {
+    return undefined;
+  }
+}
+
 export async function updateSession(request: NextRequest) {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  const serviceKey  = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
   let supabaseResponse = NextResponse.next({ request });
 
@@ -59,13 +80,15 @@ export async function updateSession(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
 
   try {
-    // ── Admin routes ───────────────────────────────────────────────
+    // ── Admin routes (security-critical: use admin API for real role) ──
     if (pathname.startsWith("/admin")) {
       if (!user) {
         return NextResponse.redirect(new URL("/login", request.url));
       }
 
-      const role = user.app_metadata?.role as string | undefined;
+      const role = serviceKey
+        ? await getRealRole(user.id, supabaseUrl, serviceKey)
+        : undefined;
 
       if (role !== undefined && !STAFF_ROLES.includes(role)) {
         return NextResponse.redirect(new URL("/login", request.url));
@@ -92,30 +115,34 @@ export async function updateSession(request: NextRequest) {
       }
     }
 
-    // ── Portal B2B ─────────────────────────────────────────────────
+    // ── Portal B2B (security-critical: use admin API for real role) ────
     if (pathname.startsWith("/b2b")) {
       if (!user) {
         return NextResponse.redirect(new URL("/login", request.url));
       }
-      const role = user.app_metadata?.role;
+      const role = serviceKey
+        ? await getRealRole(user.id, supabaseUrl, serviceKey)
+        : undefined;
       if (role !== "customer_b2b") {
         return NextResponse.redirect(new URL("/login", request.url));
       }
     }
 
-    // ── Redirigir usuarios según su rol al entrar al sitio ────────
+    // ── Redirect logged-in staff/B2B away from public pages ────────────
+    // Uses JWT role (fast). The login form server action already redirects
+    // correctly after login, so this block only handles edge cases.
+    // JWT role may be wrong for staff (shows customer_b2c due to auth hook),
+    // but that's acceptable here — it's a UX convenience, not a security gate.
     if (user && !pathname.startsWith("/auth") && !pathname.startsWith("/login") && !pathname.startsWith("/admin") && !pathname.startsWith("/b2b")) {
-      const role = user.app_metadata?.role as string | undefined;
+      const jwtRole = user.app_metadata?.role as string | undefined;
 
-      // Cliente B2B → portal B2B
-      if (role === "customer_b2b") {
+      if (jwtRole === "customer_b2b") {
         return NextResponse.redirect(new URL("/b2b/catalogo", request.url));
       }
 
-      // Staff → panel admin (con home apropiado por rol)
-      if (role && STAFF_ROLES.includes(role)) {
-        if (role === "produccion")   return NextResponse.redirect(new URL("/admin/produccion",   request.url));
-        if (role === "distribucion") return NextResponse.redirect(new URL("/admin/distribucion", request.url));
+      if (jwtRole && STAFF_ROLES.includes(jwtRole)) {
+        if (jwtRole === "produccion")   return NextResponse.redirect(new URL("/admin/produccion",   request.url));
+        if (jwtRole === "distribucion") return NextResponse.redirect(new URL("/admin/distribucion", request.url));
         return NextResponse.redirect(new URL("/admin/dashboard", request.url));
       }
     }

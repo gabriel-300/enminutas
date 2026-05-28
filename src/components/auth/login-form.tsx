@@ -6,6 +6,7 @@ import Link from "next/link";
 import { createBrowserClient } from "@supabase/ssr";
 import type { Database } from "@/types/database";
 import { Button, Input } from "@/components/ui";
+import { obtenerRolReal } from "@/app/actions/auth";
 
 export function LoginForm() {
   const router = useRouter();
@@ -35,20 +36,17 @@ export function LoginForm() {
       return;
     }
 
-    // getUser() hace una request al servidor y devuelve el app_metadata real
-    // (no el JWT que el auth hook sobreescribe con profiles.role)
-    const { data: { user: realUser } } = await supabase.auth.getUser();
-    const role = realUser?.app_metadata?.role as string | undefined;
-    const b2bStatus = realUser?.app_metadata?.b2b_status as string | undefined;
+    // obtenerRolReal() usa el admin API server-side para leer raw_app_meta_data.
+    // supabase.auth.getUser() devuelve claims del JWT que el auth hook sobreescribe
+    // con profiles.role, haciendo que los roles de staff aparezcan como customer_b2c.
+    const { role, b2bStatus } = await obtenerRolReal();
 
-    if (role === "admin" || role === "vendedor") {
+    if (role === "admin" || role === "vendedor" || role === "admin_enminutas" || role === "admin_ideaia") {
       router.push("/admin/pedidos");
     } else if (role === "produccion") {
       router.push("/admin/produccion");
     } else if (role === "distribucion") {
       router.push("/admin/distribucion");
-    } else if (role === "admin_enminutas" || role === "admin_ideaia") {
-      router.push("/admin/pedidos");
     } else if (role === "repartidor") {
       router.push("/repartidor/activos");
     } else if (role === "customer_b2b") {

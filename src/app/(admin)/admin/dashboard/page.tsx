@@ -35,6 +35,8 @@ export default async function DashboardPage() {
 
   const db = adminClient as any;
 
+  const cutoff3d = new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString();
+
   const [
     { count: pendingOrders },
     { count: inProd },
@@ -42,6 +44,8 @@ export default async function DashboardPage() {
     { data: prevRevenueData },
     { data: monthlyOrdersRaw },
     { data: lastOrdersRaw },
+    { data: pagosPendientes },
+    { data: despachosViejos },
     { data: { users } },
   ] = await Promise.all([
     db.from("orders").select("*", { count: "exact", head: true })
@@ -71,6 +75,20 @@ export default async function DashboardPage() {
     db.from("orders").select("customer_id, created_at")
       .eq("channel", "b2b_mayorista").neq("status", "cancelled")
       .order("created_at", { ascending: false }),
+
+    // Pagos declarados sin confirmar
+    db.from("orders")
+      .select("id, order_number, customer:profiles!customer_id(full_name), payment_declared_at")
+      .eq("channel", "b2b_mayorista")
+      .not("payment_declared_at", "is", null)
+      .is("payment_confirmed_at", null),
+
+    // Pedidos despachados hace más de 3 días sin confirmar entrega
+    db.from("orders")
+      .select("id, order_number, despachado_at, customer:profiles!customer_id(full_name)")
+      .eq("channel", "b2b_mayorista")
+      .eq("status", "despachado")
+      .lt("despachado_at", cutoff3d),
 
     adminClient.auth.admin.listUsers({ perPage: 1000 }),
   ]);
@@ -123,7 +141,12 @@ export default async function DashboardPage() {
     (o) => o.created_at >= prevMonthStart && o.created_at < monthStart
   ).length;
 
-  const totalAlerts = inactivos.length + (pendingOrders ?? 0) + pendingClients;
+  const totalAlerts =
+    inactivos.length +
+    (pendingOrders ?? 0) +
+    pendingClients +
+    (pagosPendientes?.length ?? 0) +
+    (despachosViejos?.length ?? 0);
 
   // ── Top productos ─────────────────────────────────────────────────────
   const productMap: Record<string, number> = {};
@@ -271,6 +294,39 @@ export default async function DashboardPage() {
                     </Link>
                   </li>
                 )}
+
+                {/* Pagos declarados sin confirmar */}
+                {(pagosPendientes ?? []).map((o: any) => (
+                  <li key={o.id} className="flex items-center gap-3 px-5 py-3 bg-warning-bg/40">
+                    <span className="size-1.5 rounded-full bg-warning shrink-0" />
+                    <p className="text-sm text-neutral-800 flex-1">
+                      <span className="font-semibold">{o.customer?.full_name ?? `#${o.order_number}`}</span>{" "}
+                      <span className="text-neutral-500">declaró pago — pendiente de confirmación</span>
+                    </p>
+                    <Link href="/admin/pedidos" className="text-xs text-tierra-700 hover:underline shrink-0">
+                      Ver →
+                    </Link>
+                  </li>
+                ))}
+
+                {/* Despachos sin confirmar entrega (+3 días) */}
+                {(despachosViejos ?? []).map((o: any) => {
+                  const days = o.despachado_at
+                    ? Math.floor((Date.now() - new Date(o.despachado_at).getTime()) / (1000 * 60 * 60 * 24))
+                    : "?";
+                  return (
+                    <li key={o.id} className="flex items-center gap-3 px-5 py-3 bg-danger-bg/30">
+                      <span className="size-1.5 rounded-full bg-danger shrink-0" />
+                      <p className="text-sm text-neutral-800 flex-1">
+                        <span className="font-semibold">{o.customer?.full_name ?? `#${o.order_number}`}</span>{" "}
+                        <span className="text-neutral-500">despachado hace {days} días sin confirmar entrega</span>
+                      </p>
+                      <Link href="/admin/distribucion" className="text-xs text-tierra-700 hover:underline shrink-0">
+                        Ver →
+                      </Link>
+                    </li>
+                  );
+                })}
               </ul>
             )}
           </div>
