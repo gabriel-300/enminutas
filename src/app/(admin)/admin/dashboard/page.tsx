@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { createClient } from "@/lib/supabase/server";
+import { createClient, createAdminClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import Link from "next/link";
 
@@ -33,7 +33,8 @@ function StatCard({
 }
 
 export default async function DashboardPage() {
-  const supabase = await createClient();
+  const supabase    = await createClient();
+  const adminClient = createAdminClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
@@ -41,67 +42,73 @@ export default async function DashboardPage() {
   const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
   const cutoff15d  = new Date(Date.now() - 15 * 24 * 60 * 60 * 1000).toISOString();
 
+  const db = adminClient as any;
+
   const [
-    { count: pendingClients },
     { count: pendingOrders },
     { count: inProd },
     { data: revenueData },
-    { count: activeClients },
     { data: recentOrders },
-    { data: activeB2B },
     { data: recentOrderIds },
+    { data: { users } },
   ] = await Promise.all([
-    // Clientes B2B esperando aprobación
-    supabase.from("profiles")
-      .select("*", { count: "exact", head: true })
-      .eq("role", "customer_b2b").eq("b2b_status", "pendiente"),
-
     // Pedidos B2B esperando aprobación
-    supabase.from("orders")
+    db.from("orders")
       .select("*", { count: "exact", head: true })
       .eq("channel", "b2b_mayorista").eq("status", "pending_payment"),
 
     // Pedidos en producción (aprobado + enviado_prod)
-    supabase.from("orders")
+    db.from("orders")
       .select("*", { count: "exact", head: true })
       .eq("channel", "b2b_mayorista")
       .in("status", ["aprobado", "enviado_prod"]),
 
     // Facturación este mes
-    supabase.from("orders")
+    db.from("orders")
       .select("total")
       .eq("channel", "b2b_mayorista")
       .not("status", "in", "(cancelled,refunded)")
       .gte("created_at", monthStart),
 
-    // Clientes B2B activos
-    supabase.from("profiles")
-      .select("*", { count: "exact", head: true })
-      .eq("role", "customer_b2b").eq("b2b_status", "activo"),
-
     // Últimos 8 pedidos B2B
-    supabase.from("orders")
+    db.from("orders")
       .select("id, order_number, status, total, created_at, customer:profiles!customer_id (full_name)")
       .eq("channel", "b2b_mayorista")
       .order("created_at", { ascending: false })
       .limit(8),
 
-    // Clientes activos para detectar inactivos
-    supabase.from("profiles")
-      .select("id, full_name")
-      .eq("role", "customer_b2b").eq("b2b_status", "activo"),
-
     // Clientes con pedido reciente (últimos 15 días)
-    supabase.from("orders")
+    db.from("orders")
       .select("customer_id")
       .eq("channel", "b2b_mayorista")
       .gte("created_at", cutoff15d),
+
+    // Auth users para contar clientes B2B
+    adminClient.auth.admin.listUsers({ perPage: 1000 }),
   ]);
 
-  const revenueTotal = (revenueData ?? []).reduce((s, o) => s + Number(o.total), 0);
+  const b2bUsers  = (users ?? []).filter((u) => u.app_metadata?.role === "customer_b2b");
+  const b2bIds    = b2bUsers.map((u) => u.id);
 
-  const activeIds   = new Set((recentOrderIds ?? []).map((o: any) => o.customer_id).filter(Boolean));
-  const inactivos   = (activeB2B ?? []).filter((c) => !activeIds.has(c.id));
+  // Perfiles de clientes B2B para b2b_status y full_name
+  const { data: b2bProfiles } = b2bIds.length > 0
+    ? await db.from("profiles").select("id, full_name, b2b_status").in("id", b2bIds)
+    : { data: [] };
+
+  const profileMap: Record<string, any> = Object.fromEntries(
+    (b2bProfiles ?? []).map((p: any) => [p.id, p])
+  );
+
+  const pendingClients = b2bUsers.filter((u) => profileMap[u.id]?.b2b_status === "pendiente").length;
+  const activeClients  = b2bUsers.filter((u) => profileMap[u.id]?.b2b_status === "activo").length;
+  const activeB2B      = b2bUsers
+    .filter((u) => profileMap[u.id]?.b2b_status === "activo")
+    .map((u) => ({ id: u.id, full_name: profileMap[u.id]?.full_name ?? u.email ?? u.id.slice(0, 8) }));
+
+  const revenueTotal = (revenueData ?? []).reduce((s: number, o: any) => s + Number(o.total), 0);
+
+  const activeIds = new Set((recentOrderIds ?? []).map((o: any) => o.customer_id).filter(Boolean));
+  const inactivos = activeB2B.filter((c) => !activeIds.has(c.id));
 
   const totalAlerts = (pendingClients ?? 0) + (pendingOrders ?? 0) + inactivos.length;
 

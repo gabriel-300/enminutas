@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { createClient } from "@/lib/supabase/server";
+import { createClient, createAdminClient } from "@/lib/supabase/server";
 import { redirect, notFound } from "next/navigation";
 import Link from "next/link";
 import { OrderStatusBadge } from "@/components/ui/badge";
@@ -18,12 +18,13 @@ export default async function AdminPedidoDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const supabase = await createClient();
+  const supabase    = await createClient();
+  const adminClient = createAdminClient();
 
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
-  const { data: order } = await supabase
+  const { data: order } = await (adminClient as any)
     .from("orders")
     .select(`
       id, order_number, status, channel, total, subtotal, shipping_fee, discount,

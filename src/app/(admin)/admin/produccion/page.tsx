@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { createClient } from "@/lib/supabase/server";
+import { createClient, createAdminClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { MarcarEnviadoProdButton } from "@/components/admin/marcar-enviado-prod-button";
 import { DespacharButton } from "@/components/admin/despachar-button";
@@ -60,11 +60,12 @@ function OrderCard({
 }
 
 export default async function ProduccionPage() {
-  const supabase = await createClient();
+  const supabase    = await createClient();
+  const adminClient = createAdminClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
-  const { data: orders } = await supabase
+  const { data: orders } = await (adminClient as any)
     .from("orders")
     .select(`
       id, order_number, status, created_at, aprobado_at,

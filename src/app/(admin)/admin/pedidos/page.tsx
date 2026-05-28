@@ -16,7 +16,7 @@ export default async function AdminPedidosPage() {
   const adminClient = createAdminClient();
 
   const [{ data: rawOrders, error }, { data: { users } }] = await Promise.all([
-    supabase
+    (adminClient as any)
       .from("orders")
       .select(`
         id, order_number, channel, status, total, payment_method, created_at,
