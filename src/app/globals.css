@@ -179,3 +179,13 @@ img, video {
     transition-duration: 0.01ms !important;
   }
 }
+
+/* Print */
+@media print {
+  .print\:hidden { display: none !important; }
+  header, nav, aside { display: none !important; }
+  body { background: white; }
+  .bg-white { background: white !important; }
+  .rounded-2xl, .rounded-xl { border-radius: 0 !important; }
+  .shadow-2xl, .shadow-lg { box-shadow: none !important; }
+}

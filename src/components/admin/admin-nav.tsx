@@ -13,6 +13,7 @@ const NAV_ITEMS = [
   { href: "/admin/zonas",        label: "Zonas",         roles: ["admin"] },
   { href: "/admin/clientes-b2b", label: "Clientes B2B",  roles: ["admin", "vendedor"] },
   { href: "/admin/clientes-b2c", label: "Clientes B2C",  roles: ["admin", "vendedor"] },
+  { href: "/admin/reportes",     label: "Reportes",      roles: ["admin", "vendedor"] },
   { href: "/admin/staff",        label: "Staff",         roles: ["admin"] },
 ];
 

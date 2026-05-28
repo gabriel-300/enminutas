@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import Link from "next/link";
 import {
   aprobarCliente,
   rechazarCliente,
@@ -266,7 +267,12 @@ export function ClientesBb2Client({
             {clientes.map((c) => (
               <tr key={c.id} className="hover:bg-neutral-50 transition-colors">
                 <td className="px-4 py-3 font-medium text-neutral-900">
-                  {c.full_name ?? "—"}
+                  <Link
+                    href={`/admin/clientes-b2b/${c.id}`}
+                    className="hover:text-tierra-700 hover:underline transition-colors"
+                  >
+                    {c.full_name ?? "—"}
+                  </Link>
                 </td>
                 <td className="px-4 py-3 text-neutral-500 text-xs">
                   {c.email ?? "—"}

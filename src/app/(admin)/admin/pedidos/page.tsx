@@ -21,7 +21,7 @@ export default async function AdminPedidosPage() {
       .select(`
         id, order_number, channel, status, total, payment_method, created_at,
         customer_id, guest_email,
-        customer:profiles!customer_id (full_name)
+        customer:profiles!customer_id (full_name, canal)
       `)
       .order("created_at", { ascending: false })
       .limit(200),
@@ -48,8 +48,9 @@ export default async function AdminPedidosPage() {
     total: o.total,
     payment_method: o.payment_method,
     created_at: o.created_at,
-    customer_name: o.customer?.full_name ?? (o.customer_id ? emailMap[o.customer_id] : null) ?? null,
+    customer_name:  o.customer?.full_name ?? (o.customer_id ? emailMap[o.customer_id] : null) ?? null,
     customer_email: o.guest_email ?? null,
+    canal:          (o.customer as any)?.canal ?? null,
   }));
 
   return (

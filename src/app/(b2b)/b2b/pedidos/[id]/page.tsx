@@ -4,6 +4,7 @@ import { redirect, notFound } from "next/navigation";
 import Link from "next/link";
 import { OrderStatusBadge } from "@/components/ui/badge";
 import { DeclararPagoButton } from "@/components/b2b/declarar-pago-button";
+import { PrintButton } from "@/components/print-button";
 
 export const metadata: Metadata = { title: "Detalle de pedido — Portal B2B En Minutas" };
 export const revalidate = 0;
@@ -101,7 +102,10 @@ export default async function B2BPedidoDetailPage({
             })}
           </p>
         </div>
-        <OrderStatusBadge status={o.status} />
+        <div className="flex items-center gap-2">
+          <PrintButton />
+          <OrderStatusBadge status={o.status} />
+        </div>
       </div>
 
       {msg && (

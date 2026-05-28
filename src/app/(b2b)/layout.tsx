@@ -5,8 +5,9 @@ import { usePathname, useRouter } from "next/navigation";
 import { createBrowserClient } from "@supabase/ssr";
 
 const navItems = [
-  { href: "/b2b/catalogo", label: "Catálogo" },
-  { href: "/b2b/pedidos", label: "Mis pedidos" },
+  { href: "/b2b/catalogo",  label: "Catálogo" },
+  { href: "/b2b/pedidos",   label: "Mis pedidos" },
+  { href: "/b2b/mi-cuenta", label: "Mi cuenta" },
 ];
 
 export default function B2BLayout({ children }: { children: React.ReactNode }) {

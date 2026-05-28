@@ -19,7 +19,7 @@ type CartItem = {
   qty: number;
 };
 
-export async function confirmarPedidoB2B(items: CartItem[]) {
+export async function confirmarPedidoB2B(items: CartItem[], notes: string | null = null) {
   if (items.length === 0) throw new Error("Carrito vacío");
 
   const supabase      = await createClient();
@@ -62,6 +62,7 @@ export async function confirmarPedidoB2B(items: CartItem[]) {
       ideaia_commission_amount:  Math.round(commissionAmount * 100) / 100,
       shipping_method:           "b2b_despacho",
       payment_method:            "transferencia",
+      notes:                     notes ?? null,
     })
     .select("id")
     .single();

@@ -78,7 +78,7 @@ export default async function CatalogoB2BPage() {
     .select(`
       id, name, unit_label, cover_image_url, bolsas_caja, kg_caja,
       costo, pkg_unitario, pkg_bulto, mult_bolsas,
-      margen_dist, margen_gastro, margen_min,
+      margen_dist, margen_gastro, margen_min, min_quantity_b2b,
       category:categories!category_id (name, slug)
     `)
     .eq("is_active", true)
@@ -90,14 +90,16 @@ export default async function CatalogoB2BPage() {
       canal === "gastro" ? (p.margen_gastro ?? 0.40) :
                            (p.margen_min    ?? 0.45);
     return {
-      id:              p.id,
-      name:            p.name,
-      unit_label:      p.unit_label,
-      bolsas_caja:     p.bolsas_caja,
-      kg_caja:         p.kg_caja,
-      categoria:       (p.category as any)?.name ?? "—",
-      categoria_slug:  (p.category as any)?.slug ?? "",
-      precio:          calcPrecio(
+      id:               p.id,
+      name:             p.name,
+      unit_label:       p.unit_label,
+      bolsas_caja:      p.bolsas_caja,
+      kg_caja:          p.kg_caja,
+      cover_image_url:  (p as any).cover_image_url as string | null,
+      min_quantity_b2b: (p as any).min_quantity_b2b as number | null,
+      categoria:        (p.category as any)?.name ?? "—",
+      categoria_slug:   (p.category as any)?.slug ?? "",
+      precio:           calcPrecio(
         p.costo, p.kg_caja, p.bolsas_caja,
         p.pkg_unitario, p.pkg_bulto, p.mult_bolsas,
         margen, flete_kg,

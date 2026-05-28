@@ -7,6 +7,7 @@ import { OrderStatusSelect } from "@/components/admin/order-status-select";
 import { AprobarPedidoButton } from "@/components/admin/aprobar-pedido-button";
 import { ConfirmarPagoButton } from "@/components/admin/confirmar-pago-button";
 import { NotasPedidoForm } from "@/components/admin/notas-pedido-form";
+import { PrintButton } from "@/components/print-button";
 
 export const metadata: Metadata = { title: "Detalle de pedido — Admin En Minutas" };
 export const revalidate = 0;
@@ -89,6 +90,7 @@ export default async function AdminPedidoDetailPage({
           </p>
         </div>
         <div className="flex items-center gap-3 flex-wrap">
+          <PrintButton />
           <OrderStatusBadge status={o.status} />
           {!o.payment_confirmed_at && (
             <ConfirmarPagoButton orderId={o.id} />

@@ -7,15 +7,28 @@ import { OrderStatusSelect } from "@/components/admin/order-status-select";
 import { aprobarPedidoB2B } from "@/app/(admin)/admin/pedidos/actions";
 
 type Order = {
-  id: string;
-  order_number: string;
-  channel: string;
-  status: string;
-  total: number;
+  id:             string;
+  order_number:   string;
+  channel:        string;
+  status:         string;
+  total:          number;
   payment_method: string;
-  created_at: string;
-  customer_name: string | null;
+  created_at:     string;
+  customer_name:  string | null;
   customer_email: string | null;
+  canal:          string | null;
+};
+
+const CANAL_LABEL: Record<string, string> = {
+  dist:   "Distribuidor",
+  gastro: "Gastronomía",
+  min:    "Minorista",
+};
+
+const CANAL_COLORS: Record<string, string> = {
+  dist:   "bg-blue-50 text-blue-700",
+  gastro: "bg-purple-50 text-purple-700",
+  min:    "bg-amber-50 text-amber-700",
 };
 
 const TABS = [
@@ -54,14 +67,20 @@ function AprobarInlineButton({ orderId }: { orderId: string }) {
 }
 
 export function PedidosClient({ orders }: { orders: Order[] }) {
-  const [tab, setTab] = useState("todos");
+  const [tab, setTab]       = useState("todos");
   const [search, setSearch] = useState("");
+  const [canal, setCanal]   = useState("todos");
+
+  const canalesDisponibles = Array.from(
+    new Set(orders.map((o) => o.canal).filter(Boolean))
+  ) as string[];
 
   const filtered = orders.filter((o) => {
     if (tab !== "todos") {
       const statuses = TAB_STATUSES[tab] ?? [];
       if (!statuses.includes(o.status)) return false;
     }
+    if (canal !== "todos" && o.canal !== canal) return false;
     if (search.trim()) {
       const q = search.toLowerCase();
       const matchNum  = o.order_number.toLowerCase().includes(q);
@@ -113,13 +132,27 @@ export function PedidosClient({ orders }: { orders: Order[] }) {
           })}
         </div>
 
-        <input
-          type="search"
-          placeholder="Buscar por cliente o nro. pedido…"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="px-3 py-2 text-sm border border-neutral-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-tierra-700/20 w-72"
-        />
+        <div className="flex items-center gap-2">
+          {canalesDisponibles.length > 0 && (
+            <select
+              value={canal}
+              onChange={(e) => setCanal(e.target.value)}
+              className="px-3 py-2 text-sm border border-neutral-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-tierra-700/20 bg-white"
+            >
+              <option value="todos">Todos los canales</option>
+              {canalesDisponibles.map((c) => (
+                <option key={c} value={c}>{CANAL_LABEL[c] ?? c}</option>
+              ))}
+            </select>
+          )}
+          <input
+            type="search"
+            placeholder="Buscar por cliente o nro. pedido…"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="px-3 py-2 text-sm border border-neutral-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-tierra-700/20 w-72"
+          />
+        </div>
       </div>
 
       {/* Tabla */}
@@ -168,6 +201,11 @@ export function PedidosClient({ orders }: { orders: Order[] }) {
                   <span className="text-neutral-800">
                     {order.customer_name ?? order.customer_email ?? "Invitado"}
                   </span>
+                  {order.canal && (
+                    <span className={`ml-2 px-1.5 py-0.5 rounded text-[10px] font-semibold uppercase tracking-wide ${CANAL_COLORS[order.canal] ?? "bg-neutral-100 text-neutral-500"}`}>
+                      {CANAL_LABEL[order.canal] ?? order.canal}
+                    </span>
+                  )}
                 </td>
                 <td className="px-4 py-3">
                   <OrderStatusBadge status={order.status} />
