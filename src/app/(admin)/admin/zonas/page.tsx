@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { createClient } from "@/lib/supabase/server";
+import { createClient, createAdminClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { ZonasClient } from "@/components/admin/zonas-client";
 
@@ -11,6 +11,8 @@ export default async function AdminZonasPage() {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
+  const db = createAdminClient() as any;
+
   const [
     { data: zonas, error },
     { data: clienteCounts },
@@ -19,7 +21,7 @@ export default async function AdminZonasPage() {
       .from("delivery_zones")
       .select("id, name, flete_kg, base_fee")
       .order("name"),
-    supabase.from("profiles").select("zona_id").not("zona_id", "is", null),
+    db.from("profiles").select("zona_id").not("zona_id", "is", null),
   ]);
 
   if (error) {
