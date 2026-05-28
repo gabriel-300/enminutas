@@ -246,6 +246,7 @@ export interface Database {
           aprobado_por: string | null;
           aprobado_at: string | null;
           despachado_at: string | null;
+          entregado_at: string | null;
           created_at: string;
           updated_at: string;
         };
