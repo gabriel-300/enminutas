@@ -24,7 +24,7 @@ export function LoginForm() {
     setError(null);
     setLoading(true);
 
-    const { data, error: authError } = await supabase.auth.signInWithPassword({
+    const { error: authError } = await supabase.auth.signInWithPassword({
       email,
       password,
     });
@@ -35,9 +35,11 @@ export function LoginForm() {
       return;
     }
 
-    // Leer del objeto user (no del JWT — el auth hook lo sobreescribe con profiles.role)
-    const role = data.user?.app_metadata?.role as string | undefined;
-    const b2bStatus = data.user?.app_metadata?.b2b_status as string | undefined;
+    // getUser() hace una request al servidor y devuelve el app_metadata real
+    // (no el JWT que el auth hook sobreescribe con profiles.role)
+    const { data: { user: realUser } } = await supabase.auth.getUser();
+    const role = realUser?.app_metadata?.role as string | undefined;
+    const b2bStatus = realUser?.app_metadata?.b2b_status as string | undefined;
 
     if (role === "admin" || role === "vendedor") {
       router.push("/admin/pedidos");
