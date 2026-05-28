@@ -7,7 +7,6 @@ import { OrderStatusSelect } from "@/components/admin/order-status-select";
 import { AprobarPedidoButton } from "@/components/admin/aprobar-pedido-button";
 import { ConfirmarPagoButton } from "@/components/admin/confirmar-pago-button";
 import { NotasPedidoForm } from "@/components/admin/notas-pedido-form";
-import { PrintButton } from "@/components/print-button";
 
 export const metadata: Metadata = { title: "Detalle de pedido — Admin En Minutas" };
 export const revalidate = 0;
@@ -91,7 +90,16 @@ export default async function AdminPedidoDetailPage({
           </p>
         </div>
         <div className="flex items-center gap-3 flex-wrap">
-          <PrintButton />
+          <Link
+            href={`/remito/${id}`}
+            target="_blank"
+            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-neutral-600 border border-neutral-200 rounded-lg hover:bg-neutral-50 transition-colors"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" className="size-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M6 9V2h12v7M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2M6 14h12v8H6v-8z" />
+            </svg>
+            Remito / PDF
+          </Link>
           <OrderStatusBadge status={o.status} />
           {!o.payment_confirmed_at && (
             <ConfirmarPagoButton orderId={o.id} />
