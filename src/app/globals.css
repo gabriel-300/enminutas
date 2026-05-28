@@ -6,62 +6,62 @@
    ───────────────────────────────────────────── */
 
 @theme {
-  /* ── Paleta Tierra Colorada */
-  --color-tierra-900: #3D1409;
-  --color-tierra-800: #561B0F;
-  --color-tierra-700: #6B2417;
-  --color-tierra-600: #833020;
-  --color-tierra-500: #9A4528;
-  --color-tierra-400: #B5643E;
-  --color-tierra-300: #C68468;
-  --color-tierra-200: #DDB09A;
-  --color-tierra-100: #F2D9CC;
-  --color-tierra-50:  #FBF2ED;
+  /* ── Paleta Azul Glaciar (primario de marca) */
+  --color-tierra-900: #040C1A;
+  --color-tierra-800: #07152A;
+  --color-tierra-700: #0E2544;
+  --color-tierra-600: #153464;
+  --color-tierra-500: #1C4585;
+  --color-tierra-400: #2A64AB;
+  --color-tierra-300: #4D8EC8;
+  --color-tierra-200: #8DBDE0;
+  --color-tierra-100: #C4DCF2;
+  --color-tierra-50:  #EAF3FB;
 
-  /* ── Paleta Crema */
-  --color-crema-50:  #FBF8F2;
-  --color-crema-100: #F5EFE6;
-  --color-crema-200: #EBE3D3;
-  --color-crema-300: #DDD3C0;
+  /* ── Paleta Hielo (fondos fríos) */
+  --color-crema-50:  #F3F7FC;
+  --color-crema-100: #E6EFF8;
+  --color-crema-200: #D2E3F2;
+  --color-crema-300: #BBCFE8;
 
-  /* ── Paleta Selva */
-  --color-selva-900: #0F1F17;
-  --color-selva-800: #162B20;
-  --color-selva-700: #1E3A2B;
-  --color-selva-600: #274E39;
-  --color-selva-500: #2F5840;
-  --color-selva-400: #3F7255;
-  --color-selva-300: #5C9C74;
-  --color-selva-100: #C8E6D4;
+  /* ── Paleta Verde Agua (success) */
+  --color-selva-900: #081A12;
+  --color-selva-800: #0F2920;
+  --color-selva-700: #18402F;
+  --color-selva-600: #225940;
+  --color-selva-500: #2B6E50;
+  --color-selva-400: #3B8A66;
+  --color-selva-300: #55A882;
+  --color-selva-100: #B8DDCA;
 
-  /* ── Paleta Dorado */
-  --color-dorado-600: #A8893A;
-  --color-dorado-500: #C9A961;
-  --color-dorado-400: #D9BE7E;
-  --color-dorado-300: #E0C792;
-  --color-dorado-100: #F5EDD3;
+  /* ── Paleta Agua (acento claro / interactivos) */
+  --color-dorado-600: #1660A8;
+  --color-dorado-500: #2278CC;
+  --color-dorado-400: #4698E0;
+  --color-dorado-300: #78BBF5;
+  --color-dorado-100: #CEE9FB;
 
-  /* ── Neutros */
-  --color-neutral-900: #1A1612;
-  --color-neutral-800: #2E2923;
-  --color-neutral-700: #4A4239;
-  --color-neutral-600: #625950;
-  --color-neutral-500: #7A7066;
-  --color-neutral-400: #98908A;
-  --color-neutral-300: #C9C0B4;
-  --color-neutral-200: #E0D9D0;
-  --color-neutral-100: #ECE6DA;
-  --color-neutral-50:  #F7F4EF;
+  /* ── Neutros fríos */
+  --color-neutral-900: #0C1420;
+  --color-neutral-800: #18222F;
+  --color-neutral-700: #2A3848;
+  --color-neutral-600: #425260;
+  --color-neutral-500: #60727E;
+  --color-neutral-400: #8698A6;
+  --color-neutral-300: #B4C3CC;
+  --color-neutral-200: #CED8DF;
+  --color-neutral-100: #E4EAEE;
+  --color-neutral-50:  #F3F7FA;
 
   /* ── Semánticos */
-  --color-success:     #2F5840;
-  --color-success-bg:  #C8E6D4;
-  --color-warning:     #C9A961;
-  --color-warning-bg:  #F5EDD3;
-  --color-danger:      #B23A24;
+  --color-success:     #1E6B45;
+  --color-success-bg:  #BDE0CE;
+  --color-warning:     #B8850A;
+  --color-warning-bg:  #FEF3C7;
+  --color-danger:      #C02820;
   --color-danger-bg:   #FAD7CE;
-  --color-info:        #2A4D6B;
-  --color-info-bg:     #D0E3F0;
+  --color-info:        #1660A8;
+  --color-info-bg:     #D0E8FA;
 
   /* ── Tipografía */
   --font-display: "Fraunces Variable", "Playfair Display", Georgia, serif;
@@ -88,12 +88,12 @@
   --radius-full: 9999px;
 
   /* ── Sombras */
-  --shadow-sm: 0 1px 2px rgba(61,20,9,0.04), 0 1px 3px rgba(61,20,9,0.06);
-  --shadow-md: 0 4px 12px rgba(61,20,9,0.06), 0 2px 4px rgba(61,20,9,0.04);
-  --shadow-lg: 0 12px 32px rgba(61,20,9,0.10), 0 4px 8px rgba(61,20,9,0.06);
-  --shadow-xl: 0 24px 48px rgba(61,20,9,0.12), 0 8px 16px rgba(61,20,9,0.08);
-  --shadow-glow-dorado: 0 0 0 4px rgba(201,169,97,0.30);
-  --shadow-glow-tierra: 0 0 0 4px rgba(107,36,23,0.20);
+  --shadow-sm: 0 1px 2px rgba(10,20,40,0.04), 0 1px 3px rgba(10,20,40,0.06);
+  --shadow-md: 0 4px 12px rgba(10,20,40,0.06), 0 2px 4px rgba(10,20,40,0.04);
+  --shadow-lg: 0 12px 32px rgba(10,20,40,0.10), 0 4px 8px rgba(10,20,40,0.06);
+  --shadow-xl: 0 24px 48px rgba(10,20,40,0.12), 0 8px 16px rgba(10,20,40,0.08);
+  --shadow-glow-dorado: 0 0 0 4px rgba(34,120,204,0.25);
+  --shadow-glow-tierra: 0 0 0 4px rgba(14,37,68,0.20);
 
   /* ── Transiciones */
   --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
