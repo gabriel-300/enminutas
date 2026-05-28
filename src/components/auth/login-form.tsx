@@ -25,37 +25,43 @@ export function LoginForm() {
     setError(null);
     setLoading(true);
 
-    const { error: authError } = await supabase.auth.signInWithPassword({
+    const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
       email,
       password,
     });
 
-    if (authError) {
+    if (authError || !authData.user) {
       setError("Email o contraseña incorrectos.");
       setLoading(false);
       return;
     }
 
-    // obtenerRolReal() usa el admin API server-side para leer raw_app_meta_data.
-    // supabase.auth.getUser() devuelve claims del JWT que el auth hook sobreescribe
-    // con profiles.role, haciendo que los roles de staff aparezcan como customer_b2c.
-    const { role, b2bStatus } = await obtenerRolReal();
+    try {
+      // Usa el userId de la respuesta del login (no del JWT) para leer
+      // raw_app_meta_data via admin API, evitando el auth hook que sobreescribe
+      // los roles de staff con profiles.role (customer_b2c por defecto).
+      const { role, b2bStatus } = await obtenerRolReal(authData.user.id);
 
-    if (role === "admin" || role === "vendedor" || role === "admin_enminutas" || role === "admin_ideaia") {
-      router.push("/admin/pedidos");
-    } else if (role === "produccion") {
-      router.push("/admin/produccion");
-    } else if (role === "distribucion") {
-      router.push("/admin/distribucion");
-    } else if (role === "repartidor") {
-      router.push("/repartidor/activos");
-    } else if (role === "customer_b2b") {
-      router.push(b2bStatus === "activo" ? "/b2b/catalogo" : "/pendiente");
-    } else {
+      if (role === "admin" || role === "vendedor" || role === "admin_enminutas" || role === "admin_ideaia") {
+        router.push("/admin/pedidos");
+      } else if (role === "produccion") {
+        router.push("/admin/produccion");
+      } else if (role === "distribucion") {
+        router.push("/admin/distribucion");
+      } else if (role === "repartidor") {
+        router.push("/repartidor/activos");
+      } else if (role === "customer_b2b") {
+        router.push(b2bStatus === "activo" ? "/b2b/catalogo" : "/pendiente");
+      } else {
+        router.push("/tienda");
+      }
+
+      router.refresh();
+    } catch {
+      // Si falla el lookup de rol, redirigir a tienda como fallback
       router.push("/tienda");
+      router.refresh();
     }
-
-    router.refresh();
   }
 
   return (
