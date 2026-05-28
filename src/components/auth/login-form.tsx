@@ -35,11 +35,9 @@ export function LoginForm() {
       return;
     }
 
-    // El rol y b2b_status vienen del JWT (hook)
-    const jwt = data.session?.access_token ?? "";
-    const payload = jwt ? JSON.parse(atob(jwt.split(".")[1])) : {};
-    const role = payload.app_metadata?.role as string | undefined;
-    const b2bStatus = payload.app_metadata?.b2b_status as string | undefined;
+    // Leer del objeto user (no del JWT — el auth hook lo sobreescribe con profiles.role)
+    const role = data.user?.app_metadata?.role as string | undefined;
+    const b2bStatus = data.user?.app_metadata?.b2b_status as string | undefined;
 
     if (role === "admin" || role === "vendedor") {
       router.push("/admin/pedidos");
