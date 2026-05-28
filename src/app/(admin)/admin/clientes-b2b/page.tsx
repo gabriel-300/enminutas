@@ -20,7 +20,7 @@ export default async function AdminClientesBb2Page() {
     { data: { users } },
     { data: zonasRaw },
   ] = await Promise.all([
-    supabase
+    (adminClient as any)
       .from("profiles")
       .select(`
         id, full_name, canal, b2b_status, created_at,
