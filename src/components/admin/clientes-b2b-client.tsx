@@ -8,16 +8,18 @@ import {
   cambiarEstadoCliente,
   crearClienteB2B,
   invitarClienteB2B,
+  editarClienteB2B,
+  eliminarClienteB2B,
 } from "@/app/(admin)/admin/clientes-b2b/actions";
 
 type Cliente = {
-  id: string;
-  full_name: string | null;
-  email: string | null;
-  canal: string | null;
+  id:         string;
+  full_name:  string | null;
+  email:      string | null;
+  canal:      string | null;
   b2b_status: string | null;
   created_at: string;
-  zona: { name: string } | null;
+  zona:       { name: string } | null;
 };
 
 type Zona = { id: string; name: string };
@@ -34,49 +36,134 @@ const STATUS_STYLE: Record<string, string> = {
   inactivo:  "bg-danger-bg text-danger",
 };
 
-function AccionesRow({ cliente }: { cliente: Cliente }) {
+const inputCls = "w-full px-3 py-2 text-sm border border-neutral-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-tierra-700/20 disabled:opacity-50";
+
+function ClienteRow({ cliente, zonas }: { cliente: Cliente; zonas: Zona[] }) {
+  const [editOpen, setEditOpen]      = useState(false);
   const [isPending, startTransition] = useTransition();
+  const [editError, setEditError]    = useState<string | null>(null);
   const status = cliente.b2b_status;
 
+  function handleEdit(e: React.SyntheticEvent<HTMLFormElement>) {
+    e.preventDefault();
+    setEditError(null);
+    const fd = new FormData(e.currentTarget);
+    startTransition(async () => {
+      try {
+        await editarClienteB2B(fd);
+        setEditOpen(false);
+      } catch (err: any) {
+        setEditError(err.message ?? "Error al guardar");
+      }
+    });
+  }
+
+  function handleEliminar() {
+    if (!confirm(`¿Eliminar al cliente ${cliente.full_name ?? cliente.email}? Esta acción no se puede deshacer.`)) return;
+    startTransition(() => eliminarClienteB2B(cliente.id));
+  }
+
   return (
-    <div className="flex items-center gap-2">
-      {status === "pendiente" && (
-        <>
-          <button
-            onClick={() => startTransition(() => aprobarCliente(cliente.id))}
-            disabled={isPending}
-            className="px-3 py-1.5 text-xs font-medium rounded-lg bg-success text-white hover:opacity-90 disabled:opacity-50 transition-opacity"
+    <>
+      <tr className="hover:bg-neutral-50 transition-colors">
+        <td className="px-4 py-3 font-medium text-neutral-900">
+          <Link
+            href={`/admin/clientes-b2b/${cliente.id}`}
+            className="hover:text-tierra-700 hover:underline transition-colors"
           >
-            Aprobar
-          </button>
-          <button
-            onClick={() => startTransition(() => rechazarCliente(cliente.id))}
-            disabled={isPending}
-            className="px-3 py-1.5 text-xs font-medium rounded-lg border border-danger text-danger hover:bg-danger-bg disabled:opacity-50 transition-colors"
-          >
-            Rechazar
-          </button>
-        </>
+            {cliente.full_name ?? "—"}
+          </Link>
+        </td>
+        <td className="px-4 py-3 text-neutral-500 text-xs">{cliente.email ?? "—"}</td>
+        <td className="px-4 py-3 text-neutral-600">
+          {cliente.canal ? CANAL_LABEL[cliente.canal] ?? cliente.canal : "—"}
+        </td>
+        <td className="px-4 py-3 text-neutral-600">{cliente.zona?.name ?? "—"}</td>
+        <td className="px-4 py-3">
+          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium uppercase tracking-wide ${STATUS_STYLE[status ?? ""] ?? "bg-neutral-100 text-neutral-500"}`}>
+            {status ?? "—"}
+          </span>
+        </td>
+        <td className="px-4 py-3 text-neutral-400 text-xs">
+          {new Date(cliente.created_at).toLocaleDateString("es-AR", { day: "2-digit", month: "2-digit", year: "2-digit" })}
+        </td>
+        <td className="px-4 py-3">
+          <div className="flex items-center gap-2 flex-wrap">
+            {status === "pendiente" && (
+              <>
+                <button onClick={() => startTransition(() => aprobarCliente(cliente.id))} disabled={isPending} className="px-3 py-1.5 text-xs font-medium rounded-lg bg-success text-white hover:opacity-90 disabled:opacity-50">Aprobar</button>
+                <button onClick={() => startTransition(() => rechazarCliente(cliente.id))} disabled={isPending} className="px-3 py-1.5 text-xs font-medium rounded-lg border border-danger text-danger hover:bg-danger-bg disabled:opacity-50">Rechazar</button>
+              </>
+            )}
+            {status === "activo" && (
+              <button onClick={() => startTransition(() => cambiarEstadoCliente(cliente.id, "inactivo"))} disabled={isPending} className="px-3 py-1.5 text-xs font-medium rounded-lg border border-neutral-200 text-neutral-500 hover:bg-neutral-50 disabled:opacity-50">Desactivar</button>
+            )}
+            {status === "inactivo" && (
+              <button onClick={() => startTransition(() => cambiarEstadoCliente(cliente.id, "activo"))} disabled={isPending} className="px-3 py-1.5 text-xs font-medium rounded-lg border border-neutral-200 text-neutral-500 hover:bg-neutral-50 disabled:opacity-50">Reactivar</button>
+            )}
+            <button
+              onClick={() => { setEditOpen(!editOpen); setEditError(null); }}
+              disabled={isPending}
+              className="px-3 py-1.5 text-xs font-medium rounded-lg border border-neutral-200 text-neutral-600 hover:bg-neutral-50 disabled:opacity-50"
+            >
+              {editOpen ? "Cancelar" : "Editar"}
+            </button>
+            <button
+              onClick={handleEliminar}
+              disabled={isPending}
+              className="px-2 py-1.5 text-xs font-medium rounded-lg border border-danger/30 text-danger hover:bg-danger-bg disabled:opacity-50 transition-colors"
+              title="Eliminar cliente"
+            >
+              ✕
+            </button>
+          </div>
+        </td>
+      </tr>
+
+      {/* Fila de edición inline */}
+      {editOpen && (
+        <tr className="bg-neutral-50 border-b border-neutral-200">
+          <td colSpan={7} className="px-4 py-4">
+            <form onSubmit={handleEdit} className="flex items-end gap-3 flex-wrap">
+              <input type="hidden" name="id" value={cliente.id} />
+              <div>
+                <label className="block text-xs font-medium text-neutral-500 mb-1">Nombre / Empresa</label>
+                <input
+                  name="name"
+                  defaultValue={cliente.full_name ?? ""}
+                  className="px-3 py-2 text-sm border border-neutral-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-tierra-700/20 w-48"
+                  disabled={isPending}
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-neutral-500 mb-1">Canal</label>
+                <select name="canal" defaultValue={cliente.canal ?? ""} className="px-3 py-2 text-sm border border-neutral-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-tierra-700/20 bg-white" disabled={isPending}>
+                  <option value="">Sin especificar</option>
+                  <option value="gastro">Gastronomía</option>
+                  <option value="dist">Distribuidor</option>
+                  <option value="min">Minorista</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-neutral-500 mb-1">Zona</label>
+                <select name="zona_id" className="px-3 py-2 text-sm border border-neutral-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-tierra-700/20 bg-white" disabled={isPending}>
+                  <option value="">Sin zona</option>
+                  {zonas.map((z) => (
+                    <option key={z.id} value={z.id}>{z.name}</option>
+                  ))}
+                </select>
+              </div>
+              <div className="flex items-end gap-2">
+                <button type="submit" disabled={isPending} className="px-4 py-2 rounded-xl bg-tierra-700 text-white text-sm font-medium hover:bg-tierra-800 disabled:opacity-50">
+                  {isPending ? "Guardando…" : "Guardar"}
+                </button>
+              </div>
+              {editError && <p className="text-xs text-danger w-full">{editError}</p>}
+            </form>
+          </td>
+        </tr>
       )}
-      {status === "activo" && (
-        <button
-          onClick={() => startTransition(() => cambiarEstadoCliente(cliente.id, "inactivo"))}
-          disabled={isPending}
-          className="px-3 py-1.5 text-xs font-medium rounded-lg border border-neutral-200 text-neutral-500 hover:bg-neutral-50 disabled:opacity-50 transition-colors"
-        >
-          Desactivar
-        </button>
-      )}
-      {status === "inactivo" && (
-        <button
-          onClick={() => startTransition(() => cambiarEstadoCliente(cliente.id, "activo"))}
-          disabled={isPending}
-          className="px-3 py-1.5 text-xs font-medium rounded-lg border border-neutral-200 text-neutral-500 hover:bg-neutral-50 disabled:opacity-50 transition-colors"
-        >
-          Reactivar
-        </button>
-      )}
-    </div>
+    </>
   );
 }
 
@@ -116,8 +203,6 @@ function CrearClienteB2BForm({ zonas }: { zonas: Zona[] }) {
     });
   }
 
-  const inputCls = "w-full px-3 py-2 text-sm border border-neutral-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-tierra-700/20 disabled:opacity-50";
-
   return (
     <div className="bg-white rounded-2xl border border-neutral-200 p-6">
       <div className="flex items-center justify-between mb-1">
@@ -139,20 +224,8 @@ function CrearClienteB2BForm({ zonas }: { zonas: Zona[] }) {
       {open && (
         <>
           <div className="flex gap-1 mt-4 mb-5 bg-neutral-100 rounded-lg p-1 w-fit">
-            <button
-              type="button"
-              onClick={() => setMode("password")}
-              className={`px-3 py-1.5 text-xs rounded-md font-medium transition-colors ${mode === "password" ? "bg-tierra-700 text-white" : "text-neutral-500 hover:text-neutral-700"}`}
-            >
-              Con contraseña
-            </button>
-            <button
-              type="button"
-              onClick={() => setMode("invite")}
-              className={`px-3 py-1.5 text-xs rounded-md font-medium transition-colors ${mode === "invite" ? "bg-tierra-700 text-white" : "text-neutral-500 hover:text-neutral-700"}`}
-            >
-              Invitar por email
-            </button>
+            <button type="button" onClick={() => setMode("password")} className={`px-3 py-1.5 text-xs rounded-md font-medium transition-colors ${mode === "password" ? "bg-tierra-700 text-white" : "text-neutral-500 hover:text-neutral-700"}`}>Con contraseña</button>
+            <button type="button" onClick={() => setMode("invite")}   className={`px-3 py-1.5 text-xs rounded-md font-medium transition-colors ${mode === "invite"   ? "bg-tierra-700 text-white" : "text-neutral-500 hover:text-neutral-700"}`}>Invitar por email</button>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-4">
@@ -171,7 +244,6 @@ function CrearClienteB2BForm({ zonas }: { zonas: Zona[] }) {
                 </select>
               </div>
             </div>
-
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className="block text-xs font-medium text-neutral-500 mb-1">Email *</label>
@@ -187,7 +259,6 @@ function CrearClienteB2BForm({ zonas }: { zonas: Zona[] }) {
                 </select>
               </div>
             </div>
-
             {mode === "password" && (
               <div className="grid grid-cols-2 gap-3">
                 <div>
@@ -200,24 +271,15 @@ function CrearClienteB2BForm({ zonas }: { zonas: Zona[] }) {
                 </div>
               </div>
             )}
-
             {mode === "invite" && (
               <p className="text-xs text-neutral-400 bg-neutral-50 border border-neutral-200 rounded-xl px-4 py-3">
                 Se enviará un email de invitación con un link para que el cliente configure su contraseña.
               </p>
             )}
-
             {error   && <p className="text-sm text-danger">{error}</p>}
             {success && <p className="text-sm text-success">{success}</p>}
-
-            <button
-              type="submit"
-              disabled={isPending}
-              className="px-4 py-2 rounded-xl bg-tierra-700 text-white text-sm font-medium hover:bg-tierra-800 disabled:opacity-50 transition-colors"
-            >
-              {isPending
-                ? (mode === "password" ? "Creando…" : "Enviando…")
-                : (mode === "password" ? "Crear cliente" : "Enviar invitación")}
+            <button type="submit" disabled={isPending} className="px-4 py-2 rounded-xl bg-tierra-700 text-white text-sm font-medium hover:bg-tierra-800 disabled:opacity-50 transition-colors">
+              {isPending ? (mode === "password" ? "Creando…" : "Enviando…") : (mode === "password" ? "Crear cliente" : "Enviar invitación")}
             </button>
           </form>
         </>
@@ -231,9 +293,9 @@ export function ClientesBb2Client({
   pendingCount,
   zonas,
 }: {
-  clientes: Cliente[];
+  clientes:     Cliente[];
   pendingCount: number;
-  zonas: Zona[];
+  zonas:        Zona[];
 }) {
   return (
     <div className="space-y-6 max-w-5xl">
@@ -265,40 +327,7 @@ export function ClientesBb2Client({
               </tr>
             )}
             {clientes.map((c) => (
-              <tr key={c.id} className="hover:bg-neutral-50 transition-colors">
-                <td className="px-4 py-3 font-medium text-neutral-900">
-                  <Link
-                    href={`/admin/clientes-b2b/${c.id}`}
-                    className="hover:text-tierra-700 hover:underline transition-colors"
-                  >
-                    {c.full_name ?? "—"}
-                  </Link>
-                </td>
-                <td className="px-4 py-3 text-neutral-500 text-xs">
-                  {c.email ?? "—"}
-                </td>
-                <td className="px-4 py-3 text-neutral-600">
-                  {c.canal ? CANAL_LABEL[c.canal] ?? c.canal : "—"}
-                </td>
-                <td className="px-4 py-3 text-neutral-600">
-                  {c.zona?.name ?? "—"}
-                </td>
-                <td className="px-4 py-3">
-                  <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium uppercase tracking-wide ${STATUS_STYLE[c.b2b_status ?? ""] ?? "bg-neutral-100 text-neutral-500"}`}>
-                    {c.b2b_status ?? "—"}
-                  </span>
-                </td>
-                <td className="px-4 py-3 text-neutral-400 text-xs">
-                  {new Date(c.created_at).toLocaleDateString("es-AR", {
-                    day: "2-digit",
-                    month: "2-digit",
-                    year: "2-digit",
-                  })}
-                </td>
-                <td className="px-4 py-3">
-                  <AccionesRow cliente={c} />
-                </td>
-              </tr>
+              <ClienteRow key={c.id} cliente={c} zonas={zonas} />
             ))}
           </tbody>
         </table>

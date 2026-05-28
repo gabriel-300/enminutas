@@ -109,3 +109,32 @@ export async function cambiarEstadoCliente(profileId: string, status: "pendiente
   if (error) throw new Error(error.message);
   revalidatePath("/admin/clientes-b2b");
 }
+
+export async function editarClienteB2B(formData: FormData) {
+  const id      = formData.get("id") as string;
+  const name    = (formData.get("name") as string).trim();
+  const canal   = formData.get("canal") as string;
+  const zonaId  = (formData.get("zona_id") as string | null)?.trim() || null;
+
+  if (!id) throw new Error("ID requerido");
+
+  const supabase = createAdminClient();
+  const { error } = await (supabase as any)
+    .from("profiles")
+    .update({ full_name: name || null, canal: canal || null, zona_id: zonaId })
+    .eq("id", id);
+  if (error) throw new Error(error.message);
+
+  revalidatePath("/admin/clientes-b2b");
+}
+
+export async function eliminarClienteB2B(clientId: string) {
+  const supabase = createAdminClient();
+
+  // Primero borrar pedidos y líneas si existen (o dejar que cascade lo haga)
+  await (supabase as any).from("profiles").delete().eq("id", clientId);
+  const { error } = await supabase.auth.admin.deleteUser(clientId);
+  if (error) throw new Error(error.message);
+
+  revalidatePath("/admin/clientes-b2b");
+}
