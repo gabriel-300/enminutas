@@ -46,7 +46,7 @@ export function AdminNav({ role, email, name }: { role: string | null; email: st
   return (
     <aside className="w-60 bg-white border-r border-neutral-200 flex flex-col shrink-0">
       <div className="p-5 border-b border-neutral-200">
-        <div className="flex items-center gap-3">
+        <Link href="/admin/dashboard" className="flex items-center gap-3 hover:opacity-80 transition-opacity">
           <div className="size-8 rounded-lg bg-tierra-700 text-white flex items-center justify-center font-display font-bold text-sm">
             EM
           </div>
@@ -56,7 +56,7 @@ export function AdminNav({ role, email, name }: { role: string | null; email: st
               {role ? (ROLE_LABEL[role] ?? role) : "Panel admin"}
             </p>
           </div>
-        </div>
+        </Link>
       </div>
 
       <nav className="flex-1 p-3 space-y-0.5">

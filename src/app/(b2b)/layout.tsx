@@ -28,14 +28,14 @@ export default function B2BLayout({ children }: { children: React.ReactNode }) {
     <div className="min-h-screen bg-neutral-50">
       <header className="bg-white border-b border-neutral-200 sticky top-0 z-10">
         <div className="max-w-7xl mx-auto px-6 h-14 flex items-center gap-6">
-          <div className="flex items-center gap-2.5 shrink-0">
+          <Link href="/b2b/catalogo" className="flex items-center gap-2.5 shrink-0 hover:opacity-80 transition-opacity">
             <div className="size-7 rounded-lg bg-tierra-700 text-white flex items-center justify-center font-display font-bold text-xs">
               EM
             </div>
             <span className="text-sm font-semibold text-neutral-900 font-display">En Minutas</span>
             <span className="text-neutral-300 select-none">·</span>
             <span className="text-xs text-neutral-500 font-medium">Portal B2B</span>
-          </div>
+          </Link>
 
           <nav className="flex items-center gap-1 flex-1">
             {navItems.map(({ href, label }) => {
