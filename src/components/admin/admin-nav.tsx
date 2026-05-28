@@ -5,7 +5,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { createBrowserClient } from "@supabase/ssr";
 
 const NAV_ITEMS = [
-  { href: "/admin/dashboard",      label: "Dashboard",     roles: ["admin", "vendedor", "produccion", "distribucion"] },
+  { href: "/admin/dashboard",      label: "Dashboard",     roles: ["admin", "vendedor", "produccion"] },
   { href: "/admin/pedidos",        label: "Pedidos",       roles: ["admin", "vendedor"] },
   { href: "/admin/produccion",     label: "Producción",    roles: ["admin", "vendedor", "produccion"] },
   { href: "/admin/distribucion",   label: "Distribución",  roles: ["admin", "vendedor", "distribucion"] },

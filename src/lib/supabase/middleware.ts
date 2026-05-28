@@ -18,7 +18,6 @@ const PRODUCCION_ALLOWED = [
 
 const DISTRIBUCION_ALLOWED = [
   "/admin/distribucion",
-  "/admin/dashboard",
 ];
 
 export async function updateSession(request: NextRequest) {
