@@ -90,15 +90,24 @@ export async function confirmarPago(orderId: string) {
 
 export async function confirmarEntrega(orderId: string) {
   const supabase = createAdminClient();
-  const { error } = await supabase
+
+  // Intentar con entregado_at; si la columna no existe aún, reintentar sin ella
+  let { error } = await (supabase as any)
     .from("orders")
-    .update({
-      status:        "delivered" as any,
-      entregado_at:  new Date().toISOString(),
-    })
+    .update({ status: "delivered", entregado_at: new Date().toISOString() })
     .eq("id", orderId);
+
+  if (error?.message?.includes("entregado_at")) {
+    ({ error } = await (supabase as any)
+      .from("orders")
+      .update({ status: "delivered" })
+      .eq("id", orderId));
+  }
+
   if (error) throw new Error(error.message);
+
   revalidatePath("/admin/distribucion");
+  revalidatePath("/admin/pedidos");
   revalidatePath("/admin/dashboard");
 }
 
