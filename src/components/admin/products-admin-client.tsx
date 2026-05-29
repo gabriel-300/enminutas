@@ -15,6 +15,8 @@ type Product = {
   unit_label: string;
   weight_grams: number | null;
   costo: number | null;
+  stock_cajas: number;
+  stock_minimo: number;
   category: { name: string } | null;
 };
 
@@ -67,6 +69,19 @@ function ProductRow({ p }: { p: Product }) {
         <p className="text-xs text-neutral-400 font-mono">{p.sku} · {p.unit_label}</p>
       </td>
       <td className="px-4 py-3 text-neutral-500">{p.category?.name ?? "—"}</td>
+      <td className="px-4 py-3 text-center">
+        {p.stock_minimo > 0 ? (
+          <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold tabular-nums ${
+            p.stock_cajas === 0          ? "bg-danger-bg text-danger"
+            : p.stock_cajas < p.stock_minimo ? "bg-warning-bg text-warning"
+            : "bg-success-bg text-success"
+          }`}>
+            {p.stock_cajas}/{p.stock_minimo}
+          </span>
+        ) : (
+          <span className="text-xs text-neutral-400 tabular-nums">{p.stock_cajas}</span>
+        )}
+      </td>
       <td className="px-4 py-3 text-center">
         {p.costo ? (
           <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-success-bg text-success">
@@ -152,6 +167,7 @@ export function ProductsAdminClient({ products }: { products: Product[] }) {
           <tr className="border-b border-neutral-200 text-left">
             <th className="px-4 py-3 font-medium text-neutral-500">Producto</th>
             <th className="px-4 py-3 font-medium text-neutral-500">Categoría</th>
+            <th className="px-4 py-3 font-medium text-neutral-500 text-center">Stock</th>
             <th className="px-4 py-3 font-medium text-neutral-500 text-center">Datos B2B</th>
             <th className="px-4 py-3 font-medium text-neutral-500 text-right">Precio B2C</th>
             <th className="px-4 py-3 font-medium text-neutral-500 text-right">Precio B2B</th>

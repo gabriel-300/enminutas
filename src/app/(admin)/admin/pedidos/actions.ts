@@ -47,6 +47,13 @@ export async function marcarEnviadoProd(orderId: string) {
 
 export async function despacharPedido(orderId: string) {
   const supabase = createAdminClient();
+
+  // Obtener líneas del pedido para descontar stock
+  const { data: lines } = await (supabase as any)
+    .from("order_lines")
+    .select("product_id, quantity")
+    .eq("order_id", orderId);
+
   const { error } = await supabase
     .from("orders")
     .update({
@@ -55,7 +62,23 @@ export async function despacharPedido(orderId: string) {
     })
     .eq("id", orderId);
   if (error) throw new Error(error.message);
+
+  // Descontar stock y registrar movimiento por cada línea
+  for (const line of (lines ?? []) as { product_id: string; quantity: number }[]) {
+    await (supabase as any).rpc("decrement_stock", {
+      p_product_id: line.product_id,
+      p_qty:        line.quantity,
+    });
+    await (supabase as any).from("stock_movements").insert({
+      product_id: line.product_id,
+      qty:        -line.quantity,
+      type:       "despacho",
+      order_id:   orderId,
+    });
+  }
+
   revalidatePath("/admin/produccion");
+  revalidatePath("/admin/cocina");
   revalidatePath("/admin/dashboard");
 }
 
