@@ -48,9 +48,8 @@ export default async function RemitoPage({
 
   const o = order as any;
 
-  // Verificar acceso: staff puede ver cualquier pedido, cliente B2B solo el suyo
-  const adminUser = await (adminClient as any).auth.admin.getUserById(user.id);
-  const role = adminUser?.data?.user?.app_metadata?.role as string | undefined;
+  // JWT role es correcto desde migration 012 — no necesitamos admin API
+  const role = user.app_metadata?.role as string | undefined;
   const STAFF = ["admin", "vendedor", "produccion", "distribucion"];
   if (!STAFF.includes(role ?? "") && o.customer_id !== user.id) notFound();
 
