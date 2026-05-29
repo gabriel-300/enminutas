@@ -29,16 +29,22 @@ export default async function RecetaEditorPage({
 
     adminClient
       .from("recipes")
-      .select(`
-        id, yield_cajas, notes,
-        steps:recipe_steps (id, step_order, description, minutes, notes),
-        ingredients:recipe_ingredients (id, nombre, cantidad, unidad)
-      `)
+      .select("id, yield_cajas, notes, steps:recipe_steps (id, step_order, description, minutes, notes)")
       .eq("product_id", productId)
       .maybeSingle(),
   ]);
 
   if (!product) notFound();
+
+  // Ingredientes en query separada para que un fallo no afecte la carga de pasos
+  let rawIngs: any[] = [];
+  if (recipeRaw?.id) {
+    const { data } = await adminClient
+      .from("recipe_ingredients")
+      .select("nombre, cantidad, unidad")
+      .eq("recipe_id", recipeRaw.id);
+    rawIngs = data ?? [];
+  }
 
   const recipe = recipeRaw
     ? {
@@ -51,7 +57,7 @@ export default async function RecetaEditorPage({
             minutes:     Number(s.minutes),
             notes:       s.notes ?? "",
           })),
-        ingredients: ((recipeRaw.ingredients ?? []) as any[]).map((ing) => ({
+        ingredients: rawIngs.map((ing) => ({
           nombre:   ing.nombre,
           cantidad: Number(ing.cantidad),
           unidad:   ing.unidad,
