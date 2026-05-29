@@ -92,7 +92,7 @@ export default async function ComprasPage() {
     }
 
     const lotes = Math.ceil(cajasNecesarias / receta.yieldCajas);
-    const costoPorLote = receta.ingredients.reduce((s, ing) => s + ing.costo, 0);
+    const costoPorLote = receta.ingredients.reduce((s: number, ing: { nombre: string; cantidad: number; unidad: string; costo: number }) => s + ing.costo, 0);
     const costoPorCaja = receta.yieldCajas > 0 ? costoPorLote / receta.yieldCajas : 0;
     needItems.push({
       id: p.id, name: p.name, sku: p.sku,
