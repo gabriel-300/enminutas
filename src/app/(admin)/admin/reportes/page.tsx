@@ -86,17 +86,20 @@ export default async function ReportesPage({
   }
 
   // ── Procesar pedidos ───────────────────────────────────────────────────────
-  const b2bOrders = (rawB2B ?? []).map((o: any) => ({
-    id:          o.id,
+  type B2BOrder = { id: string; order_number: string; total: number; commission: number; created_at: string; clientName: string; clientCanal: string };
+  type B2COrder = { total: number; created_at: string };
+
+  const b2bOrders: B2BOrder[] = (rawB2B ?? []).map((o: any) => ({
+    id:           o.id,
     order_number: o.order_number,
-    total:       Number(o.total),
-    commission:  Number(o.ideaia_commission_amount ?? 0),
-    created_at:  o.created_at,
-    clientName:  o.customer?.full_name ?? "—",
-    clientCanal: o.customer?.canal ?? "sin_canal",
+    total:        Number(o.total),
+    commission:   Number(o.ideaia_commission_amount ?? 0),
+    created_at:   o.created_at,
+    clientName:   o.customer?.full_name ?? "—",
+    clientCanal:  o.customer?.canal ?? "sin_canal",
   }));
 
-  const b2cOrders = (rawB2C ?? []).map((o: any) => ({
+  const b2cOrders: B2COrder[] = (rawB2C ?? []).map((o: any) => ({
     total:      Number(o.total),
     created_at: o.created_at,
   }));

@@ -59,7 +59,7 @@ export default async function ComprasPage() {
   }
 
   // Recetas por product_id
-  const recetaMap: Record<string, { id: string; yieldCajas: number; ingredients: { nombre: string; cantidad: number; unidad: string }[] }> = {};
+  const recetaMap: Record<string, { id: string; yieldCajas: number; ingredients: { nombre: string; cantidad: number; unidad: string; costo: number }[] }> = {};
   for (const r of (rawRecipes ?? []) as any[]) {
     recetaMap[r.product_id] = {
       id:          r.id,
