@@ -31,6 +31,10 @@ CREATE TRIGGER set_updated_at_recipes
   BEFORE UPDATE ON recipes
   FOR EACH ROW EXECUTE FUNCTION set_updated_at_recipes();
 
+-- Permisos de tabla (necesario para service_role, anon y authenticated)
+GRANT ALL ON TABLE recipes      TO anon, authenticated, service_role;
+GRANT ALL ON TABLE recipe_steps TO anon, authenticated, service_role;
+
 -- RLS: staff puede leer y escribir
 ALTER TABLE recipes       ENABLE ROW LEVEL SECURITY;
 ALTER TABLE recipe_steps  ENABLE ROW LEVEL SECURITY;
