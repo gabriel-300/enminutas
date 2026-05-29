@@ -3,6 +3,7 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { OrderStatusBadge } from "@/components/ui/badge";
+import { fmtFechaLarga } from "@/lib/fecha";
 
 export const metadata: Metadata = { title: "Mis pedidos — En Minutas" };
 export const revalidate = 0;
@@ -55,11 +56,7 @@ export default async function MisPedidosPage() {
                     {paymentLabel[order.payment_method] ?? order.payment_method}
                   </p>
                   <p className="text-xs text-neutral-400 mt-1">
-                    {new Date(order.created_at).toLocaleDateString("es-AR", {
-                      day: "2-digit",
-                      month: "long",
-                      year: "numeric",
-                    })}
+                    {fmtFechaLarga(order.created_at)}
                   </p>
                 </div>
                 <div className="text-right shrink-0">

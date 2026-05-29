@@ -1,6 +1,7 @@
 import { createClient, createAdminClient } from "@/lib/supabase/server";
 import { redirect, notFound } from "next/navigation";
 import { PrintTrigger } from "@/components/remito/print-trigger";
+import { fmtFechaSolo } from "@/lib/fecha";
 
 const fmt = (n: number) =>
   new Intl.NumberFormat("es-AR", {
@@ -71,9 +72,7 @@ export default async function RemitoPage({
   const descuento   = Number(o.discount ?? 0);
   const total       = Number(o.total ?? 0);
 
-  const fecha = new Date(o.created_at).toLocaleDateString("es-AR", {
-    day: "2-digit", month: "long", year: "numeric",
-  });
+  const fecha = fmtFechaSolo(o.created_at);
 
   return (
     <>
@@ -153,7 +152,7 @@ export default async function RemitoPage({
               <div>
                 <span style={{ color: "#666" }}>Pago confirmado: </span>
                 <span style={{ color: "#166534", fontWeight: 600 }}>
-                  {new Date(o.payment_confirmed_at).toLocaleDateString("es-AR")}
+                  {fmtFechaSolo(o.payment_confirmed_at)}
                 </span>
               </div>
             )}

@@ -3,6 +3,7 @@ import { createClient, createAdminClient } from "@/lib/supabase/server";
 import { redirect, notFound } from "next/navigation";
 import Link from "next/link";
 import { OrderStatusBadge } from "@/components/ui/badge";
+import { fmtFechaLarga, fmtFechaSolo } from "@/lib/fecha";
 
 export const metadata: Metadata = { title: "Historial de cliente — Admin En Minutas" };
 export const revalidate = 0;
@@ -107,9 +108,7 @@ export default async function ClienteB2BDetailPage({
           <div>
             <p className="text-xs text-neutral-400">Cliente desde</p>
             <p className="text-sm text-neutral-900">
-              {new Date(profile.created_at).toLocaleDateString("es-AR", {
-                day: "2-digit", month: "long", year: "numeric",
-              })}
+              {fmtFechaLarga(profile.created_at)}
             </p>
           </div>
         </div>
@@ -161,9 +160,7 @@ export default async function ClienteB2BDetailPage({
                     </Link>
                   </td>
                   <td className="px-5 py-3 text-neutral-500 text-xs">
-                    {new Date(o.created_at).toLocaleDateString("es-AR", {
-                      day: "2-digit", month: "2-digit", year: "2-digit",
-                    })}
+                    {fmtFechaSolo(o.created_at)}
                   </td>
                   <td className="px-5 py-3">
                     <OrderStatusBadge status={o.status} />

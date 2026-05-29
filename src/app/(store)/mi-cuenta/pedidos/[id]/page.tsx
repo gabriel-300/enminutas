@@ -3,6 +3,7 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { redirect, notFound } from "next/navigation";
 import { OrderStatusBadge } from "@/components/ui/badge";
+import { fmtFechaLarga, fmtFecha } from "@/lib/fecha";
 
 export const metadata: Metadata = { title: "Detalle de pedido — En Minutas" };
 export const revalidate = 0;
@@ -60,11 +61,7 @@ export default async function MiPedidoDetailPage({
             {o.order_number}
           </h1>
           <p className="text-sm text-neutral-400 mt-1">
-            {new Date(o.created_at).toLocaleDateString("es-AR", {
-              day: "2-digit",
-              month: "long",
-              year: "numeric",
-            })}
+            {fmtFechaLarga(o.created_at)}
           </p>
         </div>
         <OrderStatusBadge status={o.status} />
@@ -132,10 +129,7 @@ export default async function MiPedidoDetailPage({
         {o.payment_confirmed_at && (
           <p className="text-sm text-success mt-2">
             Pago confirmado el{" "}
-            {new Date(o.payment_confirmed_at).toLocaleDateString("es-AR", {
-              day: "2-digit",
-              month: "long",
-            })}
+            {fmtFecha(o.payment_confirmed_at, { day: "2-digit", month: "long" })}
           </p>
         )}
       </div>

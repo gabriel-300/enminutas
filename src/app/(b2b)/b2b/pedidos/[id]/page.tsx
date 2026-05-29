@@ -4,6 +4,7 @@ import { redirect, notFound } from "next/navigation";
 import Link from "next/link";
 import { OrderStatusBadge } from "@/components/ui/badge";
 import { DeclararPagoButton } from "@/components/b2b/declarar-pago-button";
+import { fmtFechaHora, fmtFecha } from "@/lib/fecha";
 
 export const metadata: Metadata = { title: "Detalle de pedido — Portal B2B En Minutas" };
 export const revalidate = 0;
@@ -95,10 +96,7 @@ export default async function B2BPedidoDetailPage({
             {o.order_number}
           </h1>
           <p className="text-xs text-neutral-400 mt-1">
-            {new Date(o.created_at).toLocaleString("es-AR", {
-              day: "2-digit", month: "long", year: "numeric",
-              hour: "2-digit", minute: "2-digit",
-            })}
+            {fmtFechaHora(o.created_at)}
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -168,10 +166,7 @@ export default async function B2BPedidoDetailPage({
               <span>✓</span>
               <span>
                 Pago declarado el{" "}
-                {new Date(o.payment_declared_at).toLocaleString("es-AR", {
-                  day: "2-digit", month: "2-digit", year: "2-digit",
-                  hour: "2-digit", minute: "2-digit",
-                })}
+                {fmtFecha(o.payment_declared_at, { day: "2-digit", month: "2-digit", year: "2-digit", hour: "2-digit", minute: "2-digit" })}
               </span>
             </div>
           ) : (

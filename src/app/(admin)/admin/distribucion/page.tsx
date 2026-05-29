@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { createClient, createAdminClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { ConfirmarEntregaButton } from "@/components/admin/confirmar-entrega-button";
+import { fmtFecha } from "@/lib/fecha";
 
 export const metadata: Metadata = { title: "Distribución — Admin En Minutas" };
 export const revalidate = 0;
@@ -85,10 +86,7 @@ export default async function DistribucionPage() {
                     {order.despachado_at && (
                       <p className="text-xs text-neutral-400 mb-3">
                         Despachado:{" "}
-                        {new Date(order.despachado_at).toLocaleString("es-AR", {
-                          day: "2-digit", month: "2-digit",
-                          hour: "2-digit", minute: "2-digit",
-                        })}
+                        {fmtFecha(order.despachado_at, { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" })}
                       </p>
                     )}
 

@@ -3,6 +3,7 @@ import { createClient, createAdminClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { MarcarEnviadoProdButton } from "@/components/admin/marcar-enviado-prod-button";
 import { DespacharButton } from "@/components/admin/despachar-button";
+import { fmtFecha } from "@/lib/fecha";
 
 export const metadata: Metadata = { title: "Producción — Admin En Minutas" };
 export const revalidate = 0;
@@ -28,10 +29,7 @@ function OrderCard({
             {order.aprobado_at && (
               <span className="text-xs text-neutral-400">
                 Aprobado:{" "}
-                {new Date(order.aprobado_at).toLocaleString("es-AR", {
-                  day: "2-digit", month: "2-digit",
-                  hour: "2-digit", minute: "2-digit",
-                })}
+                {fmtFecha(order.aprobado_at, { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" })}
               </span>
             )}
           </div>

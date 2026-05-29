@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { OrderStatusBadge } from "@/components/ui/badge";
+import { fmtFechaSolo } from "@/lib/fecha";
 
 export const metadata: Metadata = { title: "Mis pedidos — Portal B2B En Minutas" };
 export const revalidate = 0;
@@ -68,11 +69,7 @@ export default async function B2BPedidosPage() {
                     }).format(p.total)}
                   </td>
                   <td className="px-5 py-3 text-neutral-400 text-xs tabular-nums">
-                    {new Date(p.created_at).toLocaleDateString("es-AR", {
-                      day:   "2-digit",
-                      month: "2-digit",
-                      year:  "2-digit",
-                    })}
+                    {fmtFechaSolo(p.created_at)}
                   </td>
                 </tr>
               ))}
