@@ -2,6 +2,7 @@
 
 import { createClient, createAdminClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
+import { emailPagoConfirmado } from "@/lib/email";
 
 export async function updateOrderStatus(orderId: string, status: string) {
   const supabase = createAdminClient();
@@ -60,17 +61,19 @@ export async function despacharPedido(orderId: string) {
 
 export async function confirmarPago(orderId: string) {
   const supabase = createAdminClient();
-  const { data: order } = await supabase
+  const { data: order } = await (supabase as any)
     .from("orders")
-    .select("status, channel")
+    .select("status, channel, order_number, total, guest_email, customer_id, customer:profiles!customer_id(full_name)")
     .eq("id", orderId)
     .single();
+
+  const o = order as any;
 
   const updates: Record<string, any> = {
     payment_confirmed_at: new Date().toISOString(),
   };
   // Si es B2B y aún está en pending_payment, avanzar a aprobado automáticamente
-  if ((order as any)?.channel === "b2b_mayorista" && (order as any)?.status === "pending_payment") {
+  if (o?.channel === "b2b_mayorista" && o?.status === "pending_payment") {
     const authClient = await createClient();
     const { data: { user } } = await authClient.auth.getUser();
     if (user) {
@@ -86,6 +89,26 @@ export async function confirmarPago(orderId: string) {
   revalidatePath("/admin/pedidos");
   revalidatePath("/admin/produccion");
   revalidatePath("/admin/dashboard");
+
+  // Notificar al cliente — fire and forget
+  if (o?.order_number) {
+    let clientEmail: string | undefined = o.guest_email;
+    let clientName: string = o.customer?.full_name ?? "Cliente";
+
+    if (!clientEmail && o.customer_id) {
+      const { data } = await (supabase as any).auth.admin.getUserById(o.customer_id);
+      clientEmail = data?.user?.email;
+    }
+
+    if (clientEmail) {
+      emailPagoConfirmado({
+        orderNumber: o.order_number,
+        clientEmail,
+        clientName,
+        isB2B: o.channel === "b2b_mayorista",
+      }).catch(() => {});
+    }
+  }
 }
 
 export async function confirmarEntrega(orderId: string) {

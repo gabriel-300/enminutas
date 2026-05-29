@@ -158,6 +158,95 @@ export async function emailNuevoRegistroB2B({
   });
 }
 
+export async function emailPagoDeclarado({
+  orderId,
+  orderNumber,
+  clientName,
+  clientEmail,
+  total,
+}: {
+  orderId:     string;
+  orderNumber: string;
+  clientName:  string;
+  clientEmail: string;
+  total:       number;
+}) {
+  const html = baseHtml(`
+    <h1>Pago declarado por cliente</h1>
+    <p>El cliente <strong>${clientName}</strong> (${clientEmail}) declaró haber realizado el pago del pedido
+    <span class="badge">${orderNumber}</span>.</p>
+    <p class="total">Total: ${fmtARS(total)}</p>
+    <p>Verificá la transferencia en tu cuenta bancaria y confirmá el pago desde el panel.</p>
+    <a class="btn" href="${APP_URL}/admin/pedidos/${orderId}">Ver pedido →</a>
+  `);
+  const resend = getResend();
+  if (!resend) return;
+  await resend.emails.send({ from: FROM, to: ADMIN, subject: `Pago declarado — ${orderNumber}`, html });
+}
+
+export async function emailPagoConfirmado({
+  orderNumber,
+  clientEmail,
+  clientName,
+  isB2B = false,
+}: {
+  orderNumber: string;
+  clientEmail: string;
+  clientName:  string;
+  isB2B?:      boolean;
+}) {
+  const portalLink = isB2B ? `${APP_URL}/b2b/pedidos` : `${APP_URL}/mi-cuenta/pedidos`;
+  const html = baseHtml(`
+    <h1>¡Tu pago fue confirmado!</h1>
+    <p>Hola ${clientName},</p>
+    <p>Recibimos y confirmamos tu pago del pedido <strong>${orderNumber}</strong>. Ya estamos preparando tu pedido.</p>
+    <a class="btn" href="${portalLink}">Ver mis pedidos →</a>
+  `);
+  const resend = getResend();
+  if (!resend) return;
+  await resend.emails.send({ from: FROM, to: clientEmail, subject: `Pago confirmado — ${orderNumber} — En Minutas`, html });
+}
+
+export async function emailNuevoPedidoB2CAdmin({
+  orderId,
+  orderNumber,
+  clientName,
+  clientEmail,
+  total,
+  items,
+}: {
+  orderId:     string;
+  orderNumber: string;
+  clientName:  string;
+  clientEmail: string;
+  total:       number;
+  items:       { name: string; qty: number; unitPrice: number }[];
+}) {
+  const lineRows = items
+    .map((l) => `<tr>
+      <td>${l.name}</td>
+      <td class="right">${l.qty}</td>
+      <td class="right">${fmtARS(l.unitPrice)}</td>
+      <td class="right">${fmtARS(l.qty * l.unitPrice)}</td>
+    </tr>`)
+    .join("");
+
+  const html = baseHtml(`
+    <h1>Nuevo pedido de la tienda</h1>
+    <p><span class="badge">${orderNumber}</span></p>
+    <p><strong>Cliente:</strong> ${clientName} (${clientEmail})</p>
+    <table>
+      <thead><tr><th>Producto</th><th class="right">Cant.</th><th class="right">Precio u.</th><th class="right">Subtotal</th></tr></thead>
+      <tbody>${lineRows}</tbody>
+    </table>
+    <p class="total">Total: ${fmtARS(total)}</p>
+    <a class="btn" href="${APP_URL}/admin/pedidos/${orderId}">Ver pedido →</a>
+  `);
+  const resend = getResend();
+  if (!resend) return;
+  await resend.emails.send({ from: FROM, to: ADMIN, subject: `Nuevo pedido tienda — ${orderNumber}`, html });
+}
+
 export async function emailPedidoB2CRecibido({
   orderNumber,
   clientEmail,

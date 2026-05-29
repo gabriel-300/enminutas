@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { MercadoPagoConfig, Preference } from "mercadopago";
 import { z } from "zod";
-import { emailPedidoB2CRecibido } from "@/lib/email";
+import { emailPedidoB2CRecibido, emailNuevoPedidoB2CAdmin } from "@/lib/email";
 
 const ItemSchema = z.object({
   productId: z.string(),
@@ -156,6 +156,16 @@ async function createOrderInSupabase({
     clientName:    data.fullName,
     total,
     paymentMethod: data.paymentMethod,
+  }).catch(() => {});
+
+  // Aviso al admin — fire and forget
+  emailNuevoPedidoB2CAdmin({
+    orderId:     order.id,
+    orderNumber: order.order_number,
+    clientName:  data.fullName,
+    clientEmail: data.email,
+    total,
+    items: data.items.map((i) => ({ name: i.name, qty: i.quantity, unitPrice: i.price })),
   }).catch(() => {});
 
   if (data.paymentMethod === "mercadopago") {
