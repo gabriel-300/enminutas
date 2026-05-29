@@ -3,10 +3,14 @@
 import { createAdminClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 
-export async function guardarReceta(formData: FormData) {
+type ActionResult = { error: string } | { ok: true };
+
+export async function guardarReceta(formData: FormData): Promise<ActionResult> {
   const productId  = formData.get("product_id") as string;
   const yieldCajas = parseInt(formData.get("yield_cajas") as string, 10) || 1;
   const notes      = (formData.get("notes") as string | null)?.trim() || null;
+
+  if (!productId) return { error: "Producto requerido" };
 
   // Pasos: vienen como steps[0][description], steps[0][minutes], etc.
   const steps: { description: string; minutes: number; notes: string | null }[] = [];
@@ -19,42 +23,64 @@ export async function guardarReceta(formData: FormData) {
     i++;
   }
 
-  if (!productId) throw new Error("Producto requerido");
-
   const db = createAdminClient() as any;
 
-  // Upsert receta
-  const { data: recipe, error: recipeError } = await db
+  // Upsert receta — buscar primero para obtener el id existente
+  const { data: existing } = await db
     .from("recipes")
-    .upsert({ product_id: productId, yield_cajas: yieldCajas, notes }, { onConflict: "product_id" })
     .select("id")
-    .single();
+    .eq("product_id", productId)
+    .maybeSingle();
 
-  if (recipeError || !recipe) throw new Error(recipeError?.message ?? "Error al guardar receta");
+  let recipeId: string;
 
-  // Reemplazar pasos: borrar existentes e insertar nuevos
-  await db.from("recipe_steps").delete().eq("recipe_id", recipe.id);
+  if (existing?.id) {
+    // UPDATE
+    const { error: updErr } = await db
+      .from("recipes")
+      .update({ yield_cajas: yieldCajas, notes })
+      .eq("id", existing.id);
+    if (updErr) return { error: `Error al actualizar receta: ${updErr.message}` };
+    recipeId = existing.id;
+  } else {
+    // INSERT
+    const { data: inserted, error: insErr } = await db
+      .from("recipes")
+      .insert({ product_id: productId, yield_cajas: yieldCajas, notes })
+      .select("id")
+      .single();
+    if (insErr || !inserted) return { error: `Error al crear receta: ${insErr?.message ?? "sin datos"}` };
+    recipeId = inserted.id;
+  }
+
+  // Reemplazar pasos
+  const { error: delErr } = await db.from("recipe_steps").delete().eq("recipe_id", recipeId);
+  if (delErr) return { error: `Error al borrar pasos anteriores: ${delErr.message}` };
 
   if (steps.length > 0) {
     const rows = steps.map((s, idx) => ({
-      recipe_id:   recipe.id,
+      recipe_id:   recipeId,
       step_order:  idx + 1,
       description: s.description,
       minutes:     s.minutes,
       notes:       s.notes,
     }));
     const { error: stepsError } = await db.from("recipe_steps").insert(rows);
-    if (stepsError) throw new Error(stepsError.message);
+    if (stepsError) return { error: `Error al guardar pasos: ${stepsError.message}` };
   }
 
   revalidatePath("/admin/cocina/recetas");
   revalidatePath(`/admin/cocina/recetas/${productId}`);
   revalidatePath("/admin/cocina");
+
+  return { ok: true };
 }
 
-export async function eliminarReceta(productId: string) {
+export async function eliminarReceta(productId: string): Promise<ActionResult> {
   const db = createAdminClient() as any;
-  await db.from("recipes").delete().eq("product_id", productId);
+  const { error } = await db.from("recipes").delete().eq("product_id", productId);
+  if (error) return { error: error.message };
   revalidatePath("/admin/cocina/recetas");
   revalidatePath("/admin/cocina");
+  return { ok: true };
 }

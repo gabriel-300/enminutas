@@ -92,11 +92,11 @@ export function RecetaEditor({ productId, recipe }: RecetaProps) {
     });
 
     startTransition(async () => {
-      try {
-        await guardarReceta(fd);
+      const result = await guardarReceta(fd);
+      if ("error" in result) {
+        setError(result.error);
+      } else {
         setSuccess("Receta guardada correctamente.");
-      } catch (err: any) {
-        setError(err.message ?? "Error al guardar");
       }
     });
   }
@@ -104,8 +104,12 @@ export function RecetaEditor({ productId, recipe }: RecetaProps) {
   function handleEliminar() {
     if (!confirm("¿Eliminar esta receta? Se perderán todos los pasos.")) return;
     startTransition(async () => {
-      await eliminarReceta(productId);
-      router.push("/admin/cocina/recetas");
+      const result = await eliminarReceta(productId);
+      if ("error" in result) {
+        setError(result.error);
+      } else {
+        router.push("/admin/cocina/recetas");
+      }
     });
   }
 
