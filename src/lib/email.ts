@@ -10,6 +10,13 @@ const FROM    = process.env.EMAIL_FROM    ?? "En Minutas <noreply@enminutas.com.
 const ADMIN   = process.env.EMAIL_ADMIN   ?? "admin@enminutas.com.ar";
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
 
+// Con dominio resend.dev solo se puede enviar al dueño de la cuenta.
+// Mientras no haya dominio propio, redirigimos emails de clientes al admin.
+const IS_TEST_DOMAIN = FROM.includes("resend.dev");
+function resolveRecipient(clientEmail: string): string {
+  return IS_TEST_DOMAIN ? ADMIN : clientEmail;
+}
+
 const fmtARS = (n: number) =>
   new Intl.NumberFormat("es-AR", { style: "currency", currency: "ARS", maximumFractionDigits: 0 }).format(n);
 
@@ -111,8 +118,8 @@ export async function emailClienteAprobado({
   if (!resend) return;
   await resend.emails.send({
     from:    FROM,
-    to:      clientEmail,
-    subject: "Tu acceso al portal B2B de En Minutas fue aprobado",
+    to:      resolveRecipient(clientEmail),
+    subject: `${IS_TEST_DOMAIN ? `[Para: ${clientEmail}] ` : ""}Tu acceso al portal B2B de En Minutas fue aprobado`,
     html,
   });
 }
@@ -204,7 +211,7 @@ export async function emailPagoConfirmado({
   `);
   const resend = getResend();
   if (!resend) return;
-  await resend.emails.send({ from: FROM, to: clientEmail, subject: `Pago confirmado — ${orderNumber} — En Minutas`, html });
+  await resend.emails.send({ from: FROM, to: resolveRecipient(clientEmail), subject: `${IS_TEST_DOMAIN ? `[Para: ${clientEmail}] ` : ""}Pago confirmado — ${orderNumber} — En Minutas`, html });
 }
 
 export async function emailNuevoPedidoB2CAdmin({
@@ -302,8 +309,8 @@ export async function emailPedidoAdminCreado({
   if (!resend) return;
   await resend.emails.send({
     from:    FROM,
-    to:      clientEmail,
-    subject: `Pedido ${orderNumber} — En Minutas`,
+    to:      resolveRecipient(clientEmail),
+    subject: `${IS_TEST_DOMAIN ? `[Para: ${clientEmail}] ` : ""}Pedido ${orderNumber} — En Minutas`,
     html,
   });
 }
@@ -335,8 +342,8 @@ export async function emailPedidoB2CRecibido({
   if (!resend) return;
   await resend.emails.send({
     from:    FROM,
-    to:      clientEmail,
-    subject: `Pedido ${orderNumber} — En Minutas`,
+    to:      resolveRecipient(clientEmail),
+    subject: `${IS_TEST_DOMAIN ? `[Para: ${clientEmail}] ` : ""}Pedido ${orderNumber} — En Minutas`,
     html,
   });
 }
