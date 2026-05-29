@@ -120,7 +120,7 @@ export default async function RecetasPage() {
                     <p className="text-xs text-neutral-400 font-mono">{p.sku}</p>
                   </td>
                   <td className="px-5 py-3 text-right">
-                    <Link href={`/admin/cocina/recetas/${p.id}`} className="px-3 py-1.5 text-xs font-medium rounded-lg bg-tierra-700 text-white hover:bg-tierra-800 transition-colors">
+                    <Link href={`/admin/cocina/recetas/${p.id}`} className="px-3 py-1.5 text-xs font-medium rounded-lg bg-tierra-700 !text-white hover:bg-tierra-800 transition-colors">
                       + Cargar receta
                     </Link>
                   </td>
