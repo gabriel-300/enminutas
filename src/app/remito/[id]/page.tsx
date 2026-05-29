@@ -1,6 +1,6 @@
 import { createClient, createAdminClient } from "@/lib/supabase/server";
 import { redirect, notFound } from "next/navigation";
-import { PrintTrigger } from "@/components/remito/print-trigger";
+import { PrintTrigger, PrintButton } from "@/components/remito/print-trigger";
 import { fmtFechaSolo } from "@/lib/fecha";
 
 const fmt = (n: number) =>
@@ -97,12 +97,7 @@ export default async function RemitoPage({
           >
             ← Volver
           </a>
-          <button
-            onClick={() => window.print()}
-            className="px-4 py-2 bg-neutral-900 text-white text-sm font-medium rounded-lg hover:opacity-90"
-          >
-            Imprimir / Guardar PDF
-          </button>
+          <PrintButton />
         </div>
 
         {/* Encabezado */}

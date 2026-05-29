@@ -9,3 +9,14 @@ export function PrintTrigger() {
   }, []);
   return null;
 }
+
+export function PrintButton() {
+  return (
+    <button
+      onClick={() => window.print()}
+      className="px-4 py-2 bg-neutral-900 text-white text-sm font-medium rounded-lg hover:opacity-90"
+    >
+      Imprimir / Guardar PDF
+    </button>
+  );
+}
