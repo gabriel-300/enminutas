@@ -4,16 +4,25 @@ import { useState, useTransition, useMemo } from "react";
 import { registrarLote, ajustarStock } from "@/app/(admin)/admin/cocina/actions";
 
 type StockItem = {
-  id:          string;
-  name:        string;
-  sku:         string;
-  unit_label:  string | null;
-  bolsas_caja: number | null;
-  categoria:   string;
-  stock:       number;
-  minimo:      number;
-  demanda:     number;
+  id:                string;
+  name:              string;
+  sku:               string;
+  unit_label:        string | null;
+  bolsas_caja:       number | null;
+  categoria:         string;
+  stock:             number;
+  minimo:            number;
+  demanda:           number;
+  tieneReceta:       boolean;
+  minutosEstimados:  number | null;
 };
+
+function fmtMin(min: number) {
+  if (min < 60) return `${Math.round(min)} min`;
+  const h = Math.floor(min / 60);
+  const m = Math.round(min % 60);
+  return m > 0 ? `${h}h ${m}min` : `${h}h`;
+}
 
 function StockBadge({ stock, minimo }: { stock: number; minimo: number }) {
   if (minimo === 0) {
@@ -144,14 +153,40 @@ export function CocinaClient({ items }: { items: StockItem[] }) {
   const urgentes = filtered.filter((i) => i.minimo > 0 && i.stock < i.minimo);
   const resto    = filtered.filter((i) => i.minimo === 0 || i.stock >= i.minimo);
 
-  const alertaTotal = items.filter((i) => i.minimo > 0 && i.stock < i.minimo).length;
+  const alertaTotal   = items.filter((i) => i.minimo > 0 && i.stock < i.minimo).length;
+  const minTotalUrgente = urgentes.reduce((s, i) => s + (i.minutosEstimados ?? 0), 0);
 
   return (
     <div className="space-y-6">
-      {/* Alertas summary */}
+      {/* Planificador rápido */}
       {alertaTotal > 0 && (
-        <div className="px-4 py-3 bg-warning-bg border border-warning/30 rounded-xl text-sm text-warning font-medium">
-          {alertaTotal} producto{alertaTotal !== 1 ? "s" : ""} con stock bajo el mínimo — priorizá su producción
+        <div className="bg-white rounded-2xl border border-neutral-200 p-5">
+          <p className="text-xs font-semibold text-neutral-400 uppercase tracking-wide mb-3">Plan del día</p>
+          <div className="grid grid-cols-3 gap-4">
+            <div>
+              <p className="text-xs text-neutral-400">Productos a producir</p>
+              <p className="text-2xl font-semibold font-display text-warning">{alertaTotal}</p>
+            </div>
+            {minTotalUrgente > 0 && (
+              <div>
+                <p className="text-xs text-neutral-400">Tiempo estimado total</p>
+                <p className="text-2xl font-semibold font-display text-neutral-900">{fmtMin(minTotalUrgente)}</p>
+              </div>
+            )}
+            <div>
+              <p className="text-xs text-neutral-400">Prioridad</p>
+              <p className="text-sm font-medium text-neutral-700 mt-1">
+                {urgentes[0]?.name ?? "—"}
+              </p>
+            </div>
+          </div>
+          {urgentes.some((i) => !i.tieneReceta) && (
+            <p className="mt-3 text-xs text-neutral-400">
+              Algunos productos no tienen receta —{" "}
+              <a href="/admin/cocina/recetas" className="text-tierra-700 hover:underline">cargalas acá</a>{" "}
+              para ver el tiempo estimado.
+            </p>
+          )}
         </div>
       )}
 
@@ -178,6 +213,7 @@ export function CocinaClient({ items }: { items: StockItem[] }) {
               <th className="px-5 py-3 text-xs font-medium text-neutral-400 text-center">Stock actual</th>
               <th className="px-5 py-3 text-xs font-medium text-neutral-400 text-center">Mínimo</th>
               <th className="px-5 py-3 text-xs font-medium text-neutral-400 text-center">Comprometido</th>
+              <th className="px-5 py-3 text-xs font-medium text-neutral-400 text-center">Tiempo est.</th>
               <th className="px-5 py-3 text-xs font-medium text-neutral-400"></th>
             </tr>
           </thead>
@@ -250,6 +286,14 @@ function ProductRow({
           {item.demanda > 0
             ? <span className="font-medium text-tierra-700">{item.demanda}</span>
             : <span className="text-neutral-300">—</span>}
+        </td>
+        <td className="px-5 py-3 text-center text-xs text-neutral-500">
+          {item.minutosEstimados != null
+            ? <span className="font-medium text-neutral-700">{fmtMin(item.minutosEstimados)}</span>
+            : item.tieneReceta
+              ? <span className="text-neutral-300">—</span>
+              : <a href="/admin/cocina/recetas" className="text-neutral-300 hover:text-tierra-700 underline underline-offset-2">Sin receta</a>
+          }
         </td>
         <td className="px-5 py-3 text-right">
           <button
