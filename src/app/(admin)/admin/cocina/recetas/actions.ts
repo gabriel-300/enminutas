@@ -23,14 +23,15 @@ export async function guardarReceta(formData: FormData): Promise<ActionResult> {
     i++;
   }
 
-  // Ingredientes: ings[0][nombre], ings[0][cantidad], ings[0][unidad]
-  const ings: { nombre: string; cantidad: number; unidad: string }[] = [];
+  // Ingredientes: ings[0][nombre], ings[0][cantidad], ings[0][unidad], ings[0][costo]
+  const ings: { nombre: string; cantidad: number; unidad: string; costo: number }[] = [];
   let j = 0;
   while (formData.get(`ings[${j}][nombre]`) !== null) {
     const nombre   = (formData.get(`ings[${j}][nombre]`) as string).trim();
     const cantidad = parseFloat(formData.get(`ings[${j}][cantidad]`) as string) || 0;
     const unidad   = (formData.get(`ings[${j}][unidad]`) as string) || "u";
-    if (nombre) ings.push({ nombre, cantidad, unidad });
+    const costo    = parseFloat(formData.get(`ings[${j}][costo]`) as string) || 0;
+    if (nombre) ings.push({ nombre, cantidad, unidad, costo });
     j++;
   }
 
@@ -90,6 +91,7 @@ export async function guardarReceta(formData: FormData): Promise<ActionResult> {
         nombre:    ing.nombre,
         cantidad:  ing.cantidad,
         unidad:    ing.unidad,
+        costo:     ing.costo,
       }))
     );
     if (ingsError) return { error: `Error al guardar ingredientes: ${ingsError.message}` };

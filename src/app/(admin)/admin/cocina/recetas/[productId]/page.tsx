@@ -41,7 +41,7 @@ export default async function RecetaEditorPage({
   if (recipeRaw?.id) {
     const { data } = await adminClient
       .from("recipe_ingredients")
-      .select("nombre, cantidad, unidad")
+      .select("nombre, cantidad, unidad, costo")
       .eq("recipe_id", recipeRaw.id);
     rawIngs = data ?? [];
   }
@@ -61,6 +61,7 @@ export default async function RecetaEditorPage({
           nombre:   ing.nombre,
           cantidad: Number(ing.cantidad),
           unidad:   ing.unidad,
+          costo:    Number(ing.costo ?? 0),
         })),
       }
     : null;

@@ -22,13 +22,15 @@ export default async function RecetasPage() {
 
     adminClient
       .from("recipes")
-      .select("id, product_id, yield_cajas, steps:recipe_steps (id, minutes)"),
+      .select("id, product_id, yield_cajas, steps:recipe_steps (id, minutes), ingredients:recipe_ingredients (costo)"),
   ]);
 
-  const recipeMap: Record<string, { yieldCajas: number; totalMinutos: number; pasos: number }> = {};
+  const recipeMap: Record<string, { yieldCajas: number; totalMinutos: number; pasos: number; costoCaja: number }> = {};
   for (const r of (rawRecipes ?? []) as any[]) {
     const totalMinutos = (r.steps ?? []).reduce((s: number, st: any) => s + Number(st.minutes), 0);
-    recipeMap[r.product_id] = { yieldCajas: r.yield_cajas, totalMinutos, pasos: r.steps?.length ?? 0 };
+    const costoLote    = (r.ingredients ?? []).reduce((s: number, ing: any) => s + Number(ing.costo ?? 0), 0);
+    const costoCaja    = r.yield_cajas > 0 ? costoLote / r.yield_cajas : 0;
+    recipeMap[r.product_id] = { yieldCajas: r.yield_cajas, totalMinutos, pasos: r.steps?.length ?? 0, costoCaja };
   }
 
   const products = (rawProducts ?? []) as any[];
@@ -76,6 +78,7 @@ export default async function RecetasPage() {
                 <th className="px-5 py-3 text-xs font-medium text-neutral-400 text-center">Lote estándar</th>
                 <th className="px-5 py-3 text-xs font-medium text-neutral-400 text-center">Pasos</th>
                 <th className="px-5 py-3 text-xs font-medium text-neutral-400 text-center">Tiempo total</th>
+                <th className="px-5 py-3 text-xs font-medium text-neutral-400 text-right">Costo / caja</th>
                 <th className="px-5 py-3 text-xs font-medium text-neutral-400"></th>
               </tr>
             </thead>
@@ -91,6 +94,12 @@ export default async function RecetasPage() {
                     <td className="px-5 py-3 text-center text-sm text-neutral-600">{r.yieldCajas} caja{r.yieldCajas !== 1 ? "s" : ""}</td>
                     <td className="px-5 py-3 text-center text-sm text-neutral-600">{r.pasos}</td>
                     <td className="px-5 py-3 text-center text-sm font-medium text-neutral-800">{fmtMin(r.totalMinutos)}</td>
+                    <td className="px-5 py-3 text-right text-sm tabular-nums">
+                      {r.costoCaja > 0
+                        ? <span className="font-medium text-neutral-800">${r.costoCaja.toLocaleString("es-AR", { maximumFractionDigits: 0 })}</span>
+                        : <span className="text-neutral-300">—</span>
+                      }
+                    </td>
                     <td className="px-5 py-3 text-right">
                       <Link href={`/admin/cocina/recetas/${p.id}`} className="text-xs text-tierra-700 hover:underline font-medium">
                         Editar

@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { guardarReceta, eliminarReceta } from "@/app/(admin)/admin/cocina/recetas/actions";
 
 type Step = { description: string; minutes: number; notes: string };
-type Ing  = { nombre: string; cantidad: number; unidad: string };
+type Ing  = { nombre: string; cantidad: number; unidad: string; costo: number };
 
 type RecetaProps = {
   productId: string;
@@ -52,6 +52,9 @@ export function RecetaEditor({ productId, recipe }: RecetaProps) {
     recipe?.ingredients.length ? recipe.ingredients : []
   );
 
+  const costoLote = ings.reduce((s, ing) => s + (ing.costo || 0), 0);
+  const costoCaja = yieldCajas > 0 ? costoLote / yieldCajas : 0;
+
   const totalMinutos = steps.reduce((s, st) => s + (st.minutes || 0), 0);
 
   // ── Pasos ────────────────────────────────────────────────────────────────
@@ -75,7 +78,7 @@ export function RecetaEditor({ productId, recipe }: RecetaProps) {
 
   // ── Ingredientes ─────────────────────────────────────────────────────────
   function addIng() {
-    setIngs((prev) => [...prev, { nombre: "", cantidad: 0, unidad: "gr" }]);
+    setIngs((prev) => [...prev, { nombre: "", cantidad: 0, unidad: "gr", costo: 0 }]);
   }
   function removeIng(i: number) {
     setIngs((prev) => prev.filter((_, idx) => idx !== i));
@@ -108,6 +111,7 @@ export function RecetaEditor({ productId, recipe }: RecetaProps) {
       fd.set(`ings[${i}][nombre]`,   ing.nombre);
       fd.set(`ings[${i}][cantidad]`, String(ing.cantidad));
       fd.set(`ings[${i}][unidad]`,   ing.unidad);
+      fd.set(`ings[${i}][costo]`,    String(ing.costo));
     });
 
     startTransition(async () => {
@@ -184,7 +188,19 @@ export function RecetaEditor({ productId, recipe }: RecetaProps) {
               Qué se necesita para producir {yieldCajas} caja{yieldCajas !== 1 ? "s" : ""}
             </p>
           </div>
-          <span className="text-xs text-neutral-400">{ings.length} ingrediente{ings.length !== 1 ? "s" : ""}</span>
+          <div className="text-right">
+            <span className="text-xs text-neutral-400">{ings.length} ingrediente{ings.length !== 1 ? "s" : ""}</span>
+            {costoLote > 0 && (
+              <div className="mt-0.5">
+                <span className="text-xs font-semibold text-neutral-700">
+                  ${costoLote.toLocaleString("es-AR", { maximumFractionDigits: 0 })} / lote
+                </span>
+                <span className="text-xs text-tierra-700 ml-2 font-semibold">
+                  ${costoCaja.toLocaleString("es-AR", { maximumFractionDigits: 0 })} / caja
+                </span>
+              </div>
+            )}
+          </div>
         </div>
 
         {ings.length > 0 && (
@@ -205,17 +221,28 @@ export function RecetaEditor({ productId, recipe }: RecetaProps) {
                   placeholder="0"
                   value={ing.cantidad || ""}
                   onChange={(e) => updateIng(i, "cantidad", parseFloat(e.target.value) || 0)}
-                  className="w-24 px-3 py-2 text-sm border border-neutral-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-tierra-700/20 disabled:opacity-50 text-center"
+                  className="w-20 px-3 py-2 text-sm border border-neutral-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-tierra-700/20 disabled:opacity-50 text-center"
                   disabled={isPending}
                 />
                 <select
                   value={ing.unidad}
                   onChange={(e) => updateIng(i, "unidad", e.target.value)}
-                  className="w-20 px-2 py-2 text-sm border border-neutral-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-tierra-700/20 disabled:opacity-50 bg-white"
+                  className="w-18 px-2 py-2 text-sm border border-neutral-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-tierra-700/20 disabled:opacity-50 bg-white"
                   disabled={isPending}
                 >
                   {UNIDADES.map((u) => <option key={u} value={u}>{u}</option>)}
                 </select>
+                <div className="relative w-24">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-neutral-400 pointer-events-none">$</span>
+                  <input
+                    type="number" min={0} step={1}
+                    placeholder="0"
+                    value={ing.costo || ""}
+                    onChange={(e) => updateIng(i, "costo", parseFloat(e.target.value) || 0)}
+                    className="w-full pl-6 pr-2 py-2 text-sm border border-neutral-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-tierra-700/20 disabled:opacity-50 text-right"
+                    disabled={isPending}
+                  />
+                </div>
                 <button type="button" onClick={() => removeIng(i)} disabled={isPending}
                   className="size-7 flex items-center justify-center rounded-lg border border-danger/30 text-danger hover:bg-danger-bg disabled:opacity-30 text-xs shrink-0">
                   ✕

@@ -36,7 +36,7 @@ export default async function ComprasPage() {
     // Ingredientes en query separada para no crashear si 016 no fue corrida
     adminClient
       .from("recipe_ingredients")
-      .select("recipe_id, nombre, cantidad, unidad"),
+      .select("recipe_id, nombre, cantidad, unidad, costo"),
   ]);
 
   // Demanda pendiente por producto
@@ -47,13 +47,14 @@ export default async function ComprasPage() {
   }
 
   // Ingredientes por recipe_id
-  const ingsByRecipe: Record<string, { nombre: string; cantidad: number; unidad: string }[]> = {};
+  const ingsByRecipe: Record<string, { nombre: string; cantidad: number; unidad: string; costo: number }[]> = {};
   for (const ing of (rawIngs ?? []) as any[]) {
     if (!ingsByRecipe[ing.recipe_id]) ingsByRecipe[ing.recipe_id] = [];
     ingsByRecipe[ing.recipe_id].push({
       nombre:   ing.nombre,
       cantidad: Number(ing.cantidad),
       unidad:   ing.unidad,
+      costo:    Number(ing.costo ?? 0),
     });
   }
 
@@ -70,7 +71,8 @@ export default async function ComprasPage() {
   type NeedItem = {
     id: string; name: string; sku: string;
     cajasNecesarias: number; yieldCajas: number; lotes: number;
-    ingredients: { nombre: string; cantidad: number; unidad: string }[];
+    costoPorLote: number; costoPorCaja: number;
+    ingredients: { nombre: string; cantidad: number; unidad: string; costo: number }[];
   };
 
   const needItems: NeedItem[] = [];
@@ -90,9 +92,12 @@ export default async function ComprasPage() {
     }
 
     const lotes = Math.ceil(cajasNecesarias / receta.yieldCajas);
+    const costoPorLote = receta.ingredients.reduce((s, ing) => s + ing.costo, 0);
+    const costoPorCaja = receta.yieldCajas > 0 ? costoPorLote / receta.yieldCajas : 0;
     needItems.push({
       id: p.id, name: p.name, sku: p.sku,
       cajasNecesarias, yieldCajas: receta.yieldCajas, lotes,
+      costoPorLote, costoPorCaja,
       ingredients: receta.ingredients,
     });
   }
@@ -110,6 +115,7 @@ export default async function ComprasPage() {
   }
 
   const listaCompras = Object.values(ingMap).sort((a, b) => a.nombre.localeCompare(b.nombre));
+  const costoTotalProduccion = needItems.reduce((s, item) => s + item.costoPorLote * item.lotes, 0);
   const hayNada = needItems.length === 0 && sinIngredientes.length === 0;
 
   return (
@@ -137,11 +143,21 @@ export default async function ComprasPage() {
 
           {listaCompras.length > 0 && (
             <div className="bg-white rounded-2xl border border-neutral-200 overflow-hidden">
-              <div className="px-5 py-4 border-b border-neutral-100">
-                <p className="text-sm font-semibold text-neutral-800">Comprar</p>
-                <p className="text-xs text-neutral-400 mt-0.5">
-                  {listaCompras.length} ingrediente{listaCompras.length !== 1 ? "s" : ""} · {needItems.length} producto{needItems.length !== 1 ? "s" : ""} a producir
-                </p>
+              <div className="px-5 py-4 border-b border-neutral-100 flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-semibold text-neutral-800">Comprar</p>
+                  <p className="text-xs text-neutral-400 mt-0.5">
+                    {listaCompras.length} ingrediente{listaCompras.length !== 1 ? "s" : ""} · {needItems.length} producto{needItems.length !== 1 ? "s" : ""} a producir
+                  </p>
+                </div>
+                {costoTotalProduccion > 0 && (
+                  <div className="text-right">
+                    <p className="text-xs text-neutral-400">Costo total estimado</p>
+                    <p className="text-lg font-semibold font-display text-neutral-900">
+                      ${costoTotalProduccion.toLocaleString("es-AR", { maximumFractionDigits: 0 })}
+                    </p>
+                  </div>
+                )}
               </div>
               <table className="w-full text-sm">
                 <thead>
@@ -178,6 +194,7 @@ export default async function ComprasPage() {
                     <th className="px-5 py-3 text-xs font-medium text-neutral-400">Producto</th>
                     <th className="px-5 py-3 text-xs font-medium text-neutral-400 text-center">Cajas</th>
                     <th className="px-5 py-3 text-xs font-medium text-neutral-400 text-center">Lotes</th>
+                    <th className="px-5 py-3 text-xs font-medium text-neutral-400 text-right">Costo / caja</th>
                     <th className="px-5 py-3 text-xs font-medium text-neutral-400">Ingredientes por lote</th>
                   </tr>
                 </thead>
@@ -191,6 +208,12 @@ export default async function ComprasPage() {
                       <td className="px-5 py-3 text-center font-semibold text-neutral-900 tabular-nums">{item.cajasNecesarias}</td>
                       <td className="px-5 py-3 text-center text-neutral-600 tabular-nums">
                         {item.lotes} × {item.yieldCajas} cj
+                      </td>
+                      <td className="px-5 py-3 text-right tabular-nums">
+                        {item.costoPorCaja > 0
+                          ? <span className="font-medium text-neutral-800">${item.costoPorCaja.toLocaleString("es-AR", { maximumFractionDigits: 0 })}</span>
+                          : <span className="text-neutral-300">—</span>
+                        }
                       </td>
                       <td className="px-5 py-3">
                         <div className="flex flex-wrap gap-1.5">
