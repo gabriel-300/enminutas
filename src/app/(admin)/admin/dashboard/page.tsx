@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { createClient, createAdminClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import Link from "next/link";
+import { ahoraAR } from "@/lib/fecha";
 
 export const metadata: Metadata = { title: "Dashboard — Admin En Minutas" };
 export const revalidate = 0;
@@ -28,7 +29,7 @@ export default async function DashboardPage() {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
-  const now           = new Date();
+  const now           = ahoraAR();
   const monthStart    = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
   const prevMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1).toISOString();
   const sixMonthsAgo  = new Date(now.getFullYear(), now.getMonth() - 5, 1).toISOString();
@@ -222,7 +223,15 @@ export default async function DashboardPage() {
             {totalAlerts}
           </p>
           <p className="text-xs mt-1 text-neutral-400">
-            {inactivos.length} clientes inactivos
+            {totalAlerts === 0
+              ? "Todo en orden"
+              : [
+                  inactivos.length > 0 && `${inactivos.length} inactivos`,
+                  (pagosPendientes?.length ?? 0) > 0 && `${pagosPendientes!.length} pagos`,
+                  (despachosViejos?.length ?? 0) > 0 && `${despachosViejos!.length} despachos`,
+                  (pendingOrders ?? 0) > 0 && `${pendingOrders} pendientes`,
+                ].filter(Boolean).join(" · ")
+            }
           </p>
         </div>
 

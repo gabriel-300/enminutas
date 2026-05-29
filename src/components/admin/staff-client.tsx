@@ -381,8 +381,7 @@ export function StaffClient({
               )}
               {r.value === "distribucion" && (
                 <>
-                  <li>· Solo vista de distribución</li>
-                  <li>· Dashboard</li>
+                  <li>· Vista de distribución y entregas</li>
                   <li>· Sin acceso a pedidos ni clientes</li>
                 </>
               )}

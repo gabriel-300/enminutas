@@ -6,9 +6,11 @@ export const metadata: Metadata = { title: "Reportes — Admin En Minutas" };
 export const revalidate = 0;
 
 const CANAL_LABEL: Record<string, string> = {
-  dist:   "Distribuidor",
-  gastro: "Gastronomía",
-  min:    "Minorista",
+  b2b_mayorista: "B2B Mayorista",
+  b2c_nacional:  "Tienda online",
+  dist:          "Distribuidor",
+  gastro:        "Gastronomía",
+  min:           "Minorista",
 };
 
 const fmt = (n: number) =>
