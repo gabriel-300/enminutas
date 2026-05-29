@@ -5,25 +5,29 @@ import { useRouter } from "next/navigation";
 import { guardarReceta, eliminarReceta } from "@/app/(admin)/admin/cocina/recetas/actions";
 
 type Step = { description: string; minutes: number; notes: string };
+type Ing  = { nombre: string; cantidad: number; unidad: string };
 
 type RecetaProps = {
   productId: string;
   recipe: {
-    yieldCajas: number;
-    notes:      string;
-    steps:      Step[];
+    yieldCajas:  number;
+    notes:       string;
+    steps:       Step[];
+    ingredients: Ing[];
   } | null;
 };
 
 const STEP_TEMPLATES = [
-  { description: "Pesar y medir ingredientes", minutes: 5 },
+  { description: "Pesar y medir ingredientes",     minutes: 5   },
   { description: "Preparar y limpiar lugar de trabajo", minutes: 3 },
-  { description: "Mezclar/amasar", minutes: 10 },
-  { description: "Armar/moldear unidades", minutes: 15 },
-  { description: "Congelar", minutes: 120 },
-  { description: "Empacar en bolsas", minutes: 10 },
-  { description: "Armar y etiquetar cajas", minutes: 5 },
+  { description: "Mezclar/amasar",                 minutes: 10  },
+  { description: "Armar/moldear unidades",          minutes: 15  },
+  { description: "Congelar",                        minutes: 120 },
+  { description: "Empacar en bolsas",               minutes: 10  },
+  { description: "Armar y etiquetar cajas",         minutes: 5   },
 ];
+
+const UNIDADES = ["gr", "kg", "ml", "l", "u", "cc", "taza", "cdita", "cda"];
 
 function fmtMin(min: number) {
   if (!min) return "—";
@@ -44,35 +48,43 @@ export function RecetaEditor({ productId, recipe }: RecetaProps) {
   const [steps,      setSteps]      = useState<Step[]>(
     recipe?.steps.length ? recipe.steps : [{ description: "", minutes: 0, notes: "" }]
   );
+  const [ings, setIngs] = useState<Ing[]>(
+    recipe?.ingredients.length ? recipe.ingredients : []
+  );
 
   const totalMinutos = steps.reduce((s, st) => s + (st.minutes || 0), 0);
 
+  // ── Pasos ────────────────────────────────────────────────────────────────
   function addStep() {
     setSteps((prev) => [...prev, { description: "", minutes: 0, notes: "" }]);
   }
-
   function removeStep(i: number) {
     setSteps((prev) => prev.filter((_, idx) => idx !== i));
   }
-
   function updateStep(i: number, field: keyof Step, value: string | number) {
     setSteps((prev) => prev.map((s, idx) => idx === i ? { ...s, [field]: value } : s));
   }
-
   function moveStep(i: number, dir: -1 | 1) {
     const j = i + dir;
     if (j < 0 || j >= steps.length) return;
-    setSteps((prev) => {
-      const next = [...prev];
-      [next[i], next[j]] = [next[j], next[i]];
-      return next;
-    });
+    setSteps((prev) => { const n = [...prev]; [n[i], n[j]] = [n[j], n[i]]; return n; });
   }
-
   function addTemplate(tpl: { description: string; minutes: number }) {
     setSteps((prev) => [...prev, { description: tpl.description, minutes: tpl.minutes, notes: "" }]);
   }
 
+  // ── Ingredientes ─────────────────────────────────────────────────────────
+  function addIng() {
+    setIngs((prev) => [...prev, { nombre: "", cantidad: 0, unidad: "gr" }]);
+  }
+  function removeIng(i: number) {
+    setIngs((prev) => prev.filter((_, idx) => idx !== i));
+  }
+  function updateIng(i: number, field: keyof Ing, value: string | number) {
+    setIngs((prev) => prev.map((ing, idx) => idx === i ? { ...ing, [field]: value } : ing));
+  }
+
+  // ── Submit ───────────────────────────────────────────────────────────────
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (steps.filter((s) => s.description.trim()).length === 0) {
@@ -85,10 +97,17 @@ export function RecetaEditor({ productId, recipe }: RecetaProps) {
     fd.set("product_id",  productId);
     fd.set("yield_cajas", String(yieldCajas));
     fd.set("notes",       notes);
+
     steps.forEach((s, i) => {
       fd.set(`steps[${i}][description]`, s.description);
       fd.set(`steps[${i}][minutes]`,     String(s.minutes));
       fd.set(`steps[${i}][notes]`,       s.notes);
+    });
+
+    ings.forEach((ing, i) => {
+      fd.set(`ings[${i}][nombre]`,   ing.nombre);
+      fd.set(`ings[${i}][cantidad]`, String(ing.cantidad));
+      fd.set(`ings[${i}][unidad]`,   ing.unidad);
     });
 
     startTransition(async () => {
@@ -102,7 +121,7 @@ export function RecetaEditor({ productId, recipe }: RecetaProps) {
   }
 
   function handleEliminar() {
-    if (!confirm("¿Eliminar esta receta? Se perderán todos los pasos.")) return;
+    if (!confirm("¿Eliminar esta receta? Se perderán todos los datos.")) return;
     startTransition(async () => {
       const result = await eliminarReceta(productId);
       if ("error" in result) {
@@ -133,7 +152,7 @@ export function RecetaEditor({ productId, recipe }: RecetaProps) {
               disabled={isPending}
             />
             <p className="text-xs text-neutral-400 mt-1">
-              Los tiempos de cada paso aplican para producir {yieldCajas} caja{yieldCajas !== 1 ? "s" : ""}.
+              Los tiempos e ingredientes aplican para producir {yieldCajas} caja{yieldCajas !== 1 ? "s" : ""}.
             </p>
           </div>
           <div>
@@ -148,13 +167,75 @@ export function RecetaEditor({ productId, recipe }: RecetaProps) {
             />
           </div>
         </div>
-
         {totalMinutos > 0 && (
           <div className="mt-4 pt-4 border-t border-neutral-100 flex items-center justify-between">
             <p className="text-xs text-neutral-500">Tiempo total del lote de {yieldCajas} caja{yieldCajas !== 1 ? "s" : ""}</p>
             <p className="text-sm font-semibold text-neutral-900">{fmtMin(totalMinutos)}</p>
           </div>
         )}
+      </div>
+
+      {/* Ingredientes */}
+      <div className="bg-white rounded-2xl border border-neutral-200 overflow-hidden">
+        <div className="px-5 py-4 border-b border-neutral-100 flex items-center justify-between">
+          <div>
+            <p className="text-sm font-semibold text-neutral-700">Ingredientes del lote</p>
+            <p className="text-xs text-neutral-400 mt-0.5">
+              Qué se necesita para producir {yieldCajas} caja{yieldCajas !== 1 ? "s" : ""}
+            </p>
+          </div>
+          <span className="text-xs text-neutral-400">{ings.length} ingrediente{ings.length !== 1 ? "s" : ""}</span>
+        </div>
+
+        {ings.length > 0 && (
+          <div className="divide-y divide-neutral-100">
+            {ings.map((ing, i) => (
+              <div key={i} className="px-5 py-3 flex items-center gap-2">
+                <span className="text-xs font-semibold text-neutral-300 w-5 text-center shrink-0">{i + 1}</span>
+                <input
+                  type="text"
+                  placeholder="Nombre (ej: Harina 000)"
+                  value={ing.nombre}
+                  onChange={(e) => updateIng(i, "nombre", e.target.value)}
+                  className="flex-1 px-3 py-2 text-sm border border-neutral-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-tierra-700/20 disabled:opacity-50"
+                  disabled={isPending}
+                />
+                <input
+                  type="number" min={0} step={0.001}
+                  placeholder="0"
+                  value={ing.cantidad || ""}
+                  onChange={(e) => updateIng(i, "cantidad", parseFloat(e.target.value) || 0)}
+                  className="w-24 px-3 py-2 text-sm border border-neutral-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-tierra-700/20 disabled:opacity-50 text-center"
+                  disabled={isPending}
+                />
+                <select
+                  value={ing.unidad}
+                  onChange={(e) => updateIng(i, "unidad", e.target.value)}
+                  className="w-20 px-2 py-2 text-sm border border-neutral-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-tierra-700/20 disabled:opacity-50 bg-white"
+                  disabled={isPending}
+                >
+                  {UNIDADES.map((u) => <option key={u} value={u}>{u}</option>)}
+                </select>
+                <button type="button" onClick={() => removeIng(i)} disabled={isPending}
+                  className="size-7 flex items-center justify-center rounded-lg border border-danger/30 text-danger hover:bg-danger-bg disabled:opacity-30 text-xs shrink-0">
+                  ✕
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+
+        <div className="px-5 py-4 border-t border-neutral-100">
+          <button type="button" onClick={addIng} disabled={isPending}
+            className="px-3 py-1.5 text-xs font-medium rounded-lg border border-neutral-200 text-neutral-600 hover:bg-neutral-50 disabled:opacity-50 transition-colors">
+            + Agregar ingrediente
+          </button>
+          {ings.length === 0 && (
+            <p className="text-xs text-neutral-400 mt-2">
+              Sin ingredientes no se puede generar la lista de compras.
+            </p>
+          )}
+        </div>
       </div>
 
       {/* Pasos */}
@@ -218,8 +299,6 @@ export function RecetaEditor({ productId, recipe }: RecetaProps) {
             className="px-3 py-1.5 text-xs font-medium rounded-lg border border-neutral-200 text-neutral-600 hover:bg-neutral-50 disabled:opacity-50 transition-colors">
             + Agregar paso
           </button>
-
-          {/* Templates rápidos */}
           <div>
             <p className="text-xs text-neutral-400 mb-2">Pasos comunes:</p>
             <div className="flex flex-wrap gap-1.5">

@@ -12,7 +12,7 @@ export async function guardarReceta(formData: FormData): Promise<ActionResult> {
 
   if (!productId) return { error: "Producto requerido" };
 
-  // Pasos: vienen como steps[0][description], steps[0][minutes], etc.
+  // Pasos: steps[0][description], steps[0][minutes], steps[0][notes]
   const steps: { description: string; minutes: number; notes: string | null }[] = [];
   let i = 0;
   while (formData.get(`steps[${i}][description]`) !== null) {
@@ -23,9 +23,20 @@ export async function guardarReceta(formData: FormData): Promise<ActionResult> {
     i++;
   }
 
+  // Ingredientes: ings[0][nombre], ings[0][cantidad], ings[0][unidad]
+  const ings: { nombre: string; cantidad: number; unidad: string }[] = [];
+  let j = 0;
+  while (formData.get(`ings[${j}][nombre]`) !== null) {
+    const nombre   = (formData.get(`ings[${j}][nombre]`) as string).trim();
+    const cantidad = parseFloat(formData.get(`ings[${j}][cantidad]`) as string) || 0;
+    const unidad   = (formData.get(`ings[${j}][unidad]`) as string) || "u";
+    if (nombre) ings.push({ nombre, cantidad, unidad });
+    j++;
+  }
+
   const db = createAdminClient() as any;
 
-  // Upsert receta — buscar primero para obtener el id existente
+  // Obtener receta existente o crear nueva
   const { data: existing } = await db
     .from("recipes")
     .select("id")
@@ -35,7 +46,6 @@ export async function guardarReceta(formData: FormData): Promise<ActionResult> {
   let recipeId: string;
 
   if (existing?.id) {
-    // UPDATE
     const { error: updErr } = await db
       .from("recipes")
       .update({ yield_cajas: yieldCajas, notes })
@@ -43,7 +53,6 @@ export async function guardarReceta(formData: FormData): Promise<ActionResult> {
     if (updErr) return { error: `Error al actualizar receta: ${updErr.message}` };
     recipeId = existing.id;
   } else {
-    // INSERT
     const { data: inserted, error: insErr } = await db
       .from("recipes")
       .insert({ product_id: productId, yield_cajas: yieldCajas, notes })
@@ -54,24 +63,42 @@ export async function guardarReceta(formData: FormData): Promise<ActionResult> {
   }
 
   // Reemplazar pasos
-  const { error: delErr } = await db.from("recipe_steps").delete().eq("recipe_id", recipeId);
-  if (delErr) return { error: `Error al borrar pasos anteriores: ${delErr.message}` };
+  const { error: delStepsErr } = await db.from("recipe_steps").delete().eq("recipe_id", recipeId);
+  if (delStepsErr) return { error: `Error al borrar pasos: ${delStepsErr.message}` };
 
   if (steps.length > 0) {
-    const rows = steps.map((s, idx) => ({
-      recipe_id:   recipeId,
-      step_order:  idx + 1,
-      description: s.description,
-      minutes:     s.minutes,
-      notes:       s.notes,
-    }));
-    const { error: stepsError } = await db.from("recipe_steps").insert(rows);
+    const { error: stepsError } = await db.from("recipe_steps").insert(
+      steps.map((s, idx) => ({
+        recipe_id:   recipeId,
+        step_order:  idx + 1,
+        description: s.description,
+        minutes:     s.minutes,
+        notes:       s.notes,
+      }))
+    );
     if (stepsError) return { error: `Error al guardar pasos: ${stepsError.message}` };
+  }
+
+  // Reemplazar ingredientes
+  const { error: delIngsErr } = await db.from("recipe_ingredients").delete().eq("recipe_id", recipeId);
+  if (delIngsErr) return { error: `Error al borrar ingredientes: ${delIngsErr.message}` };
+
+  if (ings.length > 0) {
+    const { error: ingsError } = await db.from("recipe_ingredients").insert(
+      ings.map((ing) => ({
+        recipe_id: recipeId,
+        nombre:    ing.nombre,
+        cantidad:  ing.cantidad,
+        unidad:    ing.unidad,
+      }))
+    );
+    if (ingsError) return { error: `Error al guardar ingredientes: ${ingsError.message}` };
   }
 
   revalidatePath("/admin/cocina/recetas");
   revalidatePath(`/admin/cocina/recetas/${productId}`);
   revalidatePath("/admin/cocina");
+  revalidatePath("/admin/cocina/compras");
 
   return { ok: true };
 }
@@ -82,5 +109,6 @@ export async function eliminarReceta(productId: string): Promise<ActionResult> {
   if (error) return { error: error.message };
   revalidatePath("/admin/cocina/recetas");
   revalidatePath("/admin/cocina");
+  revalidatePath("/admin/cocina/compras");
   return { ok: true };
 }

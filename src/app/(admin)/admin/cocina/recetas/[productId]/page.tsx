@@ -29,7 +29,11 @@ export default async function RecetaEditorPage({
 
     adminClient
       .from("recipes")
-      .select("id, yield_cajas, notes, steps:recipe_steps (id, step_order, description, minutes, notes)")
+      .select(`
+        id, yield_cajas, notes,
+        steps:recipe_steps (id, step_order, description, minutes, notes),
+        ingredients:recipe_ingredients (id, nombre, cantidad, unidad)
+      `)
       .eq("product_id", productId)
       .maybeSingle(),
   ]);
@@ -47,6 +51,11 @@ export default async function RecetaEditorPage({
             minutes:     Number(s.minutes),
             notes:       s.notes ?? "",
           })),
+        ingredients: ((recipeRaw.ingredients ?? []) as any[]).map((ing) => ({
+          nombre:   ing.nombre,
+          cantidad: Number(ing.cantidad),
+          unidad:   ing.unidad,
+        })),
       }
     : null;
 
