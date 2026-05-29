@@ -3,6 +3,7 @@
 import { createClient, createAdminClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import type { PrecioB2B } from "@/lib/b2b-pricing";
+import { emailPedidoAdminCreado } from "@/lib/email";
 
 type ItemPedido = {
   productId:  string;
@@ -110,6 +111,38 @@ export async function crearPedidoAdmin(payload: CrearPedidoPayload) {
   if (linesError) {
     await adminClient.from("orders").delete().eq("id", order.id);
     throw new Error(linesError.message);
+  }
+
+  // Email al cliente
+  try {
+    const { data: profile } = await adminClient
+      .from("profiles")
+      .select("full_name")
+      .eq("id", clientId)
+      .single();
+
+    const { data: authUser } = await adminClient.auth.admin.getUserById(clientId);
+    const clientEmail = authUser?.user?.email;
+    const clientName  = (profile as any)?.full_name ?? clientEmail ?? "Cliente";
+
+    if (clientEmail) {
+      await emailPedidoAdminCreado({
+        orderId:       order.id,
+        orderNumber:   orderNum,
+        clientEmail,
+        clientName,
+        lines: items.map((i) => ({
+          name:      i.name,
+          qty:       i.quantity,
+          unitPrice: i.precio.total_civa,
+        })),
+        total:         r(subtotal),
+        paymentMethod,
+        initialStatus,
+      });
+    }
+  } catch {
+    // email no bloquea el pedido
   }
 
   redirect(`/admin/pedidos/${order.id}`);

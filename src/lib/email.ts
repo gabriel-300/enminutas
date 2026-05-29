@@ -247,6 +247,67 @@ export async function emailNuevoPedidoB2CAdmin({
   await resend.emails.send({ from: FROM, to: ADMIN, subject: `Nuevo pedido tienda — ${orderNumber}`, html });
 }
 
+export async function emailPedidoAdminCreado({
+  orderId,
+  orderNumber,
+  clientEmail,
+  clientName,
+  lines,
+  total,
+  paymentMethod,
+  initialStatus,
+}: {
+  orderId:       string;
+  orderNumber:   string;
+  clientEmail:   string;
+  clientName:    string;
+  lines:         { name: string; qty: number; unitPrice: number }[];
+  total:         number;
+  paymentMethod: string;
+  initialStatus: string;
+}) {
+  const paymentLabel: Record<string, string> = {
+    transferencia:    "Transferencia bancaria",
+    efectivo:         "Efectivo",
+    cheque:           "Cheque",
+    cuenta_corriente: "Cuenta corriente",
+  };
+
+  const lineRows = lines
+    .map((l) => `<tr>
+      <td>${l.name}</td>
+      <td class="right">${l.qty}</td>
+      <td class="right">${fmtARS(l.unitPrice)}</td>
+      <td class="right">${fmtARS(l.qty * l.unitPrice)}</td>
+    </tr>`)
+    .join("");
+
+  const isPending = initialStatus === "pending_payment";
+
+  const html = baseHtml(`
+    <h1>${isPending ? "Pedido registrado — pendiente de pago" : "Tu pedido fue confirmado"}</h1>
+    <p>Hola ${clientName},</p>
+    <p>Tu pedido <span class="badge">${orderNumber}</span> fue registrado por nuestro equipo.</p>
+    <table>
+      <thead><tr><th>Producto</th><th class="right">Cant.</th><th class="right">Precio u.</th><th class="right">Subtotal</th></tr></thead>
+      <tbody>${lineRows}</tbody>
+    </table>
+    <p class="total">Total c/IVA: ${fmtARS(total)}</p>
+    <p><strong>Forma de pago:</strong> ${paymentLabel[paymentMethod] ?? paymentMethod}</p>
+    ${isPending ? `<p>Para confirmar el pedido, realizá el pago usando <strong>${orderNumber}</strong> como referencia y avisanos.</p>` : "<p>Ya estamos preparando tu pedido.</p>"}
+    <a class="btn" href="${APP_URL}/b2b/pedidos/${orderId}">Ver pedido →</a>
+  `);
+
+  const resend = getResend();
+  if (!resend) return;
+  await resend.emails.send({
+    from:    FROM,
+    to:      clientEmail,
+    subject: `Pedido ${orderNumber} — En Minutas`,
+    html,
+  });
+}
+
 export async function emailPedidoB2CRecibido({
   orderNumber,
   clientEmail,
