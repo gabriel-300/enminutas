@@ -10,6 +10,8 @@ export async function crearClienteB2B(formData: FormData) {
   const name     = (formData.get("name") as string | null)?.trim() ?? "";
   const canal    = formData.get("canal") as string;
   const zonaId   = (formData.get("zona_id") as string | null)?.trim() || null;
+  const phone    = (formData.get("phone") as string | null)?.trim() || null;
+  const cuit     = (formData.get("cuit") as string | null)?.trim() || null;
 
   if (!email)               throw new Error("El email es requerido");
   if (!password || password.length < 8)
@@ -26,11 +28,14 @@ export async function crearClienteB2B(formData: FormData) {
   if (error) throw new Error(error.message);
 
   await (supabase as any).from("profiles").upsert({
-    id:         data.user.id,
-    full_name:  name || email,
-    canal:      canal || null,
-    zona_id:    zonaId,
-    b2b_status: "activo",
+    id:              data.user.id,
+    full_name:       name || email,
+    canal:           canal || null,
+    zona_id:         zonaId,
+    b2b_status:      "activo",
+    phone:           phone,
+    document_type:   cuit ? "cuit" : null,
+    document_number: cuit || null,
   });
 
   revalidatePath("/admin/clientes-b2b");
@@ -41,6 +46,8 @@ export async function invitarClienteB2B(formData: FormData) {
   const name   = (formData.get("name") as string | null)?.trim() ?? "";
   const canal  = formData.get("canal") as string;
   const zonaId = (formData.get("zona_id") as string | null)?.trim() || null;
+  const phone  = (formData.get("phone") as string | null)?.trim() || null;
+  const cuit   = (formData.get("cuit") as string | null)?.trim() || null;
 
   if (!email) throw new Error("El email es requerido");
 
@@ -59,11 +66,14 @@ export async function invitarClienteB2B(formData: FormData) {
   });
 
   await (supabase as any).from("profiles").upsert({
-    id:         data.user.id,
-    full_name:  name || email,
-    canal:      canal || null,
-    zona_id:    zonaId,
-    b2b_status: "activo",
+    id:              data.user.id,
+    full_name:       name || email,
+    canal:           canal || null,
+    zona_id:         zonaId,
+    b2b_status:      "activo",
+    phone:           phone,
+    document_type:   cuit ? "cuit" : null,
+    document_number: cuit || null,
   });
 
   revalidatePath("/admin/clientes-b2b");
@@ -111,17 +121,26 @@ export async function cambiarEstadoCliente(profileId: string, status: "pendiente
 }
 
 export async function editarClienteB2B(formData: FormData) {
-  const id      = formData.get("id") as string;
-  const name    = (formData.get("name") as string).trim();
-  const canal   = formData.get("canal") as string;
-  const zonaId  = (formData.get("zona_id") as string | null)?.trim() || null;
+  const id     = formData.get("id") as string;
+  const name   = (formData.get("name") as string).trim();
+  const canal  = formData.get("canal") as string;
+  const zonaId = (formData.get("zona_id") as string | null)?.trim() || null;
+  const phone  = (formData.get("phone") as string | null)?.trim() || null;
+  const cuit   = (formData.get("cuit") as string | null)?.trim() || null;
 
   if (!id) throw new Error("ID requerido");
 
   const supabase = createAdminClient();
   const { error } = await (supabase as any)
     .from("profiles")
-    .update({ full_name: name || null, canal: canal || null, zona_id: zonaId })
+    .update({
+      full_name:       name || null,
+      canal:           canal || null,
+      zona_id:         zonaId,
+      phone:           phone,
+      document_type:   cuit ? "cuit" : null,
+      document_number: cuit || null,
+    })
     .eq("id", id);
   if (error) throw new Error(error.message);
 

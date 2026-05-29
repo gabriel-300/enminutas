@@ -36,9 +36,9 @@ export default async function ClienteB2BDetailPage({
   if (!user) redirect("/login");
 
   const [{ data: profileRaw }, { data: authUserData }, { data: ordersRaw }] = await Promise.all([
-    supabase
+    (adminClient as any)
       .from("profiles")
-      .select("id, full_name, canal, b2b_status, created_at, zona:delivery_zones!zona_id (name, flete_kg)")
+      .select("id, full_name, canal, b2b_status, created_at, phone, document_number, zona:delivery_zones!zona_id (name, flete_kg)")
       .eq("id", id)
       .single(),
     adminClient.auth.admin.getUserById(id),
@@ -84,6 +84,18 @@ export default async function ClienteB2BDetailPage({
             <p className="text-xs text-neutral-400">Email</p>
             <p className="text-sm text-neutral-900">{authUser?.email ?? "—"}</p>
           </div>
+          {profile.phone && (
+            <div>
+              <p className="text-xs text-neutral-400">Teléfono</p>
+              <p className="text-sm text-neutral-900">{profile.phone}</p>
+            </div>
+          )}
+          {profile.document_number && (
+            <div>
+              <p className="text-xs text-neutral-400">CUIT</p>
+              <p className="text-sm text-neutral-900 font-mono">{profile.document_number}</p>
+            </div>
+          )}
           <div>
             <p className="text-xs text-neutral-400">Canal</p>
             <p className="text-sm font-medium text-neutral-900">

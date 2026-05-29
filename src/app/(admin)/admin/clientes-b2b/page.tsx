@@ -38,7 +38,7 @@ export default async function AdminClientesBb2Page() {
   const { data: perfiles } = b2bIds.length > 0
     ? await (adminClient as any)
         .from("profiles")
-        .select(`id, full_name, canal, b2b_status, created_at, zona:delivery_zones!zona_id (name)`)
+        .select(`id, full_name, canal, b2b_status, created_at, phone, document_number, zona_id, zona:delivery_zones!zona_id (id, name)`)
         .in("id", b2bIds)
         .order("b2b_status")
         .order("created_at", { ascending: false })
@@ -52,13 +52,16 @@ export default async function AdminClientesBb2Page() {
   const lista = b2bUsers.map((u) => {
     const p = profileMap[u.id];
     return {
-      id:         u.id,
-      full_name:  p?.full_name ?? null,
-      email:      emailMap[u.id] ?? null,
-      canal:      p?.canal ?? null,
-      b2b_status: p?.b2b_status ?? "pendiente",
-      created_at: p?.created_at ?? u.created_at,
-      zona:       p?.zona ?? null,
+      id:              u.id,
+      full_name:       p?.full_name ?? null,
+      email:           emailMap[u.id] ?? null,
+      canal:           p?.canal ?? null,
+      b2b_status:      p?.b2b_status ?? "pendiente",
+      created_at:      p?.created_at ?? u.created_at,
+      phone:           p?.phone ?? null,
+      document_number: p?.document_number ?? null,
+      zona_id:         p?.zona_id ?? null,
+      zona:            p?.zona ?? null,
     };
   }).sort((a, b) => {
     if (a.b2b_status !== b.b2b_status) return a.b2b_status.localeCompare(b.b2b_status);

@@ -13,13 +13,16 @@ import {
 } from "@/app/(admin)/admin/clientes-b2b/actions";
 
 type Cliente = {
-  id:         string;
-  full_name:  string | null;
-  email:      string | null;
-  canal:      string | null;
-  b2b_status: string | null;
-  created_at: string;
-  zona:       { name: string } | null;
+  id:              string;
+  full_name:       string | null;
+  email:           string | null;
+  canal:           string | null;
+  b2b_status:      string | null;
+  created_at:      string;
+  phone:           string | null;
+  document_number: string | null;
+  zona_id:         string | null;
+  zona:            { name: string } | null;
 };
 
 type Zona = { id: string; name: string };
@@ -124,41 +127,46 @@ function ClienteRow({ cliente, zonas }: { cliente: Cliente; zonas: Zona[] }) {
       {editOpen && (
         <tr className="bg-neutral-50 border-b border-neutral-200">
           <td colSpan={7} className="px-4 py-4">
-            <form onSubmit={handleEdit} className="flex items-end gap-3 flex-wrap">
+            <form onSubmit={handleEdit} className="space-y-3">
               <input type="hidden" name="id" value={cliente.id} />
-              <div>
-                <label className="block text-xs font-medium text-neutral-500 mb-1">Nombre / Empresa</label>
-                <input
-                  name="name"
-                  defaultValue={cliente.full_name ?? ""}
-                  className="px-3 py-2 text-sm border border-neutral-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-tierra-700/20 w-48"
-                  disabled={isPending}
-                />
+              <div className="grid grid-cols-5 gap-3">
+                <div>
+                  <label className="block text-xs font-medium text-neutral-500 mb-1">Nombre / Empresa</label>
+                  <input name="name" defaultValue={cliente.full_name ?? ""} className="px-3 py-2 text-sm border border-neutral-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-tierra-700/20 w-full" disabled={isPending} />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-neutral-500 mb-1">Canal</label>
+                  <select name="canal" defaultValue={cliente.canal ?? ""} className="px-3 py-2 text-sm border border-neutral-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-tierra-700/20 bg-white w-full" disabled={isPending}>
+                    <option value="">Sin especificar</option>
+                    <option value="gastro">Gastronomía</option>
+                    <option value="dist">Distribuidor</option>
+                    <option value="min">Minorista</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-neutral-500 mb-1">Zona</label>
+                  <select name="zona_id" defaultValue={cliente.zona_id ?? ""} className="px-3 py-2 text-sm border border-neutral-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-tierra-700/20 bg-white w-full" disabled={isPending}>
+                    <option value="">Sin zona</option>
+                    {zonas.map((z) => (
+                      <option key={z.id} value={z.id}>{z.name}</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-neutral-500 mb-1">Teléfono</label>
+                  <input name="phone" defaultValue={cliente.phone ?? ""} placeholder="+54 9 376..." className="px-3 py-2 text-sm border border-neutral-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-tierra-700/20 w-full" disabled={isPending} />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-neutral-500 mb-1">CUIT</label>
+                  <input name="cuit" defaultValue={cliente.document_number ?? ""} placeholder="20-12345678-9" className="px-3 py-2 text-sm border border-neutral-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-tierra-700/20 w-full font-mono" disabled={isPending} />
+                </div>
               </div>
-              <div>
-                <label className="block text-xs font-medium text-neutral-500 mb-1">Canal</label>
-                <select name="canal" defaultValue={cliente.canal ?? ""} className="px-3 py-2 text-sm border border-neutral-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-tierra-700/20 bg-white" disabled={isPending}>
-                  <option value="">Sin especificar</option>
-                  <option value="gastro">Gastronomía</option>
-                  <option value="dist">Distribuidor</option>
-                  <option value="min">Minorista</option>
-                </select>
-              </div>
-              <div>
-                <label className="block text-xs font-medium text-neutral-500 mb-1">Zona</label>
-                <select name="zona_id" className="px-3 py-2 text-sm border border-neutral-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-tierra-700/20 bg-white" disabled={isPending}>
-                  <option value="">Sin zona</option>
-                  {zonas.map((z) => (
-                    <option key={z.id} value={z.id}>{z.name}</option>
-                  ))}
-                </select>
-              </div>
-              <div className="flex items-end gap-2">
+              <div className="flex items-center gap-3">
                 <button type="submit" disabled={isPending} className="px-4 py-2 rounded-xl bg-tierra-700 text-white text-sm font-medium hover:bg-tierra-800 disabled:opacity-50">
                   {isPending ? "Guardando…" : "Guardar"}
                 </button>
+                {editError && <p className="text-xs text-danger">{editError}</p>}
               </div>
-              {editError && <p className="text-xs text-danger w-full">{editError}</p>}
             </form>
           </td>
         </tr>
@@ -229,11 +237,21 @@ function CrearClienteB2BForm({ zonas }: { zonas: Zona[] }) {
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-3 gap-3">
               <div>
                 <label className="block text-xs font-medium text-neutral-500 mb-1">Nombre / Empresa</label>
                 <input name="name" placeholder="Restaurant El Ejemplo" className={inputCls} disabled={isPending} />
               </div>
+              <div>
+                <label className="block text-xs font-medium text-neutral-500 mb-1">Email *</label>
+                <input name="email" type="email" required placeholder="cliente@empresa.com" className={inputCls} disabled={isPending} />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-neutral-500 mb-1">Teléfono</label>
+                <input name="phone" type="tel" placeholder="+54 9 376..." className={inputCls} disabled={isPending} />
+              </div>
+            </div>
+            <div className="grid grid-cols-3 gap-3">
               <div>
                 <label className="block text-xs font-medium text-neutral-500 mb-1">Canal</label>
                 <select name="canal" className={inputCls} disabled={isPending}>
@@ -243,12 +261,6 @@ function CrearClienteB2BForm({ zonas }: { zonas: Zona[] }) {
                   <option value="min">Minorista</option>
                 </select>
               </div>
-            </div>
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className="block text-xs font-medium text-neutral-500 mb-1">Email *</label>
-                <input name="email" type="email" required placeholder="cliente@empresa.com" className={inputCls} disabled={isPending} />
-              </div>
               <div>
                 <label className="block text-xs font-medium text-neutral-500 mb-1">Zona de delivery</label>
                 <select name="zona_id" className={inputCls} disabled={isPending}>
@@ -257,6 +269,10 @@ function CrearClienteB2BForm({ zonas }: { zonas: Zona[] }) {
                     <option key={z.id} value={z.id}>{z.name}</option>
                   ))}
                 </select>
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-neutral-500 mb-1">CUIT</label>
+                <input name="cuit" placeholder="20-12345678-9" className={`${inputCls} font-mono`} disabled={isPending} />
               </div>
             </div>
             {mode === "password" && (
