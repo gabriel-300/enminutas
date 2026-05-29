@@ -116,8 +116,23 @@ export default async function ReportesPage() {
           <h1 className="text-2xl font-semibold font-display text-neutral-900">Reportes</h1>
           <p className="text-sm text-neutral-500 mt-1">Ventas confirmadas — todos los canales</p>
         </div>
-        <div className="flex items-center gap-2">
-          <p className="text-xs text-neutral-400 mr-1">Lista de precios:</p>
+        <div className="flex items-center gap-2 flex-wrap">
+          <a
+            href={`/api/admin/export/pedidos?mes=${keyMesActual}`}
+            download
+            className="px-3 py-1.5 text-xs font-medium bg-tierra-700 text-white rounded-lg hover:bg-tierra-800 transition-colors"
+          >
+            ↓ Pedidos del mes CSV
+          </a>
+          <a
+            href="/api/admin/export/pedidos"
+            download
+            className="px-3 py-1.5 text-xs font-medium border border-neutral-200 rounded-lg text-neutral-600 hover:bg-neutral-50 transition-colors"
+          >
+            ↓ Todos los pedidos
+          </a>
+          <span className="text-neutral-200 text-xs">|</span>
+          <p className="text-xs text-neutral-400">Lista de precios:</p>
           {["dist", "gastro", "min"].map((c) => (
             <a
               key={c}
@@ -125,7 +140,7 @@ export default async function ReportesPage() {
               download
               className="px-3 py-1.5 text-xs font-medium border border-neutral-200 rounded-lg text-neutral-600 hover:bg-neutral-50 transition-colors"
             >
-              {c === "dist" ? "Distribuidor" : c === "gastro" ? "Gastronomía" : "Minorista"} CSV
+              {c === "dist" ? "Dist." : c === "gastro" ? "Gastro." : "Min."} CSV
             </a>
           ))}
         </div>

@@ -7,6 +7,7 @@ import { OrderStatusSelect } from "@/components/admin/order-status-select";
 import { AprobarPedidoButton } from "@/components/admin/aprobar-pedido-button";
 import { ConfirmarPagoButton } from "@/components/admin/confirmar-pago-button";
 import { NotasPedidoForm } from "@/components/admin/notas-pedido-form";
+import { fmtFechaHora, fmtFecha } from "@/lib/fecha";
 
 export const metadata: Metadata = { title: "Detalle de pedido — Admin En Minutas" };
 export const revalidate = 0;
@@ -79,14 +80,7 @@ export default async function AdminPedidoDetailPage({
             {o.order_number}
           </h1>
           <p className="text-sm text-neutral-500 mt-1">
-            {new Date(o.created_at).toLocaleString("es-AR", {
-              weekday: "long",
-              day: "2-digit",
-              month: "long",
-              year: "numeric",
-              hour: "2-digit",
-              minute: "2-digit",
-            })}
+            {fmtFechaHora(o.created_at)}
           </p>
         </div>
         <div className="flex items-center gap-3 flex-wrap">
@@ -131,23 +125,13 @@ export default async function AdminPedidoDetailPage({
           {o.payment_declared_at && (
             <p className="text-xs text-neutral-500 mt-1">
               Declarado:{" "}
-              {new Date(o.payment_declared_at).toLocaleString("es-AR", {
-                day: "2-digit",
-                month: "2-digit",
-                hour: "2-digit",
-                minute: "2-digit",
-              })}
+              {fmtFecha(o.payment_declared_at, { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" })}
             </p>
           )}
           {o.payment_confirmed_at && (
             <p className="text-xs text-success mt-1">
               Confirmado:{" "}
-              {new Date(o.payment_confirmed_at).toLocaleString("es-AR", {
-                day: "2-digit",
-                month: "2-digit",
-                hour: "2-digit",
-                minute: "2-digit",
-              })}
+              {fmtFecha(o.payment_confirmed_at, { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" })}
             </p>
           )}
           {!o.payment_declared_at && !o.payment_confirmed_at && (
@@ -244,10 +228,7 @@ export default async function AdminPedidoDetailPage({
         <div className="mt-4 bg-success-bg rounded-2xl border border-success/20 p-4">
           <p className="text-xs font-medium text-success">
             Pago confirmado el{" "}
-            {new Date(o.payment_confirmed_at).toLocaleString("es-AR", {
-              day: "2-digit", month: "2-digit", year: "2-digit",
-              hour: "2-digit", minute: "2-digit",
-            })}
+            {fmtFecha(o.payment_confirmed_at, { day: "2-digit", month: "2-digit", year: "2-digit", hour: "2-digit", minute: "2-digit" })}
           </p>
         </div>
       )}
@@ -257,10 +238,7 @@ export default async function AdminPedidoDetailPage({
         <div className="mt-4 bg-warning-bg rounded-2xl border border-warning/20 p-4">
           <p className="text-xs font-medium text-warning">
             El cliente declaró el pago el{" "}
-            {new Date(o.payment_declared_at).toLocaleString("es-AR", {
-              day: "2-digit", month: "2-digit", year: "2-digit",
-              hour: "2-digit", minute: "2-digit",
-            })}
+            {fmtFecha(o.payment_declared_at, { day: "2-digit", month: "2-digit", year: "2-digit", hour: "2-digit", minute: "2-digit" })}
           </p>
         </div>
       )}

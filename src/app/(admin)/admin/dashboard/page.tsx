@@ -36,7 +36,9 @@ export default async function DashboardPage() {
 
   const db = adminClient as any;
 
-  const cutoff3d = new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString();
+  const cutoff3d  = new Date(Date.now() - 3  * 24 * 60 * 60 * 1000).toISOString();
+  const cutoff5d  = new Date(Date.now() - 5  * 24 * 60 * 60 * 1000).toISOString();
+  const cutoff48h = new Date(Date.now() - 48 * 60 * 60 * 1000).toISOString();
 
   const [
     { count: pendingOrders },
@@ -47,6 +49,9 @@ export default async function DashboardPage() {
     { data: lastOrdersRaw },
     { data: pagosPendientes },
     { data: despachosViejos },
+    { data: prodAtascados },
+    { data: b2cSinPago },
+    { count: productosSinDatosB2B },
     { data: { users } },
   ] = await Promise.all([
     db.from("orders").select("*", { count: "exact", head: true })
@@ -90,6 +95,26 @@ export default async function DashboardPage() {
       .eq("channel", "b2b_mayorista")
       .eq("status", "despachado")
       .lt("despachado_at", cutoff3d),
+
+    // Pedidos B2B atascados en producción (aprobados hace >5 días, aún enviado_prod)
+    db.from("orders")
+      .select("id, order_number, aprobado_at, customer:profiles!customer_id(full_name)")
+      .eq("channel", "b2b_mayorista")
+      .eq("status", "enviado_prod")
+      .lt("aprobado_at", cutoff5d),
+
+    // Pedidos B2C sin pago hace más de 48h
+    db.from("orders")
+      .select("id, order_number, created_at, total, guest_email")
+      .eq("channel", "b2c_nacional")
+      .eq("status", "pending_payment")
+      .lt("created_at", cutoff48h),
+
+    // Productos activos sin datos B2B (sin costo → no muestran precio en catálogo)
+    db.from("products")
+      .select("*", { count: "exact", head: true })
+      .eq("is_active", true)
+      .is("costo", null),
 
     adminClient.auth.admin.listUsers({ perPage: 1000 }),
   ]);
@@ -147,7 +172,10 @@ export default async function DashboardPage() {
     (pendingOrders ?? 0) +
     pendingClients +
     (pagosPendientes?.length ?? 0) +
-    (despachosViejos?.length ?? 0);
+    (despachosViejos?.length ?? 0) +
+    (prodAtascados?.length ?? 0) +
+    (b2cSinPago?.length ?? 0) +
+    (productosSinDatosB2B ?? 0);
 
   // ── Top productos ─────────────────────────────────────────────────────
   const productMap: Record<string, number> = {};
@@ -230,6 +258,9 @@ export default async function DashboardPage() {
                   (pagosPendientes?.length ?? 0) > 0 && `${pagosPendientes!.length} pagos`,
                   (despachosViejos?.length ?? 0) > 0 && `${despachosViejos!.length} despachos`,
                   (pendingOrders ?? 0) > 0 && `${pendingOrders} pendientes`,
+                  (prodAtascados?.length ?? 0) > 0 && `${prodAtascados!.length} en prod`,
+                  (b2cSinPago?.length ?? 0) > 0 && `${b2cSinPago!.length} B2C sin pago`,
+                  (productosSinDatosB2B ?? 0) > 0 && `${productosSinDatosB2B} productos sin precio`,
                 ].filter(Boolean).join(" · ")
             }
           </p>
@@ -336,6 +367,56 @@ export default async function DashboardPage() {
                     </li>
                   );
                 })}
+
+                {/* Pedidos B2B atascados en producción (+5 días) */}
+                {(prodAtascados ?? []).map((o: any) => {
+                  const days = o.aprobado_at
+                    ? Math.floor((Date.now() - new Date(o.aprobado_at).getTime()) / (1000 * 60 * 60 * 24))
+                    : "?";
+                  return (
+                    <li key={o.id} className="flex items-center gap-3 px-5 py-3 bg-warning-bg/40">
+                      <span className="size-1.5 rounded-full bg-warning shrink-0" />
+                      <p className="text-sm text-neutral-800 flex-1">
+                        <span className="font-semibold">{o.customer?.full_name ?? `#${o.order_number}`}</span>{" "}
+                        <span className="text-neutral-500">en producción hace {days} días sin despachar</span>
+                      </p>
+                      <Link href="/admin/produccion" className="text-xs text-tierra-700 hover:underline shrink-0">
+                        Ver →
+                      </Link>
+                    </li>
+                  );
+                })}
+
+                {/* Pedidos B2C sin pago (+48h) */}
+                {(b2cSinPago ?? []).map((o: any) => {
+                  const hours = Math.floor((Date.now() - new Date(o.created_at).getTime()) / (1000 * 60 * 60));
+                  return (
+                    <li key={o.id} className="flex items-center gap-3 px-5 py-3 bg-warning-bg/40">
+                      <span className="size-1.5 rounded-full bg-warning shrink-0" />
+                      <p className="text-sm text-neutral-800 flex-1">
+                        <span className="font-semibold">{o.guest_email ?? `#${o.order_number}`}</span>{" "}
+                        <span className="text-neutral-500">pedido de tienda sin pago hace {hours}h</span>
+                      </p>
+                      <Link href={`/admin/pedidos/${o.id}`} className="text-xs text-tierra-700 hover:underline shrink-0">
+                        Ver →
+                      </Link>
+                    </li>
+                  );
+                })}
+
+                {/* Productos sin datos B2B */}
+                {(productosSinDatosB2B ?? 0) > 0 && (
+                  <li className="flex items-center gap-3 px-5 py-3 bg-neutral-50">
+                    <span className="size-1.5 rounded-full bg-neutral-400 shrink-0" />
+                    <p className="text-sm text-neutral-800 flex-1">
+                      <span className="font-semibold">{productosSinDatosB2B}</span>{" "}
+                      <span className="text-neutral-500">producto{productosSinDatosB2B !== 1 ? "s" : ""} activo{productosSinDatosB2B !== 1 ? "s" : ""} sin precio B2B — no aparecen en el catálogo</span>
+                    </p>
+                    <Link href="/admin/productos" className="text-xs text-tierra-700 hover:underline shrink-0">
+                      Cargar →
+                    </Link>
+                  </li>
+                )}
               </ul>
             )}
           </div>

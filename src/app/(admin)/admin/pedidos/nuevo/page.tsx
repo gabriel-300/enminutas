@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { createClient } from "@/lib/supabase/server";
+import { createClient, createAdminClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { NuevoPedidoClient } from "@/components/admin/nuevo-pedido-client";
 
@@ -8,12 +8,14 @@ export const metadata: Metadata = { title: "Nuevo pedido — Admin En Minutas" }
 export const revalidate = 0;
 
 export default async function NuevoPedidoPage() {
-  const supabase = await createClient();
+  const supabase    = await createClient();
+  const adminClient = createAdminClient() as any;
+
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
   const [{ data: rawClientes }, { data: rawProducts }] = await Promise.all([
-    supabase
+    adminClient
       .from("profiles")
       .select(`
         id, full_name, canal,
@@ -23,7 +25,7 @@ export default async function NuevoPedidoPage() {
       .eq("b2b_status", "activo")
       .order("full_name"),
 
-    supabase
+    adminClient
       .from("products")
       .select(`
         id, sku, name, unit_label, bolsas_caja, kg_caja,
