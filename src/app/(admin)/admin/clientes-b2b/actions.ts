@@ -121,12 +121,13 @@ export async function cambiarEstadoCliente(profileId: string, status: "pendiente
 }
 
 export async function editarClienteB2B(formData: FormData) {
-  const id     = formData.get("id") as string;
-  const name   = (formData.get("name") as string).trim();
-  const canal  = formData.get("canal") as string;
-  const zonaId = (formData.get("zona_id") as string | null)?.trim() || null;
-  const phone  = (formData.get("phone") as string | null)?.trim() || null;
-  const cuit   = (formData.get("cuit") as string | null)?.trim() || null;
+  const id          = formData.get("id") as string;
+  const name        = (formData.get("name") as string).trim();
+  const canal       = formData.get("canal") as string;
+  const zonaId      = (formData.get("zona_id") as string | null)?.trim() || null;
+  const phone       = (formData.get("phone") as string | null)?.trim() || null;
+  const cuit        = (formData.get("cuit") as string | null)?.trim() || null;
+  const vendedorId  = (formData.get("vendedor_id") as string | null)?.trim() || null;
 
   if (!id) throw new Error("ID requerido");
 
@@ -140,11 +141,13 @@ export async function editarClienteB2B(formData: FormData) {
       phone:           phone,
       document_type:   cuit ? "cuit" : null,
       document_number: cuit || null,
+      vendedor_id:     vendedorId,
     })
     .eq("id", id);
   if (error) throw new Error(error.message);
 
   revalidatePath("/admin/clientes-b2b");
+  revalidatePath("/admin/preventista");
 }
 
 export async function eliminarClienteB2B(clientId: string) {

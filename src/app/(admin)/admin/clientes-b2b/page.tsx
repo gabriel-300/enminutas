@@ -23,6 +23,11 @@ export default async function AdminClientesBb2Page() {
     (adminClient as any).from("delivery_zones").select("id, name").order("name"),
   ]);
 
+  // Vendedores disponibles para asignar
+  const vendedores = (users ?? [])
+    .filter((u) => u.app_metadata?.role === "vendedor")
+    .map((u) => ({ id: u.id, full_name: u.user_metadata?.full_name ?? u.email ?? u.id }));
+
   const zonas: Zona[] = (zonasRaw ?? []) as Zona[];
 
   // Filtrar clientes B2B por app_metadata (la columna role no existe en profiles)
@@ -38,7 +43,7 @@ export default async function AdminClientesBb2Page() {
   const { data: perfiles } = b2bIds.length > 0
     ? await (adminClient as any)
         .from("profiles")
-        .select(`id, full_name, canal, b2b_status, created_at, phone, document_number, zona_id, zona:delivery_zones!zona_id (id, name)`)
+        .select(`id, full_name, canal, b2b_status, created_at, phone, document_number, zona_id, vendedor_id, zona:delivery_zones!zona_id (id, name)`)
         .in("id", b2bIds)
         .order("b2b_status")
         .order("created_at", { ascending: false })
@@ -62,6 +67,7 @@ export default async function AdminClientesBb2Page() {
       document_number: p?.document_number ?? null,
       zona_id:         p?.zona_id ?? null,
       zona:            p?.zona ?? null,
+      vendedor_id:     p?.vendedor_id ?? null,
     };
   }).sort((a, b) => {
     if (a.b2b_status !== b.b2b_status) return a.b2b_status.localeCompare(b.b2b_status);
@@ -77,7 +83,7 @@ export default async function AdminClientesBb2Page() {
         <p className="text-sm text-neutral-500 mt-1">{lista.length} cliente{lista.length !== 1 ? "s" : ""} registrado{lista.length !== 1 ? "s" : ""}</p>
       </div>
 
-      <ClientesBb2Client clientes={lista} pendingCount={pendingCount} zonas={zonas} />
+      <ClientesBb2Client clientes={lista} pendingCount={pendingCount} zonas={zonas} vendedores={vendedores} />
     </div>
   );
 }

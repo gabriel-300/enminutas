@@ -23,9 +23,11 @@ type Cliente = {
   document_number: string | null;
   zona_id:         string | null;
   zona:            { name: string } | null;
+  vendedor_id:     string | null;
 };
 
-type Zona = { id: string; name: string };
+type Zona      = { id: string; name: string };
+type Vendedor  = { id: string; full_name: string };
 
 const CANAL_LABEL: Record<string, string> = {
   dist:   "Distribuidor",
@@ -41,7 +43,7 @@ const STATUS_STYLE: Record<string, string> = {
 
 const inputCls = "w-full px-3 py-2 text-sm border border-neutral-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-tierra-700/20 disabled:opacity-50";
 
-function ClienteRow({ cliente, zonas }: { cliente: Cliente; zonas: Zona[] }) {
+function ClienteRow({ cliente, zonas, vendedores }: { cliente: Cliente; zonas: Zona[]; vendedores: Vendedor[] }) {
   const [editOpen, setEditOpen]      = useState(false);
   const [isPending, startTransition] = useTransition();
   const [editError, setEditError]    = useState<string | null>(null);
@@ -129,7 +131,7 @@ function ClienteRow({ cliente, zonas }: { cliente: Cliente; zonas: Zona[] }) {
           <td colSpan={7} className="px-4 py-4">
             <form onSubmit={handleEdit} className="space-y-3">
               <input type="hidden" name="id" value={cliente.id} />
-              <div className="grid grid-cols-5 gap-3">
+              <div className="grid grid-cols-6 gap-3">
                 <div>
                   <label className="block text-xs font-medium text-neutral-500 mb-1">Nombre / Empresa</label>
                   <input name="name" defaultValue={cliente.full_name ?? ""} className="px-3 py-2 text-sm border border-neutral-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-tierra-700/20 w-full" disabled={isPending} />
@@ -149,6 +151,15 @@ function ClienteRow({ cliente, zonas }: { cliente: Cliente; zonas: Zona[] }) {
                     <option value="">Sin zona</option>
                     {zonas.map((z) => (
                       <option key={z.id} value={z.id}>{z.name}</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-neutral-500 mb-1">Vendedor</label>
+                  <select name="vendedor_id" defaultValue={cliente.vendedor_id ?? ""} className="px-3 py-2 text-sm border border-neutral-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-tierra-700/20 bg-white w-full" disabled={isPending}>
+                    <option value="">Sin asignar</option>
+                    {vendedores.map((v) => (
+                      <option key={v.id} value={v.id}>{v.full_name}</option>
                     ))}
                   </select>
                 </div>
@@ -308,10 +319,12 @@ export function ClientesBb2Client({
   clientes,
   pendingCount,
   zonas,
+  vendedores = [],
 }: {
   clientes:     Cliente[];
   pendingCount: number;
   zonas:        Zona[];
+  vendedores?:  Vendedor[];
 }) {
   return (
     <div className="space-y-6 max-w-5xl">
@@ -343,7 +356,7 @@ export function ClientesBb2Client({
               </tr>
             )}
             {clientes.map((c) => (
-              <ClienteRow key={c.id} cliente={c} zonas={zonas} />
+              <ClienteRow key={c.id} cliente={c} zonas={zonas} vendedores={vendedores} />
             ))}
           </tbody>
         </table>

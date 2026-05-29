@@ -7,6 +7,7 @@ import { createBrowserClient } from "@supabase/ssr";
 const NAV_ITEMS = [
   { href: "/admin/dashboard",      label: "Dashboard",     roles: ["admin", "vendedor", "produccion"] },
   { href: "/admin/pedidos",        label: "Pedidos",       roles: ["admin", "vendedor"] },
+  { href: "/admin/preventista",    label: "Preventista",   roles: ["admin", "vendedor"] },
   { href: "/admin/produccion",     label: "Producción",    roles: ["admin", "vendedor", "produccion"] },
   { href: "/admin/cocina",         label: "Cocina / Stock",  roles: ["admin", "vendedor", "produccion"] },
   { href: "/admin/cocina/recetas",       label: "Recetas",        roles: ["admin", "produccion"] },

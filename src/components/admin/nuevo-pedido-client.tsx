@@ -52,12 +52,16 @@ const fmt = (n: number) =>
 export function NuevoPedidoClient({
   clientes,
   productosRaw,
+  clienteInit = null,
+  itemsInit   = {},
 }: {
-  clientes:     ClienteB2B[];
-  productosRaw: ProductoRaw[];
+  clientes:      ClienteB2B[];
+  productosRaw:  ProductoRaw[];
+  clienteInit?:  string | null;
+  itemsInit?:    Record<string, number>;
 }) {
-  const [clienteId,     setClienteId]     = useState("");
-  const [cart,          setCart]          = useState<Record<string, number>>({});
+  const [clienteId,     setClienteId]     = useState(clienteInit ?? "");
+  const [cart,          setCart]          = useState<Record<string, number>>(itemsInit);
   const [notes,         setNotes]         = useState("");
   const [paymentMethod, setPaymentMethod] = useState("transferencia");
   const [initialStatus, setInitialStatus] = useState("aprobado");

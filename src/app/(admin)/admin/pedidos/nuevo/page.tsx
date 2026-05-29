@@ -7,7 +7,12 @@ import { NuevoPedidoClient } from "@/components/admin/nuevo-pedido-client";
 export const metadata: Metadata = { title: "Nuevo pedido — Admin En Minutas" };
 export const revalidate = 0;
 
-export default async function NuevoPedidoPage() {
+export default async function NuevoPedidoPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ cliente?: string; repetir?: string }>;
+}) {
+  const sp = await searchParams;
   const supabase    = await createClient();
   const adminClient = createAdminClient() as any;
 
@@ -62,24 +67,48 @@ export default async function NuevoPedidoPage() {
     categoria:     (p.category as any)?.name ?? "Sin categoría",
   }));
 
+  // Repetir pedido: pre-cargar líneas del pedido anterior
+  let itemsInit: Record<string, number> = {};
+  if (sp.repetir) {
+    const { data: lines } = await adminClient
+      .from("order_lines")
+      .select("product_id, quantity")
+      .eq("order_id", sp.repetir);
+
+    for (const line of (lines ?? []) as any[]) {
+      if (line.product_id) itemsInit[line.product_id] = Number(line.quantity);
+    }
+  }
+
+  const fromPreventista = !!(sp.cliente || sp.repetir);
+
   return (
     <div className="p-8">
       <div className="mb-6 flex items-center justify-between">
         <div>
           <Link
-            href="/admin/pedidos"
+            href={fromPreventista ? "/admin/preventista" : "/admin/pedidos"}
             className="text-sm text-neutral-400 hover:text-neutral-700 transition-colors mb-2 inline-block"
           >
-            ← Volver a pedidos
+            ← {fromPreventista ? "Volver al preventista" : "Volver a pedidos"}
           </Link>
-          <h1 className="text-2xl font-semibold font-display text-neutral-900">Nuevo pedido</h1>
+          <h1 className="text-2xl font-semibold font-display text-neutral-900">
+            {sp.repetir ? "Repetir pedido" : "Nuevo pedido"}
+          </h1>
           <p className="text-sm text-neutral-400 mt-1">
-            Pedido cargado manualmente — se registra como creado por el admin.
+            {sp.repetir
+              ? "Pedido pre-cargado con los productos del último pedido — revisá cantidades antes de confirmar."
+              : "Pedido cargado manualmente — se registra como creado por el admin."}
           </p>
         </div>
       </div>
 
-      <NuevoPedidoClient clientes={clientes} productosRaw={productosRaw} />
+      <NuevoPedidoClient
+        clientes={clientes}
+        productosRaw={productosRaw}
+        clienteInit={sp.cliente ?? null}
+        itemsInit={itemsInit}
+      />
     </div>
   );
 }
