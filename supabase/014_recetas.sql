@@ -26,6 +26,7 @@ CREATE OR REPLACE FUNCTION set_updated_at_recipes()
 RETURNS trigger LANGUAGE plpgsql AS $$
 BEGIN NEW.updated_at = now(); RETURN NEW; END;
 $$;
+DROP TRIGGER IF EXISTS set_updated_at_recipes ON recipes;
 CREATE TRIGGER set_updated_at_recipes
   BEFORE UPDATE ON recipes
   FOR EACH ROW EXECUTE FUNCTION set_updated_at_recipes();
@@ -34,14 +35,20 @@ CREATE TRIGGER set_updated_at_recipes
 ALTER TABLE recipes       ENABLE ROW LEVEL SECURITY;
 ALTER TABLE recipe_steps  ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY "recipes_staff_all" ON recipes
-  FOR ALL USING (
-    (auth.jwt() -> 'app_metadata' ->> 'role') IN ('admin', 'vendedor', 'produccion')
-  );
-CREATE POLICY "recipe_steps_staff_all" ON recipe_steps
-  FOR ALL USING (
-    (auth.jwt() -> 'app_metadata' ->> 'role') IN ('admin', 'vendedor', 'produccion')
-  );
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename = 'recipes' AND policyname = 'recipes_staff_all') THEN
+    CREATE POLICY "recipes_staff_all" ON recipes
+      FOR ALL USING (
+        (auth.jwt() -> 'app_metadata' ->> 'role') IN ('admin', 'vendedor', 'produccion')
+      );
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename = 'recipe_steps' AND policyname = 'recipe_steps_staff_all') THEN
+    CREATE POLICY "recipe_steps_staff_all" ON recipe_steps
+      FOR ALL USING (
+        (auth.jwt() -> 'app_metadata' ->> 'role') IN ('admin', 'vendedor', 'produccion')
+      );
+  END IF;
+END $$;
 
 -- Función: tiempo total estimado para producir N cajas de un producto
 -- Devuelve minutos (null si no hay receta)
