@@ -2,19 +2,11 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
-import { emailPagoDeclarado } from "@/lib/email";
 
 export async function declararPago(orderId: string) {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) throw new Error("No autorizado");
-
-  const { data: order } = await supabase
-    .from("orders")
-    .select("order_number, total, customer:profiles!customer_id(full_name)")
-    .eq("id", orderId)
-    .eq("customer_id", user.id)
-    .single();
 
   const { error } = await supabase
     .from("orders")
@@ -24,14 +16,44 @@ export async function declararPago(orderId: string) {
 
   if (error) throw new Error(error.message);
   revalidatePath(`/b2b/pedidos/${orderId}`);
+}
 
-  if (order) {
-    emailPagoDeclarado({
-      orderId,
-      orderNumber: (order as any).order_number,
-      clientName:  (order as any).customer?.full_name ?? user.email ?? "Cliente",
-      clientEmail: user.email ?? "",
-      total:       Number((order as any).total),
-    }).catch(() => {});
-  }
+export type ReorderLine = {
+  productId: string;
+  sku:       string;
+  name:      string;
+  price:     number;
+  quantity:  number;
+  unitLabel: string;
+  imageUrl:  string | null;
+};
+
+export async function getOrderLinesForReorder(orderId: string): Promise<ReorderLine[]> {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error("No autorizado");
+
+  const { data: order } = await supabase
+    .from("orders")
+    .select("id")
+    .eq("id", orderId)
+    .eq("customer_id", user.id)
+    .single();
+
+  if (!order) throw new Error("Pedido no encontrado");
+
+  const { data: lines } = await supabase
+    .from("order_lines")
+    .select("product_id, quantity, unit_price, product_snapshot")
+    .eq("order_id", orderId);
+
+  return ((lines ?? []) as any[]).map((line) => ({
+    productId: line.product_id,
+    sku:       line.product_snapshot?.sku        ?? "",
+    name:      line.product_snapshot?.name       ?? "Producto",
+    price:     Number(line.unit_price),
+    quantity:  Number(line.quantity),
+    unitLabel: line.product_snapshot?.unit_label ?? "",
+    imageUrl:  null,
+  }));
 }

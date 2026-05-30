@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import { OrderStatusBadge } from "@/components/ui/badge";
 import { fmtFechaSolo } from "@/lib/fecha";
+import { ReorderButton } from "@/components/b2b/reorder-button";
 
 export const metadata: Metadata = { title: "Mis pedidos — Portal B2B En Minutas" };
 export const revalidate = 0;
@@ -45,6 +46,7 @@ export default async function B2BPedidosPage() {
                 <th className="px-5 py-3 font-medium text-neutral-500">Estado</th>
                 <th className="px-5 py-3 font-medium text-neutral-500 text-right">Total c/IVA</th>
                 <th className="px-5 py-3 font-medium text-neutral-500">Fecha</th>
+                <th className="px-5 py-3 font-medium text-neutral-500"></th>
               </tr>
             </thead>
             <tbody className="divide-y divide-neutral-100">
@@ -70,6 +72,9 @@ export default async function B2BPedidosPage() {
                   </td>
                   <td className="px-5 py-3 text-neutral-400 text-xs tabular-nums">
                     {fmtFechaSolo(p.created_at)}
+                  </td>
+                  <td className="px-5 py-3 text-right">
+                    <ReorderButton orderId={p.id} variant="small" />
                   </td>
                 </tr>
               ))}
