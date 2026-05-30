@@ -19,7 +19,7 @@ export default async function NuevoPedidoPage({
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
-  const [{ data: rawClientes }, { data: rawProducts }] = await Promise.all([
+  const [{ data: rawClientes }, { data: rawProducts }, { data: rawTiers }] = await Promise.all([
     adminClient
       .from("profiles")
       .select(`
@@ -39,6 +39,12 @@ export default async function NuevoPedidoPage({
       `)
       .eq("is_active", true)
       .order("name"),
+
+    adminClient
+      .from("volume_discounts")
+      .select("min_cajas, descuento_pct, label")
+      .eq("activo", true)
+      .order("min_cajas"),
   ]);
 
   const clientes = (rawClientes ?? []).map((c: any) => ({
@@ -108,6 +114,11 @@ export default async function NuevoPedidoPage({
         productosRaw={productosRaw}
         clienteInit={sp.cliente ?? null}
         itemsInit={itemsInit}
+        tiers={(rawTiers ?? []).map((t: any) => ({
+          minCajas:     Number(t.min_cajas),
+          descuentoPct: Number(t.descuento_pct),
+          label:        t.label as string,
+        }))}
       />
     </div>
   );

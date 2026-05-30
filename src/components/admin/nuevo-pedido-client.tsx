@@ -49,16 +49,20 @@ const fmt = (n: number) =>
 
 // ── Main component ─────────────────────────────────────────────────────────
 
+type VolumeTier = { minCajas: number; descuentoPct: number; label: string };
+
 export function NuevoPedidoClient({
   clientes,
   productosRaw,
   clienteInit = null,
   itemsInit   = {},
+  tiers       = [],
 }: {
   clientes:      ClienteB2B[];
   productosRaw:  ProductoRaw[];
   clienteInit?:  string | null;
   itemsInit?:    Record<string, number>;
+  tiers?:        VolumeTier[];
 }) {
   const [clienteId,     setClienteId]     = useState(clienteInit ?? "");
   const [cart,          setCart]          = useState<Record<string, number>>(itemsInit);
@@ -116,6 +120,14 @@ export function NuevoPedidoClient({
   const subtotal  = cartItems.reduce((s, p) => s + p.precio!.total_civa * cart[p.id], 0);
   const totalQty  = cartItems.reduce((s, p) => s + cart[p.id], 0);
 
+  // Descuento por volumen: aplicar el tier más alto que aplica
+  const tierAplicado = [...tiers]
+    .sort((a, b) => b.minCajas - a.minCajas)
+    .find((t) => totalQty >= t.minCajas) ?? null;
+  const descuentoPct    = tierAplicado?.descuentoPct ?? 0;
+  const montoDescuento  = Math.round(subtotal * descuentoPct / 100 * 100) / 100;
+  const totalConDesc    = subtotal - montoDescuento;
+
   function handleSubmit() {
     if (!cliente) { setError("Seleccioná un cliente."); return; }
     if (cartItems.length === 0) { setError("Agregá al menos un producto."); return; }
@@ -140,6 +152,8 @@ export function NuevoPedidoClient({
           notes,
           paymentMethod,
           initialStatus,
+          discountPct:    descuentoPct,
+          discountAmount: montoDescuento,
         });
       } catch (e: any) {
         setError(e.message ?? "Error al crear el pedido.");
@@ -312,12 +326,36 @@ export function NuevoPedidoClient({
                 </div>
               ))}
 
-              <div className="pt-3 border-t border-neutral-100">
+              <div className="pt-3 border-t border-neutral-100 space-y-1.5">
+                {/* Banner descuento por volumen */}
+                {tierAplicado && (
+                  <div className="flex items-center justify-between px-3 py-2 rounded-xl bg-success-bg border border-success/20 text-success text-xs font-medium">
+                    <span>🎉 {tierAplicado.label}</span>
+                    <span className="tabular-nums">− {fmt(montoDescuento)}</span>
+                  </div>
+                )}
+                {/* Próximo tier disponible */}
+                {!tierAplicado && tiers.length > 0 && (
+                  <div className="px-3 py-2 rounded-xl bg-neutral-50 border border-neutral-200 text-xs text-neutral-500">
+                    {(() => {
+                      const nextTier = [...tiers].sort((a, b) => a.minCajas - b.minCajas).find(t => totalQty < t.minCajas);
+                      return nextTier
+                        ? `Sumá ${nextTier.minCajas - totalQty} caja${nextTier.minCajas - totalQty !== 1 ? "s" : ""} más y obtenés ${nextTier.descuentoPct}% off`
+                        : null;
+                    })()}
+                  </div>
+                )}
+                {tierAplicado && (
+                  <div className="flex justify-between text-sm text-neutral-500">
+                    <span>Subtotal</span>
+                    <span className="tabular-nums line-through">{fmt(subtotal)}</span>
+                  </div>
+                )}
                 <div className="flex justify-between font-semibold text-neutral-900">
                   <span>Total c/IVA</span>
-                  <span className="tabular-nums">{fmt(subtotal)}</span>
+                  <span className="tabular-nums">{fmt(tierAplicado ? totalConDesc : subtotal)}</span>
                 </div>
-                <p className="text-xs text-neutral-400 mt-1">{totalQty} caja{totalQty !== 1 ? "s" : ""}</p>
+                <p className="text-xs text-neutral-400">{totalQty} caja{totalQty !== 1 ? "s" : ""}</p>
               </div>
             </div>
           )}
@@ -379,7 +417,7 @@ export function NuevoPedidoClient({
           {isPending
             ? "Creando pedido…"
             : cartItems.length > 0
-            ? `Crear pedido · ${fmt(subtotal)}`
+            ? `Crear pedido · ${fmt(tierAplicado ? totalConDesc : subtotal)}`
             : "Crear pedido"}
         </button>
 

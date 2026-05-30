@@ -15,6 +15,7 @@ const NAV_ITEMS = [
   { href: "/admin/cocina/compras",       label: "Lista de compras", roles: ["admin", "produccion"] },
   { href: "/admin/distribucion",   label: "Distribución",  roles: ["admin", "vendedor", "distribucion"] },
   { href: "/admin/productos",    label: "Productos",     roles: ["admin"] },
+  { href: "/admin/descuentos",   label: "Descuentos vol.", roles: ["admin"] },
   { href: "/admin/categorias",   label: "Categorías",    roles: ["admin"] },
   { href: "/admin/zonas",        label: "Zonas",         roles: ["admin"] },
   { href: "/admin/clientes-b2b", label: "Clientes B2B",  roles: ["admin", "vendedor"] },

@@ -15,17 +15,19 @@ type ItemPedido = {
 };
 
 type CrearPedidoPayload = {
-  clientId:      string;
-  canal:         string;
-  zonaId:        string | null;
-  items:         ItemPedido[];
-  notes:         string;
-  paymentMethod: string;
-  initialStatus: string;
+  clientId:       string;
+  canal:          string;
+  zonaId:         string | null;
+  items:          ItemPedido[];
+  notes:          string;
+  paymentMethod:  string;
+  initialStatus:  string;
+  discountPct?:   number;
+  discountAmount?: number;
 };
 
 export async function crearPedidoAdmin(payload: CrearPedidoPayload) {
-  const { clientId, canal, zonaId, items, notes, paymentMethod, initialStatus } = payload;
+  const { clientId, canal, zonaId, items, notes, paymentMethod, initialStatus, discountPct = 0, discountAmount = 0 } = payload;
 
   if (!clientId)        throw new Error("Seleccioná un cliente");
   if (items.length === 0) throw new Error("Agregá al menos un producto");
@@ -55,7 +57,10 @@ export async function crearPedidoAdmin(payload: CrearPedidoPayload) {
   const orderNum = `B2B-${year}-${String(nextSeq).padStart(4, "0")}`;
 
   // Totales
-  const subtotal         = items.reduce((s, i) => s + i.precio.total_civa * i.quantity, 0);
+  const subtotalBruto    = items.reduce((s, i) => s + i.precio.total_civa * i.quantity, 0);
+  const subtotal         = subtotalBruto;
+  const descuento        = discountAmount > 0 ? discountAmount : Math.round(subtotalBruto * discountPct / 100 * 100) / 100;
+  const total            = subtotalBruto - descuento;
   const commissionAmount = items.reduce((s, i) => s + i.precio.comision   * i.quantity, 0);
 
   const r = (n: number) => Math.round(n * 100) / 100;
@@ -67,8 +72,8 @@ export async function crearPedidoAdmin(payload: CrearPedidoPayload) {
     status:                   initialStatus,
     subtotal:                 r(subtotal),
     shipping_fee:             0,
-    discount:                 0,
-    total:                    r(subtotal),
+    discount:                 r(descuento),
+    total:                    r(total),
     ideaia_commission_rate:   0.15,
     ideaia_commission_amount: r(commissionAmount),
     shipping_method:          "b2b_despacho",
@@ -136,7 +141,7 @@ export async function crearPedidoAdmin(payload: CrearPedidoPayload) {
           qty:       i.quantity,
           unitPrice: i.precio.total_civa,
         })),
-        total:         r(subtotal),
+        total:         r(total),
         paymentMethod,
         initialStatus,
       });
