@@ -93,7 +93,7 @@ export default async function ProduccionPage() {
       {cola.length > 0 && (
         <section className="mb-8">
           <h2 className="text-xs font-semibold text-neutral-400 uppercase tracking-wider mb-3">
-            En cola — pendientes de preparación
+            Pendientes — sin iniciar
           </h2>
           <div className="space-y-3">
             {cola.map((order) => (
@@ -111,7 +111,7 @@ export default async function ProduccionPage() {
       {preparando.length > 0 && (
         <section>
           <h2 className="text-xs font-semibold text-neutral-400 uppercase tracking-wider mb-3">
-            En preparación — listos para despachar
+            En preparación — listos para despachar ✓
           </h2>
           <div className="space-y-3">
             {preparando.map((order) => (
