@@ -1,29 +1,17 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { createClient, createAdminClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { MetaVendedorCard } from "@/components/admin/meta-vendedor-form";
+import { PreventistaClientesList } from "@/components/admin/preventista-clientes-list";
 
 export const metadata: Metadata = { title: "Preventista — Admin En Minutas" };
 export const revalidate = 0;
-
-const CANAL_LABEL: Record<string, string> = {
-  b2b_mayorista: "Mayorista", dist: "Distribuidor",
-  gastro: "Gastronomía",     min:  "Minorista",
-};
 
 const ACTIVE_STATUSES = ["aprobado", "enviado_prod", "despachado", "delivered"];
 
 function diasDesde(dateStr: string | null): number | null {
   if (!dateStr) return null;
   return Math.floor((Date.now() - new Date(dateStr).getTime()) / (1000 * 60 * 60 * 24));
-}
-
-function BadgeDias({ dias }: { dias: number | null }) {
-  if (dias === null) return <span className="text-xs text-neutral-300">Sin pedidos</span>;
-  if (dias > 30) return <span className="px-2 py-0.5 rounded-full text-xs font-semibold bg-danger-bg text-danger">{dias}d sin comprar</span>;
-  if (dias > 15) return <span className="px-2 py-0.5 rounded-full text-xs font-semibold bg-warning-bg text-warning">{dias}d sin comprar</span>;
-  return <span className="px-2 py-0.5 rounded-full text-xs font-semibold bg-success-bg text-success">{dias}d</span>;
 }
 
 export default async function PreventistaPage() {
@@ -136,22 +124,49 @@ export default async function PreventistaPage() {
     }
   }
 
+  // Historial de contactos y notas por cliente
+  type ContactLog = { tipo: string; notas: string | null; created_at: string };
+  let historialMap: Record<string, ContactLog[]> = {};
+  let notasMap: Record<string, string | null> = {};
+
+  if (clienteIds2.length > 0) {
+    const [{ data: rawContacts }, { data: rawNotas }] = await Promise.all([
+      adminClient
+        .from("contact_logs")
+        .select("cliente_id, tipo, notas, created_at")
+        .in("cliente_id", clienteIds2)
+        .order("created_at", { ascending: false }),
+      adminClient
+        .from("profiles")
+        .select("id, notas_internas")
+        .in("id", clienteIds2),
+    ]);
+
+    for (const c of (rawContacts ?? []) as any[]) {
+      if (!historialMap[c.cliente_id]) historialMap[c.cliente_id] = [];
+      historialMap[c.cliente_id].push({ tipo: c.tipo, notas: c.notas ?? null, created_at: c.created_at });
+    }
+    for (const p of (rawNotas ?? []) as any[]) {
+      notasMap[p.id] = p.notas_internas ?? null;
+    }
+  }
+
   // Ordenar por más inactivos primero
   const clientesConDias = clientes.map((c: any) => {
     const lastOrder = lastOrderMap[c.id] ?? null;
-    return { ...c, lastOrder, dias: diasDesde(lastOrder?.created_at ?? null) };
+    return {
+      ...c,
+      lastOrder,
+      dias:               diasDesde(lastOrder?.created_at ?? null),
+      historialContactos: historialMap[c.id] ?? [],
+      notasInternas:      notasMap[c.id] ?? null,
+    };
   }).sort((a: any, b: any) => {
     if (a.dias === null && b.dias === null) return 0;
     if (a.dias === null) return -1;
     if (b.dias === null) return 1;
     return b.dias - a.dias;
   });
-
-  // Stats
-  const total       = clientesConDias.length;
-  const inactivos30 = clientesConDias.filter((c: any) => c.dias === null || c.dias > 30).length;
-  const inactivos15 = clientesConDias.filter((c: any) => c.dias !== null && c.dias > 15 && c.dias <= 30).length;
-  const activos     = clientesConDias.filter((c: any) => c.dias !== null && c.dias <= 15).length;
 
   return (
     <div className="p-8 max-w-5xl space-y-6">
@@ -184,101 +199,7 @@ export default async function PreventistaPage() {
         </div>
       )}
 
-      {/* Stats de clientes */}
-      <div className="grid grid-cols-4 gap-4">
-        <div className="bg-white rounded-2xl border border-neutral-200 p-4 text-center">
-          <p className="text-2xl font-semibold font-display text-neutral-900">{total}</p>
-          <p className="text-xs text-neutral-400 mt-1">Total clientes</p>
-        </div>
-        <div className="bg-danger-bg rounded-2xl border border-danger/20 p-4 text-center">
-          <p className="text-2xl font-semibold font-display text-danger">{inactivos30}</p>
-          <p className="text-xs text-danger/70 mt-1">+30 días inactivos</p>
-        </div>
-        <div className="bg-warning-bg rounded-2xl border border-warning/20 p-4 text-center">
-          <p className="text-2xl font-semibold font-display text-warning">{inactivos15}</p>
-          <p className="text-xs text-warning/70 mt-1">15–30 días</p>
-        </div>
-        <div className="bg-success-bg rounded-2xl border border-success/20 p-4 text-center">
-          <p className="text-2xl font-semibold font-display text-success">{activos}</p>
-          <p className="text-xs text-success/70 mt-1">Activos &lt;15 días</p>
-        </div>
-      </div>
-
-      {/* Lista de clientes */}
-      {clientesConDias.length === 0 ? (
-        <div className="bg-white rounded-2xl border border-neutral-200 p-12 text-center">
-          <p className="text-neutral-400 text-sm">
-            {esVendedor ? "No tenés clientes asignados todavía." : "No hay clientes B2B activos."}
-          </p>
-          {esVendedor && (
-            <p className="text-xs text-neutral-300 mt-1">Un administrador debe asignarte clientes en la sección Clientes B2B.</p>
-          )}
-        </div>
-      ) : (
-        <div className="bg-white rounded-2xl border border-neutral-200 overflow-hidden">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-neutral-100 text-left">
-                <th className="px-5 py-3 text-xs font-medium text-neutral-400">Cliente</th>
-                <th className="px-5 py-3 text-xs font-medium text-neutral-400">Actividad</th>
-                <th className="px-5 py-3 text-xs font-medium text-neutral-400 text-right">Último pedido</th>
-                <th className="px-5 py-3 text-xs font-medium text-neutral-400 text-right">Acciones</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-neutral-50">
-              {clientesConDias.map((c: any) => (
-                <tr key={c.id} className="hover:bg-neutral-50 transition-colors">
-                  <td className="px-5 py-4">
-                    <p className="font-medium text-neutral-900">{c.full_name ?? "—"}</p>
-                    <div className="flex items-center gap-2 mt-0.5 flex-wrap">
-                      <span className="text-xs text-neutral-400">{CANAL_LABEL[c.canal] ?? c.canal}</span>
-                      {c.zona && <span className="text-xs text-neutral-300">· {c.zona.name}</span>}
-                      {c.phone && (
-                        <a href={`https://wa.me/${c.phone.replace(/\D/g, "")}`} target="_blank" rel="noopener"
-                          className="text-xs !text-green-600 hover:underline">
-                          WhatsApp
-                        </a>
-                      )}
-                    </div>
-                  </td>
-                  <td className="px-5 py-4">
-                    <BadgeDias dias={c.dias} />
-                  </td>
-                  <td className="px-5 py-4 text-right">
-                    {c.lastOrder ? (
-                      <div>
-                        <Link href={`/admin/pedidos/${c.lastOrder.id}`}
-                          className="text-xs font-mono !text-neutral-500 hover:!text-tierra-700">
-                          {c.lastOrder.order_number}
-                        </Link>
-                        <p className="text-xs font-semibold text-neutral-800 mt-0.5">
-                          {new Intl.NumberFormat("es-AR", { style: "currency", currency: "ARS", maximumFractionDigits: 0 }).format(c.lastOrder.total)}
-                        </p>
-                      </div>
-                    ) : (
-                      <span className="text-xs text-neutral-300">—</span>
-                    )}
-                  </td>
-                  <td className="px-5 py-4">
-                    <div className="flex items-center gap-2 justify-end">
-                      {c.lastOrder && (
-                        <Link href={`/admin/pedidos/nuevo?cliente=${c.id}&repetir=${c.lastOrder.id}`}
-                          className="px-2.5 py-1.5 text-xs font-medium rounded-lg border border-neutral-200 !text-neutral-600 hover:bg-neutral-50 transition-colors">
-                          Repetir
-                        </Link>
-                      )}
-                      <Link href={`/admin/pedidos/nuevo?cliente=${c.id}`}
-                        className="px-2.5 py-1.5 text-xs font-medium rounded-lg bg-tierra-700 !text-white hover:bg-tierra-800 transition-colors">
-                        + Pedido
-                      </Link>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
+      <PreventistaClientesList clientes={clientesConDias} esVendedor={esVendedor} />
     </div>
   );
 }

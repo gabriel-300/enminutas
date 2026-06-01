@@ -29,6 +29,270 @@ export default async function DashboardPage() {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
+  const role = user.app_metadata?.role as string | undefined;
+
+  // ── Dashboard del vendedor ────────────────────────────────────────────
+  if (role === "vendedor") {
+    const now        = ahoraAR();
+    const mes        = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+    const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
+    const mesNombre  = now.toLocaleDateString("es-AR", { month: "long" });
+    const db         = adminClient as any;
+
+    // Clientes asignados
+    const { data: clientesMios } = await db
+      .from("profiles")
+      .select("id, full_name, zona:delivery_zones!zona_id (name)")
+      .eq("role", "customer_b2b")
+      .eq("b2b_status", "activo")
+      .eq("vendedor_id", user.id);
+
+    const misIds = (clientesMios ?? []).map((c: any) => c.id);
+
+    // Meta del mes + ventas + pedidos (en paralelo)
+    const [
+      { data: metaData },
+      { data: ventasData },
+      { count: pedidosPendientes },
+      { count: pedidosEnProd },
+      { data: lastOrdersRaw },
+    ] = await Promise.all([
+      db.from("sales_goals").select("objetivo").eq("vendedor_id", user.id).eq("mes", mes).maybeSingle(),
+
+      misIds.length > 0
+        ? db.from("orders").select("total")
+            .in("customer_id", misIds).in("status", ACTIVE_STATUSES).gte("created_at", monthStart)
+        : Promise.resolve({ data: [] }),
+
+      misIds.length > 0
+        ? db.from("orders").select("*", { count: "exact", head: true })
+            .in("customer_id", misIds).eq("status", "pending_payment")
+        : Promise.resolve({ count: 0 }),
+
+      misIds.length > 0
+        ? db.from("orders").select("*", { count: "exact", head: true })
+            .in("customer_id", misIds).in("status", ["aprobado", "enviado_prod"])
+        : Promise.resolve({ count: 0 }),
+
+      misIds.length > 0
+        ? db.from("orders").select("customer_id, created_at")
+            .in("customer_id", misIds).neq("status", "cancelled").order("created_at", { ascending: false })
+        : Promise.resolve({ data: [] }),
+    ]);
+
+    // Días de inactividad por cliente
+    const lastOrderMap: Record<string, number> = {};
+    for (const o of (lastOrdersRaw ?? []) as any[]) {
+      if (!lastOrderMap[o.customer_id]) {
+        lastOrderMap[o.customer_id] = Math.floor(
+          (Date.now() - new Date(o.created_at).getTime()) / (1000 * 60 * 60 * 24)
+        );
+      }
+    }
+
+    const clientesConDias = (clientesMios ?? [])
+      .map((c: any) => ({ ...c, dias: lastOrderMap[c.id] ?? null }))
+      .sort((a: any, b: any) => {
+        if (a.dias === null && b.dias === null) return 0;
+        if (a.dias === null) return -1;
+        if (b.dias === null) return 1;
+        return b.dias - a.dias;
+      });
+
+    const inactivos30 = clientesConDias.filter((c: any) => c.dias === null || c.dias > 30);
+    const inactivos15 = clientesConDias.filter((c: any) => c.dias !== null && c.dias > 15 && c.dias <= 30);
+    const activosCnt  = clientesConDias.filter((c: any) => c.dias !== null && c.dias <= 15).length;
+
+    const ventasMes   = (ventasData ?? []).reduce((s: number, o: any) => s + Number(o.total), 0);
+    const objetivo    = Number(metaData?.objetivo ?? 0);
+    const pctMeta     = objetivo > 0 ? Math.min(Math.round((ventasMes / objetivo) * 100), 100) : null;
+    const totalPend   = (pedidosPendientes ?? 0) + (pedidosEnProd ?? 0);
+    const totalInact  = inactivos30.length + inactivos15.length;
+
+    return (
+      <div className="p-8 max-w-5xl">
+        {/* Header */}
+        <div className="mb-6">
+          <h1 className="text-2xl font-semibold font-display text-neutral-900">Dashboard</h1>
+          <p className="text-sm text-neutral-400 mt-0.5 capitalize">
+            {now.toLocaleDateString("es-AR", { weekday: "long", day: "numeric", month: "long", year: "numeric" })}
+          </p>
+        </div>
+
+        {/* KPIs */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+          {/* Meta del mes */}
+          <div className="bg-white rounded-2xl border border-neutral-200 p-5">
+            <p className="text-xs font-medium text-neutral-400 uppercase tracking-wide mb-1">Meta {mesNombre}</p>
+            <p className="text-3xl font-semibold font-display tabular-nums text-neutral-900">{fmtK(ventasMes)}</p>
+            {objetivo > 0 ? (
+              <>
+                <div className="mt-2 h-1.5 bg-neutral-100 rounded-full overflow-hidden">
+                  <div
+                    className={`h-full rounded-full transition-all ${pctMeta! >= 100 ? "bg-success" : pctMeta! >= 60 ? "bg-tierra-700" : "bg-warning"}`}
+                    style={{ width: `${pctMeta}%` }}
+                  />
+                </div>
+                <p className="text-xs mt-1 text-neutral-400">{pctMeta}% de {fmtK(objetivo)}</p>
+              </>
+            ) : (
+              <p className="text-xs mt-1 text-neutral-300">Sin meta definida</p>
+            )}
+          </div>
+
+          {/* Mis clientes */}
+          <Link href="/admin/preventista" className="bg-white rounded-2xl border border-neutral-200 p-5 hover:border-neutral-300 transition-colors">
+            <p className="text-xs font-medium text-neutral-400 uppercase tracking-wide mb-1">Mis clientes</p>
+            <p className="text-3xl font-semibold font-display tabular-nums text-neutral-900">{misIds.length}</p>
+            <p className="text-xs mt-1 text-neutral-400">{activosCnt} activos · {totalInact} inactivos</p>
+          </Link>
+
+          {/* Inactivos */}
+          <div className={`rounded-2xl border p-5 ${inactivos30.length > 0 ? "bg-danger-bg/40 border-danger/30" : inactivos15.length > 0 ? "bg-warning-bg/40 border-warning/30" : "bg-white border-neutral-200"}`}>
+            <p className="text-xs font-medium text-neutral-400 uppercase tracking-wide mb-1">Inactivos</p>
+            <p className={`text-3xl font-semibold font-display tabular-nums ${inactivos30.length > 0 ? "text-danger" : inactivos15.length > 0 ? "text-warning" : "text-neutral-900"}`}>
+              {totalInact}
+            </p>
+            <p className="text-xs mt-1 text-neutral-400">
+              {inactivos30.length > 0 && `${inactivos30.length} +30d`}
+              {inactivos30.length > 0 && inactivos15.length > 0 && " · "}
+              {inactivos15.length > 0 && `${inactivos15.length} 15–30d`}
+              {totalInact === 0 && "Todos activos"}
+            </p>
+          </div>
+
+          {/* Pedidos en proceso */}
+          <Link href="/admin/pedidos" className="bg-white rounded-2xl border border-neutral-200 p-5 hover:border-neutral-300 transition-colors">
+            <p className="text-xs font-medium text-neutral-400 uppercase tracking-wide mb-1">En proceso</p>
+            <p className="text-3xl font-semibold font-display tabular-nums text-neutral-900">{totalPend}</p>
+            <p className="text-xs mt-1 text-neutral-400">
+              {(pedidosPendientes ?? 0) > 0 && `${pedidosPendientes} pend. aprobación`}
+              {(pedidosPendientes ?? 0) > 0 && (pedidosEnProd ?? 0) > 0 && " · "}
+              {(pedidosEnProd ?? 0) > 0 && `${pedidosEnProd} en producción`}
+              {totalPend === 0 && "Sin pedidos activos"}
+            </p>
+          </Link>
+        </div>
+
+        {/* Body */}
+        <div className="grid grid-cols-1 lg:grid-cols-5 gap-4">
+
+          {/* Izquierda: alertas + accesos */}
+          <div className="lg:col-span-3 space-y-4">
+
+            {/* Alertas */}
+            <div className="bg-white rounded-2xl border border-neutral-200 overflow-hidden">
+              <div className="px-5 py-3.5 border-b border-neutral-100">
+                <p className="text-xs font-semibold text-neutral-400 uppercase tracking-wider">Mis alertas</p>
+              </div>
+              {totalInact === 0 && (pedidosPendientes ?? 0) === 0 ? (
+                <p className="px-5 py-8 text-sm text-neutral-400 text-center">Sin alertas activas</p>
+              ) : (
+                <ul className="divide-y divide-neutral-50">
+                  {inactivos30.map((c: any) => (
+                    <li key={c.id} className="flex items-center gap-3 px-5 py-3 bg-danger-bg/30">
+                      <span className="size-1.5 rounded-full bg-danger shrink-0" />
+                      <p className="text-sm text-neutral-800 flex-1">
+                        <span className="font-semibold">{c.full_name}</span>{" "}
+                        <span className="text-neutral-500">
+                          {c.dias === null ? "sin pedidos registrados" : `sin comprar hace ${c.dias} días`}
+                        </span>
+                      </p>
+                      <Link href="/admin/preventista" className="text-xs text-tierra-700 hover:underline shrink-0">Ver →</Link>
+                    </li>
+                  ))}
+                  {inactivos15.map((c: any) => (
+                    <li key={c.id} className="flex items-center gap-3 px-5 py-3 bg-warning-bg/40">
+                      <span className="size-1.5 rounded-full bg-warning shrink-0" />
+                      <p className="text-sm text-neutral-800 flex-1">
+                        <span className="font-semibold">{c.full_name}</span>{" "}
+                        <span className="text-neutral-500">sin comprar hace {c.dias} días</span>
+                      </p>
+                      <Link href="/admin/preventista" className="text-xs text-tierra-700 hover:underline shrink-0">Ver →</Link>
+                    </li>
+                  ))}
+                  {(pedidosPendientes ?? 0) > 0 && (
+                    <li className="flex items-center gap-3 px-5 py-3 bg-warning-bg/40">
+                      <span className="size-1.5 rounded-full bg-warning shrink-0" />
+                      <p className="text-sm text-neutral-800 flex-1">
+                        <span className="font-semibold">{pedidosPendientes}</span>{" "}
+                        <span className="text-neutral-500">pedido{pedidosPendientes !== 1 ? "s" : ""} esperando aprobación</span>
+                      </p>
+                      <Link href="/admin/pedidos" className="text-xs text-tierra-700 hover:underline shrink-0">Ver →</Link>
+                    </li>
+                  )}
+                </ul>
+              )}
+            </div>
+
+            {/* Accesos rápidos */}
+            <div className="bg-white rounded-2xl border border-neutral-200 overflow-hidden">
+              <div className="px-5 py-3.5 border-b border-neutral-100">
+                <p className="text-xs font-semibold text-neutral-400 uppercase tracking-wider">Accesos rápidos</p>
+              </div>
+              <ul className="divide-y divide-neutral-50">
+                {([
+                  { href: "/admin/preventista",  label: "Mis clientes",  badge: totalInact > 0 ? `${totalInact} inactivos` : null, icon: "👥" },
+                  { href: "/admin/pedidos/nuevo", label: "Nuevo pedido",  badge: null, icon: "📋" },
+                  { href: "/admin/pedidos",       label: "Ver pedidos",   badge: (pedidosPendientes ?? 0) > 0 ? `${pedidosPendientes} pendientes` : null, icon: "📦" },
+                  { href: "/admin/reportes",      label: "Reportes",      badge: null, icon: "📊" },
+                ] as { href: string; label: string; badge: string | null; icon: string }[]).map(({ href, label, badge, icon }) => (
+                  <li key={href}>
+                    <Link href={href} className="flex items-center justify-between px-5 py-3 hover:bg-neutral-50 transition-colors group">
+                      <div className="flex items-center gap-3">
+                        <span className="text-base">{icon}</span>
+                        <span className="text-sm text-neutral-700 group-hover:text-neutral-900">{label}</span>
+                        {badge && (
+                          <span className="px-2 py-0.5 rounded-full bg-warning-bg text-warning text-xs font-medium">{badge}</span>
+                        )}
+                      </div>
+                      <span className="text-neutral-300 group-hover:text-neutral-500 text-sm">→</span>
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </div>
+
+          {/* Derecha: lista de clientes */}
+          <div className="lg:col-span-2">
+            <div className="bg-white rounded-2xl border border-neutral-200 overflow-hidden">
+              <div className="px-5 py-3.5 border-b border-neutral-100">
+                <p className="text-xs font-semibold text-neutral-400 uppercase tracking-wider">Mis clientes — actividad</p>
+              </div>
+              {clientesConDias.length === 0 ? (
+                <p className="px-5 py-8 text-sm text-neutral-400 text-center">No tenés clientes asignados todavía.</p>
+              ) : (
+                <ul className="divide-y divide-neutral-50 max-h-96 overflow-y-auto">
+                  {clientesConDias.map((c: any) => (
+                    <li key={c.id} className="flex items-center justify-between px-5 py-3">
+                      <div className="min-w-0">
+                        <p className="text-sm font-medium text-neutral-800 truncate">{c.full_name ?? "—"}</p>
+                        {c.zona && <p className="text-xs text-neutral-400">{c.zona.name}</p>}
+                      </div>
+                      <div className="shrink-0 ml-3">
+                        {c.dias === null
+                          ? <span className="text-xs text-neutral-300">Sin pedidos</span>
+                          : c.dias > 30
+                            ? <span className="px-2 py-0.5 rounded-full text-xs font-semibold bg-danger-bg text-danger">{c.dias}d</span>
+                            : c.dias > 15
+                              ? <span className="px-2 py-0.5 rounded-full text-xs font-semibold bg-warning-bg text-warning">{c.dias}d</span>
+                              : <span className="px-2 py-0.5 rounded-full text-xs font-semibold bg-success-bg text-success">{c.dias}d</span>
+                        }
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          </div>
+
+        </div>
+      </div>
+    );
+  }
+  // ── Fin dashboard vendedor ────────────────────────────────────────────
+
   const now           = ahoraAR();
   const monthStart    = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
   const prevMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1).toISOString();
@@ -275,6 +539,42 @@ export default async function DashboardPage() {
           </p>
         </Link>
       </div>
+
+      {/* Widget preventista */}
+      {inactivos.length > 0 && (
+        <Link href="/admin/preventista"
+          className="flex items-center justify-between px-5 py-4 mb-4 bg-white rounded-2xl border border-neutral-200 hover:border-neutral-300 transition-colors">
+          <div className="flex items-center gap-4">
+            <div>
+              <p className="text-xs font-medium text-neutral-400 uppercase tracking-wide">Preventista</p>
+              <p className="text-sm font-medium text-neutral-700 mt-0.5">
+                {inactivos.filter((c: any) => c.days > 30).length > 0 && (
+                  <span className="text-danger font-semibold">{inactivos.filter((c: any) => c.days > 30).length} sin comprar +30d</span>
+                )}
+                {inactivos.filter((c: any) => c.days > 30).length > 0 && inactivos.filter((c: any) => c.days > 15 && c.days <= 30).length > 0 && " · "}
+                {inactivos.filter((c: any) => c.days > 15 && c.days <= 30).length > 0 && (
+                  <span className="text-warning">{inactivos.filter((c: any) => c.days > 15 && c.days <= 30).length} en riesgo 15-30d</span>
+                )}
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center gap-3">
+            <div className="flex gap-1.5">
+              {inactivos.slice(0, 4).map((c: any) => (
+                <div key={c.id} className="flex items-center justify-center size-7 rounded-full bg-neutral-100 text-xs font-semibold text-neutral-600" title={c.full_name}>
+                  {(c.full_name ?? "?").charAt(0).toUpperCase()}
+                </div>
+              ))}
+              {inactivos.length > 4 && (
+                <div className="flex items-center justify-center size-7 rounded-full bg-neutral-100 text-xs text-neutral-400">
+                  +{inactivos.length - 4}
+                </div>
+              )}
+            </div>
+            <span className="text-xs text-tierra-700 font-medium">Ver →</span>
+          </div>
+        </Link>
+      )}
 
       {/* Cuerpo — dos columnas */}
       <div className="grid grid-cols-1 lg:grid-cols-5 gap-4">
