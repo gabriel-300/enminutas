@@ -4,9 +4,6 @@ import { PrintButton } from "@/components/admin/print-button";
 
 export const revalidate = 0;
 
-const fmt = (n: number) =>
-  new Intl.NumberFormat("es-AR", { style: "currency", currency: "ARS", maximumFractionDigits: 0 }).format(n);
-
 function diasDesde(iso: string | null): number | null {
   if (!iso) return null;
   return Math.floor((Date.now() - new Date(iso).getTime()) / (1000 * 60 * 60 * 24));
@@ -21,9 +18,8 @@ export default async function HojaDeRutaPage() {
   const { data: orders } = await (adminClient as any)
     .from("orders")
     .select(`
-      id, order_number, total, despachado_at,
+      id, order_number, despachado_at,
       shipping_snapshot,
-      payment_confirmed_at,
       customer:profiles!customer_id (full_name, phone, zona:delivery_zones!zona_id (name)),
       guest_phone,
       lines:order_lines (quantity, product_snapshot)
@@ -112,8 +108,7 @@ export default async function HojaDeRutaPage() {
                           order.shipping_snapshot.city,
                         ].filter(Boolean).join(", ")
                       : null;
-                    const pagado = !!order.payment_confirmed_at;
-                    const dias   = diasDesde(order.despachado_at);
+                    const dias = diasDesde(order.despachado_at);
 
                     return (
                       <div
@@ -132,16 +127,6 @@ export default async function HojaDeRutaPage() {
                               </p>
                               <p className="text-xs font-mono text-neutral-400">{order.order_number}</p>
                             </div>
-                          </div>
-                          <div className="text-right shrink-0">
-                            <p className="text-lg font-bold text-neutral-900 print:text-base">{fmt(Number(order.total))}</p>
-                            <span className={`inline-block px-2 py-0.5 rounded-full text-xs font-semibold ${
-                              pagado
-                                ? "bg-green-100 text-green-700"
-                                : "bg-yellow-100 text-yellow-700"
-                            }`}>
-                              {pagado ? "Pago confirmado" : "Cobrar en entrega"}
-                            </span>
                           </div>
                         </div>
 
@@ -193,12 +178,9 @@ export default async function HojaDeRutaPage() {
             ))}
 
             {/* Resumen final */}
-            <div className="border-t-2 border-neutral-900 pt-4 mt-8 print:mt-4 flex justify-between items-center">
+            <div className="border-t-2 border-neutral-900 pt-4 mt-8 print:mt-4">
               <p className="text-sm font-semibold text-neutral-700">
                 Total paradas: {lista.length}
-              </p>
-              <p className="text-lg font-bold text-neutral-900">
-                {fmt(lista.reduce((s: number, o: any) => s + Number(o.total), 0))}
               </p>
             </div>
           </div>

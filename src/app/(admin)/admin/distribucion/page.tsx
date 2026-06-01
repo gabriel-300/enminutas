@@ -38,26 +38,38 @@ export default async function DistribucionPage() {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
-  const { data: orders } = await (adminClient as any)
-    .from("orders")
-    .select(`
-      id, order_number, status, total, created_at, despachado_at,
-      shipping_method, shipping_snapshot,
-      payment_confirmed_at,
-      customer:profiles!customer_id (full_name, phone, zona:delivery_zones!zona_id (name)),
-      guest_phone,
-      lines:order_lines (quantity, product_snapshot)
-    `)
-    .eq("channel", "b2b_mayorista")
-    .eq("status", "despachado")
-    .order("despachado_at", { ascending: true });
+  const hoyInicio = new Date();
+  hoyInicio.setHours(0, 0, 0, 0);
 
-  const lista = (orders ?? []) as any[];
+  const [{ data: orders }, { data: entregadosHoy }] = await Promise.all([
+    (adminClient as any)
+      .from("orders")
+      .select(`
+        id, order_number, status, created_at, despachado_at,
+        shipping_snapshot,
+        customer:profiles!customer_id (full_name, phone, zona:delivery_zones!zona_id (name)),
+        guest_phone,
+        lines:order_lines (quantity, product_snapshot)
+      `)
+      .eq("channel", "b2b_mayorista")
+      .eq("status", "despachado")
+      .order("despachado_at", { ascending: true }),
 
-  const fmt = (n: number) =>
-    new Intl.NumberFormat("es-AR", {
-      style: "currency", currency: "ARS", maximumFractionDigits: 0,
-    }).format(n);
+    (adminClient as any)
+      .from("orders")
+      .select(`
+        id, order_number, entregado_at,
+        customer:profiles!customer_id (full_name, zona:delivery_zones!zona_id (name)),
+        lines:order_lines (quantity, product_snapshot)
+      `)
+      .eq("channel", "b2b_mayorista")
+      .eq("status", "delivered")
+      .gte("entregado_at", hoyInicio.toISOString())
+      .order("entregado_at", { ascending: false }),
+  ]);
+
+  const lista         = (orders ?? []) as any[];
+  const listaHoy      = (entregadosHoy ?? []) as any[];
 
   // Agrupar por zona, "Sin zona" al final
   const byZone: Record<string, any[]> = {};
@@ -119,8 +131,7 @@ export default async function DistribucionPage() {
                         order.shipping_snapshot.city,
                       ].filter(Boolean).join(", ")
                     : null;
-                  const dias   = diasDesde(order.despachado_at);
-                  const pagado = !!order.payment_confirmed_at;
+                  const dias = diasDesde(order.despachado_at);
 
                   return (
                     <div
@@ -138,23 +149,11 @@ export default async function DistribucionPage() {
                             <span className="text-sm font-medium text-neutral-700">
                               {order.customer?.full_name ?? "—"}
                             </span>
-                            <span className="text-sm font-semibold text-neutral-900">
-                              {fmt(Number(order.total))}
-                            </span>
                           </div>
 
                           {/* Badges */}
                           <div className="flex items-center gap-2 flex-wrap mb-2">
                             <BadgeDias dias={dias} />
-                            {pagado ? (
-                              <span className="px-2 py-0.5 rounded-full text-xs font-semibold bg-success-bg text-success">
-                                Pago confirmado
-                              </span>
-                            ) : (
-                              <span className="px-2 py-0.5 rounded-full text-xs font-semibold bg-warning-bg text-warning">
-                                Pago pendiente
-                              </span>
-                            )}
                           </div>
 
                           {/* Teléfono + WhatsApp */}
@@ -206,6 +205,38 @@ export default async function DistribucionPage() {
               </div>
             </div>
           ))}
+        </div>
+      )}
+
+      {/* Entregados hoy */}
+      {listaHoy.length > 0 && (
+        <div className="mt-10">
+          <p className="text-xs font-semibold text-neutral-400 uppercase tracking-wide mb-3">
+            Entregados hoy · {listaHoy.length} pedido{listaHoy.length !== 1 ? "s" : ""}
+          </p>
+          <div className="space-y-2">
+            {listaHoy.map((order: any) => (
+              <div key={order.id} className="bg-white rounded-2xl border border-neutral-100 p-4 opacity-75">
+                <div className="flex items-center gap-3">
+                  <span className="text-success text-sm">✓</span>
+                  <span className="font-mono text-xs text-neutral-500">{order.order_number}</span>
+                  <span className="text-sm font-medium text-neutral-700">{order.customer?.full_name ?? "—"}</span>
+                  {order.customer?.zona && (
+                    <span className="text-xs text-neutral-400">· {order.customer.zona.name}</span>
+                  )}
+                </div>
+                <div className="mt-1 pl-6">
+                  <ul className="flex flex-wrap gap-x-4 gap-y-0.5">
+                    {(order.lines ?? []).map((line: any, i: number) => (
+                      <li key={i} className="text-xs text-neutral-400">
+                        {line.quantity}× {line.product_snapshot?.name ?? "Producto"}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
       )}
     </div>

@@ -163,7 +163,6 @@ export function PedidosClient({ orders }: { orders: Order[] }) {
               <th className="px-4 py-3 font-medium text-neutral-500 w-48">Nro. pedido</th>
               <th className="px-4 py-3 font-medium text-neutral-500">Cliente</th>
               <th className="px-4 py-3 font-medium text-neutral-500">Estado</th>
-              <th className="px-4 py-3 font-medium text-neutral-500">Pago</th>
               <th className="px-4 py-3 font-medium text-neutral-500 text-right">Total</th>
               <th className="px-4 py-3 font-medium text-neutral-500">Fecha</th>
               <th className="px-4 py-3 font-medium text-neutral-500 w-52">Cambiar estado</th>
@@ -172,7 +171,7 @@ export function PedidosClient({ orders }: { orders: Order[] }) {
           <tbody className="divide-y divide-neutral-100">
             {filtered.length === 0 && (
               <tr>
-                <td colSpan={7} className="px-4 py-12 text-center text-neutral-400">
+                <td colSpan={6} className="px-4 py-12 text-center text-neutral-400">
                   {search ? "No hay pedidos que coincidan con la búsqueda." : "No hay pedidos en esta categoría."}
                 </td>
               </tr>
@@ -209,9 +208,6 @@ export function PedidosClient({ orders }: { orders: Order[] }) {
                 </td>
                 <td className="px-4 py-3">
                   <OrderStatusBadge status={order.status} />
-                </td>
-                <td className="px-4 py-3 text-neutral-600">
-                  {paymentLabel[order.payment_method] ?? order.payment_method}
                 </td>
                 <td className="px-4 py-3 text-right font-medium text-neutral-900 tabular-nums">
                   $ {Number(order.total).toLocaleString("es-AR")}

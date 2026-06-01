@@ -48,7 +48,7 @@ const STATUS_STYLE: Record<string, string> = {
 
 const inputCls = "w-full px-3 py-2 text-sm border border-neutral-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-tierra-700/20 disabled:opacity-50";
 
-function ClienteRow({ cliente, zonas, vendedores }: { cliente: Cliente; zonas: Zona[]; vendedores: Vendedor[] }) {
+function ClienteRow({ cliente, zonas, vendedores, esAdmin }: { cliente: Cliente; zonas: Zona[]; vendedores: Vendedor[]; esAdmin: boolean }) {
   const [editOpen, setEditOpen]      = useState(false);
   const [isPending, startTransition] = useTransition();
   const [editError, setEditError]    = useState<string | null>(null);
@@ -99,16 +99,16 @@ function ClienteRow({ cliente, zonas, vendedores }: { cliente: Cliente; zonas: Z
         </td>
         <td className="px-4 py-3">
           <div className="flex items-center gap-2 flex-wrap">
-            {status === "pendiente" && (
+            {esAdmin && status === "pendiente" && (
               <>
                 <button onClick={() => startTransition(() => aprobarCliente(cliente.id))} disabled={isPending} className="px-3 py-1.5 text-xs font-medium rounded-lg bg-success text-white hover:opacity-90 disabled:opacity-50">Aprobar</button>
                 <button onClick={() => startTransition(() => rechazarCliente(cliente.id))} disabled={isPending} className="px-3 py-1.5 text-xs font-medium rounded-lg border border-danger text-danger hover:bg-danger-bg disabled:opacity-50">Rechazar</button>
               </>
             )}
-            {status === "activo" && (
+            {esAdmin && status === "activo" && (
               <button onClick={() => startTransition(() => cambiarEstadoCliente(cliente.id, "inactivo"))} disabled={isPending} className="px-3 py-1.5 text-xs font-medium rounded-lg border border-neutral-200 text-neutral-500 hover:bg-neutral-50 disabled:opacity-50">Desactivar</button>
             )}
-            {status === "inactivo" && (
+            {esAdmin && status === "inactivo" && (
               <button onClick={() => startTransition(() => cambiarEstadoCliente(cliente.id, "activo"))} disabled={isPending} className="px-3 py-1.5 text-xs font-medium rounded-lg border border-neutral-200 text-neutral-500 hover:bg-neutral-50 disabled:opacity-50">Reactivar</button>
             )}
             <button
@@ -118,14 +118,16 @@ function ClienteRow({ cliente, zonas, vendedores }: { cliente: Cliente; zonas: Z
             >
               {editOpen ? "Cancelar" : "Editar"}
             </button>
-            <button
-              onClick={handleEliminar}
-              disabled={isPending}
-              className="px-2 py-1.5 text-xs font-medium rounded-lg border border-danger/30 text-danger hover:bg-danger-bg disabled:opacity-50 transition-colors"
-              title="Eliminar cliente"
-            >
-              ✕
-            </button>
+            {esAdmin && (
+              <button
+                onClick={handleEliminar}
+                disabled={isPending}
+                className="px-2 py-1.5 text-xs font-medium rounded-lg border border-danger/30 text-danger hover:bg-danger-bg disabled:opacity-50 transition-colors"
+                title="Eliminar cliente"
+              >
+                ✕
+              </button>
+            )}
           </div>
         </td>
       </tr>
@@ -350,11 +352,13 @@ export function ClientesBb2Client({
   pendingCount,
   zonas,
   vendedores = [],
+  esAdmin = false,
 }: {
   clientes:     Cliente[];
   pendingCount: number;
   zonas:        Zona[];
   vendedores?:  Vendedor[];
+  esAdmin?:     boolean;
 }) {
   return (
     <div className="space-y-6 max-w-5xl">
@@ -386,13 +390,13 @@ export function ClientesBb2Client({
               </tr>
             )}
             {clientes.map((c) => (
-              <ClienteRow key={c.id} cliente={c} zonas={zonas} vendedores={vendedores} />
+              <ClienteRow key={c.id} cliente={c} zonas={zonas} vendedores={vendedores} esAdmin={esAdmin} />
             ))}
           </tbody>
         </table>
       </div>
 
-      <CrearClienteB2BForm zonas={zonas} />
+      {esAdmin && <CrearClienteB2BForm zonas={zonas} />}
     </div>
   );
 }
