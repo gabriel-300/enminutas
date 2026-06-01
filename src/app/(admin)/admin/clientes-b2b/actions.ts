@@ -198,8 +198,7 @@ export async function eliminarClienteB2B(clientId: string) {
   await requireAdmin();
   const supabase = createAdminClient();
 
-  // Primero borrar pedidos y líneas si existen (o dejar que cascade lo haga)
-  await (supabase as any).from("profiles").delete().eq("id", clientId);
+  // Borrar auth user primero — el cascade elimina el profile via trigger
   const { error } = await supabase.auth.admin.deleteUser(clientId);
   if (error) throw new Error(error.message);
 

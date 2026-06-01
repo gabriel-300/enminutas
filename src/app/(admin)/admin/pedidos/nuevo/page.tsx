@@ -21,6 +21,8 @@ export default async function NuevoPedidoPage({
 
   const esAdmin = user.app_metadata?.role === "admin";
 
+  const esVendedor = user.app_metadata?.role === "vendedor";
+
   // Obtener IDs de clientes B2B activos desde auth.users (profiles.role no es confiable)
   const { data: { users: allUsers } } = await adminClient.auth.admin.listUsers({ perPage: 1000 });
   const b2bIds = (allUsers ?? [])
@@ -29,12 +31,17 @@ export default async function NuevoPedidoPage({
 
   const [{ data: rawClientes }, { data: rawProducts }, { data: rawTiers }] = await Promise.all([
     b2bIds.length > 0
-      ? adminClient
-          .from("profiles")
-          .select(`id, full_name, canal, zona:delivery_zones!zona_id (id, name, flete_kg)`)
-          .in("id", b2bIds)
-          .eq("b2b_status", "activo")
-          .order("full_name")
+      ? (() => {
+          let q = adminClient
+            .from("profiles")
+            .select(`id, full_name, canal, zona:delivery_zones!zona_id (id, name, flete_kg)`)
+            .in("id", b2bIds)
+            .eq("b2b_status", "activo")
+            .order("full_name");
+          // Vendedor solo ve sus clientes asignados
+          if (esVendedor) q = q.eq("vendedor_id", user.id);
+          return q;
+        })()
       : Promise.resolve({ data: [] }),
 
     adminClient
