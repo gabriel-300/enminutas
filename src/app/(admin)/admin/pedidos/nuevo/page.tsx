@@ -19,6 +19,8 @@ export default async function NuevoPedidoPage({
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
+  const esAdmin = user.app_metadata?.role === "admin";
+
   // Obtener IDs de clientes B2B activos desde auth.users (profiles.role no es confiable)
   const { data: { users: allUsers } } = await adminClient.auth.admin.listUsers({ perPage: 1000 });
   const b2bIds = (allUsers ?? [])
@@ -119,6 +121,7 @@ export default async function NuevoPedidoPage({
         productosRaw={productosRaw}
         clienteInit={sp.cliente ?? null}
         itemsInit={itemsInit}
+        esAdmin={esAdmin}
         tiers={(rawTiers ?? []).map((t: any) => ({
           minCajas:     Number(t.min_cajas),
           descuentoPct: Number(t.descuento_pct),

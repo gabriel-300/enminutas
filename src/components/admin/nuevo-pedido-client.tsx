@@ -56,19 +56,21 @@ export function NuevoPedidoClient({
   productosRaw,
   clienteInit = null,
   itemsInit   = {},
+  esAdmin     = false,
   tiers       = [],
 }: {
   clientes:      ClienteB2B[];
   productosRaw:  ProductoRaw[];
   clienteInit?:  string | null;
   itemsInit?:    Record<string, number>;
+  esAdmin?:      boolean;
   tiers?:        VolumeTier[];
 }) {
   const [clienteId,     setClienteId]     = useState(clienteInit ?? "");
   const [cart,          setCart]          = useState<Record<string, number>>(itemsInit);
   const [notes,         setNotes]         = useState("");
   const [paymentMethod, setPaymentMethod] = useState("transferencia");
-  const [initialStatus, setInitialStatus] = useState("aprobado");
+  const [initialStatus, setInitialStatus] = useState(esAdmin ? "aprobado" : "pending_payment");
   const [filterCat,     setFilterCat]     = useState("todas");
   const [search,        setSearch]        = useState("");
   const [error,         setError]         = useState<string | null>(null);
@@ -363,17 +365,19 @@ export function NuevoPedidoClient({
 
         {/* Opciones del pedido */}
         <div className="bg-white rounded-2xl border border-neutral-200 p-5 space-y-4">
-          <div>
-            <label className="block text-xs font-medium text-neutral-500 mb-1.5">Estado inicial</label>
-            <select
-              value={initialStatus}
-              onChange={(e) => setInitialStatus(e.target.value)}
-              className="w-full px-3 py-2 text-sm border border-neutral-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-tierra-700/20"
-            >
-              <option value="aprobado">Aprobado (va directo a producción)</option>
-              <option value="pending_payment">Pendiente de pago (espera confirmación)</option>
-            </select>
-          </div>
+          {esAdmin && (
+            <div>
+              <label className="block text-xs font-medium text-neutral-500 mb-1.5">Estado inicial</label>
+              <select
+                value={initialStatus}
+                onChange={(e) => setInitialStatus(e.target.value)}
+                className="w-full px-3 py-2 text-sm border border-neutral-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-tierra-700/20"
+              >
+                <option value="aprobado">Aprobado (va directo a producción)</option>
+                <option value="pending_payment">Pendiente de pago (espera confirmación)</option>
+              </select>
+            </div>
+          )}
 
           <div>
             <label className="block text-xs font-medium text-neutral-500 mb-1.5">Forma de pago</label>

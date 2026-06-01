@@ -24,6 +24,8 @@ export default async function AdminPedidoDetailPage({
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
+  const esAdmin = user.app_metadata?.role === "admin";
+
   const { data: order } = await (adminClient as any)
     .from("orders")
     .select(`
@@ -95,15 +97,17 @@ export default async function AdminPedidoDetailPage({
             Remito / PDF
           </Link>
           <OrderStatusBadge status={o.status} />
-          {!o.payment_confirmed_at && (
+          {esAdmin && !o.payment_confirmed_at && (
             <ConfirmarPagoButton orderId={o.id} />
           )}
-          {o.channel === "b2b_mayorista" && o.status === "pending_payment" && (
+          {esAdmin && o.channel === "b2b_mayorista" && o.status === "pending_payment" && (
             <AprobarPedidoButton orderId={o.id} />
           )}
-          <div className="w-48">
-            <OrderStatusSelect orderId={o.id} currentStatus={o.status} channel={o.channel} />
-          </div>
+          {esAdmin && (
+            <div className="w-48">
+              <OrderStatusSelect orderId={o.id} currentStatus={o.status} channel={o.channel} />
+            </div>
+          )}
         </div>
       </div>
 
