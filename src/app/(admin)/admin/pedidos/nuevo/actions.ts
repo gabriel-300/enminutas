@@ -65,6 +65,23 @@ export async function crearPedidoAdmin(payload: CrearPedidoPayload) {
 
   const r = (n: number) => Math.round(n * 100) / 100;
 
+  // Dirección de entrega del cliente
+  const { data: clientProfile } = await adminClient
+    .from("profiles")
+    .select("direccion_calle, direccion_numero, direccion_piso, direccion_ciudad, phone")
+    .eq("id", clientId)
+    .single();
+
+  const cp = clientProfile as any;
+  const shippingSnapshot = (cp?.direccion_calle || cp?.direccion_ciudad)
+    ? {
+        street: cp.direccion_calle  ?? null,
+        number: cp.direccion_numero ?? null,
+        floor:  cp.direccion_piso   ?? null,
+        city:   cp.direccion_ciudad ?? null,
+      }
+    : null;
+
   const orderInsert: Record<string, any> = {
     order_number:             orderNum,
     channel:                  "b2b_mayorista",
@@ -80,6 +97,7 @@ export async function crearPedidoAdmin(payload: CrearPedidoPayload) {
     payment_method:           paymentMethod,
     notes:                    notes || null,
     delivery_zone_id:         zonaId ?? null,
+    shipping_snapshot:        shippingSnapshot,
   };
 
   // Si se crea como aprobado, registrar quién y cuándo

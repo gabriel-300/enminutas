@@ -43,7 +43,7 @@ export default async function AdminClientesBb2Page() {
   const { data: perfiles } = b2bIds.length > 0
     ? await (adminClient as any)
         .from("profiles")
-        .select(`id, full_name, canal, b2b_status, created_at, phone, document_number, zona_id, vendedor_id, zona:delivery_zones!zona_id (id, name)`)
+        .select(`id, full_name, canal, b2b_status, created_at, phone, document_number, zona_id, vendedor_id, notas_internas, direccion_calle, direccion_numero, direccion_piso, direccion_ciudad, zona:delivery_zones!zona_id (id, name)`)
         .in("id", b2bIds)
         .order("b2b_status")
         .order("created_at", { ascending: false })
@@ -65,9 +65,14 @@ export default async function AdminClientesBb2Page() {
       created_at:      p?.created_at ?? u.created_at,
       phone:           p?.phone ?? null,
       document_number: p?.document_number ?? null,
-      zona_id:         p?.zona_id ?? null,
-      zona:            p?.zona ?? null,
-      vendedor_id:     p?.vendedor_id ?? null,
+      zona_id:           p?.zona_id ?? null,
+      zona:              p?.zona ?? null,
+      vendedor_id:       p?.vendedor_id ?? null,
+      notas_internas:    p?.notas_internas ?? null,
+      direccion_calle:   p?.direccion_calle ?? null,
+      direccion_numero:  p?.direccion_numero ?? null,
+      direccion_piso:    p?.direccion_piso ?? null,
+      direccion_ciudad:  p?.direccion_ciudad ?? null,
     };
   }).sort((a, b) => {
     if (a.b2b_status !== b.b2b_status) return a.b2b_status.localeCompare(b.b2b_status);

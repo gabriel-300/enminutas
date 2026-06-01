@@ -4,6 +4,15 @@ import { createClient, createAdminClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 import { emailClienteAprobado } from "@/lib/email";
 
+function parseDireccion(fd: FormData) {
+  return {
+    direccion_calle:  (fd.get("direccion_calle")  as string | null)?.trim() || null,
+    direccion_numero: (fd.get("direccion_numero") as string | null)?.trim() || null,
+    direccion_piso:   (fd.get("direccion_piso")   as string | null)?.trim() || null,
+    direccion_ciudad: (fd.get("direccion_ciudad") as string | null)?.trim() || null,
+  };
+}
+
 export async function crearClienteB2B(formData: FormData) {
   const email    = (formData.get("email") as string).trim().toLowerCase();
   const password = formData.get("password") as string;
@@ -12,6 +21,7 @@ export async function crearClienteB2B(formData: FormData) {
   const zonaId   = (formData.get("zona_id") as string | null)?.trim() || null;
   const phone    = (formData.get("phone") as string | null)?.trim() || null;
   const cuit     = (formData.get("cuit") as string | null)?.trim() || null;
+  const dir      = parseDireccion(formData);
 
   if (!email)               throw new Error("El email es requerido");
   if (!password || password.length < 8)
@@ -43,6 +53,7 @@ export async function crearClienteB2B(formData: FormData) {
     document_type:   cuit ? "cuit" : null,
     document_number: cuit || null,
     vendedor_id:     autoVendedorId,
+    ...dir,
   });
 
   revalidatePath("/admin/clientes-b2b");
@@ -55,6 +66,7 @@ export async function invitarClienteB2B(formData: FormData) {
   const zonaId = (formData.get("zona_id") as string | null)?.trim() || null;
   const phone  = (formData.get("phone") as string | null)?.trim() || null;
   const cuit   = (formData.get("cuit") as string | null)?.trim() || null;
+  const dir    = parseDireccion(formData);
 
   if (!email) throw new Error("El email es requerido");
 
@@ -88,6 +100,7 @@ export async function invitarClienteB2B(formData: FormData) {
     document_type:   cuit ? "cuit" : null,
     document_number: cuit || null,
     vendedor_id:     autoVendedorId,
+    ...dir,
   });
 
   revalidatePath("/admin/clientes-b2b");
@@ -143,6 +156,7 @@ export async function editarClienteB2B(formData: FormData) {
   const cuit        = (formData.get("cuit") as string | null)?.trim() || null;
   const vendedorId    = (formData.get("vendedor_id") as string | null)?.trim() || null;
   const notasInternas = (formData.get("notas_internas") as string | null)?.trim() || null;
+  const dir           = parseDireccion(formData);
 
   if (!id) throw new Error("ID requerido");
 
@@ -159,6 +173,7 @@ export async function editarClienteB2B(formData: FormData) {
     document_type:   cuit ? "cuit" : null,
     document_number: cuit || null,
     notas_internas:  notasInternas,
+    ...dir,
   };
   // Solo el admin puede reasignar el vendedor
   if (esAdmin) update.vendedor_id = vendedorId;

@@ -13,17 +13,22 @@ import {
 } from "@/app/(admin)/admin/clientes-b2b/actions";
 
 type Cliente = {
-  id:              string;
-  full_name:       string | null;
-  email:           string | null;
-  canal:           string | null;
-  b2b_status:      string | null;
-  created_at:      string;
-  phone:           string | null;
-  document_number: string | null;
-  zona_id:         string | null;
-  zona:            { name: string } | null;
-  vendedor_id:     string | null;
+  id:                string;
+  full_name:         string | null;
+  email:             string | null;
+  canal:             string | null;
+  b2b_status:        string | null;
+  created_at:        string;
+  phone:             string | null;
+  document_number:   string | null;
+  zona_id:           string | null;
+  zona:              { name: string } | null;
+  vendedor_id:       string | null;
+  notas_internas:    string | null;
+  direccion_calle:   string | null;
+  direccion_numero:  string | null;
+  direccion_piso:    string | null;
+  direccion_ciudad:  string | null;
 };
 
 type Zona      = { id: string; name: string };
@@ -172,6 +177,22 @@ function ClienteRow({ cliente, zonas, vendedores }: { cliente: Cliente; zonas: Z
                   <input name="cuit" defaultValue={cliente.document_number ?? ""} placeholder="20-12345678-9" className="px-3 py-2 text-sm border border-neutral-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-tierra-700/20 w-full font-mono" disabled={isPending} />
                 </div>
               </div>
+              <div>
+                <label className="block text-xs font-medium text-neutral-500 mb-1">Dirección de entrega</label>
+                <div className="grid grid-cols-4 gap-2">
+                  <input name="direccion_calle"  defaultValue={cliente.direccion_calle ?? ""}  placeholder="Calle"   className="px-3 py-2 text-sm border border-neutral-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-tierra-700/20 col-span-2" disabled={isPending} />
+                  <input name="direccion_numero" defaultValue={cliente.direccion_numero ?? ""} placeholder="Número"  className="px-3 py-2 text-sm border border-neutral-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-tierra-700/20" disabled={isPending} />
+                  <input name="direccion_piso"   defaultValue={cliente.direccion_piso ?? ""}   placeholder="Piso/Dpto (opt.)" className="px-3 py-2 text-sm border border-neutral-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-tierra-700/20" disabled={isPending} />
+                </div>
+                <input name="direccion_ciudad" defaultValue={cliente.direccion_ciudad ?? ""} placeholder="Ciudad / Barrio" className="px-3 py-2 text-sm border border-neutral-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-tierra-700/20 w-full mt-2" disabled={isPending} />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-neutral-500 mb-1">Notas internas</label>
+                <textarea name="notas_internas" defaultValue={cliente.notas_internas ?? ""}
+                  rows={2} placeholder="Observaciones internas (no visible al cliente)"
+                  className="px-3 py-2 text-sm border border-neutral-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-tierra-700/20 w-full resize-none col-span-6"
+                  disabled={isPending} />
+              </div>
               <div className="flex items-center gap-3">
                 <button type="submit" disabled={isPending} className="px-4 py-2 rounded-xl bg-tierra-700 text-white text-sm font-medium hover:bg-tierra-800 disabled:opacity-50">
                   {isPending ? "Guardando…" : "Guardar"}
@@ -285,6 +306,15 @@ function CrearClienteB2BForm({ zonas }: { zonas: Zona[] }) {
                 <label className="block text-xs font-medium text-neutral-500 mb-1">CUIT</label>
                 <input name="cuit" placeholder="20-12345678-9" className={`${inputCls} font-mono`} disabled={isPending} />
               </div>
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-neutral-500 mb-1">Dirección de entrega</label>
+              <div className="grid grid-cols-4 gap-2">
+                <input name="direccion_calle"  placeholder="Calle"          className={`${inputCls} col-span-2`} disabled={isPending} />
+                <input name="direccion_numero" placeholder="Número"         className={inputCls} disabled={isPending} />
+                <input name="direccion_piso"   placeholder="Piso/Dpto"      className={inputCls} disabled={isPending} />
+              </div>
+              <input name="direccion_ciudad" placeholder="Ciudad / Barrio" className={`${inputCls} mt-2`} disabled={isPending} />
             </div>
             {mode === "password" && (
               <div className="grid grid-cols-2 gap-3">
