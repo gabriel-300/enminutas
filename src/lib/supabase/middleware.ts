@@ -12,8 +12,9 @@ const ADMIN_ONLY_PREFIXES = [
 ];
 
 const PRODUCCION_ALLOWED = [
-  "/admin/produccion",
   "/admin/dashboard",
+  "/admin/produccion",
+  "/admin/cocina",
 ];
 
 const DISTRIBUCION_ALLOWED = [
