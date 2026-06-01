@@ -19,16 +19,21 @@ export default async function NuevoPedidoPage({
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
+  // Obtener IDs de clientes B2B activos desde auth.users (profiles.role no es confiable)
+  const { data: { users: allUsers } } = await adminClient.auth.admin.listUsers({ perPage: 1000 });
+  const b2bIds = (allUsers ?? [])
+    .filter((u: any) => u.app_metadata?.role === "customer_b2b")
+    .map((u: any) => u.id as string);
+
   const [{ data: rawClientes }, { data: rawProducts }, { data: rawTiers }] = await Promise.all([
-    adminClient
-      .from("profiles")
-      .select(`
-        id, full_name, canal,
-        zona:delivery_zones!zona_id (id, name, flete_kg)
-      `)
-      .eq("role", "customer_b2b")
-      .eq("b2b_status", "activo")
-      .order("full_name"),
+    b2bIds.length > 0
+      ? adminClient
+          .from("profiles")
+          .select(`id, full_name, canal, zona:delivery_zones!zona_id (id, name, flete_kg)`)
+          .in("id", b2bIds)
+          .eq("b2b_status", "activo")
+          .order("full_name")
+      : Promise.resolve({ data: [] }),
 
     adminClient
       .from("products")
