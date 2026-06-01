@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { cambiarRolStaff, revocarAccesoStaff, invitarStaff, crearUsuarioConPassword, resetearPasswordAdmin, enviarEmailRecuperacion } from "@/app/(admin)/admin/staff/actions";
+import { cambiarRolStaff, revocarAccesoStaff, invitarStaff, crearUsuarioConPassword, resetearPasswordAdmin, enviarEmailRecuperacion, asignarZonaDistribuidor } from "@/app/(admin)/admin/staff/actions";
 
 type StaffMember = {
   id:           string;
@@ -10,7 +10,10 @@ type StaffMember = {
   role:         string;
   created_at:   string;
   last_sign_in: string | null;
+  zona_id:      string | null;
 };
+
+type Zona = { id: string; name: string };
 
 const ROLE_OPTIONS = [
   { value: "admin",        label: "Administrador",  desc: "Acceso total" },
@@ -119,9 +122,11 @@ function ResetPasswordPanel({ member, onClose }: { member: StaffMember; onClose:
 function StaffRow({
   member,
   isCurrentUser,
+  zonas = [],
 }: {
   member: StaffMember;
   isCurrentUser: boolean;
+  zonas?: Zona[];
 }) {
   const [isPending, startTransition] = useTransition();
   const [showReset, setShowReset]    = useState(false);
@@ -129,6 +134,10 @@ function StaffRow({
   function handleRoleChange(newRole: string) {
     if (newRole === member.role) return;
     startTransition(() => cambiarRolStaff(member.id, newRole as any));
+  }
+
+  function handleZonaChange(zonaId: string) {
+    startTransition(() => asignarZonaDistribuidor(member.id, zonaId || null));
   }
 
   function handleRevoke() {
@@ -170,6 +179,20 @@ function StaffRow({
                   <option key={r.value} value={r.value}>{r.label}</option>
                 ))}
               </select>
+              {member.role === "distribucion" && zonas.length > 0 && (
+                <select
+                  value={member.zona_id ?? ""}
+                  onChange={(e) => handleZonaChange(e.target.value)}
+                  disabled={isPending}
+                  className="text-xs border border-neutral-200 rounded-lg px-2 py-1.5 bg-white text-neutral-700 disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-tierra-700/20"
+                  title="Zona de distribución"
+                >
+                  <option value="">Sin zona</option>
+                  {zonas.map((z) => (
+                    <option key={z.id} value={z.id}>{z.name}</option>
+                  ))}
+                </select>
+              )}
               <button
                 onClick={() => setShowReset(!showReset)}
                 disabled={isPending}
@@ -313,9 +336,11 @@ function InviteForm() {
 export function StaffClient({
   staff,
   currentUserId,
+  zonas = [],
 }: {
   staff:         StaffMember[];
   currentUserId: string;
+  zonas?:        Zona[];
 }) {
   return (
     <div className="space-y-6 max-w-4xl">
@@ -343,6 +368,7 @@ export function StaffClient({
                 key={m.id}
                 member={m}
                 isCurrentUser={m.id === currentUserId}
+                zonas={zonas}
               />
             ))}
           </tbody>

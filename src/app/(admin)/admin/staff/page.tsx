@@ -15,7 +15,13 @@ export default async function AdminStaffPage() {
   if (user.app_metadata?.role !== "admin") redirect("/admin/dashboard");
 
   const adminClient = createAdminClient();
-  const { data: { users }, error } = await adminClient.auth.admin.listUsers({ perPage: 1000 });
+  const [
+    { data: { users }, error },
+    { data: zonasRaw },
+  ] = await Promise.all([
+    adminClient.auth.admin.listUsers({ perPage: 1000 }),
+    (adminClient as any).from("delivery_zones").select("id, name").order("name"),
+  ]);
 
   if (error) {
     return (
@@ -25,10 +31,22 @@ export default async function AdminStaffPage() {
     );
   }
 
-  // Filtrar solo staff (con role admin/vendedor/produccion en app_metadata)
   const STAFF_ROLES = ["admin", "vendedor", "produccion", "distribucion"];
-  const staff = (users ?? [])
-    .filter((u) => STAFF_ROLES.includes(u.app_metadata?.role))
+  const staffUsers = (users ?? []).filter((u) => STAFF_ROLES.includes(u.app_metadata?.role));
+  const distIds    = staffUsers.filter((u) => u.app_metadata?.role === "distribucion").map((u) => u.id);
+
+  // Cargar zonas asignadas a distribuidores
+  const { data: perfilesRaw } = distIds.length > 0
+    ? await (adminClient as any).from("profiles").select("id, zona_id").in("id", distIds)
+    : { data: [] };
+
+  const zonaByUser: Record<string, string | null> = Object.fromEntries(
+    (perfilesRaw ?? []).map((p: any) => [p.id, p.zona_id ?? null])
+  );
+
+  const zonas = (zonasRaw ?? []) as { id: string; name: string }[];
+
+  const staff = staffUsers
     .map((u) => ({
       id:           u.id,
       email:        u.email ?? "",
@@ -36,6 +54,7 @@ export default async function AdminStaffPage() {
       role:         u.app_metadata?.role as string,
       created_at:   u.created_at,
       last_sign_in: u.last_sign_in_at ?? null,
+      zona_id:      zonaByUser[u.id] ?? null,
     }))
     .sort((a, b) => {
       const order = { admin: 0, vendedor: 1, produccion: 2, distribucion: 3 };
@@ -51,7 +70,7 @@ export default async function AdminStaffPage() {
         </p>
       </div>
 
-      <StaffClient staff={staff} currentUserId={user.id} />
+      <StaffClient staff={staff} currentUserId={user.id} zonas={zonas} />
     </div>
   );
 }

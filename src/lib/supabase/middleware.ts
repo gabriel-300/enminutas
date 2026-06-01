@@ -18,6 +18,7 @@ const PRODUCCION_ALLOWED = [
 ];
 
 const DISTRIBUCION_ALLOWED = [
+  "/admin/dashboard",
   "/admin/distribucion",
 ];
 

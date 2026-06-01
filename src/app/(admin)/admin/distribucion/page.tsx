@@ -38,11 +38,22 @@ export default async function DistribucionPage() {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
+  // Zona asignada al usuario (solo aplica si es rol distribucion)
+  const { data: perfilUsuario } = await (adminClient as any)
+    .from("profiles")
+    .select("zona_id, zona:delivery_zones!zona_id(name)")
+    .eq("id", user.id)
+    .maybeSingle();
+
+  const zonaFiltro     = perfilUsuario?.zona_id ?? null;
+  const zonaNombre     = (perfilUsuario?.zona as any)?.name ?? null;
+  const esDistribucion = user.app_metadata?.role === "distribucion";
+
   const hoyInicio = new Date();
   hoyInicio.setHours(0, 0, 0, 0);
 
-  const [{ data: orders }, { data: entregadosHoy }] = await Promise.all([
-    (adminClient as any)
+  const buildQuery = (db: any, status: string) => {
+    let q = db
       .from("orders")
       .select(`
         id, order_number, status, created_at, despachado_at,
@@ -52,20 +63,24 @@ export default async function DistribucionPage() {
         lines:order_lines (quantity, product_snapshot)
       `)
       .eq("channel", "b2b_mayorista")
-      .eq("status", "despachado")
-      .order("despachado_at", { ascending: true }),
+      .eq("status", status);
+    if (esDistribucion && zonaFiltro) q = q.eq("delivery_zone_id", zonaFiltro);
+    return q;
+  };
 
-    (adminClient as any)
-      .from("orders")
-      .select(`
-        id, order_number, entregado_at,
-        customer:profiles!customer_id (full_name, zona:delivery_zones!zona_id (name)),
-        lines:order_lines (quantity, product_snapshot)
-      `)
-      .eq("channel", "b2b_mayorista")
-      .eq("status", "delivered")
-      .gte("entregado_at", hoyInicio.toISOString())
-      .order("entregado_at", { ascending: false }),
+  const [{ data: orders }, { data: entregadosHoy }] = await Promise.all([
+    buildQuery(adminClient as any, "despachado").order("despachado_at", { ascending: true }),
+
+    (() => {
+      let q = (adminClient as any)
+        .from("orders")
+        .select(`id, order_number, entregado_at, customer:profiles!customer_id (full_name, zona:delivery_zones!zona_id (name)), lines:order_lines (quantity, product_snapshot)`)
+        .eq("channel", "b2b_mayorista").eq("status", "delivered")
+        .gte("entregado_at", hoyInicio.toISOString())
+        .order("entregado_at", { ascending: false });
+      if (esDistribucion && zonaFiltro) q = q.eq("delivery_zone_id", zonaFiltro);
+      return q;
+    })(),
   ]);
 
   const lista         = (orders ?? []) as any[];
@@ -87,24 +102,42 @@ export default async function DistribucionPage() {
 
   return (
     <div className="p-8 max-w-3xl">
-      <div className="mb-8 flex items-start justify-between gap-4">
+      <div className="mb-6 flex items-start justify-between gap-4">
         <div>
           <h1 className="text-2xl font-semibold font-display text-neutral-900">Distribución</h1>
           <p className="text-sm text-neutral-500 mt-1">
             {lista.length === 0
               ? "No hay pedidos en tránsito."
-              : `${lista.length} pedido${lista.length !== 1 ? "s" : ""} despachado${lista.length !== 1 ? "s" : ""} pendiente${lista.length !== 1 ? "s" : ""} de entrega`}
+              : `${lista.length} pedido${lista.length !== 1 ? "s" : ""} pendiente${lista.length !== 1 ? "s" : ""} de entrega`}
+            {zonaNombre && <span className="ml-2 text-neutral-400">— Zona: {zonaNombre}</span>}
           </p>
+          {esDistribucion && !zonaFiltro && (
+            <p className="text-xs text-warning mt-1">Sin zona asignada — mostrando todos los pedidos. Pedile al admin que configure tu zona.</p>
+          )}
         </div>
-        {lista.length > 0 && (
+        <div className="flex gap-2 shrink-0">
           <Link
-            href="/admin/distribucion/hoja-de-ruta"
-            target="_blank"
-            className="shrink-0 flex items-center gap-1.5 px-4 py-2 rounded-xl border border-neutral-200 text-sm font-medium text-neutral-700 hover:bg-neutral-50 transition-colors"
+            href="/admin/distribucion/historial"
+            className="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-neutral-200 text-sm font-medium text-neutral-600 hover:bg-neutral-50 transition-colors"
           >
-            🗺️ Hoja de ruta
+            <svg xmlns="http://www.w3.org/2000/svg" className="size-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            Historial
           </Link>
-        )}
+          {lista.length > 0 && (
+            <Link
+              href="/admin/distribucion/hoja-de-ruta"
+              target="_blank"
+              className="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-neutral-200 text-sm font-medium text-neutral-700 hover:bg-neutral-50 transition-colors"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" className="size-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
+              </svg>
+              Hoja de ruta
+            </Link>
+          )}
+        </div>
       </div>
 
       {lista.length === 0 ? (

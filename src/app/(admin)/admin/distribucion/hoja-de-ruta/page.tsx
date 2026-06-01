@@ -9,25 +9,55 @@ function diasDesde(iso: string | null): number | null {
   return Math.floor((Date.now() - new Date(iso).getTime()) / (1000 * 60 * 60 * 24));
 }
 
-export default async function HojaDeRutaPage() {
+export default async function HojaDeRutaPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ fecha?: string }>;
+}) {
+  const sp          = await searchParams;
+  const fechaParam  = sp.fecha ?? null; // YYYY-MM-DD → hoja histórica
+  const esHistorico = !!fechaParam;
+
   const supabase    = await createClient();
   const adminClient = createAdminClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
-  const { data: orders } = await (adminClient as any)
+  // Zona del usuario si es distribucion
+  const esDistribucion = user.app_metadata?.role === "distribucion";
+  let zonaFiltro: string | null = null;
+  if (esDistribucion) {
+    const { data: perfil } = await (adminClient as any)
+      .from("profiles").select("zona_id").eq("id", user.id).maybeSingle();
+    zonaFiltro = perfil?.zona_id ?? null;
+  }
+
+  let q = (adminClient as any)
     .from("orders")
     .select(`
-      id, order_number, despachado_at,
+      id, order_number, despachado_at, entregado_at,
       shipping_snapshot,
       customer:profiles!customer_id (full_name, phone, zona:delivery_zones!zona_id (name)),
       guest_phone,
       lines:order_lines (quantity, product_snapshot)
     `)
-    .eq("channel", "b2b_mayorista")
-    .eq("status", "despachado")
-    .order("despachado_at", { ascending: true });
+    .eq("channel", "b2b_mayorista");
 
+  if (esHistorico) {
+    // Mostrar entregados del día indicado
+    const diaInicio = new Date(`${fechaParam}T00:00:00`);
+    const diaFin    = new Date(`${fechaParam}T23:59:59`);
+    q = q.eq("status", "delivered")
+         .gte("entregado_at", diaInicio.toISOString())
+         .lte("entregado_at", diaFin.toISOString())
+         .order("entregado_at", { ascending: true });
+  } else {
+    q = q.eq("status", "despachado").order("despachado_at", { ascending: true });
+  }
+
+  if (esDistribucion && zonaFiltro) q = q.eq("delivery_zone_id", zonaFiltro);
+
+  const { data: orders } = await q;
   const lista = (orders ?? []) as any[];
 
   // Agrupar por zona
@@ -43,9 +73,13 @@ export default async function HojaDeRutaPage() {
     return a.localeCompare(b, "es");
   });
 
-  const fecha = new Date().toLocaleDateString("es-AR", {
-    weekday: "long", day: "numeric", month: "long", year: "numeric",
-  });
+  const fechaDisplay = esHistorico
+    ? new Date(`${fechaParam}T12:00:00`).toLocaleDateString("es-AR", {
+        weekday: "long", day: "numeric", month: "long", year: "numeric",
+      })
+    : new Date().toLocaleDateString("es-AR", {
+        weekday: "long", day: "numeric", month: "long", year: "numeric",
+      });
 
   let stopNumber = 0;
 
@@ -54,7 +88,7 @@ export default async function HojaDeRutaPage() {
       {/* Toolbar — solo pantalla */}
       <div className="print:hidden flex items-center justify-between px-8 py-4 border-b border-neutral-200 bg-neutral-50">
         <div className="flex items-center gap-4">
-          <a href="/admin/distribucion" className="text-sm text-neutral-500 hover:text-neutral-700">
+          <a href={esHistorico ? "/admin/distribucion/historial" : "/admin/distribucion"} className="text-sm text-neutral-500 hover:text-neutral-700">
             ← Volver
           </a>
           <span className="text-sm font-semibold text-neutral-900">Hoja de ruta</span>
@@ -68,8 +102,10 @@ export default async function HojaDeRutaPage() {
         {/* Encabezado */}
         <div className="flex items-start justify-between mb-8 print:mb-6">
           <div>
-            <h1 className="text-2xl font-bold text-neutral-900 print:text-xl">Hoja de Ruta</h1>
-            <p className="text-sm text-neutral-500 mt-1 capitalize">{fecha}</p>
+            <h1 className="text-2xl font-bold text-neutral-900 print:text-xl">
+              {esHistorico ? "Hoja de Ruta — Histórico" : "Hoja de Ruta"}
+            </h1>
+            <p className="text-sm text-neutral-500 mt-1 capitalize">{fechaDisplay}</p>
           </div>
           <div className="text-right">
             <p className="text-lg font-bold text-neutral-900">En Minutas</p>

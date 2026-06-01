@@ -3,6 +3,16 @@
 import { createAdminClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 
+export async function asignarZonaDistribuidor(userId: string, zonaId: string | null) {
+  const supabase = createAdminClient();
+  await (supabase as any).from("profiles").upsert({
+    id:      userId,
+    zona_id: zonaId || null,
+  });
+  revalidatePath("/admin/staff");
+  revalidatePath("/admin/distribucion");
+}
+
 const VALID_ROLES = ["admin", "vendedor", "produccion", "distribucion"] as const;
 type StaffRole = typeof VALID_ROLES[number];
 
