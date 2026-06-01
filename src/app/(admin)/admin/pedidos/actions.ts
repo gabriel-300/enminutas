@@ -4,7 +4,17 @@ import { createClient, createAdminClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 import { emailPagoConfirmado } from "@/lib/email";
 
+async function getCallerRole(): Promise<string | null> {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return null;
+  return (user.app_metadata?.role as string) ?? null;
+}
+
 export async function updateOrderStatus(orderId: string, status: string) {
+  const role = await getCallerRole();
+  if (role !== "admin") throw new Error("No autorizado");
+
   const supabase = createAdminClient();
   const { error } = await supabase
     .from("orders")
@@ -15,10 +25,11 @@ export async function updateOrderStatus(orderId: string, status: string) {
 }
 
 export async function aprobarPedidoB2B(orderId: string) {
-  const supabase = createAdminClient();
-  const authClient = await createClient();
+  const supabase    = createAdminClient();
+  const authClient  = await createClient();
   const { data: { user } } = await authClient.auth.getUser();
   if (!user) throw new Error("No autorizado");
+  if (user.app_metadata?.role !== "admin") throw new Error("No autorizado");
 
   const { error } = await supabase
     .from("orders")
@@ -36,6 +47,9 @@ export async function aprobarPedidoB2B(orderId: string) {
 }
 
 export async function marcarEnviadoProd(orderId: string) {
+  const role = await getCallerRole();
+  if (role !== "admin" && role !== "produccion") throw new Error("No autorizado");
+
   const supabase = createAdminClient();
   const { error } = await supabase
     .from("orders")
@@ -46,9 +60,11 @@ export async function marcarEnviadoProd(orderId: string) {
 }
 
 export async function despacharPedido(orderId: string) {
+  const role = await getCallerRole();
+  if (role !== "admin" && role !== "produccion") throw new Error("No autorizado");
+
   const supabase = createAdminClient();
 
-  // Obtener líneas del pedido para descontar stock
   const { data: lines } = await (supabase as any)
     .from("order_lines")
     .select("product_id, quantity")
@@ -63,7 +79,6 @@ export async function despacharPedido(orderId: string) {
     .eq("id", orderId);
   if (error) throw new Error(error.message);
 
-  // Descontar stock y registrar movimiento por cada línea
   for (const line of (lines ?? []) as { product_id: string; quantity: number }[]) {
     await (supabase as any).rpc("decrement_stock", {
       p_product_id: line.product_id,
@@ -83,6 +98,9 @@ export async function despacharPedido(orderId: string) {
 }
 
 export async function confirmarPago(orderId: string) {
+  const role = await getCallerRole();
+  if (role !== "admin") throw new Error("No autorizado");
+
   const supabase = createAdminClient();
   const { data: order } = await (supabase as any)
     .from("orders")
@@ -95,7 +113,6 @@ export async function confirmarPago(orderId: string) {
   const updates: Record<string, any> = {
     payment_confirmed_at: new Date().toISOString(),
   };
-  // Si es B2B y aún está en pending_payment, avanzar a aprobado automáticamente
   if (o?.channel === "b2b_mayorista" && o?.status === "pending_payment") {
     const authClient = await createClient();
     const { data: { user } } = await authClient.auth.getUser();
@@ -113,7 +130,6 @@ export async function confirmarPago(orderId: string) {
   revalidatePath("/admin/produccion");
   revalidatePath("/admin/dashboard");
 
-  // Notificar al cliente — fire and forget
   if (o?.order_number) {
     let clientEmail: string | undefined = o.guest_email;
     let clientName: string = o.customer?.full_name ?? "Cliente";
@@ -135,9 +151,11 @@ export async function confirmarPago(orderId: string) {
 }
 
 export async function confirmarEntrega(orderId: string) {
+  const role = await getCallerRole();
+  if (role !== "admin" && role !== "distribucion") throw new Error("No autorizado");
+
   const supabase = createAdminClient();
 
-  // Intentar con entregado_at; si la columna no existe aún, reintentar sin ella
   let { error } = await (supabase as any)
     .from("orders")
     .update({ status: "delivered", entregado_at: new Date().toISOString() })
@@ -158,6 +176,9 @@ export async function confirmarEntrega(orderId: string) {
 }
 
 export async function agregarNota(orderId: string, nota: string) {
+  const role = await getCallerRole();
+  if (!role) throw new Error("No autorizado");
+
   const supabase = createAdminClient();
   const { error } = await supabase
     .from("orders")

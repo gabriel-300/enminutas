@@ -106,7 +106,14 @@ export async function invitarClienteB2B(formData: FormData) {
   revalidatePath("/admin/clientes-b2b");
 }
 
+async function requireAdmin() {
+  const auth = await createClient();
+  const { data: { user } } = await auth.auth.getUser();
+  if (!user || user.app_metadata?.role !== "admin") throw new Error("No autorizado");
+}
+
 export async function aprobarCliente(profileId: string) {
+  await requireAdmin();
   const supabase = createAdminClient();
   const { error } = await supabase
     .from("profiles")
@@ -128,6 +135,7 @@ export async function aprobarCliente(profileId: string) {
 }
 
 export async function rechazarCliente(profileId: string) {
+  await requireAdmin();
   const supabase = createAdminClient();
   const { error } = await supabase
     .from("profiles")
@@ -138,6 +146,7 @@ export async function rechazarCliente(profileId: string) {
 }
 
 export async function cambiarEstadoCliente(profileId: string, status: "pendiente" | "activo" | "inactivo") {
+  await requireAdmin();
   const supabase = createAdminClient();
   const { error } = await supabase
     .from("profiles")
@@ -186,6 +195,7 @@ export async function editarClienteB2B(formData: FormData) {
 }
 
 export async function eliminarClienteB2B(clientId: string) {
+  await requireAdmin();
   const supabase = createAdminClient();
 
   // Primero borrar pedidos y líneas si existen (o dejar que cascade lo haga)

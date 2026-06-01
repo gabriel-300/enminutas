@@ -6,6 +6,10 @@ import { revalidatePath } from "next/cache";
 type Result = { error: string } | { ok: true };
 
 export async function guardarMeta(formData: FormData): Promise<Result> {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user || user.app_metadata?.role !== "admin") return { error: "No autorizado" };
+
   const vendedorId = formData.get("vendedor_id") as string;
   const mes        = formData.get("mes") as string;
   const objetivo   = parseFloat(formData.get("objetivo") as string) || 0;
