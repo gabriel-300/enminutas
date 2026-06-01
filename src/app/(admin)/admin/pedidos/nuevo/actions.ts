@@ -38,6 +38,18 @@ export async function crearPedidoAdmin(payload: CrearPedidoPayload) {
   const { data: { user } } = await authClient.auth.getUser();
   if (!user) throw new Error("No autorizado");
 
+  const callerRole = user.app_metadata?.role as string | undefined;
+
+  // Vendedor solo puede crear pedidos para sus clientes asignados
+  if (callerRole === "vendedor") {
+    const { data: perfil } = await (adminClient as any)
+      .from("profiles")
+      .select("vendedor_id")
+      .eq("id", clientId)
+      .single();
+    if (!perfil || perfil.vendedor_id !== user.id) throw new Error("No autorizado: el cliente no te pertenece");
+  }
+
   // Número de pedido — buscar el máximo existente e incrementar
   const year = new Date().getFullYear();
   const { data: maxOrder } = await adminClient

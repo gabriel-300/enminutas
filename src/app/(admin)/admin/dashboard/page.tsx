@@ -101,7 +101,8 @@ export default async function DashboardPage() {
         return b.dias - a.dias;
       });
 
-    const inactivos30 = clientesConDias.filter((c: any) => c.dias === null || c.dias > 30);
+    const sinPedidos  = clientesConDias.filter((c: any) => c.dias === null);
+    const inactivos30 = clientesConDias.filter((c: any) => c.dias !== null && c.dias > 30);
     const inactivos15 = clientesConDias.filter((c: any) => c.dias !== null && c.dias > 15 && c.dias <= 30);
     const activosCnt  = clientesConDias.filter((c: any) => c.dias !== null && c.dias <= 15).length;
 
@@ -109,7 +110,7 @@ export default async function DashboardPage() {
     const objetivo    = Number(metaData?.objetivo ?? 0);
     const pctMeta     = objetivo > 0 ? Math.min(Math.round((ventasMes / objetivo) * 100), 100) : null;
     const totalPend   = (pedidosPendientes ?? 0) + (pedidosEnProd ?? 0);
-    const totalInact  = inactivos30.length + inactivos15.length;
+    const totalInact  = sinPedidos.length + inactivos30.length + inactivos15.length;
 
     return (
       <div className="p-8 max-w-5xl">
@@ -150,14 +151,16 @@ export default async function DashboardPage() {
           </Link>
 
           {/* Inactivos */}
-          <div className={`rounded-2xl border p-5 ${inactivos30.length > 0 ? "bg-danger-bg/40 border-danger/30" : inactivos15.length > 0 ? "bg-warning-bg/40 border-warning/30" : "bg-white border-neutral-200"}`}>
-            <p className="text-xs font-medium text-neutral-400 uppercase tracking-wide mb-1">Inactivos</p>
-            <p className={`text-3xl font-semibold font-display tabular-nums ${inactivos30.length > 0 ? "text-danger" : inactivos15.length > 0 ? "text-warning" : "text-neutral-900"}`}>
+          <div className={`rounded-2xl border p-5 ${(sinPedidos.length + inactivos30.length) > 0 ? "bg-danger-bg/40 border-danger/30" : inactivos15.length > 0 ? "bg-warning-bg/40 border-warning/30" : "bg-white border-neutral-200"}`}>
+            <p className="text-xs font-medium text-neutral-400 uppercase tracking-wide mb-1">Requieren contacto</p>
+            <p className={`text-3xl font-semibold font-display tabular-nums ${(sinPedidos.length + inactivos30.length) > 0 ? "text-danger" : inactivos15.length > 0 ? "text-warning" : "text-neutral-900"}`}>
               {totalInact}
             </p>
             <p className="text-xs mt-1 text-neutral-400">
+              {sinPedidos.length > 0 && `${sinPedidos.length} sin pedidos`}
+              {sinPedidos.length > 0 && inactivos30.length > 0 && " · "}
               {inactivos30.length > 0 && `${inactivos30.length} +30d`}
-              {inactivos30.length > 0 && inactivos15.length > 0 && " · "}
+              {(sinPedidos.length + inactivos30.length) > 0 && inactivos15.length > 0 && " · "}
               {inactivos15.length > 0 && `${inactivos15.length} 15–30d`}
               {totalInact === 0 && "Todos activos"}
             </p>
@@ -191,14 +194,22 @@ export default async function DashboardPage() {
                 <p className="px-5 py-8 text-sm text-neutral-400 text-center">Sin alertas activas</p>
               ) : (
                 <ul className="divide-y divide-neutral-50">
+                  {sinPedidos.map((c: any) => (
+                    <li key={c.id} className="flex items-center gap-3 px-5 py-3 bg-danger-bg/30">
+                      <span className="size-1.5 rounded-full bg-danger shrink-0" />
+                      <p className="text-sm text-neutral-800 flex-1">
+                        <span className="font-semibold">{c.full_name}</span>{" "}
+                        <span className="text-neutral-500">sin pedidos registrados — primer contacto</span>
+                      </p>
+                      <Link href="/admin/preventista" className="text-xs text-tierra-700 hover:underline shrink-0">Ver →</Link>
+                    </li>
+                  ))}
                   {inactivos30.map((c: any) => (
                     <li key={c.id} className="flex items-center gap-3 px-5 py-3 bg-danger-bg/30">
                       <span className="size-1.5 rounded-full bg-danger shrink-0" />
                       <p className="text-sm text-neutral-800 flex-1">
                         <span className="font-semibold">{c.full_name}</span>{" "}
-                        <span className="text-neutral-500">
-                          {c.dias === null ? "sin pedidos registrados" : `sin comprar hace ${c.dias} días`}
-                        </span>
+                        <span className="text-neutral-500">sin comprar hace {c.dias} días</span>
                       </p>
                       <Link href="/admin/preventista" className="text-xs text-tierra-700 hover:underline shrink-0">Ver →</Link>
                     </li>
