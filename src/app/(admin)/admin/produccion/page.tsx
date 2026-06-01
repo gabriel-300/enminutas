@@ -11,12 +11,20 @@ export const revalidate = 0;
 function OrderCard({
   order,
   action,
+  variant = "default",
 }: {
-  order:  any;
-  action: React.ReactNode;
+  order:    any;
+  action:   React.ReactNode;
+  variant?: "default" | "pending" | "active";
 }) {
+  const cardCls = {
+    default: "bg-white border-neutral-200",
+    pending: "bg-warning-bg/30 border-warning/30",
+    active:  "bg-success-bg/30 border-success/30",
+  }[variant];
+
   return (
-    <div className="bg-white rounded-2xl border border-neutral-200 p-5">
+    <div className={`rounded-2xl border p-5 ${cardCls}`}>
       <div className="flex items-start justify-between gap-4">
         <div className="min-w-0">
           <div className="flex items-center gap-3 flex-wrap">
@@ -92,8 +100,8 @@ export default async function ProduccionPage() {
       {/* Cola de producción */}
       {cola.length > 0 && (
         <section className="mb-8">
-          <h2 className="text-xs font-semibold text-neutral-400 uppercase tracking-wider mb-3">
-            Pendientes — sin iniciar
+          <h2 className="text-xs font-semibold text-warning uppercase tracking-wider mb-3">
+            ● Pendientes — sin iniciar
           </h2>
           <div className="space-y-3">
             {cola.map((order) => (
@@ -101,6 +109,7 @@ export default async function ProduccionPage() {
                 key={order.id}
                 order={order}
                 action={<MarcarEnviadoProdButton orderId={order.id} />}
+                variant="pending"
               />
             ))}
           </div>
@@ -110,8 +119,8 @@ export default async function ProduccionPage() {
       {/* En preparación */}
       {preparando.length > 0 && (
         <section>
-          <h2 className="text-xs font-semibold text-neutral-400 uppercase tracking-wider mb-3">
-            En preparación — listos para despachar ✓
+          <h2 className="text-xs font-semibold text-success uppercase tracking-wider mb-3">
+            ● En preparación — listos para despachar
           </h2>
           <div className="space-y-3">
             {preparando.map((order) => (
@@ -119,6 +128,7 @@ export default async function ProduccionPage() {
                 key={order.id}
                 order={order}
                 action={<DespacharButton orderId={order.id} />}
+                variant="active"
               />
             ))}
           </div>
