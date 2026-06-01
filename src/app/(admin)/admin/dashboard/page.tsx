@@ -61,22 +61,24 @@ export default async function DashboardPage() {
 
       misIds.length > 0
         ? db.from("orders").select("total")
-            .in("customer_id", misIds).in("status", ACTIVE_STATUSES).gte("created_at", monthStart)
+            .in("customer_id", misIds).eq("channel", "b2b_mayorista")
+            .in("status", ACTIVE_STATUSES).gte("created_at", monthStart)
         : Promise.resolve({ data: [] }),
 
       misIds.length > 0
         ? db.from("orders").select("*", { count: "exact", head: true })
-            .in("customer_id", misIds).eq("status", "pending_payment")
+            .in("customer_id", misIds).eq("channel", "b2b_mayorista").eq("status", "pending_payment")
         : Promise.resolve({ count: 0 }),
 
       misIds.length > 0
         ? db.from("orders").select("*", { count: "exact", head: true })
-            .in("customer_id", misIds).in("status", ["aprobado", "enviado_prod"])
+            .in("customer_id", misIds).eq("channel", "b2b_mayorista").in("status", ["aprobado", "enviado_prod"])
         : Promise.resolve({ count: 0 }),
 
       misIds.length > 0
         ? db.from("orders").select("customer_id, created_at")
-            .in("customer_id", misIds).neq("status", "cancelled").order("created_at", { ascending: false })
+            .in("customer_id", misIds).eq("channel", "b2b_mayorista")
+            .neq("status", "cancelled").order("created_at", { ascending: false })
         : Promise.resolve({ data: [] }),
     ]);
 
@@ -612,11 +614,16 @@ export default async function DashboardPage() {
       const last = lastOrderByClient[c.id];
       const days = last
         ? Math.floor((Date.now() - last.getTime()) / (1000 * 60 * 60 * 24))
-        : 999;
+        : null;
       return { ...c, days };
     })
-    .filter((c: any) => c.days > 15)
-    .sort((a: any, b: any) => b.days - a.days);
+    .filter((c: any) => c.days === null || c.days > 15)
+    .sort((a: any, b: any) => {
+      if (a.days === null && b.days === null) return 0;
+      if (a.days === null) return -1;
+      if (b.days === null) return 1;
+      return b.days - a.days;
+    });
 
   // ── KPIs ─────────────────────────────────────────────────────────────
   const revenueTotal  = (revenueData ?? []).reduce((s: number, o: any) => s + Number(o.total), 0);
@@ -796,7 +803,7 @@ export default async function DashboardPage() {
                     <p className="text-sm text-neutral-800 flex-1">
                       <span className="font-semibold">{c.full_name}</span>{" "}
                       <span className="text-neutral-500">
-                        sin pedir hace {c.days === 999 ? "más de 30" : c.days} días
+                        {c.days === null ? "sin pedidos registrados" : `sin pedir hace ${c.days} días`}
                       </span>
                     </p>
                     <Link href="/admin/clientes-b2b" className="text-xs text-tierra-700 hover:underline shrink-0">
