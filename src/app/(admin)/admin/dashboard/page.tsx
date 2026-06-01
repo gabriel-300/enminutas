@@ -49,13 +49,14 @@ export default async function DashboardPage() {
 
     const misIds = (clientesMios ?? []).map((c: any) => c.id);
 
-    // Meta del mes + ventas + pedidos (en paralelo)
+    // Meta del mes + ventas + pedidos + últimos contactos (en paralelo)
     const [
       { data: metaData },
       { data: ventasData },
       { count: pedidosPendientes },
       { count: pedidosEnProd },
       { data: lastOrdersRaw },
+      { data: ultimosContactos },
     ] = await Promise.all([
       db.from("sales_goals").select("objetivo").eq("vendedor_id", user.id).eq("mes", mes).maybeSingle(),
 
@@ -80,6 +81,12 @@ export default async function DashboardPage() {
             .in("customer_id", misIds).eq("channel", "b2b_mayorista")
             .neq("status", "cancelled").order("created_at", { ascending: false })
         : Promise.resolve({ data: [] }),
+
+      db.from("contact_logs")
+        .select("tipo, notas, created_at, cliente:profiles!cliente_id(full_name)")
+        .eq("vendedor_id", user.id)
+        .order("created_at", { ascending: false })
+        .limit(8),
     ]);
 
     // Días de inactividad por cliente
@@ -245,10 +252,9 @@ export default async function DashboardPage() {
               </div>
               <ul className="divide-y divide-neutral-50">
                 {([
-                  { href: "/admin/preventista",  label: "Mis clientes",  badge: totalInact > 0 ? `${totalInact} inactivos` : null, icon: "👥" },
+                  { href: "/admin/preventista",   label: "Mis clientes", badge: totalInact > 0 ? `${totalInact} para contactar` : null, icon: "👥" },
                   { href: "/admin/pedidos/nuevo", label: "Nuevo pedido",  badge: null, icon: "📋" },
                   { href: "/admin/pedidos",       label: "Ver pedidos",   badge: (pedidosPendientes ?? 0) > 0 ? `${pedidosPendientes} pendientes` : null, icon: "📦" },
-                  { href: "/admin/reportes",      label: "Reportes",      badge: null, icon: "📊" },
                 ] as { href: string; label: string; badge: string | null; icon: string }[]).map(({ href, label, badge, icon }) => (
                   <li key={href}>
                     <Link href={href} className="flex items-center justify-between px-5 py-3 hover:bg-neutral-50 transition-colors group">
@@ -267,34 +273,39 @@ export default async function DashboardPage() {
             </div>
           </div>
 
-          {/* Derecha: lista de clientes */}
+          {/* Derecha: últimos contactos */}
           <div className="lg:col-span-2">
             <div className="bg-white rounded-2xl border border-neutral-200 overflow-hidden">
-              <div className="px-5 py-3.5 border-b border-neutral-100">
-                <p className="text-xs font-semibold text-neutral-400 uppercase tracking-wider">Mis clientes — actividad</p>
+              <div className="px-5 py-3.5 border-b border-neutral-100 flex items-center justify-between">
+                <p className="text-xs font-semibold text-neutral-400 uppercase tracking-wider">Últimos contactos</p>
+                <Link href="/admin/preventista" className="text-xs text-tierra-700 hover:underline">Ver todo →</Link>
               </div>
-              {clientesConDias.length === 0 ? (
-                <p className="px-5 py-8 text-sm text-neutral-400 text-center">No tenés clientes asignados todavía.</p>
+              {(ultimosContactos ?? []).length === 0 ? (
+                <p className="px-5 py-8 text-sm text-neutral-400 text-center">Todavía no registraste contactos.</p>
               ) : (
-                <ul className="divide-y divide-neutral-50 max-h-96 overflow-y-auto">
-                  {clientesConDias.map((c: any) => (
-                    <li key={c.id} className="flex items-center justify-between px-5 py-3">
-                      <div className="min-w-0">
-                        <p className="text-sm font-medium text-neutral-800 truncate">{c.full_name ?? "—"}</p>
-                        {c.zona && <p className="text-xs text-neutral-400">{c.zona.name}</p>}
-                      </div>
-                      <div className="shrink-0 ml-3">
-                        {c.dias === null
-                          ? <span className="text-xs text-neutral-300">Sin pedidos</span>
-                          : c.dias > 30
-                            ? <span className="px-2 py-0.5 rounded-full text-xs font-semibold bg-danger-bg text-danger">{c.dias}d</span>
-                            : c.dias > 15
-                              ? <span className="px-2 py-0.5 rounded-full text-xs font-semibold bg-warning-bg text-warning">{c.dias}d</span>
-                              : <span className="px-2 py-0.5 rounded-full text-xs font-semibold bg-success-bg text-success">{c.dias}d</span>
-                        }
-                      </div>
-                    </li>
-                  ))}
+                <ul className="divide-y divide-neutral-50">
+                  {(ultimosContactos as any[]).map((c, i) => {
+                    const dias = Math.floor((Date.now() - new Date(c.created_at).getTime()) / (1000 * 60 * 60 * 24));
+                    const TIPO_EMOJI: Record<string, string> = {
+                      llamada: "📞", visita: "🏪", whatsapp: "💬", email: "✉️", otro: "·",
+                    };
+                    return (
+                      <li key={i} className="px-5 py-3">
+                        <div className="flex items-center gap-2 mb-0.5">
+                          <span className="text-sm">{TIPO_EMOJI[c.tipo] ?? "·"}</span>
+                          <span className="text-sm font-medium text-neutral-800 truncate">
+                            {(c.cliente as any)?.full_name ?? "—"}
+                          </span>
+                          <span className="text-xs text-neutral-400 ml-auto shrink-0">
+                            {dias === 0 ? "Hoy" : `hace ${dias}d`}
+                          </span>
+                        </div>
+                        {c.notas && (
+                          <p className="text-xs text-neutral-500 truncate pl-6">{c.notas}</p>
+                        )}
+                      </li>
+                    );
+                  })}
                 </ul>
               )}
             </div>
