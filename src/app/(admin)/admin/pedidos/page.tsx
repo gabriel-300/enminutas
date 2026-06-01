@@ -81,7 +81,7 @@ export default async function AdminPedidosPage() {
         </div>
         <Link
           href="/admin/pedidos/nuevo"
-          className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-tierra-700 text-white text-sm font-medium hover:bg-tierra-800 transition-colors"
+          className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-tierra-700 !text-white text-sm font-medium hover:bg-tierra-800 transition-colors"
         >
           + Nuevo pedido
         </Link>
