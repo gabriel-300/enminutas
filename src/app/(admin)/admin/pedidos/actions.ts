@@ -51,6 +51,10 @@ export async function marcarEnviadoProd(orderId: string) {
   if (role !== "admin" && role !== "produccion") throw new Error("No autorizado");
 
   const supabase = createAdminClient();
+
+  const { data: current } = await (supabase as any).from("orders").select("status").eq("id", orderId).single();
+  if ((current as any)?.status !== "aprobado") throw new Error("El pedido debe estar aprobado para iniciar preparación");
+
   const { error } = await supabase
     .from("orders")
     .update({ status: "enviado_prod" as any })
@@ -64,6 +68,9 @@ export async function despacharPedido(orderId: string) {
   if (role !== "admin" && role !== "produccion") throw new Error("No autorizado");
 
   const supabase = createAdminClient();
+
+  const { data: current } = await (supabase as any).from("orders").select("status").eq("id", orderId).single();
+  if ((current as any)?.status !== "enviado_prod") throw new Error("El pedido debe estar en preparación para despacharse");
 
   const { data: lines } = await (supabase as any)
     .from("order_lines")

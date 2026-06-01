@@ -39,7 +39,17 @@ export async function registrarContacto(formData: FormData): Promise<Result> {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { error: "No autorizado" };
 
+  const role = user.app_metadata?.role as string | undefined;
+  if (role !== "admin" && role !== "vendedor") return { error: "No autorizado" };
+
   const db = createAdminClient() as any;
+
+  // Vendedor solo puede registrar contactos de sus propios clientes
+  if (role === "vendedor") {
+    const { data: perfil } = await db.from("profiles").select("vendedor_id").eq("id", clienteId).single();
+    if (!perfil || perfil.vendedor_id !== user.id) return { error: "No autorizado" };
+  }
+
   const { error } = await db.from("contact_logs").insert({
     vendedor_id: user.id,
     cliente_id:  clienteId,

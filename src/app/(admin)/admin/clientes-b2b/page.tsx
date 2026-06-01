@@ -29,6 +29,7 @@ export default async function AdminClientesBb2Page() {
     .map((u) => ({ id: u.id, full_name: u.user_metadata?.full_name ?? u.email ?? u.id }));
 
   const zonas: Zona[] = (zonasRaw ?? []) as Zona[];
+  const esVendedor = user.app_metadata?.role === "vendedor";
 
   // Filtrar clientes B2B por app_metadata (la columna role no existe en profiles)
   const b2bUsers = (users ?? []).filter(
@@ -54,7 +55,12 @@ export default async function AdminClientesBb2Page() {
     (perfiles ?? []).map((p: any) => [p.id, p])
   );
 
-  const lista = b2bUsers.map((u) => {
+  // Vendedor solo ve sus clientes asignados
+  const b2bUsersFiltrados = esVendedor
+    ? b2bUsers.filter((u) => profileMap[u.id]?.vendedor_id === user.id)
+    : b2bUsers;
+
+  const lista = b2bUsersFiltrados.map((u) => {
     const p = profileMap[u.id];
     return {
       id:              u.id,

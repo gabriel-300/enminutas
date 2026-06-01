@@ -135,7 +135,8 @@ export default async function PreventistaPage() {
         .from("contact_logs")
         .select("cliente_id, tipo, notas, created_at")
         .in("cliente_id", clienteIds2)
-        .order("created_at", { ascending: false }),
+        .order("created_at", { ascending: false })
+        .limit(500),
       adminClient
         .from("profiles")
         .select("id, notas_internas")
