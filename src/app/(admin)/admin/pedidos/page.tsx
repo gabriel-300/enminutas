@@ -14,17 +14,36 @@ export default async function AdminPedidosPage() {
   if (!user) redirect("/login");
 
   const adminClient = createAdminClient();
+  const esVendedor = user.app_metadata?.role === "vendedor";
+
+  // Si es vendedor, filtrar solo pedidos de sus clientes asignados
+  let clienteIds: string[] | null = null;
+  if (esVendedor) {
+    const { data: misClientes } = await (adminClient as any)
+      .from("profiles")
+      .select("id")
+      .eq("vendedor_id", user.id);
+    clienteIds = (misClientes ?? []).map((c: any) => c.id as string);
+  }
+
+  let ordersQuery = (adminClient as any)
+    .from("orders")
+    .select(`
+      id, order_number, channel, status, total, payment_method, created_at,
+      customer_id, guest_email,
+      customer:profiles!customer_id (full_name, canal)
+    `)
+    .order("created_at", { ascending: false })
+    .limit(200);
+
+  if (clienteIds !== null) {
+    ordersQuery = clienteIds.length > 0
+      ? ordersQuery.in("customer_id", clienteIds)
+      : ordersQuery.eq("customer_id", "00000000-0000-0000-0000-000000000000"); // sin resultados
+  }
 
   const [{ data: rawOrders, error }, { data: { users } }] = await Promise.all([
-    (adminClient as any)
-      .from("orders")
-      .select(`
-        id, order_number, channel, status, total, payment_method, created_at,
-        customer_id, guest_email,
-        customer:profiles!customer_id (full_name, canal)
-      `)
-      .order("created_at", { ascending: false })
-      .limit(200),
+    ordersQuery,
     adminClient.auth.admin.listUsers({ perPage: 1000 }),
   ]);
 
