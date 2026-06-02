@@ -230,17 +230,15 @@ function CrearClienteB2BForm({ zonas }: { zonas: Zona[] }) {
     }
 
     startTransition(async () => {
-      try {
-        if (mode === "password") {
-          await crearClienteB2B(fd);
-          setSuccess("Cliente B2B creado correctamente.");
-        } else {
-          await invitarClienteB2B(fd);
-          setSuccess("Invitación enviada al email del cliente.");
-        }
+      const result = mode === "password"
+        ? await crearClienteB2B(fd)
+        : await invitarClienteB2B(fd);
+
+      if (result.error) {
+        setError(result.error);
+      } else {
+        setSuccess(mode === "password" ? "Cliente B2B creado correctamente." : "Invitación enviada al email del cliente.");
         form.reset();
-      } catch (err: any) {
-        setError(err.message ?? "Error al crear el cliente");
       }
     });
   }

@@ -13,99 +13,122 @@ function parseDireccion(fd: FormData) {
   };
 }
 
-export async function crearClienteB2B(formData: FormData) {
-  const email    = (formData.get("email") as string).trim().toLowerCase();
-  const password = formData.get("password") as string;
-  const name     = (formData.get("name") as string | null)?.trim() ?? "";
-  const canal    = formData.get("canal") as string;
-  const zonaId   = (formData.get("zona_id") as string | null)?.trim() || null;
-  const phone    = (formData.get("phone") as string | null)?.trim() || null;
-  const cuit     = (formData.get("cuit") as string | null)?.trim() || null;
-  const dir      = parseDireccion(formData);
+export async function crearClienteB2B(formData: FormData): Promise<{ error?: string }> {
+  try {
+    const email    = (formData.get("email") as string).trim().toLowerCase();
+    const password = formData.get("password") as string;
+    const name     = (formData.get("name") as string | null)?.trim() ?? "";
+    const canal    = formData.get("canal") as string;
+    const zonaId   = (formData.get("zona_id") as string | null)?.trim() || null;
+    const phone    = (formData.get("phone") as string | null)?.trim() || null;
+    const cuit     = (formData.get("cuit") as string | null)?.trim() || null;
+    const dir      = parseDireccion(formData);
 
-  if (!email)               throw new Error("El email es requerido");
-  if (!password || password.length < 8)
-    throw new Error("La contraseña debe tener al menos 8 caracteres");
+    if (!email)                          return { error: "El email es requerido" };
+    if (!password || password.length < 8) return { error: "La contraseña debe tener al menos 8 caracteres" };
 
-  const auth = await createClient();
-  const { data: { user: caller } } = await auth.auth.getUser();
-  const callerRole = caller?.app_metadata?.role as string | undefined;
-  const autoVendedorId = callerRole === "vendedor" ? caller!.id : null;
-  const initialStatus  = callerRole === "vendedor" ? "pendiente" : "activo";
+    const auth = await createClient();
+    const { data: { user: caller } } = await auth.auth.getUser();
+    const callerRole     = caller?.app_metadata?.role as string | undefined;
+    const autoVendedorId = callerRole === "vendedor" ? caller!.id : null;
+    const initialStatus  = callerRole === "vendedor" ? "pendiente" : "activo";
 
-  const supabase = createAdminClient();
-  const { data, error } = await supabase.auth.admin.createUser({
-    email,
-    password,
-    email_confirm: true,
-    user_metadata: { full_name: name || email },
-    app_metadata:  { role: "customer_b2b" },
-  });
-  if (error) throw new Error(error.message);
+    const supabase = createAdminClient();
+    const { data, error } = await supabase.auth.admin.createUser({
+      email,
+      password,
+      email_confirm: true,
+      user_metadata: { full_name: name || email },
+      app_metadata:  { role: "customer_b2b" },
+    });
+    if (error) {
+      const msg = error.message?.toLowerCase() ?? "";
+      if (msg.includes("already") || msg.includes("duplicate") || msg.includes("exist")) {
+        return { error: "Ya existe un usuario con ese email." };
+      }
+      return { error: error.message };
+    }
 
-  await (supabase as any).from("profiles").upsert({
-    id:              data.user.id,
-    full_name:       name || email,
-    role:            "customer_b2b",
-    canal:           canal || null,
-    zona_id:         zonaId,
-    b2b_status:      initialStatus,
-    phone:           phone,
-    document_type:   cuit ? "cuit" : null,
-    document_number: cuit || null,
-    vendedor_id:     autoVendedorId,
-    ...dir,
-  });
+    const { error: profileError } = await (supabase as any).from("profiles").upsert({
+      id:              data.user.id,
+      full_name:       name || email,
+      role:            "customer_b2b",
+      canal:           canal || null,
+      zona_id:         zonaId,
+      b2b_status:      initialStatus,
+      phone:           phone,
+      document_type:   cuit ? "cuit" : null,
+      document_number: cuit || null,
+      vendedor_id:     autoVendedorId,
+      ...dir,
+    });
+    if (profileError) return { error: "Error al guardar el perfil: " + profileError.message };
 
-  revalidatePath("/admin/clientes-b2b");
+    revalidatePath("/admin/clientes-b2b");
+    return {};
+  } catch (err: any) {
+    return { error: err.message ?? "Error inesperado al crear el cliente" };
+  }
 }
 
-export async function invitarClienteB2B(formData: FormData) {
-  const email  = (formData.get("email") as string).trim().toLowerCase();
-  const name   = (formData.get("name") as string | null)?.trim() ?? "";
-  const canal  = formData.get("canal") as string;
-  const zonaId = (formData.get("zona_id") as string | null)?.trim() || null;
-  const phone  = (formData.get("phone") as string | null)?.trim() || null;
-  const cuit   = (formData.get("cuit") as string | null)?.trim() || null;
-  const dir    = parseDireccion(formData);
+export async function invitarClienteB2B(formData: FormData): Promise<{ error?: string }> {
+  try {
+    const email  = (formData.get("email") as string).trim().toLowerCase();
+    const name   = (formData.get("name") as string | null)?.trim() ?? "";
+    const canal  = formData.get("canal") as string;
+    const zonaId = (formData.get("zona_id") as string | null)?.trim() || null;
+    const phone  = (formData.get("phone") as string | null)?.trim() || null;
+    const cuit   = (formData.get("cuit") as string | null)?.trim() || null;
+    const dir    = parseDireccion(formData);
 
-  if (!email) throw new Error("El email es requerido");
+    if (!email) return { error: "El email es requerido" };
 
-  const auth = await createClient();
-  const { data: { user: caller } } = await auth.auth.getUser();
-  const callerRole = caller?.app_metadata?.role as string | undefined;
-  const autoVendedorId = callerRole === "vendedor" ? caller!.id : null;
-  const initialStatus  = callerRole === "vendedor" ? "pendiente" : "activo";
+    const auth = await createClient();
+    const { data: { user: caller } } = await auth.auth.getUser();
+    const callerRole     = caller?.app_metadata?.role as string | undefined;
+    const autoVendedorId = callerRole === "vendedor" ? caller!.id : null;
+    const initialStatus  = callerRole === "vendedor" ? "pendiente" : "activo";
 
-  const appUrl     = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
-  const redirectTo = `${appUrl}/auth/callback?next=/auth/set-password`;
+    const appUrl     = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
+    const redirectTo = `${appUrl}/auth/callback?next=/auth/set-password`;
 
-  const supabase = createAdminClient();
-  const { data, error } = await supabase.auth.admin.inviteUserByEmail(email, {
-    data: { full_name: name || email },
-    redirectTo,
-  });
-  if (error) throw new Error(error.message);
+    const supabase = createAdminClient();
+    const { data, error } = await supabase.auth.admin.inviteUserByEmail(email, {
+      data: { full_name: name || email },
+      redirectTo,
+    });
+    if (error) {
+      const msg = error.message?.toLowerCase() ?? "";
+      if (msg.includes("already") || msg.includes("duplicate") || msg.includes("exist")) {
+        return { error: "Ya existe un usuario con ese email." };
+      }
+      return { error: error.message };
+    }
 
-  await supabase.auth.admin.updateUserById(data.user.id, {
-    app_metadata: { role: "customer_b2b" },
-  });
+    await supabase.auth.admin.updateUserById(data.user.id, {
+      app_metadata: { role: "customer_b2b" },
+    });
 
-  await (supabase as any).from("profiles").upsert({
-    id:              data.user.id,
-    full_name:       name || email,
-    role:            "customer_b2b",
-    canal:           canal || null,
-    zona_id:         zonaId,
-    b2b_status:      initialStatus,
-    phone:           phone,
-    document_type:   cuit ? "cuit" : null,
-    document_number: cuit || null,
-    vendedor_id:     autoVendedorId,
-    ...dir,
-  });
+    const { error: profileError } = await (supabase as any).from("profiles").upsert({
+      id:              data.user.id,
+      full_name:       name || email,
+      role:            "customer_b2b",
+      canal:           canal || null,
+      zona_id:         zonaId,
+      b2b_status:      initialStatus,
+      phone:           phone,
+      document_type:   cuit ? "cuit" : null,
+      document_number: cuit || null,
+      vendedor_id:     autoVendedorId,
+      ...dir,
+    });
+    if (profileError) return { error: "Error al guardar el perfil: " + profileError.message };
 
-  revalidatePath("/admin/clientes-b2b");
+    revalidatePath("/admin/clientes-b2b");
+    return {};
+  } catch (err: any) {
+    return { error: err.message ?? "Error inesperado al enviar la invitación" };
+  }
 }
 
 async function requireAdmin() {
