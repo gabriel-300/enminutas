@@ -33,7 +33,7 @@ export function Badge({ variant = "default", className, children }: BadgeProps) 
 
 export function OrderStatusBadge({ status }: { status: string }) {
   const config: Record<string, { label: string; variant: BadgeVariant }> = {
-    pending_payment: { label: "Pendiente de pago",      variant: "warning" },
+    pending_payment: { label: "Pendiente",               variant: "warning" },
     payment_review:  { label: "Revisando pago",          variant: "info" },
     paid:            { label: "Pago confirmado",          variant: "success" },
     preparing:       { label: "En preparación",           variant: "info" },

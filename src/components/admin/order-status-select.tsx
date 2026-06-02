@@ -12,7 +12,7 @@ const B2B_FLOW = [
 ];
 
 const B2B_OPTIONS = [
-  { value: "pending_payment", label: "Pendiente de pago" },
+  { value: "pending_payment", label: "Pendiente" },
   { value: "aprobado",        label: "Aprobado" },
   { value: "enviado_prod",    label: "En producción" },
   { value: "despachado",      label: "Despachado" },
@@ -21,7 +21,7 @@ const B2B_OPTIONS = [
 ];
 
 const B2C_OPTIONS = [
-  { value: "pending_payment", label: "Pendiente de pago" },
+  { value: "pending_payment", label: "Pendiente" },
   { value: "payment_review",  label: "Revisando pago" },
   { value: "paid",            label: "Pago confirmado" },
   { value: "preparing",       label: "En preparación" },
