@@ -52,7 +52,7 @@ export default async function HojaDeRutaPage({
          .lte("entregado_at", diaFin.toISOString())
          .order("entregado_at", { ascending: true });
   } else {
-    q = q.eq("status", "despachado").order("despachado_at", { ascending: true });
+    q = q.in("status", ["despachado", "en_distribucion"]).order("despachado_at", { ascending: true });
   }
 
   if (esDistribucion && zonaFiltro) q = q.eq("delivery_zone_id", zonaFiltro);
