@@ -31,6 +31,7 @@ export async function crearClienteB2B(formData: FormData) {
   const { data: { user: caller } } = await auth.auth.getUser();
   const callerRole = caller?.app_metadata?.role as string | undefined;
   const autoVendedorId = callerRole === "vendedor" ? caller!.id : null;
+  const initialStatus  = callerRole === "vendedor" ? "pendiente" : "activo";
 
   const supabase = createAdminClient();
   const { data, error } = await supabase.auth.admin.createUser({
@@ -48,7 +49,7 @@ export async function crearClienteB2B(formData: FormData) {
     role:            "customer_b2b",
     canal:           canal || null,
     zona_id:         zonaId,
-    b2b_status:      "activo",
+    b2b_status:      initialStatus,
     phone:           phone,
     document_type:   cuit ? "cuit" : null,
     document_number: cuit || null,
@@ -74,6 +75,7 @@ export async function invitarClienteB2B(formData: FormData) {
   const { data: { user: caller } } = await auth.auth.getUser();
   const callerRole = caller?.app_metadata?.role as string | undefined;
   const autoVendedorId = callerRole === "vendedor" ? caller!.id : null;
+  const initialStatus  = callerRole === "vendedor" ? "pendiente" : "activo";
 
   const appUrl     = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
   const redirectTo = `${appUrl}/auth/callback?next=/auth/set-password`;
@@ -95,7 +97,7 @@ export async function invitarClienteB2B(formData: FormData) {
     role:            "customer_b2b",
     canal:           canal || null,
     zona_id:         zonaId,
-    b2b_status:      "activo",
+    b2b_status:      initialStatus,
     phone:           phone,
     document_type:   cuit ? "cuit" : null,
     document_number: cuit || null,

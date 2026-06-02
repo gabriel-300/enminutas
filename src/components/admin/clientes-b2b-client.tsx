@@ -396,7 +396,7 @@ export function ClientesBb2Client({
         </table>
       </div>
 
-      {esAdmin && <CrearClienteB2BForm zonas={zonas} />}
+      <CrearClienteB2BForm zonas={zonas} />
     </div>
   );
 }
