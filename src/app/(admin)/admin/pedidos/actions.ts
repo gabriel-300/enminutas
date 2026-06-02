@@ -157,6 +157,25 @@ export async function confirmarPago(orderId: string) {
   }
 }
 
+export async function iniciarDistribucion(orderId: string) {
+  const role = await getCallerRole();
+  if (role !== "admin" && role !== "distribucion") throw new Error("No autorizado");
+
+  const supabase = createAdminClient();
+
+  const { data: current } = await (supabase as any).from("orders").select("status").eq("id", orderId).single();
+  if ((current as any)?.status !== "despachado") throw new Error("El pedido debe estar despachado para iniciar distribución");
+
+  const { error } = await (supabase as any)
+    .from("orders")
+    .update({ status: "en_distribucion" as any })
+    .eq("id", orderId);
+  if (error) throw new Error(error.message);
+
+  revalidatePath("/admin/distribucion");
+  revalidatePath("/admin/produccion");
+}
+
 export async function confirmarEntrega(orderId: string) {
   const role = await getCallerRole();
   if (role !== "admin" && role !== "distribucion") throw new Error("No autorizado");

@@ -14,13 +14,14 @@ function OrderCard({
   variant = "default",
 }: {
   order:    any;
-  action:   React.ReactNode;
-  variant?: "default" | "pending" | "active";
+  action?:  React.ReactNode;
+  variant?: "default" | "pending" | "active" | "dispatched";
 }) {
   const cardCls = {
-    default: "bg-white border-neutral-200",
-    pending: "bg-warning-bg/30 border-warning/30",
-    active:  "bg-success-bg/30 border-success/30",
+    default:    "bg-white border-neutral-200",
+    pending:    "bg-warning-bg/30 border-warning/30",
+    active:     "bg-success-bg/30 border-success/30",
+    dispatched: "bg-neutral-50 border-neutral-200 opacity-70",
   }[variant];
 
   return (
@@ -74,17 +75,18 @@ export default async function ProduccionPage() {
   const { data: orders } = await (adminClient as any)
     .from("orders")
     .select(`
-      id, order_number, status, created_at, aprobado_at,
+      id, order_number, status, created_at, aprobado_at, despachado_at,
       customer:profiles!customer_id (full_name),
       lines:order_lines (quantity, product_snapshot)
     `)
     .eq("channel", "b2b_mayorista")
-    .in("status", ["aprobado", "enviado_prod"])
+    .in("status", ["aprobado", "enviado_prod", "despachado", "en_distribucion"])
     .order("aprobado_at", { ascending: true });
 
   const lista       = (orders ?? []) as any[];
   const cola        = lista.filter((o) => o.status === "aprobado");
   const preparando  = lista.filter((o) => o.status === "enviado_prod");
+  const despachados = lista.filter((o) => o.status === "despachado" || o.status === "en_distribucion");
 
   return (
     <div className="p-8 max-w-3xl">
@@ -93,7 +95,7 @@ export default async function ProduccionPage() {
         <p className="text-sm text-neutral-500 mt-1">
           {lista.length === 0
             ? "Sin pedidos activos en este momento."
-            : `${cola.length} en cola · ${preparando.length} en preparación`}
+            : `${cola.length} en cola · ${preparando.length} en preparación · ${despachados.length} en distribución`}
         </p>
       </div>
 
@@ -129,6 +131,24 @@ export default async function ProduccionPage() {
                 order={order}
                 action={<DespacharButton orderId={order.id} />}
                 variant="active"
+              />
+            ))}
+          </div>
+        </section>
+      )}
+
+      {/* En distribución (solo lectura) */}
+      {despachados.length > 0 && (
+        <section className="mt-8">
+          <h2 className="text-xs font-semibold text-neutral-400 uppercase tracking-wider mb-3">
+            ● En distribución
+          </h2>
+          <div className="space-y-3">
+            {despachados.map((order) => (
+              <OrderCard
+                key={order.id}
+                order={order}
+                variant="dispatched"
               />
             ))}
           </div>

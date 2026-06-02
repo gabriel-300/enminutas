@@ -8,16 +8,18 @@ const B2B_FLOW = [
   "aprobado",
   "enviado_prod",
   "despachado",
+  "en_distribucion",
   "delivered",
 ];
 
 const B2B_OPTIONS = [
-  { value: "pending_payment", label: "Pendiente" },
-  { value: "aprobado",        label: "Aprobado" },
-  { value: "enviado_prod",    label: "En producción" },
-  { value: "despachado",      label: "Despachado" },
-  { value: "delivered",       label: "Entregado" },
-  { value: "cancelled",       label: "Cancelado" },
+  { value: "pending_payment",  label: "Pendiente" },
+  { value: "aprobado",         label: "Aprobado" },
+  { value: "enviado_prod",     label: "En producción" },
+  { value: "despachado",       label: "Despachado" },
+  { value: "en_distribucion",  label: "En distribución" },
+  { value: "delivered",        label: "Entregado" },
+  { value: "cancelled",        label: "Cancelado" },
 ];
 
 const B2C_OPTIONS = [

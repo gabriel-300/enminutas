@@ -5,7 +5,6 @@ import Link from "next/link";
 import { OrderStatusBadge } from "@/components/ui/badge";
 import { OrderStatusSelect } from "@/components/admin/order-status-select";
 import { AprobarPedidoButton } from "@/components/admin/aprobar-pedido-button";
-import { ConfirmarPagoButton } from "@/components/admin/confirmar-pago-button";
 import { NotasPedidoForm } from "@/components/admin/notas-pedido-form";
 import { fmtFechaHora, fmtFecha } from "@/lib/fecha";
 
@@ -99,9 +98,6 @@ export default async function AdminPedidoDetailPage({
             </Link>
           )}
           <OrderStatusBadge status={o.status} />
-          {esAdmin && !o.payment_confirmed_at && (
-            <ConfirmarPagoButton orderId={o.id} />
-          )}
           {esAdmin && o.channel === "b2b_mayorista" && o.status === "pending_payment" && (
             <AprobarPedidoButton orderId={o.id} />
           )}

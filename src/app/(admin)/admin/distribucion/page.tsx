@@ -3,6 +3,8 @@ import Link from "next/link";
 import { createClient, createAdminClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { ConfirmarEntregaButton } from "@/components/admin/confirmar-entrega-button";
+import { IniciarDistribucionButton } from "@/components/admin/iniciar-distribucion-button";
+import { DistribucionZonaFiltro } from "@/components/admin/distribucion-zona-filtro";
 import { fmtFecha } from "@/lib/fecha";
 
 export const metadata: Metadata = { title: "Distribución — Admin En Minutas" };
@@ -32,7 +34,12 @@ function BadgeDias({ dias }: { dias: number | null }) {
   );
 }
 
-export default async function DistribucionPage() {
+export default async function DistribucionPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ zona?: string }>;
+}) {
+  const { zona: zonaParam } = await searchParams;
   const supabase    = await createClient();
   const adminClient = createAdminClient();
   const { data: { user } } = await supabase.auth.getUser();
@@ -52,7 +59,7 @@ export default async function DistribucionPage() {
   const hoyInicio = new Date();
   hoyInicio.setHours(0, 0, 0, 0);
 
-  const buildQuery = (db: any, status: string) => {
+  const buildQuery = (db: any, status: string | string[]) => {
     let q = db
       .from("orders")
       .select(`
@@ -63,13 +70,13 @@ export default async function DistribucionPage() {
         lines:order_lines (quantity, product_snapshot)
       `)
       .eq("channel", "b2b_mayorista")
-      .eq("status", status);
+      .in("status", status instanceof Array ? status : [status]);
     if (esDistribucion && zonaFiltro) q = q.eq("delivery_zone_id", zonaFiltro);
     return q;
   };
 
   const [{ data: orders }, { data: entregadosHoy }] = await Promise.all([
-    buildQuery(adminClient as any, "despachado").order("despachado_at", { ascending: true }),
+    buildQuery(adminClient as any, ["despachado", "en_distribucion"]).order("despachado_at", { ascending: true }),
 
     (() => {
       let q = (adminClient as any)
@@ -98,7 +105,11 @@ export default async function DistribucionPage() {
     if (b === "Sin zona asignada") return -1;
     return a.localeCompare(b, "es");
   });
-  const multipleZones = zoneNames.length > 1;
+  const multipleZones     = zoneNames.length > 1;
+  const mostrarFiltro     = !esDistribucion && zoneNames.length > 1;
+  const filteredZoneNames = zonaParam
+    ? zoneNames.filter((z) => z === zonaParam)
+    : zoneNames;
 
   return (
     <div className="p-8 max-w-3xl">
@@ -140,13 +151,21 @@ export default async function DistribucionPage() {
         </div>
       </div>
 
+      {mostrarFiltro && (
+        <DistribucionZonaFiltro zonas={zoneNames} />
+      )}
+
       {lista.length === 0 ? (
         <div className="bg-white rounded-2xl border border-neutral-200 p-12 text-center">
           <p className="text-neutral-400 text-sm">No hay pedidos despachados pendientes de entrega.</p>
         </div>
+      ) : filteredZoneNames.length === 0 ? (
+        <div className="bg-white rounded-2xl border border-neutral-200 p-12 text-center">
+          <p className="text-neutral-400 text-sm">No hay pedidos para la zona seleccionada.</p>
+        </div>
       ) : (
         <div className="space-y-8">
-          {zoneNames.map((zoneName) => (
+          {filteredZoneNames.map((zoneName) => (
             <div key={zoneName}>
               {multipleZones && (
                 <p className="text-xs font-semibold text-neutral-400 uppercase tracking-wide mb-3">
@@ -230,7 +249,10 @@ export default async function DistribucionPage() {
                           </ul>
                         </div>
 
-                        <ConfirmarEntregaButton orderId={order.id} />
+                        {order.status === "despachado"
+                          ? <IniciarDistribucionButton orderId={order.id} />
+                          : <ConfirmarEntregaButton orderId={order.id} />
+                        }
                       </div>
                     </div>
                   );

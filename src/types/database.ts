@@ -29,7 +29,8 @@ export type OrderStatus =
   | "refunded"
   | "aprobado"
   | "enviado_prod"
-  | "despachado";
+  | "despachado"
+  | "en_distribucion";
 
 export type OrderChannel =
   | "b2c_nacional"
