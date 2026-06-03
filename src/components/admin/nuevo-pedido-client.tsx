@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useMemo, useTransition } from "react";
-import { calcPrecio, margenParaCanal, type PrecioB2B } from "@/lib/b2b-pricing";
+import { precioParaCanal, type PrecioB2B } from "@/lib/b2b-pricing";
 import { crearPedidoAdmin } from "@/app/(admin)/admin/pedidos/nuevo/actions";
 
 // ── Types ──────────────────────────────────────────────────────────────────
@@ -22,13 +22,9 @@ type ProductoRaw = {
   unit_label:    string | null;
   bolsas_caja:   number | null;
   kg_caja:       number | null;
-  costo:         number | null;
-  pkg_unitario:  number | null;
-  pkg_bulto:     number | null;
-  margen_dist:   number | null;
-  margen_gastro: number | null;
-  margen_min:    number | null;
-  mult_bolsas:   boolean | null;
+  precio_dist:   number | null;
+  precio_gastro: number | null;
+  precio_min:    number | null;
   categoria:     string;
 };
 
@@ -83,11 +79,12 @@ export function NuevoPedidoClient({
     if (!cliente) return productosRaw.map((p) => ({ ...p, precio: null }));
     return productosRaw.map((p) => ({
       ...p,
-      precio: calcPrecio(
-        p.costo, p.kg_caja, p.bolsas_caja,
-        p.pkg_unitario, p.pkg_bulto, p.mult_bolsas,
-        margenParaCanal(cliente.canal, p.margen_dist, p.margen_gastro, p.margen_min),
-        cliente.flete_kg,
+      precio: precioParaCanal(
+        cliente.canal,
+        p.precio_dist,
+        p.precio_gastro,
+        p.precio_min,
+        p.bolsas_caja,
       ),
     }));
   }, [cliente, productosRaw]);

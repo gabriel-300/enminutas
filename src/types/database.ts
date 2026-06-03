@@ -145,6 +145,9 @@ export interface Database {
           margen_gastro: number | null;
           margen_min: number | null;
           mult_bolsas: boolean | null;
+          precio_dist: number | null;
+          precio_gastro: number | null;
+          precio_min: number | null;
           created_at: string;
           updated_at: string;
         };

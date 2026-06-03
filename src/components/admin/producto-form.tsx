@@ -19,15 +19,11 @@ type ProductoValues = {
   category_id?: string | null;
   cover_image_url?:  string | null;
   extra_images?:     string[] | null;
-  costo?: number | null;
   kg_caja?: number | null;
   bolsas_caja?: number | null;
-  pkg_unitario?: number | null;
-  pkg_bulto?: number | null;
-  margen_dist?: number | null;
-  margen_gastro?: number | null;
-  margen_min?: number | null;
-  mult_bolsas?: boolean;
+  precio_dist?: number | null;
+  precio_gastro?: number | null;
+  precio_min?: number | null;
 };
 
 type Props = {
@@ -166,38 +162,19 @@ export function ProductoForm({ categorias, defaultValues: dv = {}, action, submi
       {/* Datos B2B */}
       <section className="bg-white rounded-2xl border border-neutral-200 p-6 space-y-4">
         <div>
-          <h2 className="text-sm font-semibold text-neutral-700 uppercase tracking-wide">Datos B2B / Costo</h2>
-          <p className="text-xs text-neutral-400 mt-1">Completar para que el catálogo B2B calcule precios dinámicos por canal y zona.</p>
-        </div>
-
-        <div className="grid grid-cols-3 gap-4">
-          <Field label="Costo s/IVA por bolsa ($)" name="costo" type="number" defaultValue={dv.costo ?? ""} placeholder="0" step="0.01" min="0" />
-          <Field label="Kg por caja" name="kg_caja" type="number" defaultValue={dv.kg_caja ?? ""} placeholder="10.8" step="0.001" min="0" />
-          <Field label="Bolsas por caja" name="bolsas_caja" type="number" defaultValue={dv.bolsas_caja ?? ""} placeholder="6" min="1" />
+          <h2 className="text-sm font-semibold text-neutral-700 uppercase tracking-wide">Datos B2B</h2>
+          <p className="text-xs text-neutral-400 mt-1">Kg/caja y bolsas/caja se usan para stock y hoja de ruta. Los precios son TOTAL C/IVA por caja según canal.</p>
         </div>
 
         <div className="grid grid-cols-2 gap-4">
-          <Field label="Packaging unitario ($)" name="pkg_unitario" type="number" defaultValue={dv.pkg_unitario ?? 0} placeholder="0" step="0.01" min="0" />
-          <Field label="Packaging por bulto ($)" name="pkg_bulto" type="number" defaultValue={dv.pkg_bulto ?? 0} placeholder="0" step="0.01" min="0" />
+          <Field label="Kg por caja" name="kg_caja" type="number" defaultValue={dv.kg_caja ?? ""} placeholder="5" step="0.001" min="0" />
+          <Field label="Bolsas / unidades por caja" name="bolsas_caja" type="number" defaultValue={dv.bolsas_caja ?? ""} placeholder="36" min="1" />
         </div>
 
         <div className="grid grid-cols-3 gap-4">
-          <Field label="Margen distribuidor (%)" name="margen_dist" type="number" defaultValue={dv.margen_dist != null ? dv.margen_dist * 100 : 35} placeholder="35" step="0.1" min="0" max="100" />
-          <Field label="Margen gastronomía (%)" name="margen_gastro" type="number" defaultValue={dv.margen_gastro != null ? dv.margen_gastro * 100 : 40} placeholder="40" step="0.1" min="0" max="100" />
-          <Field label="Margen minorista (%)" name="margen_min" type="number" defaultValue={dv.margen_min != null ? dv.margen_min * 100 : 45} placeholder="45" step="0.1" min="0" max="100" />
-        </div>
-
-        <div className="flex items-center gap-3">
-          <input
-            type="checkbox"
-            name="mult_bolsas"
-            id="mult_bolsas"
-            defaultChecked={dv.mult_bolsas ?? true}
-            className="size-4 rounded accent-tierra-700"
-          />
-          <label htmlFor="mult_bolsas" className="text-sm text-neutral-700">
-            Multiplicar costo por bolsas/caja al calcular precio de caja
-          </label>
+          <Field label="Precio Distribuidor c/IVA ($)" name="precio_dist" type="number" defaultValue={dv.precio_dist ?? ""} placeholder="0" step="0.01" min="0" />
+          <Field label="Precio Gastronomía c/IVA ($)" name="precio_gastro" type="number" defaultValue={dv.precio_gastro ?? ""} placeholder="0" step="0.01" min="0" />
+          <Field label="Precio Minorista c/IVA ($)" name="precio_min" type="number" defaultValue={dv.precio_min ?? ""} placeholder="0" step="0.01" min="0" />
         </div>
       </section>
 

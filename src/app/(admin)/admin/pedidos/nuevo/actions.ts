@@ -73,7 +73,7 @@ export async function crearPedidoAdmin(payload: CrearPedidoPayload) {
   const subtotal         = subtotalBruto;
   const descuento        = discountAmount > 0 ? discountAmount : Math.round(subtotalBruto * discountPct / 100 * 100) / 100;
   const total            = subtotalBruto - descuento;
-  const commissionAmount = items.reduce((s, i) => s + i.precio.comision   * i.quantity, 0);
+  const commissionAmount = 0;
 
   const r = (n: number) => Math.round(n * 100) / 100;
 

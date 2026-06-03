@@ -10,11 +10,8 @@ type CartItem = {
   unit_label:  string | null;
   bolsas_caja: number | null;
   precio: {
-    lista_siva: number;
-    comision:   number;
-    flete:      number;
-    total_siva: number;
     total_civa: number;
+    por_unidad: number;
   };
   qty: number;
 };
@@ -22,13 +19,12 @@ type CartItem = {
 export async function confirmarPedidoB2B(items: CartItem[], notes: string | null = null) {
   if (items.length === 0) throw new Error("Carrito vacío");
 
-  const supabase      = await createClient();
-  const adminClient   = createAdminClient();
+  const supabase    = await createClient();
+  const adminClient = createAdminClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) throw new Error("No autorizado");
 
-  const subtotal         = items.reduce((s, i) => s + i.precio.total_civa  * i.qty, 0);
-  const commissionAmount = items.reduce((s, i) => s + i.precio.comision    * i.qty, 0);
+  const subtotal = items.reduce((s, i) => s + i.precio.total_civa * i.qty, 0);
 
   const year = new Date().getFullYear();
   const { data: maxOrder } = await adminClient
@@ -50,19 +46,19 @@ export async function confirmarPedidoB2B(items: CartItem[], notes: string | null
   const { data: order, error: orderError } = await supabase
     .from("orders")
     .insert({
-      order_number:              orderNum,
-      channel:                   "b2b_mayorista",
-      customer_id:               user.id,
-      status:                    "pending_payment",
-      subtotal:                  Math.round(subtotal * 100) / 100,
-      shipping_fee:              0,
-      discount:                  0,
-      total:                     Math.round(subtotal * 100) / 100,
-      ideaia_commission_rate:    0.15,
-      ideaia_commission_amount:  Math.round(commissionAmount * 100) / 100,
-      shipping_method:           "b2b_despacho",
-      payment_method:            "transferencia",
-      notes:                     notes ?? null,
+      order_number:    orderNum,
+      channel:         "b2b_mayorista",
+      customer_id:     user.id,
+      status:          "pending_payment",
+      subtotal:        Math.round(subtotal * 100) / 100,
+      shipping_fee:    0,
+      discount:        0,
+      total:           Math.round(subtotal * 100) / 100,
+      ideaia_commission_rate:   0.15,
+      ideaia_commission_amount: 0,
+      shipping_method:          "b2b_despacho",
+      payment_method:           "transferencia",
+      notes:                    notes ?? null,
     })
     .select("id")
     .single();
@@ -90,7 +86,6 @@ export async function confirmarPedidoB2B(items: CartItem[], notes: string | null
     throw new Error(linesError.message);
   }
 
-  // Notificar al admin — fire and forget
   const { data: profile } = await supabase
     .from("profiles")
     .select("full_name")

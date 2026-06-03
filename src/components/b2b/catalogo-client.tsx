@@ -5,11 +5,8 @@ import Image from "next/image";
 import { confirmarPedidoB2B } from "@/app/(b2b)/b2b/catalogo/actions";
 
 type PrecioB2B = {
-  lista_siva: number;
-  comision:   number;
-  flete:      number;
-  total_siva: number;
   total_civa: number;
+  por_unidad: number;
 };
 
 type Producto = {
@@ -80,7 +77,6 @@ function ProductCard({
   onInc:   () => void;
   onDec:   () => void;
 }) {
-  const [open, setOpen] = useState(false);
   const minQty = p.min_quantity_b2b ?? 1;
 
   return (
@@ -120,47 +116,17 @@ function ProductCard({
         </div>
 
         {p.precio ? (
-          <>
-            <div className="flex items-end justify-between">
-              <div>
-                <p className="text-xs text-neutral-400">Total c/IVA</p>
-                <p className="text-xl font-semibold text-neutral-900 font-display tabular-nums">
-                  {fmt(p.precio.total_civa)}
-                </p>
-              </div>
-              <button
-                onClick={() => setOpen(!open)}
-                className="text-xs text-tierra-700 hover:underline pb-0.5"
-              >
-                {open ? "Ocultar" : "Desglose"}
-              </button>
+          <div className="flex items-end justify-between">
+            <div>
+              <p className="text-xs text-neutral-400">Total c/IVA · por caja</p>
+              <p className="text-xl font-semibold text-neutral-900 font-display tabular-nums">
+                {fmt(p.precio.total_civa)}
+              </p>
             </div>
-
-            {open && (
-              <div className="bg-neutral-50 rounded-xl p-3 space-y-1.5 text-xs">
-                <div className="flex justify-between text-neutral-600">
-                  <span>Lista s/IVA</span>
-                  <span className="tabular-nums">{fmt(p.precio.lista_siva)}</span>
-                </div>
-                <div className="flex justify-between text-neutral-600">
-                  <span>Comisión (15%)</span>
-                  <span className="tabular-nums">{fmt(p.precio.comision)}</span>
-                </div>
-                <div className="flex justify-between text-neutral-600">
-                  <span>Flete</span>
-                  <span className="tabular-nums">{fmt(p.precio.flete)}</span>
-                </div>
-                <div className="flex justify-between font-medium text-neutral-800 pt-1 border-t border-neutral-200">
-                  <span>Total s/IVA</span>
-                  <span className="tabular-nums">{fmt(p.precio.total_siva)}</span>
-                </div>
-                <div className="flex justify-between font-semibold text-tierra-700">
-                  <span>Total c/IVA (21%)</span>
-                  <span className="tabular-nums">{fmt(p.precio.total_civa)}</span>
-                </div>
-              </div>
-            )}
-          </>
+            <p className="text-xs text-neutral-400 pb-0.5">
+              {fmt(p.precio.por_unidad)}/u
+            </p>
+          </div>
         ) : (
           <p className="text-sm text-neutral-400 italic flex-1">Precio a consultar</p>
         )}

@@ -48,7 +48,7 @@ export default async function NuevoPedidoPage({
       .from("products")
       .select(`
         id, sku, name, unit_label, bolsas_caja, kg_caja,
-        costo, pkg_unitario, pkg_bulto, margen_dist, margen_gastro, margen_min, mult_bolsas,
+        precio_dist, precio_gastro, precio_min,
         category:categories!category_id (name)
       `)
       .eq("is_active", true)
@@ -77,13 +77,9 @@ export default async function NuevoPedidoPage({
     unit_label:    p.unit_label,
     bolsas_caja:   p.bolsas_caja,
     kg_caja:       p.kg_caja,
-    costo:         p.costo,
-    pkg_unitario:  p.pkg_unitario,
-    pkg_bulto:     p.pkg_bulto,
-    margen_dist:   p.margen_dist,
-    margen_gastro: p.margen_gastro,
-    margen_min:    p.margen_min,
-    mult_bolsas:   p.mult_bolsas,
+    precio_dist:   p.precio_dist   ?? null,
+    precio_gastro: p.precio_gastro ?? null,
+    precio_min:    p.precio_min    ?? null,
     categoria:     (p.category as any)?.name ?? "Sin categoría",
   }));
 
