@@ -15,8 +15,8 @@ export default async function AdminProductosPage() {
   const { data: products, error } = await supabase
     .from("products")
     .select(`
-      id, sku, name, price_b2c, price_b2b, is_active, unit_label, weight_grams,
-      costo, bolsas_caja, kg_caja, stock_cajas, stock_minimo,
+      id, sku, name, price_b2c, is_active, unit_label,
+      stock_cajas, stock_minimo, precio_dist, precio_gastro, precio_min,
       category:categories (name)
     `)
     .order("is_active", { ascending: false })
