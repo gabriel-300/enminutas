@@ -311,16 +311,6 @@ export default async function ReportesPage({
             </div>
           )}
 
-          {/* Comisión Ideaia */}
-          {totalComision > 0 && (
-            <div className="bg-neutral-50 rounded-2xl border border-neutral-200 p-5 flex items-center justify-between">
-              <div>
-                <p className="text-xs font-medium text-neutral-400 uppercase tracking-wide">Comisión Ideaia</p>
-                <p className="text-xs text-neutral-400 mt-0.5">15% sobre ventas B2B</p>
-              </div>
-              <p className="text-2xl font-semibold font-display text-neutral-900 tabular-nums">{fmt(totalComision)}</p>
-            </div>
-          )}
         </div>
       )}
     </div>
