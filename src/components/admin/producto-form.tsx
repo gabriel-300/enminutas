@@ -153,10 +153,7 @@ export function ProductoForm({ categorias, defaultValues: dv = {}, action, submi
       {/* Precios B2C */}
       <section className="bg-white rounded-2xl border border-neutral-200 p-6 space-y-4">
         <h2 className="text-sm font-semibold text-neutral-700 uppercase tracking-wide">Precios</h2>
-        <div className="grid grid-cols-2 gap-4">
-          <Field label="Precio B2C (s/IVA) *" name="price_b2c" type="number" defaultValue={dv.price_b2c} placeholder="0" required min="0" />
-          <Field label="Precio B2B fijo (referencia)" name="price_b2b" type="number" defaultValue={dv.price_b2b} placeholder="0" min="0" />
-        </div>
+        <Field label="Precio B2C (s/IVA) *" name="price_b2c" type="number" defaultValue={dv.price_b2c} placeholder="0" required min="0" />
       </section>
 
       {/* Datos B2B */}
