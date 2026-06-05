@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { createClient, createAdminClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
-import { eliminarCanal } from "./actions";
+import { EliminarCanalBtn } from "./eliminar-canal-btn";
 
 export const metadata: Metadata = { title: "Canales B2B — Admin En Minutas" };
 export const revalidate = 0;
@@ -65,17 +65,7 @@ export default async function CanalesPage() {
                     >
                       Editar
                     </Link>
-                    <form action={eliminarCanal.bind(null, c.id)}>
-                      <button
-                        type="submit"
-                        className="text-xs text-danger hover:underline"
-                        onClick={(e) => {
-                          if (!confirm(`¿Eliminar el canal "${c.nombre}"?`)) e.preventDefault();
-                        }}
-                      >
-                        Eliminar
-                      </button>
-                    </form>
+                    <EliminarCanalBtn id={c.id} nombre={c.nombre} />
                   </div>
                 </td>
               </tr>
