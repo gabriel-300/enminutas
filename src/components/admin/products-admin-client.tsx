@@ -22,22 +22,12 @@ type Product = {
 
 function ProductRow({ p }: { p: Product }) {
   const [active,     setActive]     = useState(p.is_active);
-  const [b2c,        setB2c]        = useState(p.price_b2c);
-  const [editingB2c, setEditingB2c] = useState(false);
-  const [inputB2c,   setInputB2c]   = useState(String(p.price_b2c));
   const [isPending,  startTransition] = useTransition();
   const router = useRouter();
 
   function handleDelete() {
     if (!confirm(`¿Eliminar "${p.name}"? Esta acción no se puede deshacer.`)) return;
     startTransition(async () => { await eliminarProducto(p.id); router.refresh(); });
-  }
-
-  function saveB2c(rawInput: string) {
-    const parsed = parseInt(rawInput.replace(/\D/g, ""), 10);
-    if (!parsed) { setInputB2c(String(b2c)); setEditingB2c(false); return; }
-    setB2c(parsed); setEditingB2c(false);
-    startTransition(() => updateProductPrice(p.id, parsed, 0));
   }
 
   function handleToggle() {
@@ -71,26 +61,6 @@ function ProductRow({ p }: { p: Product }) {
           </span>
         ) : (
           <span className="text-xs text-neutral-400 tabular-nums">{p.stock_cajas}</span>
-        )}
-      </td>
-
-      {/* Precio B2C */}
-      <td className="px-4 py-3 text-right">
-        {editingB2c ? (
-          <input
-            type="number"
-            value={inputB2c}
-            onChange={(e) => setInputB2c(e.target.value)}
-            onBlur={() => saveB2c(inputB2c)}
-            onKeyDown={(e) => { if (e.key === "Enter") e.currentTarget.blur(); if (e.key === "Escape") { setEditingB2c(false); setInputB2c(String(b2c)); }}}
-            autoFocus
-            className="w-28 px-2 py-1 text-sm border border-tierra-700 rounded-lg focus:outline-none text-right"
-            disabled={isPending}
-          />
-        ) : (
-          <button onClick={() => setEditingB2c(true)} className="text-sm hover:text-tierra-700 tabular-nums" title="Click para editar">
-            {fmt(b2c)}
-          </button>
         )}
       </td>
 
@@ -136,7 +106,6 @@ export function ProductsAdminClient({ products }: { products: Product[] }) {
             <th className="px-4 py-3 font-medium text-neutral-500">Producto</th>
             <th className="px-4 py-3 font-medium text-neutral-500">Categoría</th>
             <th className="px-4 py-3 font-medium text-neutral-500 text-center">Stock</th>
-            <th className="px-4 py-3 font-medium text-neutral-500 text-right">Precio B2C</th>
             <th className="px-4 py-3 font-medium text-neutral-500 text-right">Precio lista</th>
             <th className="px-4 py-3 font-medium text-neutral-500 text-center">Activo</th>
             <th className="px-4 py-3 w-28"></th>
