@@ -12,9 +12,17 @@ type ClienteB2B = {
   canal_nombre:        string;
   canal_descuento_pct: number;
   descuento_extra_pct: number;
-  zona_id:             string | null;
-  zona_name:           string;
-  flete_kg:            number;
+};
+
+type DireccionB2B = {
+  id:           string;
+  alias:        string;
+  calle:        string | null;
+  ciudad:       string | null;
+  zona_id:      string | null;
+  zona_name:    string;
+  flete_kg:     number;
+  es_principal: boolean;
 };
 
 type ProductoRaw = {
@@ -41,20 +49,23 @@ type VolumeTier = { minCajas: number; descuentoPct: number; label: string };
 
 export function NuevoPedidoClient({
   clientes,
+  direccionesMap = {},
   productosRaw,
   clienteInit = null,
   itemsInit   = {},
   esAdmin     = false,
   tiers       = [],
 }: {
-  clientes:      ClienteB2B[];
-  productosRaw:  ProductoRaw[];
-  clienteInit?:  string | null;
-  itemsInit?:    Record<string, number>;
-  esAdmin?:      boolean;
-  tiers?:        VolumeTier[];
+  clientes:        ClienteB2B[];
+  direccionesMap?: Record<string, DireccionB2B[]>;
+  productosRaw:    ProductoRaw[];
+  clienteInit?:    string | null;
+  itemsInit?:      Record<string, number>;
+  esAdmin?:        boolean;
+  tiers?:          VolumeTier[];
 }) {
   const [clienteId,     setClienteId]     = useState(clienteInit ?? "");
+  const [direccionId,   setDireccionId]   = useState<string>("");
   const [cart,          setCart]          = useState<Record<string, number>>(itemsInit);
   const [notes,         setNotes]         = useState("");
   const [paymentMethod, setPaymentMethod] = useState("transferencia");
@@ -64,9 +75,25 @@ export function NuevoPedidoClient({
   const [error,         setError]         = useState<string | null>(null);
   const [isPending,     startTransition]  = useTransition();
 
-  const cliente = clientes.find((c) => c.id === clienteId) ?? null;
+  const cliente    = clientes.find((c) => c.id === clienteId) ?? null;
+  const direcciones: DireccionB2B[] = clienteId ? (direccionesMap[clienteId] ?? []) : [];
+  const direccion  = direcciones.find((d) => d.id === direccionId)
+    ?? direcciones.find((d) => d.es_principal)
+    ?? direcciones[0]
+    ?? null;
 
-  // Calcular precios según el cliente seleccionado
+  const flete_kg = direccion?.flete_kg ?? 0;
+
+  // Auto-seleccionar dirección principal al cambiar cliente
+  function handleClienteChange(id: string) {
+    setClienteId(id);
+    setCart({});
+    const dirs = direccionesMap[id] ?? [];
+    const principal = dirs.find((d) => d.es_principal) ?? dirs[0];
+    setDireccionId(principal?.id ?? "");
+  }
+
+  // Calcular precios según cliente + dirección seleccionada
   const productos: ProductoConPrecio[] = useMemo(() => {
     if (!cliente) return productosRaw.map((p) => ({ ...p, precio: null }));
     return productosRaw.map((p) => ({
@@ -75,12 +102,12 @@ export function NuevoPedidoClient({
         p.precio_lista,
         cliente.canal_descuento_pct,
         cliente.descuento_extra_pct,
-        cliente.flete_kg,
+        flete_kg,
         p.kg_caja,
         p.bolsas_caja,
       ),
     }));
-  }, [cliente, productosRaw]);
+  }, [cliente, flete_kg, productosRaw]);
 
   const categorias = useMemo(
     () => Array.from(new Set(productosRaw.map((p) => p.categoria))).sort(),
@@ -139,7 +166,7 @@ export function NuevoPedidoClient({
         await crearPedidoAdmin({
           clientId:      cliente.id,
           canal:         cliente.canal_nombre,
-          zonaId:        cliente.zona_id,
+          zonaId:        direccion?.zona_id ?? null,
           items,
           notes,
           paymentMethod,
@@ -166,26 +193,46 @@ export function NuevoPedidoClient({
           </label>
           <select
             value={clienteId}
-            onChange={(e) => { setClienteId(e.target.value); setCart({}); }}
+            onChange={(e) => handleClienteChange(e.target.value)}
             className="w-full px-3 py-2 text-sm border border-neutral-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-tierra-700/20"
           >
             <option value="">Seleccionar cliente…</option>
             {clientes.map((c) => (
               <option key={c.id} value={c.id}>
-                {c.full_name ?? c.id.slice(0, 8)} — {c.canal_nombre} · {c.zona_name}
+                {c.full_name ?? c.id.slice(0, 8)} — {c.canal_nombre}
               </option>
             ))}
           </select>
 
+          {/* Selector de dirección */}
           {cliente && (
-            <div className="mt-3 flex items-center gap-4 text-xs text-neutral-500">
-              <span className="px-2 py-0.5 bg-info-bg text-info rounded-full font-medium">
-                {cliente.canal_nombre}
-              </span>
-              <span>{cliente.zona_name}</span>
-              {cliente.flete_kg > 0 && (
-                <span>Flete: {fmt(cliente.flete_kg)}/kg</span>
+            <div className="mt-3 space-y-2">
+              {direcciones.length === 0 ? (
+                <p className="text-xs text-warning bg-warning-bg border border-warning/20 rounded-xl px-3 py-2">
+                  Este cliente no tiene direcciones de entrega.{" "}
+                  <a href={`/admin/clientes-b2b/${cliente.id}`} className="underline">Agregar dirección →</a>
+                </p>
+              ) : (
+                <div>
+                  <label className="block text-xs font-medium text-neutral-500 mb-1">Dirección de entrega</label>
+                  <select
+                    value={direccionId}
+                    onChange={(e) => setDireccionId(e.target.value)}
+                    className="w-full px-3 py-2 text-sm border border-neutral-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-tierra-700/20"
+                  >
+                    {direcciones.map((d) => (
+                      <option key={d.id} value={d.id}>
+                        {d.alias}{d.ciudad ? ` — ${d.ciudad}` : ""} · {d.zona_name}
+                        {d.flete_kg > 0 ? ` (flete ${fmt(d.flete_kg)}/kg)` : ""}
+                      </option>
+                    ))}
+                  </select>
+                </div>
               )}
+              <div className="flex items-center gap-3 text-xs text-neutral-500">
+                <span className="px-2 py-0.5 bg-info-bg text-info rounded-full font-medium">{cliente.canal_nombre}</span>
+                {flete_kg > 0 && <span>Flete: {fmt(flete_kg)}/kg</span>}
+              </div>
             </div>
           )}
         </div>

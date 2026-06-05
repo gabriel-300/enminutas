@@ -29,16 +29,15 @@ export default async function NuevoPedidoPage({
     .filter((u: any) => u.app_metadata?.role === "customer_b2b")
     .map((u: any) => u.id as string);
 
-  const [{ data: rawClientes }, { data: rawProducts }, { data: rawTiers }] = await Promise.all([
+  const [{ data: rawClientes }, { data: rawProducts }, { data: rawTiers }, { data: rawDirecciones }] = await Promise.all([
     b2bIds.length > 0
       ? (() => {
           let q = adminClient
             .from("profiles")
-            .select(`id, full_name, descuento_extra_pct, canal:canales!canal_id (nombre, descuento_pct), zona:delivery_zones!zona_id (id, name, flete_kg)`)
+            .select(`id, full_name, descuento_extra_pct, canal:canales!canal_id (nombre, descuento_pct)`)
             .in("id", b2bIds)
             .eq("b2b_status", "activo")
             .order("full_name");
-          // Vendedor solo ve sus clientes asignados
           if (esVendedor) q = q.eq("vendedor_id", user.id);
           return q;
         })()
@@ -59,6 +58,15 @@ export default async function NuevoPedidoPage({
       .select("min_cajas, descuento_pct, label")
       .eq("activo", true)
       .order("min_cajas"),
+
+    b2bIds.length > 0
+      ? adminClient
+          .from("direcciones_entrega")
+          .select("id, profile_id, alias, calle, ciudad, es_principal, zona_id, zona:delivery_zones!zona_id (id, name, flete_kg)")
+          .in("profile_id", b2bIds)
+          .eq("activo", true)
+          .order("es_principal", { ascending: false })
+      : Promise.resolve({ data: [] }),
   ]);
 
   const clientes = (rawClientes ?? []).map((c: any) => ({
@@ -67,10 +75,23 @@ export default async function NuevoPedidoPage({
     canal_nombre:        c.canal?.nombre        ?? "Sin canal",
     canal_descuento_pct: Number(c.canal?.descuento_pct ?? 0),
     descuento_extra_pct: Number(c.descuento_extra_pct  ?? 0),
-    zona_id:             c.zona?.id   ?? null,
-    zona_name:           c.zona?.name ?? "Sin zona",
-    flete_kg:            Number(c.zona?.flete_kg ?? 0),
   }));
+
+  // Agrupar direcciones por cliente
+  const direccionesMap: Record<string, any[]> = {};
+  for (const d of (rawDirecciones ?? []) as any[]) {
+    if (!direccionesMap[d.profile_id]) direccionesMap[d.profile_id] = [];
+    direccionesMap[d.profile_id].push({
+      id:        d.id,
+      alias:     d.alias,
+      calle:     d.calle,
+      ciudad:    d.ciudad,
+      zona_id:   d.zona?.id   ?? null,
+      zona_name: d.zona?.name ?? "Sin zona",
+      flete_kg:  Number(d.zona?.flete_kg ?? 0),
+      es_principal: d.es_principal,
+    });
+  }
 
   const productosRaw = (rawProducts ?? []).map((p: any) => ({
     id:           p.id,
@@ -121,6 +142,7 @@ export default async function NuevoPedidoPage({
 
       <NuevoPedidoClient
         clientes={clientes}
+        direccionesMap={direccionesMap}
         productosRaw={productosRaw}
         clienteInit={sp.cliente ?? null}
         itemsInit={itemsInit}

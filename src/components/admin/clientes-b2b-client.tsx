@@ -179,14 +179,9 @@ function ClienteRow({ cliente, zonas, vendedores, canales, esAdmin }: { cliente:
                   <input name="cuit" defaultValue={cliente.document_number ?? ""} placeholder="20-12345678-9" className="px-3 py-2 text-sm border border-neutral-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-tierra-700/20 w-full font-mono" disabled={isPending} />
                 </div>
               </div>
-              <div>
-                <label className="block text-xs font-medium text-neutral-500 mb-1">Dirección de entrega</label>
-                <div className="grid grid-cols-4 gap-2">
-                  <input name="direccion_calle"  defaultValue={cliente.direccion_calle ?? ""}  placeholder="Calle"   className="px-3 py-2 text-sm border border-neutral-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-tierra-700/20 col-span-2" disabled={isPending} />
-                  <input name="direccion_numero" defaultValue={cliente.direccion_numero ?? ""} placeholder="Número"  className="px-3 py-2 text-sm border border-neutral-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-tierra-700/20" disabled={isPending} />
-                  <input name="direccion_piso"   defaultValue={cliente.direccion_piso ?? ""}   placeholder="Piso/Dpto (opt.)" className="px-3 py-2 text-sm border border-neutral-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-tierra-700/20" disabled={isPending} />
-                </div>
-                <input name="direccion_ciudad" defaultValue={cliente.direccion_ciudad ?? ""} placeholder="Ciudad / Barrio" className="px-3 py-2 text-sm border border-neutral-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-tierra-700/20 w-full mt-2" disabled={isPending} />
+              <div className="flex items-center gap-2 px-3 py-2 bg-neutral-50 border border-neutral-200 rounded-xl text-xs text-neutral-500">
+                Las direcciones de entrega se gestionan desde el perfil del cliente.
+                <a href={`/admin/clientes-b2b/${cliente.id}`} className="text-tierra-700 hover:underline shrink-0">Ver direcciones →</a>
               </div>
               <div>
                 <label className="block text-xs font-medium text-neutral-500 mb-1">Notas internas</label>

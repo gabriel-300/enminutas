@@ -4,14 +4,15 @@ import { redirect, notFound } from "next/navigation";
 import Link from "next/link";
 import { OrderStatusBadge } from "@/components/ui/badge";
 import { fmtFechaLarga, fmtFechaSolo } from "@/lib/fecha";
+import { DireccionesClient } from "./direcciones-client";
 
 export const metadata: Metadata = { title: "Historial de cliente — Admin En Minutas" };
 export const revalidate = 0;
 
 const STATUS_LABEL: Record<string, string> = {
-  activo:       "Activo",
-  pendiente:    "Pendiente",
-  desactivado:  "Desactivado",
+  activo:      "Activo",
+  pendiente:   "Pendiente",
+  desactivado: "Desactivado",
 };
 
 const fmt = (n: number) =>
@@ -29,10 +30,16 @@ export default async function ClienteB2BDetailPage({
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
-  const [{ data: profileRaw }, { data: authUserData }, { data: ordersRaw }] = await Promise.all([
+  const [
+    { data: profileRaw },
+    { data: authUserData },
+    { data: ordersRaw },
+    { data: direccionesRaw },
+    { data: zonasRaw },
+  ] = await Promise.all([
     (adminClient as any)
       .from("profiles")
-      .select("id, full_name, descuento_extra_pct, b2b_status, created_at, phone, document_number, canal:canales!canal_id (nombre, descuento_pct), zona:delivery_zones!zona_id (name, flete_kg)")
+      .select("id, full_name, descuento_extra_pct, b2b_status, created_at, phone, document_number, canal:canales!canal_id (nombre, descuento_pct)")
       .eq("id", id)
       .single(),
     adminClient.auth.admin.getUserById(id),
@@ -42,6 +49,16 @@ export default async function ClienteB2BDetailPage({
       .eq("customer_id", id)
       .eq("channel", "b2b_mayorista")
       .order("created_at", { ascending: false }),
+    (adminClient as any)
+      .from("direcciones_entrega")
+      .select("id, alias, calle, numero, piso, ciudad, es_principal, zona_id, zona:delivery_zones!zona_id (name, flete_kg)")
+      .eq("profile_id", id)
+      .eq("activo", true)
+      .order("es_principal", { ascending: false }),
+    (adminClient as any)
+      .from("delivery_zones")
+      .select("id, name, flete_kg")
+      .order("name"),
   ]);
 
   if (!profileRaw) notFound();
@@ -49,8 +66,9 @@ export default async function ClienteB2BDetailPage({
   const profile   = profileRaw as any;
   const authUser  = authUserData?.user;
   const orders    = (ordersRaw ?? []) as any[];
-  const zona      = profile.zona as { name: string; flete_kg: number | null } | null;
   const canal     = profile.canal as { nombre: string; descuento_pct: number } | null;
+  const direcciones = (direccionesRaw ?? []) as any[];
+  const zonas       = (zonasRaw ?? []) as { id: string; name: string; flete_kg: number }[];
 
   const totalFacturado = orders
     .filter((o) => o.status !== "cancelled")
@@ -71,7 +89,7 @@ export default async function ClienteB2BDetailPage({
         {profile.full_name ?? authUser?.email ?? "Cliente"}
       </h1>
 
-      {/* Datos del cliente */}
+      {/* Datos + Métricas */}
       <div className="grid grid-cols-2 gap-4 mb-6">
         <div className="bg-white rounded-2xl border border-neutral-200 p-5 space-y-3">
           <p className="text-xs font-semibold text-neutral-400 uppercase tracking-wide">Datos</p>
@@ -96,19 +114,10 @@ export default async function ClienteB2BDetailPage({
             <p className="text-sm font-medium text-neutral-900">
               {canal?.nombre ?? "—"}
               {canal?.descuento_pct != null && canal.descuento_pct > 0 && (
-                <span className="text-neutral-400 ml-1 font-normal">·  −{canal.descuento_pct}%</span>
+                <span className="text-neutral-400 ml-1 font-normal">· −{canal.descuento_pct}%</span>
               )}
               {profile.descuento_extra_pct > 0 && (
                 <span className="text-success ml-1 font-normal">+{profile.descuento_extra_pct}% extra</span>
-              )}
-            </p>
-          </div>
-          <div>
-            <p className="text-xs text-neutral-400">Zona</p>
-            <p className="text-sm text-neutral-900">
-              {zona?.name ?? "—"}
-              {zona?.flete_kg != null && (
-                <span className="text-neutral-400 ml-1">· {fmt(zona.flete_kg)}/kg</span>
               )}
             </p>
           </div>
@@ -120,13 +129,10 @@ export default async function ClienteB2BDetailPage({
           </div>
           <div>
             <p className="text-xs text-neutral-400">Cliente desde</p>
-            <p className="text-sm text-neutral-900">
-              {fmtFechaLarga(profile.created_at)}
-            </p>
+            <p className="text-sm text-neutral-900">{fmtFechaLarga(profile.created_at)}</p>
           </div>
         </div>
 
-        {/* Métricas */}
         <div className="bg-white rounded-2xl border border-neutral-200 p-5 space-y-4">
           <p className="text-xs font-semibold text-neutral-400 uppercase tracking-wide">Resumen</p>
           <div>
@@ -142,6 +148,15 @@ export default async function ClienteB2BDetailPage({
             <p className="text-2xl font-semibold font-display text-tierra-700">{fmt(totalFacturado)}</p>
           </div>
         </div>
+      </div>
+
+      {/* Direcciones de entrega */}
+      <div className="mb-6">
+        <DireccionesClient
+          profileId={id}
+          direcciones={direcciones}
+          zonas={zonas}
+        />
       </div>
 
       {/* Historial de pedidos */}
@@ -172,12 +187,8 @@ export default async function ClienteB2BDetailPage({
                       {o.order_number}
                     </Link>
                   </td>
-                  <td className="px-5 py-3 text-neutral-500 text-xs">
-                    {fmtFechaSolo(o.created_at)}
-                  </td>
-                  <td className="px-5 py-3">
-                    <OrderStatusBadge status={o.status} />
-                  </td>
+                  <td className="px-5 py-3 text-neutral-500 text-xs">{fmtFechaSolo(o.created_at)}</td>
+                  <td className="px-5 py-3"><OrderStatusBadge status={o.status} /></td>
                   <td className="px-5 py-3 text-right font-medium text-neutral-900 tabular-nums">
                     {fmt(Number(o.total))}
                   </td>
