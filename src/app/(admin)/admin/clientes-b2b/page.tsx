@@ -18,9 +18,11 @@ export default async function AdminClientesBb2Page() {
   const [
     { data: { users } },
     { data: zonasRaw },
+    { data: canalesRaw },
   ] = await Promise.all([
     adminClient.auth.admin.listUsers({ perPage: 1000 }),
     (adminClient as any).from("delivery_zones").select("id, name").order("name"),
+    (adminClient as any).from("canales").select("id, slug, nombre, descuento_pct").eq("activo", true).order("sort_order"),
   ]);
 
   // Vendedores disponibles para asignar
@@ -41,10 +43,13 @@ export default async function AdminClientesBb2Page() {
     b2bUsers.map((u) => [u.id, u.email ?? null])
   );
 
+  const canales = (canalesRaw ?? []) as { id: string; slug: string; nombre: string; descuento_pct: number }[];
+  const canalMap: Record<string, string> = Object.fromEntries(canales.map((c) => [c.id, c.nombre]));
+
   const { data: perfiles } = b2bIds.length > 0
     ? await (adminClient as any)
         .from("profiles")
-        .select(`id, full_name, canal, b2b_status, created_at, phone, document_number, zona_id, vendedor_id, notas_internas, direccion_calle, direccion_numero, direccion_piso, direccion_ciudad, zona:delivery_zones!zona_id (id, name)`)
+        .select(`id, full_name, canal_id, descuento_extra_pct, b2b_status, created_at, phone, document_number, zona_id, vendedor_id, notas_internas, direccion_calle, direccion_numero, direccion_piso, direccion_ciudad, zona:delivery_zones!zona_id (id, name)`)
         .in("id", b2bIds)
         .order("b2b_status")
         .order("created_at", { ascending: false })
@@ -66,7 +71,9 @@ export default async function AdminClientesBb2Page() {
       id:              u.id,
       full_name:       p?.full_name ?? null,
       email:           emailMap[u.id] ?? null,
-      canal:           p?.canal ?? null,
+      canal_id:        p?.canal_id ?? null,
+      canal_nombre:    p?.canal_id ? (canalMap[p.canal_id] ?? null) : null,
+      descuento_extra_pct: p?.descuento_extra_pct ?? 0,
       b2b_status:      p?.b2b_status ?? "pendiente",
       created_at:      p?.created_at ?? u.created_at,
       phone:           p?.phone ?? null,
@@ -94,7 +101,7 @@ export default async function AdminClientesBb2Page() {
         <p className="text-sm text-neutral-500 mt-1">{lista.length} cliente{lista.length !== 1 ? "s" : ""} registrado{lista.length !== 1 ? "s" : ""}</p>
       </div>
 
-      <ClientesBb2Client clientes={lista} pendingCount={pendingCount} zonas={zonas} vendedores={vendedores} esAdmin={!esVendedor} />
+      <ClientesBb2Client clientes={lista} pendingCount={pendingCount} zonas={zonas} canales={canales} vendedores={vendedores} esAdmin={!esVendedor} />
     </div>
   );
 }

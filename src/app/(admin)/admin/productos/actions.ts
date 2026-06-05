@@ -61,9 +61,7 @@ export async function crearProducto(formData: FormData) {
   // Campos B2B
   payload.kg_caja      = formData.get("kg_caja")      ? Number(formData.get("kg_caja"))      : null;
   payload.bolsas_caja  = formData.get("bolsas_caja")  ? Number(formData.get("bolsas_caja"))  : null;
-  payload.precio_dist  = formData.get("precio_dist")  ? Number(formData.get("precio_dist"))  : null;
-  payload.precio_gastro = formData.get("precio_gastro") ? Number(formData.get("precio_gastro")) : null;
-  payload.precio_min   = formData.get("precio_min")   ? Number(formData.get("precio_min"))   : null;
+  payload.precio_lista = formData.get("precio_lista") ? Number(formData.get("precio_lista")) : null;
 
   const { error } = await supabase.from("products").insert(payload as any);
   if (error) throw new Error(error.message);
@@ -102,11 +100,9 @@ export async function actualizarProducto(productId: string, formData: FormData) 
   payload.weight_grams = weightGrams ? Number(weightGrams) : null;
 
   // Campos B2B
-  payload.kg_caja       = formData.get("kg_caja")       ? Number(formData.get("kg_caja"))       : null;
-  payload.bolsas_caja   = formData.get("bolsas_caja")   ? Number(formData.get("bolsas_caja"))   : null;
-  payload.precio_dist   = formData.get("precio_dist")   ? Number(formData.get("precio_dist"))   : null;
-  payload.precio_gastro = formData.get("precio_gastro") ? Number(formData.get("precio_gastro")) : null;
-  payload.precio_min    = formData.get("precio_min")    ? Number(formData.get("precio_min"))    : null;
+  payload.kg_caja      = formData.get("kg_caja")      ? Number(formData.get("kg_caja"))      : null;
+  payload.bolsas_caja  = formData.get("bolsas_caja")  ? Number(formData.get("bolsas_caja"))  : null;
+  payload.precio_lista = formData.get("precio_lista") ? Number(formData.get("precio_lista")) : null;
 
   const { error } = await supabase
     .from("products")

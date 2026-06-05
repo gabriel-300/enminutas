@@ -25,7 +25,7 @@ export default async function EditarProductoPage({
         id, sku, name, unit_label, short_description, description, cooking_methods,
         weight_grams, price_b2c, price_b2b, is_active,
         category_id, cover_image_url, extra_images, kg_caja, bolsas_caja,
-        precio_dist, precio_gastro, precio_min
+        precio_lista
       `)
       .eq("id", id)
       .single(),
@@ -77,9 +77,7 @@ export default async function EditarProductoPage({
           extra_images:     p.extra_images ?? [],
           kg_caja:       p.kg_caja,
           bolsas_caja:   p.bolsas_caja,
-          precio_dist:   p.precio_dist,
-          precio_gastro: p.precio_gastro,
-          precio_min:    p.precio_min,
+          precio_lista:  p.precio_lista,
         }}
         action={handleUpdate}
         submitLabel="Guardar cambios"

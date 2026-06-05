@@ -145,6 +145,7 @@ const NAV: Item[] = [
 
   { href: "/admin/productos",             label: "Productos",        roles: ["admin"], icon: "productos" },
   { href: "/admin/categorias",            label: "Categorías",       roles: ["admin"], icon: "categorias" },
+  { href: "/admin/canales",               label: "Canales B2B",      roles: ["admin"], icon: "descuentos" },
   { href: "/admin/zonas",                 label: "Zonas",            roles: ["admin"], icon: "zonas" },
   { href: "/admin/descuentos",            label: "Descuentos vol.",  roles: ["admin"], icon: "descuentos" },
   { href: "/admin/clientes-b2b",          label: "Clientes B2B",    roles: ["admin", "vendedor"], icon: "clientesB2B" },

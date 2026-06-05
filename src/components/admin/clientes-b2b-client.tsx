@@ -13,32 +13,29 @@ import {
 } from "@/app/(admin)/admin/clientes-b2b/actions";
 
 type Cliente = {
-  id:                string;
-  full_name:         string | null;
-  email:             string | null;
-  canal:             string | null;
-  b2b_status:        string | null;
-  created_at:        string;
-  phone:             string | null;
-  document_number:   string | null;
-  zona_id:           string | null;
-  zona:              { name: string } | null;
-  vendedor_id:       string | null;
-  notas_internas:    string | null;
-  direccion_calle:   string | null;
-  direccion_numero:  string | null;
-  direccion_piso:    string | null;
-  direccion_ciudad:  string | null;
+  id:                  string;
+  full_name:           string | null;
+  email:               string | null;
+  canal_id:            string | null;
+  canal_nombre:        string | null;
+  descuento_extra_pct: number;
+  b2b_status:          string | null;
+  created_at:          string;
+  phone:               string | null;
+  document_number:     string | null;
+  zona_id:             string | null;
+  zona:                { name: string } | null;
+  vendedor_id:         string | null;
+  notas_internas:      string | null;
+  direccion_calle:     string | null;
+  direccion_numero:    string | null;
+  direccion_piso:      string | null;
+  direccion_ciudad:    string | null;
 };
 
-type Zona      = { id: string; name: string };
-type Vendedor  = { id: string; full_name: string };
-
-const CANAL_LABEL: Record<string, string> = {
-  dist:   "Distribuidor",
-  gastro: "Gastronomía",
-  min:    "Minorista",
-};
+type Zona    = { id: string; name: string };
+type Vendedor = { id: string; full_name: string };
+type Canal   = { id: string; slug: string; nombre: string; descuento_pct: number };
 
 const STATUS_STYLE: Record<string, string> = {
   pendiente: "bg-warning-bg text-warning",
@@ -48,7 +45,7 @@ const STATUS_STYLE: Record<string, string> = {
 
 const inputCls = "w-full px-3 py-2 text-sm border border-neutral-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-tierra-700/20 disabled:opacity-50";
 
-function ClienteRow({ cliente, zonas, vendedores, esAdmin }: { cliente: Cliente; zonas: Zona[]; vendedores: Vendedor[]; esAdmin: boolean }) {
+function ClienteRow({ cliente, zonas, vendedores, canales, esAdmin }: { cliente: Cliente; zonas: Zona[]; vendedores: Vendedor[]; canales: Canal[]; esAdmin: boolean }) {
   const [editOpen, setEditOpen]      = useState(false);
   const [isPending, startTransition] = useTransition();
   const [editError, setEditError]    = useState<string | null>(null);
@@ -86,7 +83,10 @@ function ClienteRow({ cliente, zonas, vendedores, esAdmin }: { cliente: Cliente;
         </td>
         <td className="px-4 py-3 text-neutral-500 text-xs">{cliente.email ?? "—"}</td>
         <td className="px-4 py-3 text-neutral-600">
-          {cliente.canal ? CANAL_LABEL[cliente.canal] ?? cliente.canal : "—"}
+          {cliente.canal_nombre ?? "—"}
+          {cliente.descuento_extra_pct > 0 && (
+            <span className="ml-1 text-xs text-success font-medium">+{cliente.descuento_extra_pct}%</span>
+          )}
         </td>
         <td className="px-4 py-3 text-neutral-600">{cliente.zona?.name ?? "—"}</td>
         <td className="px-4 py-3">
@@ -145,11 +145,11 @@ function ClienteRow({ cliente, zonas, vendedores, esAdmin }: { cliente: Cliente;
                 </div>
                 <div>
                   <label className="block text-xs font-medium text-neutral-500 mb-1">Canal</label>
-                  <select name="canal" defaultValue={cliente.canal ?? ""} className="px-3 py-2 text-sm border border-neutral-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-tierra-700/20 bg-white w-full" disabled={isPending}>
+                  <select name="canal_id" defaultValue={cliente.canal_id ?? ""} className="px-3 py-2 text-sm border border-neutral-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-tierra-700/20 bg-white w-full" disabled={isPending}>
                     <option value="">Sin especificar</option>
-                    <option value="gastro">Gastronomía</option>
-                    <option value="dist">Distribuidor</option>
-                    <option value="min">Minorista</option>
+                    {canales.map((c) => (
+                      <option key={c.id} value={c.id}>{c.nombre}</option>
+                    ))}
                   </select>
                 </div>
                 <div>
@@ -195,6 +195,22 @@ function ClienteRow({ cliente, zonas, vendedores, esAdmin }: { cliente: Cliente;
                   className="px-3 py-2 text-sm border border-neutral-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-tierra-700/20 w-full resize-none col-span-6"
                   disabled={isPending} />
               </div>
+              {esAdmin && (
+                <div className="flex items-center gap-4 px-3 py-2 bg-amber-50 border border-amber-200 rounded-xl">
+                  <div>
+                    <label className="block text-xs font-medium text-amber-700 mb-1">Descuento extra cliente (%)</label>
+                    <input
+                      name="descuento_extra_pct"
+                      type="number"
+                      defaultValue={cliente.descuento_extra_pct ?? 0}
+                      min="0" max="99" step="0.01"
+                      className="w-24 px-3 py-1.5 text-sm border border-amber-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-300"
+                      disabled={isPending}
+                    />
+                  </div>
+                  <p className="text-xs text-amber-600">Solo admin. Se acumula sobre el descuento del canal.</p>
+                </div>
+              )}
               <div className="flex items-center gap-3">
                 <button type="submit" disabled={isPending} className="px-4 py-2 rounded-xl bg-tierra-700 text-white text-sm font-medium hover:bg-tierra-800 disabled:opacity-50">
                   {isPending ? "Guardando…" : "Guardar"}
@@ -209,7 +225,7 @@ function ClienteRow({ cliente, zonas, vendedores, esAdmin }: { cliente: Cliente;
   );
 }
 
-function CrearClienteB2BForm({ zonas }: { zonas: Zona[] }) {
+function CrearClienteB2BForm({ zonas, canales }: { zonas: Zona[]; canales: Canal[] }) {
   const [isPending, startTransition] = useTransition();
   const [open,    setOpen]    = useState(false);
   const [mode,    setMode]    = useState<"password" | "invite">("password");
@@ -286,11 +302,11 @@ function CrearClienteB2BForm({ zonas }: { zonas: Zona[] }) {
             <div className="grid grid-cols-3 gap-3">
               <div>
                 <label className="block text-xs font-medium text-neutral-500 mb-1">Canal</label>
-                <select name="canal" className={inputCls} disabled={isPending}>
+                <select name="canal_id" className={inputCls} disabled={isPending}>
                   <option value="">Sin especificar</option>
-                  <option value="gastro">Gastronomía</option>
-                  <option value="dist">Distribuidor</option>
-                  <option value="min">Minorista</option>
+                  {canales.map((c) => (
+                    <option key={c.id} value={c.id}>{c.nombre}</option>
+                  ))}
                 </select>
               </div>
               <div>
@@ -349,12 +365,14 @@ export function ClientesBb2Client({
   clientes,
   pendingCount,
   zonas,
+  canales = [],
   vendedores = [],
   esAdmin = false,
 }: {
   clientes:     Cliente[];
   pendingCount: number;
   zonas:        Zona[];
+  canales?:     Canal[];
   vendedores?:  Vendedor[];
   esAdmin?:     boolean;
 }) {
@@ -388,13 +406,13 @@ export function ClientesBb2Client({
               </tr>
             )}
             {clientes.map((c) => (
-              <ClienteRow key={c.id} cliente={c} zonas={zonas} vendedores={vendedores} esAdmin={esAdmin} />
+              <ClienteRow key={c.id} cliente={c} zonas={zonas} canales={canales} vendedores={vendedores} esAdmin={esAdmin} />
             ))}
           </tbody>
         </table>
       </div>
 
-      <CrearClienteB2BForm zonas={zonas} />
+      <CrearClienteB2BForm zonas={zonas} canales={canales} />
     </div>
   );
 }

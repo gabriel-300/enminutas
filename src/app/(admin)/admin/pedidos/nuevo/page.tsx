@@ -34,7 +34,7 @@ export default async function NuevoPedidoPage({
       ? (() => {
           let q = adminClient
             .from("profiles")
-            .select(`id, full_name, canal, zona:delivery_zones!zona_id (id, name, flete_kg)`)
+            .select(`id, full_name, descuento_extra_pct, canal:canales!canal_id (nombre, descuento_pct), zona:delivery_zones!zona_id (id, name, flete_kg)`)
             .in("id", b2bIds)
             .eq("b2b_status", "activo")
             .order("full_name");
@@ -48,7 +48,7 @@ export default async function NuevoPedidoPage({
       .from("products")
       .select(`
         id, sku, name, unit_label, bolsas_caja, kg_caja,
-        precio_dist, precio_gastro, precio_min,
+        precio_lista,
         category:categories!category_id (name)
       `)
       .eq("is_active", true)
@@ -62,25 +62,25 @@ export default async function NuevoPedidoPage({
   ]);
 
   const clientes = (rawClientes ?? []).map((c: any) => ({
-    id:        c.id,
-    full_name: c.full_name,
-    canal:     c.canal ?? "min",
-    zona_id:   c.zona?.id   ?? null,
-    zona_name: c.zona?.name ?? "Sin zona",
-    flete_kg:  Number(c.zona?.flete_kg ?? 0),
+    id:                  c.id,
+    full_name:           c.full_name,
+    canal_nombre:        c.canal?.nombre        ?? "Sin canal",
+    canal_descuento_pct: Number(c.canal?.descuento_pct ?? 0),
+    descuento_extra_pct: Number(c.descuento_extra_pct  ?? 0),
+    zona_id:             c.zona?.id   ?? null,
+    zona_name:           c.zona?.name ?? "Sin zona",
+    flete_kg:            Number(c.zona?.flete_kg ?? 0),
   }));
 
   const productosRaw = (rawProducts ?? []).map((p: any) => ({
-    id:            p.id,
-    sku:           p.sku,
-    name:          p.name,
-    unit_label:    p.unit_label,
-    bolsas_caja:   p.bolsas_caja,
-    kg_caja:       p.kg_caja,
-    precio_dist:   p.precio_dist   ?? null,
-    precio_gastro: p.precio_gastro ?? null,
-    precio_min:    p.precio_min    ?? null,
-    categoria:     (p.category as any)?.name ?? "Sin categoría",
+    id:           p.id,
+    sku:          p.sku,
+    name:         p.name,
+    unit_label:   p.unit_label,
+    bolsas_caja:  p.bolsas_caja,
+    kg_caja:      p.kg_caja,
+    precio_lista: p.precio_lista ?? null,
+    categoria:    (p.category as any)?.name ?? "Sin categoría",
   }));
 
   // Repetir pedido: pre-cargar líneas del pedido anterior

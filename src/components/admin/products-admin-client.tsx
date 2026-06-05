@@ -16,9 +16,7 @@ type Product = {
   unit_label:    string;
   stock_cajas:   number;
   stock_minimo:  number;
-  precio_dist:   number | null;
-  precio_gastro: number | null;
-  precio_min:    number | null;
+  precio_lista:  number | null;
   category:      { name: string } | null;
 };
 
@@ -48,7 +46,7 @@ function ProductRow({ p }: { p: Product }) {
     startTransition(async () => { try { await toggleProductActive(p.id, next); } catch { setActive(!next); } });
   }
 
-  const tienePrecios = p.precio_dist || p.precio_gastro || p.precio_min;
+  const tienePrecios = !!p.precio_lista;
 
   return (
     <tr className={`hover:bg-neutral-50 transition-colors ${!active ? "opacity-50" : ""}`}>
@@ -96,16 +94,12 @@ function ProductRow({ p }: { p: Product }) {
         )}
       </td>
 
-      {/* Precios B2B */}
-      <td className="px-4 py-3">
+      {/* Precio lista B2B */}
+      <td className="px-4 py-3 text-right tabular-nums">
         {tienePrecios ? (
-          <div className="space-y-0.5 text-xs tabular-nums text-right">
-            <p><span className="text-neutral-400">Dist </span><span className="font-medium text-neutral-700">{p.precio_dist ? fmt(p.precio_dist) : "—"}</span></p>
-            <p><span className="text-neutral-400">Gastro </span><span className="font-medium text-neutral-700">{p.precio_gastro ? fmt(p.precio_gastro) : "—"}</span></p>
-            <p><span className="text-neutral-400">Min </span><span className="font-medium text-neutral-700">{p.precio_min ? fmt(p.precio_min) : "—"}</span></p>
-          </div>
+          <span className="text-sm font-medium text-neutral-700">{fmt(p.precio_lista!)}</span>
         ) : (
-          <span className="text-xs text-neutral-300 block text-right">Sin precios</span>
+          <span className="text-xs text-neutral-300">Sin precio</span>
         )}
       </td>
 
@@ -143,7 +137,7 @@ export function ProductsAdminClient({ products }: { products: Product[] }) {
             <th className="px-4 py-3 font-medium text-neutral-500">Categoría</th>
             <th className="px-4 py-3 font-medium text-neutral-500 text-center">Stock</th>
             <th className="px-4 py-3 font-medium text-neutral-500 text-right">Precio B2C</th>
-            <th className="px-4 py-3 font-medium text-neutral-500 text-right">Precios B2B</th>
+            <th className="px-4 py-3 font-medium text-neutral-500 text-right">Precio lista</th>
             <th className="px-4 py-3 font-medium text-neutral-500 text-center">Activo</th>
             <th className="px-4 py-3 w-28"></th>
           </tr>

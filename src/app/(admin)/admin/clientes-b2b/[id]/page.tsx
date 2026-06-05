@@ -8,12 +8,6 @@ import { fmtFechaLarga, fmtFechaSolo } from "@/lib/fecha";
 export const metadata: Metadata = { title: "Historial de cliente — Admin En Minutas" };
 export const revalidate = 0;
 
-const CANAL_LABEL: Record<string, string> = {
-  dist:   "Distribuidor",
-  gastro: "Gastronomía",
-  min:    "Minorista",
-};
-
 const STATUS_LABEL: Record<string, string> = {
   activo:       "Activo",
   pendiente:    "Pendiente",
@@ -38,7 +32,7 @@ export default async function ClienteB2BDetailPage({
   const [{ data: profileRaw }, { data: authUserData }, { data: ordersRaw }] = await Promise.all([
     (adminClient as any)
       .from("profiles")
-      .select("id, full_name, canal, b2b_status, created_at, phone, document_number, zona:delivery_zones!zona_id (name, flete_kg)")
+      .select("id, full_name, descuento_extra_pct, b2b_status, created_at, phone, document_number, canal:canales!canal_id (nombre, descuento_pct), zona:delivery_zones!zona_id (name, flete_kg)")
       .eq("id", id)
       .single(),
     adminClient.auth.admin.getUserById(id),
@@ -56,6 +50,7 @@ export default async function ClienteB2BDetailPage({
   const authUser  = authUserData?.user;
   const orders    = (ordersRaw ?? []) as any[];
   const zona      = profile.zona as { name: string; flete_kg: number | null } | null;
+  const canal     = profile.canal as { nombre: string; descuento_pct: number } | null;
 
   const totalFacturado = orders
     .filter((o) => o.status !== "cancelled")
@@ -99,7 +94,13 @@ export default async function ClienteB2BDetailPage({
           <div>
             <p className="text-xs text-neutral-400">Canal</p>
             <p className="text-sm font-medium text-neutral-900">
-              {profile.canal ? CANAL_LABEL[profile.canal] ?? profile.canal : "—"}
+              {canal?.nombre ?? "—"}
+              {canal?.descuento_pct != null && canal.descuento_pct > 0 && (
+                <span className="text-neutral-400 ml-1 font-normal">·  −{canal.descuento_pct}%</span>
+              )}
+              {profile.descuento_extra_pct > 0 && (
+                <span className="text-success ml-1 font-normal">+{profile.descuento_extra_pct}% extra</span>
+              )}
             </p>
           </div>
           <div>

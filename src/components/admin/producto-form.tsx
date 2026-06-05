@@ -21,9 +21,7 @@ type ProductoValues = {
   extra_images?:     string[] | null;
   kg_caja?: number | null;
   bolsas_caja?: number | null;
-  precio_dist?: number | null;
-  precio_gastro?: number | null;
-  precio_min?: number | null;
+  precio_lista?: number | null;
 };
 
 type Props = {
@@ -168,11 +166,18 @@ export function ProductoForm({ categorias, defaultValues: dv = {}, action, submi
           <Field label="Bolsas / unidades por caja" name="bolsas_caja" type="number" defaultValue={dv.bolsas_caja ?? ""} placeholder="36" min="1" />
         </div>
 
-        <div className="grid grid-cols-3 gap-4">
-          <Field label="Precio Distribuidor c/IVA ($)" name="precio_dist" type="number" defaultValue={dv.precio_dist ?? ""} placeholder="0" step="0.01" min="0" />
-          <Field label="Precio Gastronomía c/IVA ($)" name="precio_gastro" type="number" defaultValue={dv.precio_gastro ?? ""} placeholder="0" step="0.01" min="0" />
-          <Field label="Precio Minorista c/IVA ($)" name="precio_min" type="number" defaultValue={dv.precio_min ?? ""} placeholder="0" step="0.01" min="0" />
-        </div>
+        <Field
+          label="Precio de lista c/IVA ($)"
+          name="precio_lista"
+          type="number"
+          defaultValue={dv.precio_lista ?? ""}
+          placeholder="0"
+          step="0.01"
+          min="0"
+        />
+        <p className="text-xs text-neutral-400">
+          Los descuentos por canal (distribuidor, gastronomía, etc.) y el flete se aplican automáticamente al crear un pedido.
+        </p>
       </section>
 
       {/* Acciones */}

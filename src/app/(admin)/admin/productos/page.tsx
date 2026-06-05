@@ -16,7 +16,7 @@ export default async function AdminProductosPage() {
     .from("products")
     .select(`
       id, sku, name, price_b2c, is_active, unit_label,
-      stock_cajas, stock_minimo, precio_dist, precio_gastro, precio_min,
+      stock_cajas, stock_minimo, precio_lista,
       category:categories (name)
     `)
     .order("is_active", { ascending: false })

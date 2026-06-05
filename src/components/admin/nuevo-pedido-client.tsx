@@ -7,36 +7,28 @@ import { crearPedidoAdmin } from "@/app/(admin)/admin/pedidos/nuevo/actions";
 // ── Types ──────────────────────────────────────────────────────────────────
 
 type ClienteB2B = {
-  id:        string;
-  full_name: string | null;
-  canal:     string;
-  zona_id:   string | null;
-  zona_name: string;
-  flete_kg:  number;
+  id:                  string;
+  full_name:           string | null;
+  canal_nombre:        string;
+  canal_descuento_pct: number;
+  descuento_extra_pct: number;
+  zona_id:             string | null;
+  zona_name:           string;
+  flete_kg:            number;
 };
 
 type ProductoRaw = {
-  id:            string;
-  sku:           string;
-  name:          string;
-  unit_label:    string | null;
-  bolsas_caja:   number | null;
-  kg_caja:       number | null;
-  precio_dist:   number | null;
-  precio_gastro: number | null;
-  precio_min:    number | null;
-  categoria:     string;
+  id:          string;
+  sku:         string;
+  name:        string;
+  unit_label:  string | null;
+  bolsas_caja: number | null;
+  kg_caja:     number | null;
+  precio_lista: number | null;
+  categoria:   string;
 };
 
 type ProductoConPrecio = ProductoRaw & { precio: PrecioB2B | null };
-
-// ── Helpers ────────────────────────────────────────────────────────────────
-
-const CANAL_LABEL: Record<string, string> = {
-  dist:   "Distribuidor",
-  gastro: "Gastronomía",
-  min:    "Minorista",
-};
 
 const fmt = (n: number) =>
   new Intl.NumberFormat("es-AR", {
@@ -80,10 +72,11 @@ export function NuevoPedidoClient({
     return productosRaw.map((p) => ({
       ...p,
       precio: precioParaCanal(
-        cliente.canal,
-        p.precio_dist,
-        p.precio_gastro,
-        p.precio_min,
+        p.precio_lista,
+        cliente.canal_descuento_pct,
+        cliente.descuento_extra_pct,
+        cliente.flete_kg,
+        p.kg_caja,
         p.bolsas_caja,
       ),
     }));
@@ -145,7 +138,7 @@ export function NuevoPedidoClient({
       try {
         await crearPedidoAdmin({
           clientId:      cliente.id,
-          canal:         cliente.canal,
+          canal:         cliente.canal_nombre,
           zonaId:        cliente.zona_id,
           items,
           notes,
@@ -179,7 +172,7 @@ export function NuevoPedidoClient({
             <option value="">Seleccionar cliente…</option>
             {clientes.map((c) => (
               <option key={c.id} value={c.id}>
-                {c.full_name ?? c.id.slice(0, 8)} — {CANAL_LABEL[c.canal] ?? c.canal} · {c.zona_name}
+                {c.full_name ?? c.id.slice(0, 8)} — {c.canal_nombre} · {c.zona_name}
               </option>
             ))}
           </select>
@@ -187,7 +180,7 @@ export function NuevoPedidoClient({
           {cliente && (
             <div className="mt-3 flex items-center gap-4 text-xs text-neutral-500">
               <span className="px-2 py-0.5 bg-info-bg text-info rounded-full font-medium">
-                {CANAL_LABEL[cliente.canal] ?? cliente.canal}
+                {cliente.canal_nombre}
               </span>
               <span>{cliente.zona_name}</span>
               {cliente.flete_kg > 0 && (

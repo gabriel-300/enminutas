@@ -18,7 +18,7 @@ export async function crearClienteB2B(formData: FormData): Promise<{ error?: str
     const email    = (formData.get("email") as string).trim().toLowerCase();
     const password = formData.get("password") as string;
     const name     = (formData.get("name") as string | null)?.trim() ?? "";
-    const canal    = formData.get("canal") as string;
+    const canalId  = (formData.get("canal_id") as string | null)?.trim() || null;
     const zonaId   = (formData.get("zona_id") as string | null)?.trim() || null;
     const phone    = (formData.get("phone") as string | null)?.trim() || null;
     const cuit     = (formData.get("cuit") as string | null)?.trim() || null;
@@ -53,7 +53,7 @@ export async function crearClienteB2B(formData: FormData): Promise<{ error?: str
       id:              data.user.id,
       full_name:       name || email,
       role:            "customer_b2b",
-      canal:           canal || null,
+      canal_id:        canalId,
       zona_id:         zonaId,
       b2b_status:      initialStatus,
       phone:           phone,
@@ -75,11 +75,11 @@ export async function invitarClienteB2B(formData: FormData): Promise<{ error?: s
   try {
     const email  = (formData.get("email") as string).trim().toLowerCase();
     const name   = (formData.get("name") as string | null)?.trim() ?? "";
-    const canal  = formData.get("canal") as string;
-    const zonaId = (formData.get("zona_id") as string | null)?.trim() || null;
-    const phone  = (formData.get("phone") as string | null)?.trim() || null;
-    const cuit   = (formData.get("cuit") as string | null)?.trim() || null;
-    const dir    = parseDireccion(formData);
+    const canalId = (formData.get("canal_id") as string | null)?.trim() || null;
+    const zonaId  = (formData.get("zona_id") as string | null)?.trim() || null;
+    const phone   = (formData.get("phone") as string | null)?.trim() || null;
+    const cuit    = (formData.get("cuit") as string | null)?.trim() || null;
+    const dir     = parseDireccion(formData);
 
     if (!email) return { error: "El email es requerido" };
 
@@ -113,7 +113,7 @@ export async function invitarClienteB2B(formData: FormData): Promise<{ error?: s
       id:              data.user.id,
       full_name:       name || email,
       role:            "customer_b2b",
-      canal:           canal || null,
+      canal_id:        canalId,
       zona_id:         zonaId,
       b2b_status:      initialStatus,
       phone:           phone,
@@ -184,12 +184,13 @@ export async function cambiarEstadoCliente(profileId: string, status: "pendiente
 export async function editarClienteB2B(formData: FormData) {
   const id          = formData.get("id") as string;
   const name        = (formData.get("name") as string).trim();
-  const canal       = formData.get("canal") as string;
+  const canalId     = (formData.get("canal_id") as string | null)?.trim() || null;
   const zonaId      = (formData.get("zona_id") as string | null)?.trim() || null;
   const phone       = (formData.get("phone") as string | null)?.trim() || null;
   const cuit        = (formData.get("cuit") as string | null)?.trim() || null;
   const vendedorId    = (formData.get("vendedor_id") as string | null)?.trim() || null;
   const notasInternas = (formData.get("notas_internas") as string | null)?.trim() || null;
+  const descuentoExtra = parseFloat(formData.get("descuento_extra_pct") as string) || 0;
   const dir           = parseDireccion(formData);
 
   if (!id) throw new Error("ID requerido");
@@ -201,7 +202,7 @@ export async function editarClienteB2B(formData: FormData) {
   const supabase = createAdminClient();
   const update: Record<string, any> = {
     full_name:       name || null,
-    canal:           canal || null,
+    canal_id:        canalId,
     zona_id:         zonaId,
     phone:           phone,
     document_type:   cuit ? "cuit" : null,
@@ -209,8 +210,11 @@ export async function editarClienteB2B(formData: FormData) {
     notas_internas:  notasInternas,
     ...dir,
   };
-  // Solo el admin puede reasignar el vendedor
-  if (esAdmin) update.vendedor_id = vendedorId;
+  // Solo el admin puede reasignar vendedor y descuento extra
+  if (esAdmin) {
+    update.vendedor_id       = vendedorId;
+    update.descuento_extra_pct = descuentoExtra;
+  }
 
   const { error } = await (supabase as any).from("profiles").update(update).eq("id", id);
   if (error) throw new Error(error.message);

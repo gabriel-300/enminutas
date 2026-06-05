@@ -7,54 +7,50 @@ import { precioParaCanal } from "@/lib/b2b-pricing";
 export const metadata: Metadata = { title: "Catálogo — Portal B2B En Minutas" };
 export const revalidate = 0;
 
-const CANAL_LABEL: Record<string, string> = {
-  dist:   "Distribuidor",
-  gastro: "Gastronomía",
-  min:    "Minorista",
-};
-
 export default async function CatalogoB2BPage() {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
-  const { data: profileRaw } = await supabase
+  const { data: profileRaw } = await (supabase as any)
     .from("profiles")
-    .select("full_name, canal, b2b_status, zona:delivery_zones!zona_id (name)")
+    .select("full_name, descuento_extra_pct, b2b_status, canal:canales!canal_id (nombre, descuento_pct), zona:delivery_zones!zona_id (name, flete_kg)")
     .eq("id", user.id)
     .single();
 
   const profile = profileRaw as any;
   if (!profile || profile.b2b_status !== "activo") redirect("/b2b/pendiente");
 
-  const canal = profile.canal as "dist" | "gastro" | "min" | null;
-  const zona  = profile.zona as { name: string } | null;
+  const canal = profile.canal as { nombre: string; descuento_pct: number } | null;
+  const zona  = profile.zona  as { name: string; flete_kg: number | null } | null;
+  const descuentoExtra = Number(profile.descuento_extra_pct ?? 0);
 
-  const { data: rawProducts } = await supabase
+  const { data: rawProducts } = await (supabase as any)
     .from("products")
     .select(`
       id, name, unit_label, cover_image_url, bolsas_caja, kg_caja,
-      min_quantity_b2b, precio_dist, precio_gastro, precio_min,
+      min_quantity_b2b, precio_lista,
       category:categories!category_id (name, slug)
     `)
     .eq("is_active", true)
     .order("name");
 
-  const products = (rawProducts ?? []).map((p) => ({
+  const products = (rawProducts ?? []).map((p: any) => ({
     id:               p.id,
     name:             p.name,
     unit_label:       p.unit_label,
     bolsas_caja:      p.bolsas_caja,
     kg_caja:          p.kg_caja,
-    cover_image_url:  (p as any).cover_image_url as string | null,
-    min_quantity_b2b: (p as any).min_quantity_b2b as number | null,
-    categoria:        (p.category as any)?.name ?? "—",
-    categoria_slug:   (p.category as any)?.slug ?? "",
+    cover_image_url:  p.cover_image_url as string | null,
+    min_quantity_b2b: p.min_quantity_b2b as number | null,
+    categoria:        p.category?.name ?? "—",
+    categoria_slug:   p.category?.slug ?? "",
     precio:           precioParaCanal(
-      canal,
-      (p as any).precio_dist   ?? null,
-      (p as any).precio_gastro ?? null,
-      (p as any).precio_min    ?? null,
+      p.precio_lista ?? null,
+      Number(canal?.descuento_pct ?? 0),
+      descuentoExtra,
+      Number(zona?.flete_kg ?? 0),
+      p.kg_caja,
       p.bolsas_caja,
     ),
   }));
@@ -66,7 +62,7 @@ export default async function CatalogoB2BPage() {
           <h1 className="text-2xl font-semibold font-display text-neutral-900">Catálogo</h1>
           <p className="text-sm text-neutral-500 mt-0.5">
             {profile.full_name}
-            {canal && ` · ${CANAL_LABEL[canal]}`}
+            {canal?.nombre && ` · ${canal.nombre}`}
             {zona?.name && ` · ${zona.name}`}
           </p>
         </div>
