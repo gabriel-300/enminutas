@@ -33,9 +33,9 @@ type Cliente = {
   direccion_ciudad:    string | null;
 };
 
-type Zona    = { id: string; name: string };
+type Zona     = { id: string; name: string };
 type Vendedor = { id: string; full_name: string };
-type Canal   = { id: string; slug: string; nombre: string; descuento_pct: number };
+type Canal    = { id: string; slug: string; nombre: string; descuento_pct: number };
 
 const STATUS_STYLE: Record<string, string> = {
   pendiente: "bg-warning-bg text-warning",
@@ -45,7 +45,199 @@ const STATUS_STYLE: Record<string, string> = {
 
 const inputCls = "w-full px-3 py-2 text-sm border border-neutral-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-tierra-700/20 disabled:opacity-50";
 
-function ClienteRow({ cliente, zonas, vendedores, canales, esAdmin }: { cliente: Cliente; zonas: Zona[]; vendedores: Vendedor[]; canales: Canal[]; esAdmin: boolean }) {
+// ── Shared edit form ──────────────────────────────────────────────────────────
+
+function EditForm({
+  cliente, zonas, canales, vendedores, esAdmin, isPending, editError, onSubmit,
+}: {
+  cliente: Cliente; zonas: Zona[]; canales: Canal[]; vendedores: Vendedor[];
+  esAdmin: boolean; isPending: boolean; editError: string | null;
+  onSubmit: (e: React.SyntheticEvent<HTMLFormElement>) => void;
+}) {
+  return (
+    <form onSubmit={onSubmit} className="space-y-3">
+      <input type="hidden" name="id" value={cliente.id} />
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+        <div>
+          <label className="block text-xs font-medium text-neutral-500 mb-1">Nombre / Empresa</label>
+          <input name="name" defaultValue={cliente.full_name ?? ""} className={inputCls} disabled={isPending} />
+        </div>
+        <div>
+          <label className="block text-xs font-medium text-neutral-500 mb-1">Canal</label>
+          <select name="canal_id" defaultValue={cliente.canal_id ?? ""} className={`${inputCls} bg-white`} disabled={isPending}>
+            <option value="">Sin especificar</option>
+            {canales.map((c) => <option key={c.id} value={c.id}>{c.nombre}</option>)}
+          </select>
+        </div>
+        <div>
+          <label className="block text-xs font-medium text-neutral-500 mb-1">Zona</label>
+          <select name="zona_id" defaultValue={cliente.zona_id ?? ""} className={`${inputCls} bg-white`} disabled={isPending}>
+            <option value="">Sin zona</option>
+            {zonas.map((z) => <option key={z.id} value={z.id}>{z.name}</option>)}
+          </select>
+        </div>
+        <div>
+          <label className="block text-xs font-medium text-neutral-500 mb-1">Vendedor</label>
+          <select name="vendedor_id" defaultValue={cliente.vendedor_id ?? ""} className={`${inputCls} bg-white`} disabled={isPending}>
+            <option value="">Sin asignar</option>
+            {vendedores.map((v) => <option key={v.id} value={v.id}>{v.full_name}</option>)}
+          </select>
+        </div>
+        <div>
+          <label className="block text-xs font-medium text-neutral-500 mb-1">Teléfono</label>
+          <input name="phone" defaultValue={cliente.phone ?? ""} placeholder="+54 9 376…" className={inputCls} disabled={isPending} />
+        </div>
+        <div>
+          <label className="block text-xs font-medium text-neutral-500 mb-1">CUIT</label>
+          <input name="cuit" defaultValue={cliente.document_number ?? ""} placeholder="20-12345678-9" className={`${inputCls} font-mono`} disabled={isPending} />
+        </div>
+      </div>
+      <div className="flex items-center gap-2 px-3 py-2 bg-neutral-50 border border-neutral-200 rounded-xl text-xs text-neutral-500">
+        Las direcciones de entrega se gestionan desde el perfil del cliente.
+        <a href={`/admin/clientes-b2b/${cliente.id}`} className="text-tierra-700 hover:underline shrink-0">Ver →</a>
+      </div>
+      <div>
+        <label className="block text-xs font-medium text-neutral-500 mb-1">Notas internas</label>
+        <textarea name="notas_internas" defaultValue={cliente.notas_internas ?? ""}
+          rows={2} placeholder="Observaciones internas (no visible al cliente)"
+          className={`${inputCls} resize-none`} disabled={isPending} />
+      </div>
+      {esAdmin && (
+        <div className="flex items-center gap-4 px-3 py-2 bg-amber-50 border border-amber-200 rounded-xl">
+          <div>
+            <label className="block text-xs font-medium text-amber-700 mb-1">Descuento extra (%)</label>
+            <input name="descuento_extra_pct" type="number"
+              defaultValue={cliente.descuento_extra_pct ?? 0}
+              min="0" max="99" step="0.01"
+              className="w-24 px-3 py-1.5 text-sm border border-amber-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-300"
+              disabled={isPending} />
+          </div>
+          <p className="text-xs text-amber-600">Solo admin. Se acumula sobre el descuento del canal.</p>
+        </div>
+      )}
+      <div className="flex items-center gap-3">
+        <button type="submit" disabled={isPending}
+          className="px-4 py-2 rounded-xl bg-tierra-700 text-white text-sm font-medium hover:bg-tierra-800 disabled:opacity-50">
+          {isPending ? "Guardando…" : "Guardar"}
+        </button>
+        {editError && <p className="text-xs text-danger">{editError}</p>}
+      </div>
+    </form>
+  );
+}
+
+// ── Mobile card ───────────────────────────────────────────────────────────────
+
+function ClienteMobileCard({ cliente, zonas, vendedores, canales, esAdmin }: {
+  cliente: Cliente; zonas: Zona[]; vendedores: Vendedor[]; canales: Canal[]; esAdmin: boolean;
+}) {
+  const [editOpen, setEditOpen]      = useState(false);
+  const [isPending, startTransition] = useTransition();
+  const [editError, setEditError]    = useState<string | null>(null);
+  const status = cliente.b2b_status;
+
+  function handleEdit(e: React.SyntheticEvent<HTMLFormElement>) {
+    e.preventDefault();
+    setEditError(null);
+    const fd = new FormData(e.currentTarget);
+    startTransition(async () => {
+      try {
+        await editarClienteB2B(fd);
+        setEditOpen(false);
+      } catch (err: any) {
+        setEditError(err.message ?? "Error al guardar");
+      }
+    });
+  }
+
+  function handleEliminar() {
+    if (!confirm(`¿Eliminar al cliente ${cliente.full_name ?? cliente.email}?`)) return;
+    startTransition(() => eliminarClienteB2B(cliente.id));
+  }
+
+  const phoneClean = cliente.phone?.replace(/\s/g, "") ?? "";
+
+  return (
+    <div className="bg-white rounded-2xl border border-neutral-200 p-4">
+      {/* Nombre + estado */}
+      <div className="flex items-start justify-between gap-2 mb-1">
+        <Link href={`/admin/clientes-b2b/${cliente.id}`}
+          className="font-medium text-neutral-900 hover:text-tierra-700 transition-colors">
+          {cliente.full_name ?? "—"}
+        </Link>
+        <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium uppercase tracking-wide shrink-0 ${STATUS_STYLE[status ?? ""] ?? "bg-neutral-100 text-neutral-500"}`}>
+          {status ?? "—"}
+        </span>
+      </div>
+
+      {/* Info secundaria */}
+      <div className="text-xs text-neutral-400 space-y-0.5 mb-3">
+        {cliente.email && <p>{cliente.email}</p>}
+        <p className="flex items-center gap-2">
+          {cliente.canal_nombre && <span>{cliente.canal_nombre}</span>}
+          {cliente.descuento_extra_pct > 0 && <span className="text-success font-medium">+{cliente.descuento_extra_pct}%</span>}
+          {cliente.zona && <span>· {cliente.zona.name}</span>}
+        </p>
+        {cliente.phone && (
+          <a href={`tel:${phoneClean}`} className="text-tierra-700 hover:underline">{cliente.phone}</a>
+        )}
+        <p>{new Date(cliente.created_at).toLocaleDateString("es-AR", { day: "2-digit", month: "2-digit", year: "2-digit" })}</p>
+      </div>
+
+      {/* Acciones */}
+      <div className="flex flex-wrap gap-2">
+        {esAdmin && status === "pendiente" && (
+          <>
+            <button onClick={() => startTransition(() => aprobarCliente(cliente.id))} disabled={isPending}
+              className="flex-1 px-3 py-1.5 text-xs font-medium rounded-lg bg-success text-white hover:opacity-90 disabled:opacity-50">
+              Aprobar
+            </button>
+            <button onClick={() => startTransition(() => rechazarCliente(cliente.id))} disabled={isPending}
+              className="px-3 py-1.5 text-xs font-medium rounded-lg border border-danger text-danger hover:bg-danger-bg disabled:opacity-50">
+              Rechazar
+            </button>
+          </>
+        )}
+        {esAdmin && status === "activo" && (
+          <button onClick={() => startTransition(() => cambiarEstadoCliente(cliente.id, "inactivo"))} disabled={isPending}
+            className="px-3 py-1.5 text-xs font-medium rounded-lg border border-neutral-200 text-neutral-500 hover:bg-neutral-50 disabled:opacity-50">
+            Desactivar
+          </button>
+        )}
+        {esAdmin && status === "inactivo" && (
+          <button onClick={() => startTransition(() => cambiarEstadoCliente(cliente.id, "activo"))} disabled={isPending}
+            className="px-3 py-1.5 text-xs font-medium rounded-lg border border-neutral-200 text-neutral-500 hover:bg-neutral-50 disabled:opacity-50">
+            Reactivar
+          </button>
+        )}
+        <button onClick={() => { setEditOpen(!editOpen); setEditError(null); }} disabled={isPending}
+          className="px-3 py-1.5 text-xs font-medium rounded-lg border border-neutral-200 text-neutral-600 hover:bg-neutral-50 disabled:opacity-50">
+          {editOpen ? "Cancelar" : "Editar"}
+        </button>
+        {esAdmin && (
+          <button onClick={handleEliminar} disabled={isPending}
+            className="px-2 py-1.5 text-xs font-medium rounded-lg border border-danger/30 text-danger hover:bg-danger-bg disabled:opacity-50">
+            ✕
+          </button>
+        )}
+      </div>
+
+      {/* Edit form */}
+      {editOpen && (
+        <div className="mt-3 pt-3 border-t border-neutral-100">
+          <EditForm cliente={cliente} zonas={zonas} canales={canales} vendedores={vendedores}
+            esAdmin={esAdmin} isPending={isPending} editError={editError} onSubmit={handleEdit} />
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── Desktop row ───────────────────────────────────────────────────────────────
+
+function ClienteRow({ cliente, zonas, vendedores, canales, esAdmin }: {
+  cliente: Cliente; zonas: Zona[]; vendedores: Vendedor[]; canales: Canal[]; esAdmin: boolean;
+}) {
   const [editOpen, setEditOpen]      = useState(false);
   const [isPending, startTransition] = useTransition();
   const [editError, setEditError]    = useState<string | null>(null);
@@ -74,10 +266,8 @@ function ClienteRow({ cliente, zonas, vendedores, canales, esAdmin }: { cliente:
     <>
       <tr className="hover:bg-neutral-50 transition-colors">
         <td className="px-4 py-3 font-medium text-neutral-900">
-          <Link
-            href={`/admin/clientes-b2b/${cliente.id}`}
-            className="hover:text-tierra-700 hover:underline transition-colors"
-          >
+          <Link href={`/admin/clientes-b2b/${cliente.id}`}
+            className="hover:text-tierra-700 hover:underline transition-colors">
             {cliente.full_name ?? "—"}
           </Link>
         </td>
@@ -111,20 +301,14 @@ function ClienteRow({ cliente, zonas, vendedores, canales, esAdmin }: { cliente:
             {esAdmin && status === "inactivo" && (
               <button onClick={() => startTransition(() => cambiarEstadoCliente(cliente.id, "activo"))} disabled={isPending} className="px-3 py-1.5 text-xs font-medium rounded-lg border border-neutral-200 text-neutral-500 hover:bg-neutral-50 disabled:opacity-50">Reactivar</button>
             )}
-            <button
-              onClick={() => { setEditOpen(!editOpen); setEditError(null); }}
-              disabled={isPending}
-              className="px-3 py-1.5 text-xs font-medium rounded-lg border border-neutral-200 text-neutral-600 hover:bg-neutral-50 disabled:opacity-50"
-            >
+            <button onClick={() => { setEditOpen(!editOpen); setEditError(null); }} disabled={isPending}
+              className="px-3 py-1.5 text-xs font-medium rounded-lg border border-neutral-200 text-neutral-600 hover:bg-neutral-50 disabled:opacity-50">
               {editOpen ? "Cancelar" : "Editar"}
             </button>
             {esAdmin && (
-              <button
-                onClick={handleEliminar}
-                disabled={isPending}
+              <button onClick={handleEliminar} disabled={isPending}
                 className="px-2 py-1.5 text-xs font-medium rounded-lg border border-danger/30 text-danger hover:bg-danger-bg disabled:opacity-50 transition-colors"
-                title="Eliminar cliente"
-              >
+                title="Eliminar cliente">
                 ✕
               </button>
             )}
@@ -132,93 +316,19 @@ function ClienteRow({ cliente, zonas, vendedores, canales, esAdmin }: { cliente:
         </td>
       </tr>
 
-      {/* Fila de edición inline */}
       {editOpen && (
         <tr className="bg-neutral-50 border-b border-neutral-200">
           <td colSpan={7} className="px-4 py-4">
-            <form onSubmit={handleEdit} className="space-y-3">
-              <input type="hidden" name="id" value={cliente.id} />
-              <div className="grid grid-cols-6 gap-3">
-                <div>
-                  <label className="block text-xs font-medium text-neutral-500 mb-1">Nombre / Empresa</label>
-                  <input name="name" defaultValue={cliente.full_name ?? ""} className="px-3 py-2 text-sm border border-neutral-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-tierra-700/20 w-full" disabled={isPending} />
-                </div>
-                <div>
-                  <label className="block text-xs font-medium text-neutral-500 mb-1">Canal</label>
-                  <select name="canal_id" defaultValue={cliente.canal_id ?? ""} className="px-3 py-2 text-sm border border-neutral-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-tierra-700/20 bg-white w-full" disabled={isPending}>
-                    <option value="">Sin especificar</option>
-                    {canales.map((c) => (
-                      <option key={c.id} value={c.id}>{c.nombre}</option>
-                    ))}
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-xs font-medium text-neutral-500 mb-1">Zona</label>
-                  <select name="zona_id" defaultValue={cliente.zona_id ?? ""} className="px-3 py-2 text-sm border border-neutral-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-tierra-700/20 bg-white w-full" disabled={isPending}>
-                    <option value="">Sin zona</option>
-                    {zonas.map((z) => (
-                      <option key={z.id} value={z.id}>{z.name}</option>
-                    ))}
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-xs font-medium text-neutral-500 mb-1">Vendedor</label>
-                  <select name="vendedor_id" defaultValue={cliente.vendedor_id ?? ""} className="px-3 py-2 text-sm border border-neutral-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-tierra-700/20 bg-white w-full" disabled={isPending}>
-                    <option value="">Sin asignar</option>
-                    {vendedores.map((v) => (
-                      <option key={v.id} value={v.id}>{v.full_name}</option>
-                    ))}
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-xs font-medium text-neutral-500 mb-1">Teléfono</label>
-                  <input name="phone" defaultValue={cliente.phone ?? ""} placeholder="+54 9 376..." className="px-3 py-2 text-sm border border-neutral-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-tierra-700/20 w-full" disabled={isPending} />
-                </div>
-                <div>
-                  <label className="block text-xs font-medium text-neutral-500 mb-1">CUIT</label>
-                  <input name="cuit" defaultValue={cliente.document_number ?? ""} placeholder="20-12345678-9" className="px-3 py-2 text-sm border border-neutral-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-tierra-700/20 w-full font-mono" disabled={isPending} />
-                </div>
-              </div>
-              <div className="flex items-center gap-2 px-3 py-2 bg-neutral-50 border border-neutral-200 rounded-xl text-xs text-neutral-500">
-                Las direcciones de entrega se gestionan desde el perfil del cliente.
-                <a href={`/admin/clientes-b2b/${cliente.id}`} className="text-tierra-700 hover:underline shrink-0">Ver direcciones →</a>
-              </div>
-              <div>
-                <label className="block text-xs font-medium text-neutral-500 mb-1">Notas internas</label>
-                <textarea name="notas_internas" defaultValue={cliente.notas_internas ?? ""}
-                  rows={2} placeholder="Observaciones internas (no visible al cliente)"
-                  className="px-3 py-2 text-sm border border-neutral-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-tierra-700/20 w-full resize-none col-span-6"
-                  disabled={isPending} />
-              </div>
-              {esAdmin && (
-                <div className="flex items-center gap-4 px-3 py-2 bg-amber-50 border border-amber-200 rounded-xl">
-                  <div>
-                    <label className="block text-xs font-medium text-amber-700 mb-1">Descuento extra cliente (%)</label>
-                    <input
-                      name="descuento_extra_pct"
-                      type="number"
-                      defaultValue={cliente.descuento_extra_pct ?? 0}
-                      min="0" max="99" step="0.01"
-                      className="w-24 px-3 py-1.5 text-sm border border-amber-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-300"
-                      disabled={isPending}
-                    />
-                  </div>
-                  <p className="text-xs text-amber-600">Solo admin. Se acumula sobre el descuento del canal.</p>
-                </div>
-              )}
-              <div className="flex items-center gap-3">
-                <button type="submit" disabled={isPending} className="px-4 py-2 rounded-xl bg-tierra-700 text-white text-sm font-medium hover:bg-tierra-800 disabled:opacity-50">
-                  {isPending ? "Guardando…" : "Guardar"}
-                </button>
-                {editError && <p className="text-xs text-danger">{editError}</p>}
-              </div>
-            </form>
+            <EditForm cliente={cliente} zonas={zonas} canales={canales} vendedores={vendedores}
+              esAdmin={esAdmin} isPending={isPending} editError={editError} onSubmit={handleEdit} />
           </td>
         </tr>
       )}
     </>
   );
 }
+
+// ── Crear cliente form ────────────────────────────────────────────────────────
 
 function CrearClienteB2BForm({ zonas, canales }: { zonas: Zona[]; canales: Canal[] }) {
   const [isPending, startTransition] = useTransition();
@@ -235,10 +345,7 @@ function CrearClienteB2BForm({ zonas, canales }: { zonas: Zona[]; canales: Canal
 
     const pw  = fd.get("password") as string;
     const pw2 = fd.get("password_confirm") as string;
-    if (mode === "password" && pw !== pw2) {
-      setError("Las contraseñas no coinciden");
-      return;
-    }
+    if (mode === "password" && pw !== pw2) { setError("Las contraseñas no coinciden"); return; }
 
     startTransition(async () => {
       const result = mode === "password"
@@ -255,13 +362,11 @@ function CrearClienteB2BForm({ zonas, canales }: { zonas: Zona[]; canales: Canal
   }
 
   return (
-    <div className="bg-white rounded-2xl border border-neutral-200 p-6">
+    <div className="bg-white rounded-2xl border border-neutral-200 p-5 md:p-6">
       <div className="flex items-center justify-between mb-1">
         <h2 className="text-sm font-semibold text-neutral-800">Agregar cliente B2B</h2>
-        <button
-          onClick={() => { setOpen(!open); setError(null); setSuccess(null); }}
-          className="text-xs text-tierra-700 hover:underline"
-        >
+        <button onClick={() => { setOpen(!open); setError(null); setSuccess(null); }}
+          className="text-xs text-tierra-700 hover:underline">
           {open ? "Cancelar" : "+ Nuevo cliente"}
         </button>
       </div>
@@ -275,12 +380,18 @@ function CrearClienteB2BForm({ zonas, canales }: { zonas: Zona[]; canales: Canal
       {open && (
         <>
           <div className="flex gap-1 mt-4 mb-5 bg-neutral-100 rounded-lg p-1 w-fit">
-            <button type="button" onClick={() => setMode("password")} className={`px-3 py-1.5 text-xs rounded-md font-medium transition-colors ${mode === "password" ? "bg-tierra-700 text-white" : "text-neutral-500 hover:text-neutral-700"}`}>Con contraseña</button>
-            <button type="button" onClick={() => setMode("invite")}   className={`px-3 py-1.5 text-xs rounded-md font-medium transition-colors ${mode === "invite"   ? "bg-tierra-700 text-white" : "text-neutral-500 hover:text-neutral-700"}`}>Invitar por email</button>
+            <button type="button" onClick={() => setMode("password")}
+              className={`px-3 py-1.5 text-xs rounded-md font-medium transition-colors ${mode === "password" ? "bg-tierra-700 text-white" : "text-neutral-500 hover:text-neutral-700"}`}>
+              Con contraseña
+            </button>
+            <button type="button" onClick={() => setMode("invite")}
+              className={`px-3 py-1.5 text-xs rounded-md font-medium transition-colors ${mode === "invite" ? "bg-tierra-700 text-white" : "text-neutral-500 hover:text-neutral-700"}`}>
+              Invitar por email
+            </button>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="grid grid-cols-3 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <div>
                 <label className="block text-xs font-medium text-neutral-500 mb-1">Nombre / Empresa</label>
                 <input name="name" placeholder="Restaurant El Ejemplo" className={inputCls} disabled={isPending} />
@@ -291,26 +402,22 @@ function CrearClienteB2BForm({ zonas, canales }: { zonas: Zona[]; canales: Canal
               </div>
               <div>
                 <label className="block text-xs font-medium text-neutral-500 mb-1">Teléfono</label>
-                <input name="phone" type="tel" placeholder="+54 9 376..." className={inputCls} disabled={isPending} />
+                <input name="phone" type="tel" placeholder="+54 9 376…" className={inputCls} disabled={isPending} />
               </div>
             </div>
-            <div className="grid grid-cols-3 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <div>
                 <label className="block text-xs font-medium text-neutral-500 mb-1">Canal</label>
-                <select name="canal_id" className={inputCls} disabled={isPending}>
+                <select name="canal_id" className={`${inputCls} bg-white`} disabled={isPending}>
                   <option value="">Sin especificar</option>
-                  {canales.map((c) => (
-                    <option key={c.id} value={c.id}>{c.nombre}</option>
-                  ))}
+                  {canales.map((c) => <option key={c.id} value={c.id}>{c.nombre}</option>)}
                 </select>
               </div>
               <div>
                 <label className="block text-xs font-medium text-neutral-500 mb-1">Zona de delivery</label>
-                <select name="zona_id" className={inputCls} disabled={isPending}>
+                <select name="zona_id" className={`${inputCls} bg-white`} disabled={isPending}>
                   <option value="">Sin zona</option>
-                  {zonas.map((z) => (
-                    <option key={z.id} value={z.id}>{z.name}</option>
-                  ))}
+                  {zonas.map((z) => <option key={z.id} value={z.id}>{z.name}</option>)}
                 </select>
               </div>
               <div>
@@ -320,15 +427,15 @@ function CrearClienteB2BForm({ zonas, canales }: { zonas: Zona[]; canales: Canal
             </div>
             <div>
               <label className="block text-xs font-medium text-neutral-500 mb-1">Dirección de entrega</label>
-              <div className="grid grid-cols-4 gap-2">
-                <input name="direccion_calle"  placeholder="Calle"          className={`${inputCls} col-span-2`} disabled={isPending} />
-                <input name="direccion_numero" placeholder="Número"         className={inputCls} disabled={isPending} />
-                <input name="direccion_piso"   placeholder="Piso/Dpto"      className={inputCls} disabled={isPending} />
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                <input name="direccion_calle"  placeholder="Calle"     className={`${inputCls} col-span-2`} disabled={isPending} />
+                <input name="direccion_numero" placeholder="Número"    className={inputCls} disabled={isPending} />
+                <input name="direccion_piso"   placeholder="Piso/Dpto" className={inputCls} disabled={isPending} />
               </div>
               <input name="direccion_ciudad" placeholder="Ciudad / Barrio" className={`${inputCls} mt-2`} disabled={isPending} />
             </div>
             {mode === "password" && (
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="block text-xs font-medium text-neutral-500 mb-1">Contraseña *</label>
                   <input name="password" type="password" required minLength={8} placeholder="Mínimo 8 caracteres" className={inputCls} disabled={isPending} />
@@ -346,8 +453,11 @@ function CrearClienteB2BForm({ zonas, canales }: { zonas: Zona[]; canales: Canal
             )}
             {error   && <p className="text-sm text-danger">{error}</p>}
             {success && <p className="text-sm text-success">{success}</p>}
-            <button type="submit" disabled={isPending} className="px-4 py-2 rounded-xl bg-tierra-700 text-white text-sm font-medium hover:bg-tierra-800 disabled:opacity-50 transition-colors">
-              {isPending ? (mode === "password" ? "Creando…" : "Enviando…") : (mode === "password" ? "Crear cliente" : "Enviar invitación")}
+            <button type="submit" disabled={isPending}
+              className="w-full sm:w-auto px-4 py-2 rounded-xl bg-tierra-700 text-white text-sm font-medium hover:bg-tierra-800 disabled:opacity-50 transition-colors">
+              {isPending
+                ? (mode === "password" ? "Creando…" : "Enviando…")
+                : (mode === "password" ? "Crear cliente" : "Enviar invitación")}
             </button>
           </form>
         </>
@@ -356,13 +466,10 @@ function CrearClienteB2BForm({ zonas, canales }: { zonas: Zona[]; canales: Canal
   );
 }
 
+// ── Main component ────────────────────────────────────────────────────────────
+
 export function ClientesBb2Client({
-  clientes,
-  pendingCount,
-  zonas,
-  canales = [],
-  vendedores = [],
-  esAdmin = false,
+  clientes, pendingCount, zonas, canales = [], vendedores = [], esAdmin = false,
 }: {
   clientes:     Cliente[];
   pendingCount: number;
@@ -372,14 +479,27 @@ export function ClientesBb2Client({
   esAdmin?:     boolean;
 }) {
   return (
-    <div className="space-y-6 max-w-5xl">
+    <div className="space-y-5 md:space-y-6 max-w-5xl">
       {pendingCount > 0 && (
         <div className="px-4 py-3 bg-warning-bg border border-warning/30 rounded-xl text-sm text-warning font-medium">
           {pendingCount} solicitud{pendingCount !== 1 ? "es" : ""} pendiente{pendingCount !== 1 ? "s" : ""} de aprobación
         </div>
       )}
 
-      <div className="bg-white rounded-2xl border border-neutral-200 overflow-hidden">
+      {/* ── Mobile: cards ────────────────────────────────────────────────── */}
+      <div className="md:hidden space-y-3">
+        {clientes.length === 0 ? (
+          <p className="text-sm text-neutral-400 text-center py-10">No hay clientes B2B registrados todavía.</p>
+        ) : (
+          clientes.map((c) => (
+            <ClienteMobileCard key={c.id} cliente={c} zonas={zonas} canales={canales}
+              vendedores={vendedores} esAdmin={esAdmin} />
+          ))
+        )}
+      </div>
+
+      {/* ── Desktop: tabla ───────────────────────────────────────────────── */}
+      <div className="hidden md:block bg-white rounded-2xl border border-neutral-200 overflow-hidden">
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-neutral-200 text-left">
@@ -401,7 +521,8 @@ export function ClientesBb2Client({
               </tr>
             )}
             {clientes.map((c) => (
-              <ClienteRow key={c.id} cliente={c} zonas={zonas} canales={canales} vendedores={vendedores} esAdmin={esAdmin} />
+              <ClienteRow key={c.id} cliente={c} zonas={zonas} canales={canales}
+                vendedores={vendedores} esAdmin={esAdmin} />
             ))}
           </tbody>
         </table>

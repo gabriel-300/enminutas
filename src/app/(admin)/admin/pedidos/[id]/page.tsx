@@ -67,9 +67,9 @@ export default async function AdminPedidoDetailPage({
   const customerEmail = o.guest_email;
 
   return (
-    <div className="p-8 max-w-4xl">
+    <div className="p-4 md:p-8 max-w-4xl">
       {/* Header */}
-      <div className="mb-6 flex items-start justify-between">
+      <div className="mb-5 md:mb-6 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <Link
             href="/admin/pedidos"
@@ -77,39 +77,39 @@ export default async function AdminPedidoDetailPage({
           >
             ← Volver a pedidos
           </Link>
-          <h1 className="text-2xl font-semibold font-display text-neutral-900">
+          <h1 className="text-xl md:text-2xl font-semibold font-display font-mono text-neutral-900">
             {o.order_number}
           </h1>
           <p className="text-sm text-neutral-500 mt-1">
             {fmtFechaHora(o.created_at)}
           </p>
         </div>
-        <div className="flex items-center gap-3 flex-wrap">
+        <div className="flex items-center gap-2 flex-wrap">
+          <OrderStatusBadge status={o.status} />
           {o.status !== "pending_payment" && (
             <Link
               href={`/remito/${id}`}
               target="_blank"
-              className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-neutral-600 border border-neutral-200 rounded-lg hover:bg-neutral-50 transition-colors"
+              className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-neutral-600 border border-neutral-200 rounded-lg hover:bg-neutral-50 transition-colors shrink-0"
             >
               <svg xmlns="http://www.w3.org/2000/svg" className="size-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M6 9V2h12v7M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2M6 14h12v8H6v-8z" />
               </svg>
-              Remito / PDF
+              Remito
             </Link>
           )}
-          <OrderStatusBadge status={o.status} />
           {esAdmin && o.channel === "b2b_mayorista" && o.status === "pending_payment" && (
             <AprobarPedidoButton orderId={o.id} />
           )}
           {esAdmin && (
-            <div className="w-48">
+            <div className="w-44">
               <OrderStatusSelect orderId={o.id} currentStatus={o.status} channel={o.channel} />
             </div>
           )}
         </div>
       </div>
 
-      <div className="grid grid-cols-3 gap-4 mb-6">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 md:gap-4 mb-5 md:mb-6">
         {/* Cliente */}
         <div className="bg-white rounded-2xl border border-neutral-200 p-5">
           <p className="text-xs font-medium text-neutral-400 uppercase tracking-wide mb-3">Cliente</p>
@@ -166,7 +166,31 @@ export default async function AdminPedidoDetailPage({
         <div className="px-5 py-4 border-b border-neutral-100">
           <p className="text-sm font-medium text-neutral-700">Productos</p>
         </div>
-        <table className="w-full text-sm">
+
+        {/* Mobile: cards */}
+        <div className="md:hidden divide-y divide-neutral-100">
+          {(o.lines ?? []).map((line: any) => (
+            <div key={line.id} className="px-4 py-3 flex items-start justify-between gap-3">
+              <div className="min-w-0">
+                <p className="text-sm text-neutral-800 font-medium leading-snug">
+                  {line.product_snapshot?.name ?? "Producto"}
+                </p>
+                {line.product_snapshot?.sku && (
+                  <p className="text-xs text-neutral-400 font-mono">{line.product_snapshot.sku}</p>
+                )}
+                <p className="text-xs text-neutral-400 mt-0.5">
+                  {line.quantity} × $ {Number(line.unit_price).toLocaleString("es-AR")}
+                </p>
+              </div>
+              <span className="font-semibold text-sm text-neutral-900 tabular-nums shrink-0">
+                $ {Number(line.line_total).toLocaleString("es-AR")}
+              </span>
+            </div>
+          ))}
+        </div>
+
+        {/* Desktop: tabla */}
+        <table className="hidden md:table w-full text-sm">
           <thead>
             <tr className="text-left border-b border-neutral-100">
               <th className="px-5 py-3 text-xs font-medium text-neutral-400">Producto</th>
@@ -200,7 +224,7 @@ export default async function AdminPedidoDetailPage({
       </div>
 
       {/* Totales */}
-      <div className="bg-white rounded-2xl border border-neutral-200 p-5 max-w-xs ml-auto">
+      <div className="bg-white rounded-2xl border border-neutral-200 p-5 sm:max-w-xs sm:ml-auto">
         <div className="space-y-2 text-sm">
           <div className="flex justify-between text-neutral-600">
             <span>Subtotal</span>
