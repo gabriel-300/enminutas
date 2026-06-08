@@ -73,15 +73,15 @@ export default async function AdminPedidosPage() {
   }));
 
   return (
-    <div className="p-8">
-      <div className="mb-6 flex items-center justify-between">
+    <div className="p-4 md:p-8">
+      <div className="mb-5 md:mb-6 flex items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-semibold font-display text-neutral-900">Pedidos</h1>
-          <p className="text-sm text-neutral-500 mt-1">{orders.length} pedido{orders.length !== 1 ? "s" : ""} en total</p>
+          <h1 className="text-xl md:text-2xl font-semibold font-display text-neutral-900">Pedidos</h1>
+          <p className="text-sm text-neutral-500 mt-0.5">{orders.length} pedido{orders.length !== 1 ? "s" : ""} en total</p>
         </div>
         <Link
           href="/admin/pedidos/nuevo"
-          className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-tierra-700 !text-white text-sm font-medium hover:bg-tierra-800 transition-colors"
+          className="shrink-0 inline-flex items-center gap-1.5 px-3 md:px-4 py-2 rounded-xl bg-tierra-700 !text-white text-sm font-medium hover:bg-tierra-800 transition-colors"
         >
           + Nuevo pedido
         </Link>

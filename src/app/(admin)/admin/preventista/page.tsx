@@ -170,9 +170,9 @@ export default async function PreventistaPage() {
   });
 
   return (
-    <div className="p-8 max-w-5xl space-y-6">
+    <div className="p-4 md:p-8 max-w-5xl space-y-5 md:space-y-6">
       <div>
-        <h1 className="text-2xl font-semibold font-display text-neutral-900">Preventista</h1>
+        <h1 className="text-xl md:text-2xl font-semibold font-display text-neutral-900">Preventista</h1>
         <p className="text-sm text-neutral-500 mt-1">
           {esVendedor ? "Tus clientes asignados" : "Todos los clientes B2B activos"} — ordenados por inactividad
         </p>
@@ -184,7 +184,7 @@ export default async function PreventistaPage() {
           <p className="text-xs font-semibold text-neutral-400 uppercase tracking-wide mb-3">
             Metas del mes · {new Date(mes + "-01").toLocaleDateString("es-AR", { month: "long", year: "numeric" })}
           </p>
-          <div className={`grid gap-4 ${vendedoresMeta.length === 1 ? "grid-cols-1 max-w-sm" : "grid-cols-2"}`}>
+          <div className={`grid gap-3 md:gap-4 ${vendedoresMeta.length === 1 ? "grid-cols-1 max-w-sm" : "grid-cols-1 sm:grid-cols-2"}`}>
             {vendedoresMeta.map((v: any) => (
               <MetaVendedorCard
                 key={v.id}

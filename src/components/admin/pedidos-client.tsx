@@ -19,22 +19,10 @@ type Order = {
   canal:          string | null;
 };
 
-const CANAL_LABEL: Record<string, string> = {
-  dist:   "Distribuidor",
-  gastro: "Gastronomía",
-  min:    "Minorista",
-};
-
-const CANAL_COLORS: Record<string, string> = {
-  dist:   "bg-blue-50 text-blue-700",
-  gastro: "bg-purple-50 text-purple-700",
-  min:    "bg-amber-50 text-amber-700",
-};
-
 const TABS = [
   { key: "todos",       label: "Todos" },
   { key: "pendientes",  label: "Pendientes" },
-  { key: "produccion",  label: "En producción" },
+  { key: "produccion",  label: "Producción" },
   { key: "despachados", label: "Despachados" },
   { key: "entregados",  label: "Entregados" },
 ];
@@ -44,13 +32,6 @@ const TAB_STATUSES: Record<string, string[]> = {
   produccion:  ["aprobado", "enviado_prod", "paid", "preparing", "ready"],
   despachados: ["despachado", "shipped", "in_delivery"],
   entregados:  ["delivered"],
-};
-
-const paymentLabel: Record<string, string> = {
-  bank_transfer: "Transferencia",
-  transferencia: "Transferencia",
-  mercado_pago:  "Mercado Pago",
-  cash:          "Efectivo",
 };
 
 function AprobarInlineButton({ orderId }: { orderId: string }) {
@@ -66,27 +47,29 @@ function AprobarInlineButton({ orderId }: { orderId: string }) {
   );
 }
 
+function fmtDate(iso: string) {
+  return new Date(iso).toLocaleString("es-AR", {
+    day: "2-digit", month: "2-digit", year: "2-digit",
+    hour: "2-digit", minute: "2-digit",
+  });
+}
+
 export function PedidosClient({ orders }: { orders: Order[] }) {
   const [tab, setTab]       = useState("todos");
   const [search, setSearch] = useState("");
-  const [canal, setCanal]   = useState("todos");
-
-  const canalesDisponibles = Array.from(
-    new Set(orders.map((o) => o.canal).filter(Boolean))
-  ) as string[];
 
   const filtered = orders.filter((o) => {
     if (tab !== "todos") {
       const statuses = TAB_STATUSES[tab] ?? [];
       if (!statuses.includes(o.status)) return false;
     }
-    if (canal !== "todos" && o.canal !== canal) return false;
     if (search.trim()) {
       const q = search.toLowerCase();
-      const matchNum  = o.order_number.toLowerCase().includes(q);
-      const matchName = (o.customer_name ?? "").toLowerCase().includes(q);
-      const matchMail = (o.customer_email ?? "").toLowerCase().includes(q);
-      if (!matchNum && !matchName && !matchMail) return false;
+      if (
+        !o.order_number.toLowerCase().includes(q) &&
+        !(o.customer_name ?? "").toLowerCase().includes(q) &&
+        !(o.customer_email ?? "").toLowerCase().includes(q)
+      ) return false;
     }
     return true;
   });
@@ -104,9 +87,9 @@ export function PedidosClient({ orders }: { orders: Order[] }) {
         </div>
       )}
 
-      {/* Tabs + buscador */}
-      <div className="flex items-center justify-between gap-4 flex-wrap">
-        <div className="flex gap-1 bg-white border border-neutral-200 rounded-xl p-1">
+      {/* Tabs — scroll horizontal en mobile */}
+      <div className="overflow-x-auto -mx-4 px-4 md:mx-0 md:px-0">
+        <div className="flex gap-1 bg-white border border-neutral-200 rounded-xl p-1 w-max md:w-auto">
           {TABS.map((t) => {
             const count = t.key === "todos"
               ? orders.length
@@ -115,7 +98,7 @@ export function PedidosClient({ orders }: { orders: Order[] }) {
               <button
                 key={t.key}
                 onClick={() => setTab(t.key)}
-                className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+                className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors whitespace-nowrap ${
                   tab === t.key
                     ? "bg-tierra-700 text-white"
                     : "text-neutral-500 hover:text-neutral-800 hover:bg-neutral-50"
@@ -131,32 +114,71 @@ export function PedidosClient({ orders }: { orders: Order[] }) {
             );
           })}
         </div>
-
-        <div className="flex items-center gap-2">
-          {canalesDisponibles.length > 0 && (
-            <select
-              value={canal}
-              onChange={(e) => setCanal(e.target.value)}
-              className="px-3 py-2 text-sm border border-neutral-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-tierra-700/20 bg-white"
-            >
-              <option value="todos">Todos los canales</option>
-              {canalesDisponibles.map((c) => (
-                <option key={c} value={c}>{CANAL_LABEL[c] ?? c}</option>
-              ))}
-            </select>
-          )}
-          <input
-            type="search"
-            placeholder="Buscar por cliente o nro. pedido…"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="px-3 py-2 text-sm border border-neutral-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-tierra-700/20 w-72"
-          />
-        </div>
       </div>
 
-      {/* Tabla */}
-      <div className="bg-white rounded-2xl border border-neutral-200 overflow-hidden">
+      {/* Buscador */}
+      <input
+        type="search"
+        placeholder="Buscar por cliente o nro. pedido…"
+        value={search}
+        onChange={(e) => setSearch(e.target.value)}
+        className="w-full md:w-72 px-3 py-2 text-sm border border-neutral-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-tierra-700/20"
+      />
+
+      {/* ── Mobile: cards ──────────────────────────────────────────── */}
+      <div className="md:hidden space-y-2">
+        {filtered.length === 0 ? (
+          <div className="bg-white rounded-2xl border border-neutral-200 px-4 py-10 text-center text-sm text-neutral-400">
+            {search ? "Sin resultados." : "No hay pedidos en esta categoría."}
+          </div>
+        ) : filtered.map((order) => (
+          <div key={order.id} className="bg-white rounded-2xl border border-neutral-200 p-4">
+            <div className="flex items-start justify-between gap-2 mb-2">
+              <div className="flex items-center gap-2 flex-wrap">
+                <Link
+                  href={`/admin/pedidos/${order.id}`}
+                  className="font-mono text-sm font-semibold text-tierra-700 hover:underline"
+                >
+                  {order.order_number}
+                </Link>
+                {order.channel === "b2b_mayorista" && (
+                  <span className="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-info-bg text-info uppercase tracking-wide">
+                    B2B
+                  </span>
+                )}
+              </div>
+              <span className="font-semibold text-sm text-neutral-900 tabular-nums shrink-0">
+                $ {Number(order.total).toLocaleString("es-AR")}
+              </span>
+            </div>
+
+            <p className="text-sm text-neutral-700 mb-1">
+              {order.customer_name ?? order.customer_email ?? "Invitado"}
+            </p>
+
+            <div className="flex items-center gap-2 flex-wrap mb-3">
+              <OrderStatusBadge status={order.status} />
+              <span className="text-xs text-neutral-400">{fmtDate(order.created_at)}</span>
+            </div>
+
+            <div className="flex items-center gap-2 flex-wrap">
+              {order.channel === "b2b_mayorista" && order.status === "pending_payment" && (
+                <AprobarInlineButton orderId={order.id} />
+              )}
+              <div className="flex-1 min-w-0">
+                <OrderStatusSelect
+                  orderId={order.id}
+                  currentStatus={order.status}
+                  channel={order.channel}
+                />
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* ── Desktop: tabla ─────────────────────────────────────────── */}
+      <div className="hidden md:block bg-white rounded-2xl border border-neutral-200 overflow-hidden">
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-neutral-200 text-left">
@@ -200,11 +222,6 @@ export function PedidosClient({ orders }: { orders: Order[] }) {
                   <span className="text-neutral-800">
                     {order.customer_name ?? order.customer_email ?? "Invitado"}
                   </span>
-                  {order.canal && (
-                    <span className={`ml-2 px-1.5 py-0.5 rounded text-[10px] font-semibold uppercase tracking-wide ${CANAL_COLORS[order.canal] ?? "bg-neutral-100 text-neutral-500"}`}>
-                      {CANAL_LABEL[order.canal] ?? order.canal}
-                    </span>
-                  )}
                 </td>
                 <td className="px-4 py-3">
                   <OrderStatusBadge status={order.status} />
@@ -213,13 +230,7 @@ export function PedidosClient({ orders }: { orders: Order[] }) {
                   $ {Number(order.total).toLocaleString("es-AR")}
                 </td>
                 <td className="px-4 py-3 text-neutral-500 text-xs whitespace-nowrap">
-                  {new Date(order.created_at).toLocaleString("es-AR", {
-                    day: "2-digit",
-                    month: "2-digit",
-                    year: "2-digit",
-                    hour: "2-digit",
-                    minute: "2-digit",
-                  })}
+                  {fmtDate(order.created_at)}
                 </td>
                 <td className="px-4 py-3">
                   <OrderStatusSelect
