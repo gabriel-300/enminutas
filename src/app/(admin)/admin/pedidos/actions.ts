@@ -37,16 +37,19 @@ export async function aprobarPedidoB2B(orderId: string) {
   if (!user) throw new Error("No autorizado");
   if (user.app_metadata?.role !== "admin") throw new Error("No autorizado");
 
-  const { error } = await supabase
+  const { data: updated, error } = await (supabase as any)
     .from("orders")
     .update({
-      status:       "aprobado" as any,
+      status:       "aprobado",
       aprobado_por: user.id,
       aprobado_at:  new Date().toISOString(),
     })
-    .eq("id", orderId);
+    .eq("id", orderId)
+    .eq("status", "pending_payment")
+    .select("id");
 
   if (error) throw new Error(error.message);
+  if (!updated?.length) throw new Error("El pedido ya fue procesado o no existe");
   revalidatePath("/admin/pedidos");
   revalidatePath(`/admin/pedidos/${orderId}`);
   revalidatePath("/admin/produccion");
@@ -75,9 +78,6 @@ export async function despacharPedido(orderId: string) {
   if (role !== "admin" && role !== "produccion") throw new Error("No autorizado");
 
   const supabase = createAdminClient();
-
-  const { data: current } = await (supabase as any).from("orders").select("status, id").eq("id", orderId).single();
-  if ((current as any)?.status !== "enviado_prod") throw new Error("El pedido debe estar en preparación para despacharse");
 
   const { data: lines } = await (supabase as any)
     .from("order_lines")
@@ -174,14 +174,14 @@ export async function iniciarDistribucion(orderId: string) {
 
   const supabase = createAdminClient();
 
-  const { data: current } = await (supabase as any).from("orders").select("status").eq("id", orderId).single();
-  if ((current as any)?.status !== "despachado") throw new Error("El pedido debe estar despachado para iniciar distribución");
-
-  const { error } = await (supabase as any)
+  const { data: updated, error } = await (supabase as any)
     .from("orders")
-    .update({ status: "en_distribucion" as any })
-    .eq("id", orderId);
+    .update({ status: "en_distribucion" })
+    .eq("id", orderId)
+    .eq("status", "despachado")
+    .select("id");
   if (error) throw new Error(error.message);
+  if (!updated?.length) throw new Error("El pedido debe estar despachado para iniciar distribución");
 
   revalidatePath("/admin/distribucion");
   revalidatePath("/admin/produccion");
@@ -193,19 +193,15 @@ export async function confirmarEntrega(orderId: string) {
 
   const supabase = createAdminClient();
 
-  let { error } = await (supabase as any)
+  const { data: updated, error } = await (supabase as any)
     .from("orders")
     .update({ status: "delivered", entregado_at: new Date().toISOString() })
-    .eq("id", orderId);
-
-  if (error?.message?.includes("entregado_at")) {
-    ({ error } = await (supabase as any)
-      .from("orders")
-      .update({ status: "delivered" })
-      .eq("id", orderId));
-  }
+    .eq("id", orderId)
+    .in("status", ["despachado", "en_distribucion"])
+    .select("id");
 
   if (error) throw new Error(error.message);
+  if (!updated?.length) throw new Error("El pedido no está en estado de distribución");
 
   revalidatePath("/admin/distribucion");
   revalidatePath("/admin/pedidos");

@@ -1,9 +1,16 @@
 "use server";
 
-import { createAdminClient } from "@/lib/supabase/server";
+import { createClient, createAdminClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 
+async function requireAdmin() {
+  const auth = await createClient();
+  const { data: { user } } = await auth.auth.getUser();
+  if (!user || user.app_metadata?.role !== "admin") throw new Error("No autorizado");
+}
+
 export async function crearZona(formData: FormData) {
+  await requireAdmin();
   const name    = (formData.get("name") as string).trim();
   const flete   = Number(formData.get("flete_kg")) || null;
   if (!name) throw new Error("El nombre es requerido");
@@ -22,6 +29,7 @@ export async function crearZona(formData: FormData) {
 }
 
 export async function actualizarZona(id: string, formData: FormData) {
+  await requireAdmin();
   const name  = (formData.get("name") as string).trim();
   const flete = Number(formData.get("flete_kg")) || null;
   if (!name) throw new Error("El nombre es requerido");
@@ -34,6 +42,7 @@ export async function actualizarZona(id: string, formData: FormData) {
 }
 
 export async function eliminarZona(id: string) {
+  await requireAdmin();
   const supabase = createAdminClient();
   const db = supabase as any;
 

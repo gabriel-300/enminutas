@@ -1,9 +1,16 @@
 "use server";
 
-import { createAdminClient } from "@/lib/supabase/server";
+import { createClient, createAdminClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 
+async function requireAdmin() {
+  const auth = await createClient();
+  const { data: { user } } = await auth.auth.getUser();
+  if (!user || user.app_metadata?.role !== "admin") throw new Error("No autorizado");
+}
+
 export async function asignarZonaDistribuidor(userId: string, zonaId: string | null) {
+  await requireAdmin();
   const supabase = createAdminClient();
   await (supabase as any).from("profiles").upsert({
     id:      userId,
@@ -21,6 +28,7 @@ function isValidRole(r: unknown): r is StaffRole {
 }
 
 export async function cambiarRolStaff(userId: string, newRole: StaffRole) {
+  await requireAdmin();
   const supabase = createAdminClient();
   const { error } = await supabase.auth.admin.updateUserById(userId, {
     app_metadata: { role: newRole },
@@ -30,6 +38,7 @@ export async function cambiarRolStaff(userId: string, newRole: StaffRole) {
 }
 
 export async function revocarAccesoStaff(userId: string) {
+  await requireAdmin();
   const supabase = createAdminClient();
   const { error } = await supabase.auth.admin.updateUserById(userId, {
     app_metadata: { role: null },
@@ -39,6 +48,7 @@ export async function revocarAccesoStaff(userId: string) {
 }
 
 export async function invitarStaff(formData: FormData) {
+  await requireAdmin();
   const email = (formData.get("email") as string).trim().toLowerCase();
   const rol   = formData.get("rol") as string;
   const name  = (formData.get("name") as string | null)?.trim() ?? "";
@@ -66,6 +76,7 @@ export async function invitarStaff(formData: FormData) {
 }
 
 export async function resetearPasswordAdmin(userId: string, newPassword: string) {
+  await requireAdmin();
   if (!newPassword || newPassword.length < 8)
     throw new Error("La contraseña debe tener al menos 8 caracteres");
 
@@ -90,6 +101,7 @@ export async function enviarEmailRecuperacion(email: string) {
 }
 
 export async function crearUsuarioConPassword(formData: FormData) {
+  await requireAdmin();
   const email    = (formData.get("email") as string).trim().toLowerCase();
   const password = formData.get("password") as string;
   const rol      = formData.get("rol") as string;

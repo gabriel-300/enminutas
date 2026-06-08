@@ -36,7 +36,7 @@ export function precioParaCanal(
   const descuento_total = Math.min((canal_descuento_pct + descuento_extra_pct) / 100, 1);
   const precio_canal    = Math.max(0, precio_lista * (1 - descuento_total));
   const flete           = (kg_caja ?? 0) * flete_kg;
-  const total_civa      = Math.round(precio_canal + flete);
+  const total_civa      = Math.round((precio_canal + flete) * 100) / 100;
   const por_unidad      = bolsas_caja
     ? Math.round((total_civa / bolsas_caja) * 100) / 100
     : total_civa;

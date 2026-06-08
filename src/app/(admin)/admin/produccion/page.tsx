@@ -66,6 +66,8 @@ export default async function ProduccionPage() {
   const adminClient = createAdminClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/login");
+  const role = user.app_metadata?.role as string | undefined;
+  if (role !== "admin" && role !== "produccion") redirect("/admin/dashboard");
 
   const { data: orders } = await (adminClient as any)
     .from("orders")

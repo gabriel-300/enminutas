@@ -12,6 +12,8 @@ export default async function CocinaPage() {
 
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/login");
+  const role = user.app_metadata?.role as string | undefined;
+  if (role !== "admin" && role !== "produccion") redirect("/admin/dashboard");
 
   const [{ data: rawProducts }, { data: rawPendingLines }, { data: rawRecipes }] = await Promise.all([
     adminClient

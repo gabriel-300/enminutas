@@ -241,6 +241,15 @@ export async function eliminarClienteB2B(clientId: string) {
   await requireAdmin();
   const supabase = createAdminClient();
 
+  const { count: pedidosActivos } = await (supabase as any)
+    .from("orders")
+    .select("*", { count: "exact", head: true })
+    .eq("customer_id", clientId)
+    .in("status", ["pending_payment", "aprobado", "enviado_prod", "despachado", "en_distribucion"]);
+
+  if ((pedidosActivos ?? 0) > 0)
+    throw new Error(`No se puede eliminar: el cliente tiene ${pedidosActivos} pedido${pedidosActivos !== 1 ? "s" : ""} activo${pedidosActivos !== 1 ? "s" : ""}`);
+
   // Borrar auth user primero — el cascade elimina el profile via trigger
   const { error } = await supabase.auth.admin.deleteUser(clientId);
   if (error) throw new Error(error.message);
