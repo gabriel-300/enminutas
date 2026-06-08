@@ -7,13 +7,8 @@
 ALTER TABLE public.orders
   ADD COLUMN IF NOT EXISTS delivered_snapshot jsonb;
 
--- Extender constraint de status (drop y re-add)
-ALTER TABLE public.orders DROP CONSTRAINT IF EXISTS orders_status_check;
-ALTER TABLE public.orders
-  ADD CONSTRAINT orders_status_check
-  CHECK (status IN (
-    'pending_payment', 'aprobado', 'enviado_prod', 'despachado',
-    'en_distribucion', 'delivered', 'cancelled', 'entrega_parcial'
-  ));
+-- Agregar el status al enum (igual que en_distribucion)
+ALTER TYPE public.order_status
+  ADD VALUE IF NOT EXISTS 'entrega_parcial' AFTER 'en_distribucion';
 
 GRANT ALL ON public.orders TO anon, authenticated, service_role;

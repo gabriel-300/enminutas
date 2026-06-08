@@ -30,7 +30,7 @@ export default async function AdminPedidoDetailPage({
     .select(`
       id, order_number, status, channel, total, subtotal, shipping_fee, discount,
       payment_method, payment_declared_at, payment_confirmed_at,
-      shipping_method, shipping_snapshot, notes, created_at,
+      shipping_method, shipping_snapshot, delivered_snapshot, notes, created_at,
       guest_email, guest_phone,
       customer:profiles!customer_id (full_name, phone),
       lines:order_lines (
