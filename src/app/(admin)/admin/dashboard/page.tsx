@@ -146,17 +146,17 @@ export default async function DashboardPage() {
     const totalInact  = sinPedidos.length + inactivos30.length + inactivos15.length;
 
     return (
-      <div className="p-8 max-w-5xl">
+      <div className="p-4 md:p-8 max-w-5xl">
         {/* Header */}
-        <div className="mb-6">
-          <h1 className="text-2xl font-semibold font-display text-neutral-900">Dashboard</h1>
+        <div className="mb-5 md:mb-6">
+          <h1 className="text-xl md:text-2xl font-semibold font-display text-neutral-900">Dashboard</h1>
           <p className="text-sm text-neutral-400 mt-0.5 capitalize">
             {now.toLocaleDateString("es-AR", { weekday: "long", day: "numeric", month: "long", year: "numeric" })}
           </p>
         </div>
 
         {/* KPIs */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4 mb-5 md:mb-6">
           {/* Meta del mes */}
           <div className="bg-white rounded-2xl border border-neutral-200 p-5">
             <p className="text-xs font-medium text-neutral-400 uppercase tracking-wide mb-1">Meta {mesNombre}</p>
@@ -376,17 +376,17 @@ export default async function DashboardPage() {
     }
 
     return (
-      <div className="p-8 max-w-5xl">
+      <div className="p-4 md:p-8 max-w-5xl">
         {/* Header */}
-        <div className="mb-6">
-          <h1 className="text-2xl font-semibold font-display text-neutral-900">Dashboard</h1>
+        <div className="mb-5 md:mb-6">
+          <h1 className="text-xl md:text-2xl font-semibold font-display text-neutral-900">Dashboard</h1>
           <p className="text-sm text-neutral-400 mt-0.5 capitalize">
             {now.toLocaleDateString("es-AR", { weekday: "long", day: "numeric", month: "long", year: "numeric" })}
           </p>
         </div>
 
         {/* KPIs */}
-        <div className="grid grid-cols-3 gap-4 mb-6">
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-4 mb-5 md:mb-6">
           <Link href="/admin/produccion" className="bg-white rounded-2xl border border-neutral-200 p-5 hover:border-neutral-300 transition-colors">
             <p className="text-xs font-medium text-neutral-400 uppercase tracking-wide mb-1">En cola</p>
             <p className="text-3xl font-semibold font-display tabular-nums text-neutral-900">{cola.length}</p>
@@ -608,10 +608,10 @@ export default async function DashboardPage() {
     const entregasMes = byMonth[mesActual] ?? 0;
 
     return (
-      <div className="p-8 max-w-5xl">
+      <div className="p-4 md:p-8 max-w-5xl">
         {/* Header */}
-        <div className="mb-6">
-          <h1 className="text-2xl font-semibold font-display text-neutral-900">Dashboard</h1>
+        <div className="mb-5 md:mb-6">
+          <h1 className="text-xl md:text-2xl font-semibold font-display text-neutral-900">Dashboard</h1>
           <p className="text-sm text-neutral-400 mt-0.5 capitalize">
             {now.toLocaleDateString("es-AR", { weekday: "long", day: "numeric", month: "long", year: "numeric" })}
             {zonaNombre && <span className="ml-2 text-neutral-300">— Zona: {zonaNombre}</span>}
@@ -622,7 +622,7 @@ export default async function DashboardPage() {
         </div>
 
         {/* KPIs */}
-        <div className="grid grid-cols-3 gap-4 mb-6">
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-4 mb-5 md:mb-6">
           <Link href="/admin/distribucion" className={`rounded-2xl border p-5 hover:border-neutral-300 transition-colors ${enTransitoList.length > 0 ? "bg-warning-bg/40 border-warning/30" : "bg-white border-neutral-200"}`}>
             <p className="text-xs font-medium text-neutral-400 uppercase tracking-wide mb-1">En tránsito</p>
             <p className={`text-3xl font-semibold font-display tabular-nums ${enTransitoList.length > 0 ? "text-warning" : "text-neutral-900"}`}>
@@ -966,17 +966,17 @@ export default async function DashboardPage() {
   const mesNombre = now.toLocaleDateString("es-AR", { month: "long" });
 
   return (
-    <div className="p-8 max-w-6xl">
+    <div className="p-4 md:p-8 max-w-6xl">
       {/* Header */}
-      <div className="mb-6">
-        <h1 className="text-2xl font-semibold font-display text-neutral-900">Dashboard</h1>
+      <div className="mb-5 md:mb-6">
+        <h1 className="text-xl md:text-2xl font-semibold font-display text-neutral-900">Dashboard</h1>
         <p className="text-sm text-neutral-400 mt-0.5 capitalize">
           {now.toLocaleDateString("es-AR", { weekday: "long", day: "numeric", month: "long", year: "numeric" })}
         </p>
       </div>
 
       {/* KPIs */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4 mb-5 md:mb-6">
         {/* Ventas */}
         <Link href="/admin/reportes" className="bg-white rounded-2xl border border-neutral-200 p-5 hover:border-neutral-300 transition-colors">
           <p className="text-xs font-medium text-neutral-400 uppercase tracking-wide mb-1">Ventas {mesNombre}</p>
