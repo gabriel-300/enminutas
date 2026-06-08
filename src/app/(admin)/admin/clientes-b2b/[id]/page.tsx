@@ -30,6 +30,19 @@ export default async function ClienteB2BDetailPage({
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
+  const role = user.app_metadata?.role as string | undefined;
+  if (role !== "admin" && role !== "vendedor") redirect("/admin");
+
+  // Vendedor: cargar el perfil del cliente primero para verificar propiedad
+  if (role === "vendedor") {
+    const { data: perfilCheck } = await (adminClient as any)
+      .from("profiles")
+      .select("vendedor_id")
+      .eq("id", id)
+      .single();
+    if (!perfilCheck || perfilCheck.vendedor_id !== user.id) notFound();
+  }
+
   const [
     { data: profileRaw },
     { data: authUserData },

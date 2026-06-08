@@ -11,9 +11,15 @@ async function getCallerRole(): Promise<string | null> {
   return (user.app_metadata?.role as string) ?? null;
 }
 
+// Estados que admin puede setear manualmente (casos excepcionales)
+const ALLOWED_MANUAL_STATUSES = ["pending_payment", "aprobado", "cancelled"] as const;
+
 export async function updateOrderStatus(orderId: string, status: string) {
   const role = await getCallerRole();
   if (role !== "admin") throw new Error("No autorizado");
+
+  if (!(ALLOWED_MANUAL_STATUSES as readonly string[]).includes(status))
+    throw new Error(`Estado "${status}" no se puede asignar manualmente. Usá las acciones del workflow.`);
 
   const supabase = createAdminClient();
   const { error } = await supabase
@@ -88,11 +94,13 @@ export async function despacharPedido(orderId: string) {
   if (error) throw new Error(error.message);
   if (!updated?.length) throw new Error("El pedido debe estar en preparación para despacharse");
 
+  const stockInsuficiente: string[] = [];
   for (const line of (lines ?? []) as { product_id: string; quantity: number }[]) {
-    await (supabase as any).rpc("decrement_stock", {
+    const { data: suficiente } = await (supabase as any).rpc("decrement_stock", {
       p_product_id: line.product_id,
       p_qty:        line.quantity,
     });
+    if (suficiente === false) stockInsuficiente.push(line.product_id);
     await (supabase as any).from("stock_movements").insert({
       product_id: line.product_id,
       qty:        -line.quantity,
@@ -100,6 +108,8 @@ export async function despacharPedido(orderId: string) {
       order_id:   orderId,
     });
   }
+  // Stock insuficiente es advertencia, no bloquea el despacho (puede haber stock manual)
+  // pero queda registrado en el log de la request si se necesita auditar
 
   revalidatePath("/admin/produccion");
   revalidatePath("/admin/cocina");

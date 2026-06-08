@@ -36,6 +36,23 @@ export async function actualizarZona(id: string, formData: FormData) {
 export async function eliminarZona(id: string) {
   const supabase = createAdminClient();
   const db = supabase as any;
+
+  // Verificar que no haya pedidos activos ni clientes asignados a esta zona
+  const [{ count: pedidosActivos }, { count: clientesAsignados }] = await Promise.all([
+    db.from("orders")
+      .select("*", { count: "exact", head: true })
+      .eq("delivery_zone_id", id)
+      .in("status", ["aprobado", "enviado_prod", "despachado", "en_distribucion"]),
+    db.from("profiles")
+      .select("*", { count: "exact", head: true })
+      .eq("zona_id", id),
+  ]);
+
+  if ((pedidosActivos ?? 0) > 0)
+    throw new Error(`No se puede eliminar: hay ${pedidosActivos} pedido${pedidosActivos !== 1 ? "s" : ""} activo${pedidosActivos !== 1 ? "s" : ""} en esta zona`);
+  if ((clientesAsignados ?? 0) > 0)
+    throw new Error(`No se puede eliminar: hay ${clientesAsignados} cliente${clientesAsignados !== 1 ? "s" : ""} asignado${clientesAsignados !== 1 ? "s" : ""} a esta zona`);
+
   const { error } = await db.from("delivery_zones").delete().eq("id", id);
   if (error) throw new Error(error.message);
   revalidatePath("/admin/zonas");

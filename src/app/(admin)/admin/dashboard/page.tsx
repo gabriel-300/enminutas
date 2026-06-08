@@ -862,7 +862,7 @@ export default async function DashboardPage() {
     db.from("products")
       .select("*", { count: "exact", head: true })
       .eq("is_active", true)
-      .is("costo", null),
+      .is("precio_lista", null),
 
     adminClient.auth.admin.listUsers({ perPage: 1000 }),
   ]);

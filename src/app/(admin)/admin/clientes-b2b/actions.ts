@@ -197,9 +197,23 @@ export async function editarClienteB2B(formData: FormData) {
 
   const auth = await createClient();
   const { data: { user: caller } } = await auth.auth.getUser();
-  const esAdmin = caller?.app_metadata?.role === "admin";
+  if (!caller) throw new Error("No autorizado");
+  const esAdmin     = caller.app_metadata?.role === "admin";
+  const esVendedor  = caller.app_metadata?.role === "vendedor";
+  if (!esAdmin && !esVendedor) throw new Error("No autorizado");
 
   const supabase = createAdminClient();
+
+  // Vendedor solo puede editar sus propios clientes
+  if (esVendedor) {
+    const { data: perfil } = await (supabase as any)
+      .from("profiles")
+      .select("vendedor_id")
+      .eq("id", id)
+      .single();
+    if (!perfil || perfil.vendedor_id !== caller.id) throw new Error("No autorizado");
+  }
+
   const update: Record<string, any> = {
     full_name:       name || null,
     canal_id:        canalId,
