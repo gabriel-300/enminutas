@@ -83,7 +83,7 @@ export default async function B2BPedidoDetailPage({
   const showBankInfo = o.status === "pending_payment" && (bankCbu || bankAlias);
 
   return (
-    <div className="max-w-3xl mx-auto px-6 py-8">
+    <div className="max-w-3xl mx-auto px-4 md:px-6 py-5 md:py-8">
       <Link
         href="/b2b/pedidos"
         className="text-sm text-neutral-400 hover:text-neutral-700 transition-colors mb-4 inline-block"
@@ -91,9 +91,9 @@ export default async function B2BPedidoDetailPage({
         ← Mis pedidos
       </Link>
 
-      <div className="flex items-start justify-between mb-6">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between mb-5 md:mb-6">
         <div>
-          <h1 className="text-2xl font-semibold font-display text-neutral-900 font-mono">
+          <h1 className="text-xl md:text-2xl font-semibold font-display text-neutral-900 font-mono">
             {o.order_number}
           </h1>
           <p className="text-xs text-neutral-400 mt-1">
@@ -101,17 +101,17 @@ export default async function B2BPedidoDetailPage({
           </p>
         </div>
         <div className="flex items-center gap-2">
+          <OrderStatusBadge status={o.status} />
           <Link
             href={`/remito/${o.id}`}
             target="_blank"
-            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-neutral-600 border border-neutral-200 rounded-lg hover:bg-neutral-50 transition-colors"
+            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-neutral-600 border border-neutral-200 rounded-lg hover:bg-neutral-50 transition-colors shrink-0"
           >
             <svg xmlns="http://www.w3.org/2000/svg" className="size-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M6 9V2h12v7M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2M6 14h12v8H6v-8z" />
             </svg>
-            Remito / PDF
+            Remito
           </Link>
-          <OrderStatusBadge status={o.status} />
         </div>
       </div>
 
@@ -128,7 +128,7 @@ export default async function B2BPedidoDetailPage({
           <p className="text-xs font-semibold text-neutral-400 uppercase tracking-wide mb-4">
             Datos para la transferencia
           </p>
-          <div className="grid grid-cols-2 gap-x-8 gap-y-3 text-sm">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-3 text-sm">
             <div>
               <p className="text-xs text-neutral-400 mb-0.5">Titular</p>
               <p className="font-medium text-neutral-900">{bankTitular}</p>
@@ -181,7 +181,31 @@ export default async function B2BPedidoDetailPage({
         <div className="px-5 py-4 border-b border-neutral-100">
           <p className="text-sm font-medium text-neutral-700">Productos</p>
         </div>
-        <table className="w-full text-sm">
+
+        {/* Mobile: cards */}
+        <div className="md:hidden divide-y divide-neutral-100">
+          {(o.lines ?? []).map((line: any) => (
+            <div key={line.id} className="px-4 py-3 flex items-start justify-between gap-3">
+              <div className="min-w-0">
+                <p className="text-sm text-neutral-800 font-medium leading-snug">
+                  {line.product_snapshot?.name ?? "Producto"}
+                </p>
+                {line.product_snapshot?.unit_label && (
+                  <p className="text-xs text-neutral-400">{line.product_snapshot.unit_label}</p>
+                )}
+                <p className="text-xs text-neutral-400 mt-0.5">
+                  {line.quantity} × {fmt(Number(line.unit_price))}
+                </p>
+              </div>
+              <span className="font-semibold text-sm text-neutral-900 tabular-nums shrink-0">
+                {fmt(Number(line.line_total))}
+              </span>
+            </div>
+          ))}
+        </div>
+
+        {/* Desktop: tabla */}
+        <table className="hidden md:table w-full text-sm">
           <thead>
             <tr className="text-left border-b border-neutral-100">
               <th className="px-5 py-3 text-xs font-medium text-neutral-400">Producto</th>
@@ -213,7 +237,7 @@ export default async function B2BPedidoDetailPage({
       </div>
 
       {/* Total */}
-      <div className="bg-white rounded-2xl border border-neutral-200 p-5 max-w-xs ml-auto mb-4">
+      <div className="bg-white rounded-2xl border border-neutral-200 p-5 sm:max-w-xs sm:ml-auto mb-4">
         <div className="flex justify-between font-semibold text-neutral-900">
           <span>Total c/IVA</span>
           <span className="tabular-nums">{fmt(Number(o.total))}</span>

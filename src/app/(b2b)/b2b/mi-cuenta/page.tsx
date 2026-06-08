@@ -37,8 +37,8 @@ export default async function MiCuentaPage() {
     new Intl.NumberFormat("es-AR", { style: "currency", currency: "ARS", maximumFractionDigits: 0 }).format(n);
 
   return (
-    <div className="max-w-2xl mx-auto px-6 py-8">
-      <h1 className="text-2xl font-semibold font-display text-neutral-900 mb-6">Mi cuenta</h1>
+    <div className="max-w-2xl mx-auto px-4 md:px-6 py-5 md:py-8">
+      <h1 className="text-xl md:text-2xl font-semibold font-display text-neutral-900 mb-5 md:mb-6">Mi cuenta</h1>
 
       {/* Datos personales */}
       <section className="bg-white rounded-2xl border border-neutral-200 divide-y divide-neutral-100 mb-4">

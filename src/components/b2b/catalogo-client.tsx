@@ -216,7 +216,8 @@ export function CatalogoB2BClient({ products }: { products: Producto[] }) {
       </div>
 
       {/* Filtro categorías */}
-      <div className="flex items-center gap-2 mb-6 flex-wrap">
+      <div className="overflow-x-auto -mx-4 px-4 md:mx-0 md:px-0 mb-6">
+      <div className="flex items-center gap-2 w-max md:w-auto md:flex-wrap">
         <button
           onClick={() => setActiveCat("todas")}
           className={`px-3.5 py-1.5 rounded-full text-sm font-medium transition-colors ${
@@ -240,6 +241,7 @@ export function CatalogoB2BClient({ products }: { products: Producto[] }) {
             {cat}
           </button>
         ))}
+      </div>
       </div>
 
       {/* Grid */}
@@ -265,9 +267,9 @@ export function CatalogoB2BClient({ products }: { products: Producto[] }) {
         </div>
       )}
 
-      {/* Barra flotante del carrito */}
+      {/* Barra flotante del carrito — sube sobre bottom nav en mobile */}
       {totalQty > 0 && (
-        <div className="fixed bottom-0 left-0 right-0 z-20 flex justify-center p-4">
+        <div className="fixed bottom-16 md:bottom-0 left-0 right-0 z-20 flex justify-center p-4">
           <div className="bg-neutral-900 text-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden">
             {/* Nota del pedido (expandible) */}
             {showNota && (
