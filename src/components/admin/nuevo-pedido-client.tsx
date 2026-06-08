@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useMemo, useTransition } from "react";
+import { useRouter } from "next/navigation";
 import { precioParaCanal, type PrecioB2B } from "@/lib/b2b-pricing";
 import { crearPedidoAdmin } from "@/app/(admin)/admin/pedidos/nuevo/actions";
 
@@ -65,6 +66,7 @@ export function NuevoPedidoClient({
   esAdmin?:        boolean;
   tiers?:          VolumeTier[];
 }) {
+  const router = useRouter();
   const [clienteId,     setClienteId]     = useState(clienteInit ?? "");
   const [direccionId,   setDireccionId]   = useState<string>("");
   const [cart,          setCart]          = useState<Record<string, number>>(itemsInit);
@@ -149,7 +151,7 @@ export function NuevoPedidoClient({
     }));
     startTransition(async () => {
       try {
-        await crearPedidoAdmin({
+        const { orderId } = await crearPedidoAdmin({
           clientId: cliente.id, canal: cliente.canal_nombre,
           zonaId: direccion?.zona_id ?? null, items, notes, paymentMethod,
           initialStatus, discountPct: descuentoPct, discountAmount: montoDescuento,
@@ -157,6 +159,7 @@ export function NuevoPedidoClient({
             ? { calle: direccion.calle, numero: direccion.numero ?? null, piso: direccion.piso ?? null, ciudad: direccion.ciudad }
             : null,
         });
+        router.push(`/admin/pedidos/${orderId}`);
       } catch (e: any) { setError(e.message ?? "Error al crear el pedido."); }
     });
   }

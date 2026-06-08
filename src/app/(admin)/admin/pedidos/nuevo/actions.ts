@@ -1,7 +1,6 @@
 "use server";
 
 import { createClient, createAdminClient } from "@/lib/supabase/server";
-import { redirect } from "next/navigation";
 import type { PrecioB2B } from "@/lib/b2b-pricing";
 import { emailPedidoAdminCreado } from "@/lib/email";
 
@@ -27,7 +26,7 @@ type CrearPedidoPayload = {
   shippingAddress?: { calle: string | null; numero: string | null; piso: string | null; ciudad: string | null } | null;
 };
 
-export async function crearPedidoAdmin(payload: CrearPedidoPayload) {
+export async function crearPedidoAdmin(payload: CrearPedidoPayload): Promise<{ orderId: string }> {
   const { clientId, canal, zonaId, items, notes, paymentMethod, initialStatus, discountPct = 0, discountAmount = 0, shippingAddress } = payload;
 
   if (!clientId)        throw new Error("Seleccioná un cliente");
@@ -186,5 +185,5 @@ export async function crearPedidoAdmin(payload: CrearPedidoPayload) {
     // email no bloquea el pedido
   }
 
-  redirect(`/admin/pedidos/${order.id}`);
+  return { orderId: order.id };
 }
