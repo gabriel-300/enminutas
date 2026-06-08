@@ -51,30 +51,11 @@ export async function crearPedidoAdmin(payload: CrearPedidoPayload) {
     if (!perfil || perfil.vendedor_id !== user.id) throw new Error("No autorizado: el cliente no te pertenece");
   }
 
-  // Número de pedido — buscar el máximo existente e incrementar
-  const year = new Date().getFullYear();
-  const { data: maxOrder } = await adminClient
-    .from("orders")
-    .select("order_number")
-    .like("order_number", `B2B-${year}-%`)
-    .order("order_number", { ascending: false })
-    .limit(1)
-    .maybeSingle();
-
-  let nextSeq = 1;
-  if ((maxOrder as any)?.order_number) {
-    const lastNum = parseInt((maxOrder as any).order_number.split("-").pop() ?? "0", 10);
-    if (!isNaN(lastNum)) nextSeq = lastNum + 1;
-  }
-
-  const orderNum = `B2B-${year}-${String(nextSeq).padStart(4, "0")}`;
-
   // Totales
   const subtotalBruto    = items.reduce((s, i) => s + i.precio.total_civa * i.quantity, 0);
   const subtotal         = subtotalBruto;
   const descuento        = discountAmount > 0 ? discountAmount : Math.round(subtotalBruto * discountPct / 100 * 100) / 100;
   const total            = subtotalBruto - descuento;
-  const commissionAmount = 0;
 
   const r = (n: number) => Math.round(n * 100) / 100;
 
@@ -87,8 +68,7 @@ export async function crearPedidoAdmin(payload: CrearPedidoPayload) {
       }
     : null;
 
-  const orderInsert: Record<string, any> = {
-    order_number:             orderNum,
+  const baseInsert: Record<string, any> = {
     channel:                  "b2b_mayorista",
     customer_id:              clientId,
     status:                   initialStatus,
@@ -97,27 +77,45 @@ export async function crearPedidoAdmin(payload: CrearPedidoPayload) {
     discount:                 r(descuento),
     total:                    r(total),
     ideaia_commission_rate:   0.15,
-    ideaia_commission_amount: r(commissionAmount),
+    ideaia_commission_amount: 0,
     shipping_method:          "b2b_despacho",
     payment_method:           paymentMethod,
     notes:                    notes || null,
     delivery_zone_id:         zonaId ?? null,
     shipping_snapshot:        shippingSnapshot,
   };
-
-  // Si se crea como aprobado, registrar quién y cuándo
   if (initialStatus === "aprobado") {
-    orderInsert.aprobado_por = user.id;
-    orderInsert.aprobado_at  = new Date().toISOString();
+    baseInsert.aprobado_por = user.id;
+    baseInsert.aprobado_at  = new Date().toISOString();
   }
 
-  const { data: order, error: orderError } = await adminClient
-    .from("orders")
-    .insert(orderInsert as any)
-    .select("id")
-    .single();
-
-  if (orderError || !order) throw new Error(orderError?.message ?? "Error al crear el pedido");
+  // Insertar con retry en caso de colisión de número (constraint UNIQUE)
+  const year = new Date().getFullYear();
+  let order: { id: string } | null = null;
+  let orderNum = "";
+  for (let attempt = 0; attempt < 5; attempt++) {
+    const { data: maxRow } = await adminClient
+      .from("orders")
+      .select("order_number")
+      .like("order_number", `B2B-${year}-%`)
+      .order("order_number", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    let nextSeq = 1;
+    if ((maxRow as any)?.order_number) {
+      const last = parseInt((maxRow as any).order_number.split("-").pop() ?? "0", 10);
+      if (!isNaN(last)) nextSeq = last + 1;
+    }
+    orderNum = `B2B-${year}-${String(nextSeq).padStart(4, "0")}`;
+    const { data: o, error: oErr } = await adminClient
+      .from("orders")
+      .insert({ ...baseInsert, order_number: orderNum } as any)
+      .select("id")
+      .single();
+    if (!oErr && o) { order = o; break; }
+    if (oErr?.code !== "23505") throw new Error(oErr?.message ?? "Error al crear el pedido");
+  }
+  if (!order) throw new Error("No se pudo generar número de pedido único. Intenta de nuevo.");
 
   const lines = items.map((item) => ({
     order_id:         order.id,

@@ -71,7 +71,10 @@ export default async function DistribucionPage({
       `)
       .eq("channel", "b2b_mayorista")
       .in("status", status instanceof Array ? status : [status]);
-    if (esDistribucion && zonaFiltro) q = q.eq("delivery_zone_id", zonaFiltro);
+    if (esDistribucion) {
+      // Sin zona asignada: no mostrar ningún pedido
+      q = q.eq("delivery_zone_id", zonaFiltro ?? "00000000-0000-0000-0000-000000000000");
+    }
     return q;
   };
 
@@ -85,7 +88,7 @@ export default async function DistribucionPage({
         .eq("channel", "b2b_mayorista").eq("status", "delivered")
         .gte("entregado_at", hoyInicio.toISOString())
         .order("entregado_at", { ascending: false });
-      if (esDistribucion && zonaFiltro) q = q.eq("delivery_zone_id", zonaFiltro);
+      if (esDistribucion) q = q.eq("delivery_zone_id", zonaFiltro ?? "00000000-0000-0000-0000-000000000000");
       return q;
     })(),
   ]);

@@ -33,6 +33,13 @@ export async function getOrderLinesForReorder(orderId: string): Promise<ReorderL
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) throw new Error("No autorizado");
 
+  const { data: profile } = await (supabase as any)
+    .from("profiles")
+    .select("b2b_status")
+    .eq("id", user.id)
+    .single();
+  if (!profile || profile.b2b_status !== "activo") throw new Error("Tu cuenta no está activa");
+
   const { data: order } = await supabase
     .from("orders")
     .select("id")

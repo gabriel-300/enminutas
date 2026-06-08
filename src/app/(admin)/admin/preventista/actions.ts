@@ -70,6 +70,12 @@ export async function guardarNotasCliente(clienteId: string, notas: string): Pro
   if (role !== "admin" && role !== "vendedor") return { error: "No autorizado" };
 
   const db = createAdminClient() as any;
+
+  if (role === "vendedor") {
+    const { data: perfil } = await db.from("profiles").select("vendedor_id").eq("id", clienteId).single();
+    if (!perfil || perfil.vendedor_id !== user.id) return { error: "No autorizado" };
+  }
+
   const { error } = await db.from("profiles").update({ notas_internas: notas || null }).eq("id", clienteId);
   if (error) return { error: error.message };
   revalidatePath("/admin/preventista");

@@ -24,47 +24,59 @@ export async function confirmarPedidoB2B(items: CartItem[], notes: string | null
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) throw new Error("No autorizado");
 
-  const subtotal = items.reduce((s, i) => s + i.precio.total_civa * i.qty, 0);
-
-  const year = new Date().getFullYear();
-  const { data: maxOrder } = await adminClient
-    .from("orders")
-    .select("order_number")
-    .like("order_number", `B2B-${year}-%`)
-    .order("order_number", { ascending: false })
-    .limit(1)
-    .maybeSingle();
-
-  let nextSeq = 1;
-  if (maxOrder?.order_number) {
-    const lastNum = parseInt(maxOrder.order_number.split("-").pop() ?? "0", 10);
-    if (!isNaN(lastNum)) nextSeq = lastNum + 1;
-  }
-
-  const orderNum = `B2B-${year}-${String(nextSeq).padStart(4, "0")}`;
-
-  const { data: order, error: orderError } = await supabase
-    .from("orders")
-    .insert({
-      order_number:    orderNum,
-      channel:         "b2b_mayorista",
-      customer_id:     user.id,
-      status:          "pending_payment",
-      subtotal:        Math.round(subtotal * 100) / 100,
-      shipping_fee:    0,
-      discount:        0,
-      total:           Math.round(subtotal * 100) / 100,
-      ideaia_commission_rate:   0.15,
-      ideaia_commission_amount: 0,
-      shipping_method:          "b2b_despacho",
-      payment_method:           "transferencia",
-      notes:                    notes ?? null,
-      delivery_zone_id:         zonaId ?? null,
-    })
-    .select("id")
+  const { data: perfil } = await (supabase as any)
+    .from("profiles")
+    .select("b2b_status")
+    .eq("id", user.id)
     .single();
+  if (!perfil || perfil.b2b_status !== "activo") throw new Error("Tu cuenta no está activa para realizar pedidos");
 
-  if (orderError || !order) throw new Error(orderError?.message ?? "Error al crear el pedido");
+  const subtotal = items.reduce((s, i) => s + i.precio.total_civa * i.qty, 0);
+  const r = (n: number) => Math.round(n * 100) / 100;
+
+  const baseInsert = {
+    channel:                  "b2b_mayorista",
+    customer_id:              user.id,
+    status:                   "pending_payment",
+    subtotal:                 r(subtotal),
+    shipping_fee:             0,
+    discount:                 0,
+    total:                    r(subtotal),
+    ideaia_commission_rate:   0.15,
+    ideaia_commission_amount: 0,
+    shipping_method:          "b2b_despacho",
+    payment_method:           "transferencia",
+    notes:                    notes ?? null,
+    delivery_zone_id:         zonaId ?? null,
+  };
+
+  // Insertar con retry en caso de colisión de número (constraint UNIQUE)
+  const year = new Date().getFullYear();
+  let order: { id: string } | null = null;
+  let orderNum = "";
+  for (let attempt = 0; attempt < 5; attempt++) {
+    const { data: maxRow } = await adminClient
+      .from("orders")
+      .select("order_number")
+      .like("order_number", `B2B-${year}-%`)
+      .order("order_number", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    let nextSeq = 1;
+    if ((maxRow as any)?.order_number) {
+      const last = parseInt((maxRow as any).order_number.split("-").pop() ?? "0", 10);
+      if (!isNaN(last)) nextSeq = last + 1;
+    }
+    orderNum = `B2B-${year}-${String(nextSeq).padStart(4, "0")}`;
+    const { data: o, error: oErr } = await supabase
+      .from("orders")
+      .insert({ ...baseInsert, order_number: orderNum } as any)
+      .select("id")
+      .single();
+    if (!oErr && o) { order = o; break; }
+    if (oErr?.code !== "23505") throw new Error(oErr?.message ?? "Error al crear el pedido");
+  }
+  if (!order) throw new Error("No se pudo generar número de pedido único. Intenta de nuevo.");
 
   const lines = items.map((item) => ({
     order_id:         order.id,
