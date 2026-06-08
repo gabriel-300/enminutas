@@ -120,8 +120,8 @@ export default async function NuevoPedidoPage({
   const fromPreventista = !!(sp.cliente || sp.repetir);
 
   return (
-    <div className="p-8">
-      <div className="mb-6 flex items-center justify-between">
+    <div className="p-4 md:p-8">
+      <div className="mb-5 md:mb-6 flex items-center justify-between">
         <div>
           <Link
             href={fromPreventista ? "/admin/preventista" : "/admin/pedidos"}
@@ -129,7 +129,7 @@ export default async function NuevoPedidoPage({
           >
             ← {fromPreventista ? "Volver al preventista" : "Volver a pedidos"}
           </Link>
-          <h1 className="text-2xl font-semibold font-display text-neutral-900">
+          <h1 className="text-xl md:text-2xl font-semibold font-display text-neutral-900">
             {sp.repetir ? "Repetir pedido" : "Nuevo pedido"}
           </h1>
           <p className="text-sm text-neutral-400 mt-1">

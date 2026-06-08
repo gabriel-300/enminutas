@@ -49,13 +49,13 @@ export default async function HistorialDistribucionPage() {
   const dias = Object.values(byDate).sort((a, b) => b.fecha.localeCompare(a.fecha));
 
   return (
-    <div className="p-8 max-w-2xl">
-      <div className="mb-6 flex items-center gap-4">
+    <div className="p-4 md:p-8 max-w-2xl">
+      <div className="mb-5 md:mb-6 flex items-center gap-4">
         <Link href="/admin/distribucion" className="text-sm text-neutral-400 hover:text-neutral-700 transition-colors">
           ← Volver
         </Link>
         <div>
-          <h1 className="text-2xl font-semibold font-display text-neutral-900">Historial de entregas</h1>
+          <h1 className="text-xl md:text-2xl font-semibold font-display text-neutral-900">Historial de entregas</h1>
           <p className="text-sm text-neutral-500 mt-0.5">Últimos 30 días</p>
         </div>
       </div>
