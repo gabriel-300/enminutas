@@ -31,10 +31,10 @@ export default async function AdminProductosPage() {
   }
 
   return (
-    <div className="p-8">
-      <div className="mb-6 flex items-center justify-between">
+    <div className="p-4 md:p-8">
+      <div className="mb-5 md:mb-6 flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-semibold font-display text-neutral-900">Productos</h1>
+          <h1 className="text-xl md:text-2xl font-semibold font-display text-neutral-900">Productos</h1>
           <p className="text-sm text-neutral-500 mt-1">
             {products?.length ?? 0} productos
           </p>

@@ -77,7 +77,7 @@ export default async function ClienteB2BDetailPage({
   const pedidosConfirmados = orders.filter((o: any) => o.payment_confirmed_at).length;
 
   return (
-    <div className="p-8 max-w-4xl">
+    <div className="p-4 md:p-8 max-w-4xl">
       <Link
         href="/admin/clientes-b2b"
         className="text-sm text-neutral-400 hover:text-neutral-700 transition-colors mb-4 inline-block"
@@ -85,12 +85,12 @@ export default async function ClienteB2BDetailPage({
         ← Clientes B2B
       </Link>
 
-      <h1 className="text-2xl font-semibold font-display text-neutral-900 mb-6">
+      <h1 className="text-xl md:text-2xl font-semibold font-display text-neutral-900 mb-5 md:mb-6">
         {profile.full_name ?? authUser?.email ?? "Cliente"}
       </h1>
 
       {/* Datos + Métricas */}
-      <div className="grid grid-cols-2 gap-4 mb-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 md:gap-4 mb-5 md:mb-6">
         <div className="bg-white rounded-2xl border border-neutral-200 p-5 space-y-3">
           <p className="text-xs font-semibold text-neutral-400 uppercase tracking-wide">Datos</p>
           <div>
@@ -167,35 +167,57 @@ export default async function ClienteB2BDetailPage({
         {orders.length === 0 ? (
           <p className="text-sm text-neutral-400 text-center py-12">Este cliente no tiene pedidos aún.</p>
         ) : (
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="text-left border-b border-neutral-100">
-                <th className="px-5 py-3 text-xs font-medium text-neutral-400">Nro.</th>
-                <th className="px-5 py-3 text-xs font-medium text-neutral-400">Fecha</th>
-                <th className="px-5 py-3 text-xs font-medium text-neutral-400">Estado</th>
-                <th className="px-5 py-3 text-xs font-medium text-neutral-400 text-right">Total</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-neutral-50">
+          <>
+            {/* Mobile */}
+            <div className="md:hidden divide-y divide-neutral-100">
               {orders.map((o: any) => (
-                <tr key={o.id} className="hover:bg-neutral-50 transition-colors">
-                  <td className="px-5 py-3">
-                    <Link
-                      href={`/admin/pedidos/${o.id}`}
-                      className="font-mono text-xs text-tierra-700 hover:underline"
-                    >
+                <div key={o.id} className="px-4 py-3 flex items-start justify-between gap-2">
+                  <div>
+                    <Link href={`/admin/pedidos/${o.id}`}
+                      className="font-mono text-xs text-tierra-700 hover:underline font-semibold">
                       {o.order_number}
                     </Link>
-                  </td>
-                  <td className="px-5 py-3 text-neutral-500 text-xs">{fmtFechaSolo(o.created_at)}</td>
-                  <td className="px-5 py-3"><OrderStatusBadge status={o.status} /></td>
-                  <td className="px-5 py-3 text-right font-medium text-neutral-900 tabular-nums">
+                    <div className="flex items-center gap-2 mt-1">
+                      <OrderStatusBadge status={o.status} />
+                      <span className="text-xs text-neutral-400">{fmtFechaSolo(o.created_at)}</span>
+                    </div>
+                  </div>
+                  <span className="font-semibold text-sm text-neutral-900 tabular-nums shrink-0">
                     {fmt(Number(o.total))}
-                  </td>
-                </tr>
+                  </span>
+                </div>
               ))}
-            </tbody>
-          </table>
+            </div>
+
+            {/* Desktop */}
+            <table className="hidden md:table w-full text-sm">
+              <thead>
+                <tr className="text-left border-b border-neutral-100">
+                  <th className="px-5 py-3 text-xs font-medium text-neutral-400">Nro.</th>
+                  <th className="px-5 py-3 text-xs font-medium text-neutral-400">Fecha</th>
+                  <th className="px-5 py-3 text-xs font-medium text-neutral-400">Estado</th>
+                  <th className="px-5 py-3 text-xs font-medium text-neutral-400 text-right">Total</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-neutral-50">
+                {orders.map((o: any) => (
+                  <tr key={o.id} className="hover:bg-neutral-50 transition-colors">
+                    <td className="px-5 py-3">
+                      <Link href={`/admin/pedidos/${o.id}`}
+                        className="font-mono text-xs text-tierra-700 hover:underline">
+                        {o.order_number}
+                      </Link>
+                    </td>
+                    <td className="px-5 py-3 text-neutral-500 text-xs">{fmtFechaSolo(o.created_at)}</td>
+                    <td className="px-5 py-3"><OrderStatusBadge status={o.status} /></td>
+                    <td className="px-5 py-3 text-right font-medium text-neutral-900 tabular-nums">
+                      {fmt(Number(o.total))}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </>
         )}
       </div>
     </div>

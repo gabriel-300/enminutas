@@ -29,13 +29,25 @@ const ROLE_BADGE: Record<string, string> = {
   distribucion: "bg-warning-bg text-warning",
 };
 
+function fmtAcceso(ts: string | null) {
+  if (!ts) return "Nunca";
+  return new Date(ts).toLocaleDateString("es-AR", {
+    day: "2-digit", month: "2-digit", year: "2-digit",
+    hour: "2-digit", minute: "2-digit",
+  });
+}
+
+// ── Reset password panel ──────────────────────────────────────────────────────
+
 function ResetPasswordPanel({ member, onClose }: { member: StaffMember; onClose: () => void }) {
-  const [mode, setMode]       = useState<"email" | "direct">("email");
+  const [mode, setMode]         = useState<"email" | "direct">("email");
   const [password, setPassword] = useState("");
   const [confirm,  setConfirm]  = useState("");
-  const [msg,  setMsg]  = useState<string | null>(null);
-  const [err,  setErr]  = useState<string | null>(null);
+  const [msg,  setMsg]          = useState<string | null>(null);
+  const [err,  setErr]          = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
+
+  const inputCls = "w-full px-3 py-2 text-sm border border-neutral-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-tierra-700/20 disabled:opacity-50";
 
   function handleEmail() {
     setErr(null); setMsg(null);
@@ -60,24 +72,15 @@ function ResetPasswordPanel({ member, onClose }: { member: StaffMember; onClose:
     });
   }
 
-  const inputCls = "w-full px-3 py-2 text-sm border border-neutral-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-tierra-700/20 disabled:opacity-50";
-
   return (
     <div className="mt-2 p-3 bg-neutral-50 border border-neutral-200 rounded-xl text-sm space-y-3">
-      {/* Toggle */}
       <div className="flex gap-2">
-        <button
-          type="button"
-          onClick={() => { setMode("email"); setErr(null); setMsg(null); }}
-          className={`px-2.5 py-1 rounded-lg text-xs transition-colors ${mode === "email" ? "bg-tierra-700 text-white" : "bg-white border border-neutral-200 text-neutral-600 hover:bg-neutral-100"}`}
-        >
+        <button type="button" onClick={() => { setMode("email"); setErr(null); setMsg(null); }}
+          className={`px-2.5 py-1 rounded-lg text-xs transition-colors ${mode === "email" ? "bg-tierra-700 text-white" : "bg-white border border-neutral-200 text-neutral-600 hover:bg-neutral-100"}`}>
           Enviar email
         </button>
-        <button
-          type="button"
-          onClick={() => { setMode("direct"); setErr(null); setMsg(null); }}
-          className={`px-2.5 py-1 rounded-lg text-xs transition-colors ${mode === "direct" ? "bg-tierra-700 text-white" : "bg-white border border-neutral-200 text-neutral-600 hover:bg-neutral-100"}`}
-        >
+        <button type="button" onClick={() => { setMode("direct"); setErr(null); setMsg(null); }}
+          className={`px-2.5 py-1 rounded-lg text-xs transition-colors ${mode === "direct" ? "bg-tierra-700 text-white" : "bg-white border border-neutral-200 text-neutral-600 hover:bg-neutral-100"}`}>
           Poner contraseña
         </button>
         <button type="button" onClick={onClose} className="ml-auto text-xs text-neutral-400 hover:text-neutral-700">✕</button>
@@ -87,20 +90,16 @@ function ResetPasswordPanel({ member, onClose }: { member: StaffMember; onClose:
         <div className="space-y-2">
           <p className="text-xs text-neutral-500">
             Se enviará un link de recuperación a <strong>{member.email}</strong>.
-            El usuario puede hacer click para crear una nueva contraseña.
           </p>
-          <button
-            onClick={handleEmail}
-            disabled={isPending}
-            className="px-3 py-1.5 text-xs rounded-lg bg-tierra-700 text-white hover:bg-tierra-800 disabled:opacity-50 transition-colors"
-          >
+          <button onClick={handleEmail} disabled={isPending}
+            className="px-3 py-1.5 text-xs rounded-lg bg-tierra-700 text-white hover:bg-tierra-800 disabled:opacity-50 transition-colors">
             {isPending ? "Enviando…" : "Enviar email de recuperación"}
           </button>
         </div>
       ) : (
         <form onSubmit={handleDirect} className="space-y-2">
-          <p className="text-xs text-neutral-500">El usuario podrá ingresar inmediatamente con la nueva contraseña.</p>
-          <div className="grid grid-cols-2 gap-2">
+          <p className="text-xs text-neutral-500">El usuario puede ingresar inmediatamente con la nueva contraseña.</p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
             <input type="password" value={password} onChange={e => setPassword(e.target.value)}
               placeholder="Nueva contraseña" minLength={8} required disabled={isPending} className={inputCls} />
             <input type="password" value={confirm} onChange={e => setConfirm(e.target.value)}
@@ -119,14 +118,79 @@ function ResetPasswordPanel({ member, onClose }: { member: StaffMember; onClose:
   );
 }
 
-function StaffRow({
-  member,
-  isCurrentUser,
-  zonas = [],
-}: {
-  member: StaffMember;
-  isCurrentUser: boolean;
-  zonas?: Zona[];
+// ── Mobile card ───────────────────────────────────────────────────────────────
+
+function StaffMobileCard({ member, isCurrentUser, zonas = [] }: {
+  member: StaffMember; isCurrentUser: boolean; zonas?: Zona[];
+}) {
+  const [isPending, startTransition] = useTransition();
+  const [showReset, setShowReset]    = useState(false);
+
+  function handleRoleChange(newRole: string) {
+    if (newRole === member.role) return;
+    startTransition(() => cambiarRolStaff(member.id, newRole as any));
+  }
+
+  function handleZonaChange(zonaId: string) {
+    startTransition(() => asignarZonaDistribuidor(member.id, zonaId || null));
+  }
+
+  function handleRevoke() {
+    if (!confirm(`¿Revocar acceso de ${member.email}? Ya no podrá ingresar al panel.`)) return;
+    startTransition(() => revocarAccesoStaff(member.id));
+  }
+
+  return (
+    <div className="bg-white rounded-2xl border border-neutral-200 p-4">
+      <div className="flex items-start justify-between gap-2 mb-1">
+        <div>
+          <p className="font-medium text-neutral-900">{member.name ?? member.email}</p>
+          {member.name && <p className="text-xs text-neutral-400">{member.email}</p>}
+          {isCurrentUser && <span className="text-xs text-neutral-400 italic">Vos</span>}
+        </div>
+        <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium shrink-0 ${ROLE_BADGE[member.role] ?? "bg-neutral-100 text-neutral-600"}`}>
+          {ROLE_OPTIONS.find((r) => r.value === member.role)?.label ?? member.role}
+        </span>
+      </div>
+
+      <p className="text-xs text-neutral-400 mb-3">Último acceso: {fmtAcceso(member.last_sign_in)}</p>
+
+      {!isCurrentUser && (
+        <div className="space-y-2">
+          <div className="flex gap-2">
+            <select value={member.role} onChange={(e) => handleRoleChange(e.target.value)} disabled={isPending}
+              className="flex-1 text-xs border border-neutral-200 rounded-lg px-2 py-1.5 bg-white text-neutral-700 disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-tierra-700/20">
+              {ROLE_OPTIONS.map((r) => <option key={r.value} value={r.value}>{r.label}</option>)}
+            </select>
+            {member.role === "distribucion" && zonas.length > 0 && (
+              <select value={member.zona_id ?? ""} onChange={(e) => handleZonaChange(e.target.value)} disabled={isPending}
+                className="flex-1 text-xs border border-neutral-200 rounded-lg px-2 py-1.5 bg-white text-neutral-700 disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-tierra-700/20">
+                <option value="">Sin zona</option>
+                {zonas.map((z) => <option key={z.id} value={z.id}>{z.name}</option>)}
+              </select>
+            )}
+          </div>
+          <div className="flex gap-2">
+            <button onClick={() => setShowReset(!showReset)} disabled={isPending}
+              className="px-3 py-1.5 text-xs rounded-lg border border-neutral-200 text-neutral-600 hover:bg-neutral-50 disabled:opacity-40">
+              {showReset ? "Cancelar" : "Contraseña"}
+            </button>
+            <button onClick={handleRevoke} disabled={isPending}
+              className="px-3 py-1.5 text-xs rounded-lg border border-danger/30 text-danger hover:bg-danger-bg disabled:opacity-40">
+              Revocar
+            </button>
+          </div>
+          {showReset && <ResetPasswordPanel member={member} onClose={() => setShowReset(false)} />}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── Desktop row ───────────────────────────────────────────────────────────────
+
+function StaffRow({ member, isCurrentUser, zonas = [] }: {
+  member: StaffMember; isCurrentUser: boolean; zonas?: Zona[];
 }) {
   const [isPending, startTransition] = useTransition();
   const [showReset, setShowReset]    = useState(false);
@@ -158,53 +222,28 @@ function StaffRow({
             {ROLE_OPTIONS.find((r) => r.value === member.role)?.label ?? member.role}
           </span>
         </td>
-        <td className="px-4 py-3 text-xs text-neutral-400">
-          {member.last_sign_in
-            ? new Date(member.last_sign_in).toLocaleDateString("es-AR", {
-                day: "2-digit", month: "2-digit", year: "2-digit",
-                hour: "2-digit", minute: "2-digit",
-              })
-            : "Nunca"}
-        </td>
+        <td className="px-4 py-3 text-xs text-neutral-400">{fmtAcceso(member.last_sign_in)}</td>
         <td className="px-4 py-3">
           {!isCurrentUser ? (
             <div className="flex items-center gap-3">
-              <select
-                value={member.role}
-                onChange={(e) => handleRoleChange(e.target.value)}
-                disabled={isPending}
-                className="text-xs border border-neutral-200 rounded-lg px-2 py-1.5 bg-white text-neutral-700 disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-tierra-700/20"
-              >
-                {ROLE_OPTIONS.map((r) => (
-                  <option key={r.value} value={r.value}>{r.label}</option>
-                ))}
+              <select value={member.role} onChange={(e) => handleRoleChange(e.target.value)} disabled={isPending}
+                className="text-xs border border-neutral-200 rounded-lg px-2 py-1.5 bg-white text-neutral-700 disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-tierra-700/20">
+                {ROLE_OPTIONS.map((r) => <option key={r.value} value={r.value}>{r.label}</option>)}
               </select>
               {member.role === "distribucion" && zonas.length > 0 && (
-                <select
-                  value={member.zona_id ?? ""}
-                  onChange={(e) => handleZonaChange(e.target.value)}
-                  disabled={isPending}
+                <select value={member.zona_id ?? ""} onChange={(e) => handleZonaChange(e.target.value)} disabled={isPending}
                   className="text-xs border border-neutral-200 rounded-lg px-2 py-1.5 bg-white text-neutral-700 disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-tierra-700/20"
-                  title="Zona de distribución"
-                >
+                  title="Zona de distribución">
                   <option value="">Sin zona</option>
-                  {zonas.map((z) => (
-                    <option key={z.id} value={z.id}>{z.name}</option>
-                  ))}
+                  {zonas.map((z) => <option key={z.id} value={z.id}>{z.name}</option>)}
                 </select>
               )}
-              <button
-                onClick={() => setShowReset(!showReset)}
-                disabled={isPending}
-                className="text-xs text-neutral-500 hover:text-neutral-800 hover:underline disabled:opacity-40"
-              >
+              <button onClick={() => setShowReset(!showReset)} disabled={isPending}
+                className="text-xs text-neutral-500 hover:text-neutral-800 hover:underline disabled:opacity-40">
                 Contraseña
               </button>
-              <button
-                onClick={handleRevoke}
-                disabled={isPending}
-                className="text-xs text-danger hover:underline disabled:opacity-40"
-              >
+              <button onClick={handleRevoke} disabled={isPending}
+                className="text-xs text-danger hover:underline disabled:opacity-40">
                 Revocar
               </button>
             </div>
@@ -224,18 +263,21 @@ function StaffRow({
   );
 }
 
+// ── Invite form ───────────────────────────────────────────────────────────────
+
 function InviteForm() {
   const [isPending, startTransition] = useTransition();
   const [mode, setMode]       = useState<"invite" | "password">("password");
   const [error, setError]     = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
 
+  const inputCls = "w-full px-3 py-2 text-sm border border-neutral-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-tierra-700/20 disabled:opacity-50";
+
   function handleSubmit(e: React.SyntheticEvent<HTMLFormElement>) {
     e.preventDefault();
     const fd   = new FormData(e.currentTarget);
     const form = e.currentTarget;
-    setError(null);
-    setSuccess(null);
+    setError(null); setSuccess(null);
     startTransition(async () => {
       try {
         if (mode === "invite") {
@@ -246,32 +288,21 @@ function InviteForm() {
           setSuccess("Usuario creado. Ya puede ingresar con su email y contraseña.");
         }
         form.reset();
-      } catch (err: any) {
-        setError(err.message ?? "Error al crear usuario");
-      }
+      } catch (err: any) { setError(err.message ?? "Error al crear usuario"); }
     });
   }
 
-  const inputCls = "w-full px-3 py-2 text-sm border border-neutral-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-tierra-700/20 disabled:opacity-50";
-
   return (
-    <div className="bg-white rounded-2xl border border-neutral-200 p-6">
+    <div className="bg-white rounded-2xl border border-neutral-200 p-5 md:p-6">
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-sm font-semibold text-neutral-800">Agregar miembro</h2>
-        {/* Toggle */}
         <div className="flex rounded-lg border border-neutral-200 overflow-hidden text-xs">
-          <button
-            type="button"
-            onClick={() => { setMode("password"); setError(null); setSuccess(null); }}
-            className={`px-3 py-1.5 transition-colors ${mode === "password" ? "bg-tierra-700 text-white" : "text-neutral-500 hover:bg-neutral-50"}`}
-          >
+          <button type="button" onClick={() => { setMode("password"); setError(null); setSuccess(null); }}
+            className={`px-3 py-1.5 transition-colors ${mode === "password" ? "bg-tierra-700 text-white" : "text-neutral-500 hover:bg-neutral-50"}`}>
             Con contraseña
           </button>
-          <button
-            type="button"
-            onClick={() => { setMode("invite"); setError(null); setSuccess(null); }}
-            className={`px-3 py-1.5 transition-colors ${mode === "invite" ? "bg-tierra-700 text-white" : "text-neutral-500 hover:bg-neutral-50"}`}
-          >
+          <button type="button" onClick={() => { setMode("invite"); setError(null); setSuccess(null); }}
+            className={`px-3 py-1.5 transition-colors ${mode === "invite" ? "bg-tierra-700 text-white" : "text-neutral-500 hover:bg-neutral-50"}`}>
             Invitar por email
           </button>
         </div>
@@ -284,7 +315,7 @@ function InviteForm() {
       </p>
 
       <form onSubmit={handleSubmit} className="space-y-4">
-        <div className="grid grid-cols-3 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
           <div>
             <label className="block text-xs font-medium text-neutral-500 mb-1">Nombre</label>
             <input name="name" placeholder="Nombre completo" className={inputCls} disabled={isPending} />
@@ -295,7 +326,7 @@ function InviteForm() {
           </div>
           <div>
             <label className="block text-xs font-medium text-neutral-500 mb-1">Rol *</label>
-            <select name="rol" required className={inputCls} disabled={isPending}>
+            <select name="rol" required className={`${inputCls} bg-white`} disabled={isPending}>
               {ROLE_OPTIONS.map((r) => (
                 <option key={r.value} value={r.value}>{r.label} — {r.desc}</option>
               ))}
@@ -304,7 +335,7 @@ function InviteForm() {
         </div>
 
         {mode === "password" && (
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <label className="block text-xs font-medium text-neutral-500 mb-1">Contraseña *</label>
               <input name="password" type="password" required minLength={8} placeholder="Mínimo 8 caracteres" className={inputCls} disabled={isPending} />
@@ -319,11 +350,8 @@ function InviteForm() {
         {error   && <p className="text-sm text-danger">{error}</p>}
         {success && <p className="text-sm text-success">{success}</p>}
 
-        <button
-          type="submit"
-          disabled={isPending}
-          className="px-4 py-2 rounded-xl bg-tierra-700 text-white text-sm font-medium hover:bg-tierra-800 disabled:opacity-50 transition-colors"
-        >
+        <button type="submit" disabled={isPending}
+          className="w-full sm:w-auto px-4 py-2 rounded-xl bg-tierra-700 text-white text-sm font-medium hover:bg-tierra-800 disabled:opacity-50 transition-colors">
           {isPending
             ? "Procesando…"
             : mode === "password" ? "Crear usuario" : "Enviar invitación"}
@@ -333,19 +361,28 @@ function InviteForm() {
   );
 }
 
-export function StaffClient({
-  staff,
-  currentUserId,
-  zonas = [],
-}: {
+// ── Main ──────────────────────────────────────────────────────────────────────
+
+export function StaffClient({ staff, currentUserId, zonas = [] }: {
   staff:         StaffMember[];
   currentUserId: string;
   zonas?:        Zona[];
 }) {
   return (
-    <div className="space-y-6 max-w-4xl">
-      {/* Tabla de staff */}
-      <div className="bg-white rounded-2xl border border-neutral-200 overflow-hidden">
+    <div className="space-y-5 md:space-y-6 max-w-4xl">
+
+      {/* ── Mobile: cards ────────────────────────────────────────────────── */}
+      <div className="md:hidden space-y-3">
+        {staff.length === 0
+          ? <p className="text-sm text-neutral-400 text-center py-10">No hay miembros de staff configurados.</p>
+          : staff.map((m) => (
+              <StaffMobileCard key={m.id} member={m} isCurrentUser={m.id === currentUserId} zonas={zonas} />
+            ))
+        }
+      </div>
+
+      {/* ── Desktop: tabla ───────────────────────────────────────────────── */}
+      <div className="hidden md:block bg-white rounded-2xl border border-neutral-200 overflow-hidden">
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-neutral-200 text-left">
@@ -364,19 +401,14 @@ export function StaffClient({
               </tr>
             )}
             {staff.map((m) => (
-              <StaffRow
-                key={m.id}
-                member={m}
-                isCurrentUser={m.id === currentUserId}
-                zonas={zonas}
-              />
+              <StaffRow key={m.id} member={m} isCurrentUser={m.id === currentUserId} zonas={zonas} />
             ))}
           </tbody>
         </table>
       </div>
 
       {/* Info de roles */}
-      <div className="grid grid-cols-4 gap-3">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         {ROLE_OPTIONS.map((r) => (
           <div key={r.value} className="bg-white rounded-xl border border-neutral-200 p-4">
             <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium mb-2 ${ROLE_BADGE[r.value]}`}>
@@ -384,39 +416,15 @@ export function StaffClient({
             </span>
             <p className="text-xs text-neutral-500">{r.desc}</p>
             <ul className="mt-2 text-xs text-neutral-400 space-y-0.5">
-              {r.value === "admin" && (
-                <>
-                  <li>· Dashboard, pedidos, producción</li>
-                  <li>· Productos, categorías, zonas</li>
-                  <li>· Clientes B2B, staff</li>
-                </>
-              )}
-              {r.value === "vendedor" && (
-                <>
-                  <li>· Dashboard, pedidos, producción</li>
-                  <li>· Clientes B2B</li>
-                  <li>· Sin acceso a configuración</li>
-                </>
-              )}
-              {r.value === "produccion" && (
-                <>
-                  <li>· Solo vista de producción</li>
-                  <li>· Dashboard</li>
-                  <li>· Sin acceso a pedidos ni clientes</li>
-                </>
-              )}
-              {r.value === "distribucion" && (
-                <>
-                  <li>· Vista de distribución y entregas</li>
-                  <li>· Sin acceso a pedidos ni clientes</li>
-                </>
-              )}
+              {r.value === "admin" && (<><li>· Dashboard, pedidos, producción</li><li>· Productos, categorías, zonas</li><li>· Clientes B2B, staff</li></>)}
+              {r.value === "vendedor" && (<><li>· Dashboard, pedidos, producción</li><li>· Clientes B2B</li><li>· Sin acceso a configuración</li></>)}
+              {r.value === "produccion" && (<><li>· Solo vista de producción</li><li>· Dashboard</li><li>· Sin acceso a pedidos ni clientes</li></>)}
+              {r.value === "distribucion" && (<><li>· Vista de distribución y entregas</li><li>· Sin acceso a pedidos ni clientes</li></>)}
             </ul>
           </div>
         ))}
       </div>
 
-      {/* Formulario de invitación */}
       <InviteForm />
     </div>
   );
