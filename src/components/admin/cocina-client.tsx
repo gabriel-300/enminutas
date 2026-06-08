@@ -133,6 +133,42 @@ function LoteForm({ item, onClose }: { item: StockItem; onClose: () => void }) {
   );
 }
 
+function ProductCard({
+  item, open, onToggle, highlight,
+}: {
+  item: StockItem; open: boolean; onToggle: () => void; highlight: boolean;
+}) {
+  return (
+    <div className={`bg-white rounded-2xl border p-4 ${highlight ? "border-warning/30 bg-warning-bg/20" : "border-neutral-200"}`}>
+      <div className="flex items-start justify-between gap-2 mb-1">
+        <div className="min-w-0">
+          <p className="text-sm font-medium text-neutral-900 leading-tight">{item.name}</p>
+          <p className="text-xs text-neutral-400 font-mono mt-0.5">
+            {item.sku}{item.bolsas_caja ? ` · ${item.bolsas_caja}u/caja` : ""}
+          </p>
+        </div>
+        <StockBadge stock={item.stock} minimo={item.minimo} />
+      </div>
+      <div className="flex items-center gap-4 text-xs text-neutral-500 mb-3">
+        {item.minimo > 0 && <span>Mín: <strong className="text-neutral-700">{item.minimo}</strong></span>}
+        {item.demanda > 0 && <span>Comprometido: <strong className="text-tierra-700">{item.demanda}</strong></span>}
+        {item.minutosEstimados != null && <span>⏱ {fmtMin(item.minutosEstimados)}</span>}
+      </div>
+      <button
+        onClick={onToggle}
+        className="w-full py-2 text-xs font-medium rounded-xl bg-tierra-700 text-white hover:bg-tierra-800 transition-colors"
+      >
+        {open ? "Cancelar" : "+ Registrar lote / ajustar stock"}
+      </button>
+      {open && (
+        <div className="mt-3">
+          <LoteForm item={item} onClose={onToggle} />
+        </div>
+      )}
+    </div>
+  );
+}
+
 export function CocinaClient({ items }: { items: StockItem[] }) {
   const [openId, setOpenId]   = useState<string | null>(null);
   const [filterCat, setFilterCat] = useState("todas");
@@ -160,9 +196,9 @@ export function CocinaClient({ items }: { items: StockItem[] }) {
     <div className="space-y-6">
       {/* Planificador rápido */}
       {alertaTotal > 0 && (
-        <div className="bg-white rounded-2xl border border-neutral-200 p-5">
+        <div className="bg-white rounded-2xl border border-neutral-200 p-4 md:p-5">
           <p className="text-xs font-semibold text-neutral-400 uppercase tracking-wide mb-3">Plan del día</p>
-          <div className="grid grid-cols-3 gap-4">
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-4">
             <div>
               <p className="text-xs text-neutral-400">Productos a producir</p>
               <p className="text-2xl font-semibold font-display text-warning">{alertaTotal}</p>
@@ -190,22 +226,59 @@ export function CocinaClient({ items }: { items: StockItem[] }) {
         </div>
       )}
 
-      {/* Filtros */}
-      <div className="flex gap-1 bg-white border border-neutral-200 rounded-xl p-1 w-fit flex-wrap">
-        <button onClick={() => setFilterCat("todas")}
-          className={`px-3 py-1 rounded-lg text-xs font-medium transition-colors ${filterCat === "todas" ? "bg-tierra-700 text-white" : "text-neutral-500 hover:text-neutral-800"}`}>
-          Todas
-        </button>
-        {categorias.map((cat) => (
-          <button key={cat} onClick={() => setFilterCat(cat)}
-            className={`px-3 py-1 rounded-lg text-xs font-medium transition-colors ${filterCat === cat ? "bg-tierra-700 text-white" : "text-neutral-500 hover:text-neutral-800"}`}>
-            {cat}
+      {/* Filtros — scroll horizontal en mobile */}
+      <div className="overflow-x-auto -mx-4 px-4 md:mx-0 md:px-0">
+        <div className="flex gap-1 bg-white border border-neutral-200 rounded-xl p-1 w-max md:w-fit">
+          <button onClick={() => setFilterCat("todas")}
+            className={`px-3 py-1 rounded-lg text-xs font-medium transition-colors whitespace-nowrap ${filterCat === "todas" ? "bg-tierra-700 text-white" : "text-neutral-500 hover:text-neutral-800"}`}>
+            Todas
           </button>
-        ))}
+          {categorias.map((cat) => (
+            <button key={cat} onClick={() => setFilterCat(cat)}
+              className={`px-3 py-1 rounded-lg text-xs font-medium transition-colors whitespace-nowrap ${filterCat === cat ? "bg-tierra-700 text-white" : "text-neutral-500 hover:text-neutral-800"}`}>
+              {cat}
+            </button>
+          ))}
+        </div>
       </div>
 
-      {/* Tabla */}
-      <div className="bg-white rounded-2xl border border-neutral-200 overflow-hidden">
+      {/* ── Mobile: cards ──────────────────────────────────────────── */}
+      <div className="md:hidden space-y-2">
+        {urgentes.length === 0 && resto.length === 0 ? (
+          <div className="bg-white rounded-2xl border border-neutral-200 p-10 text-center text-xs text-neutral-400">
+            Sin productos activos.
+          </div>
+        ) : (
+          <>
+            {urgentes.map((item) => (
+              <ProductCard
+                key={item.id}
+                item={item}
+                open={openId === item.id}
+                onToggle={() => setOpenId(openId === item.id ? null : item.id)}
+                highlight
+              />
+            ))}
+            {(showAll ? resto : resto.slice(0, 8)).map((item) => (
+              <ProductCard
+                key={item.id}
+                item={item}
+                open={openId === item.id}
+                onToggle={() => setOpenId(openId === item.id ? null : item.id)}
+                highlight={false}
+              />
+            ))}
+            {resto.length > 8 && (
+              <button onClick={() => setShowAll(!showAll)} className="w-full py-2 text-xs text-tierra-700 hover:underline">
+                {showAll ? "Mostrar menos" : `Ver ${resto.length - 8} más`}
+              </button>
+            )}
+          </>
+        )}
+      </div>
+
+      {/* ── Desktop: tabla ─────────────────────────────────────────── */}
+      <div className="hidden md:block bg-white rounded-2xl border border-neutral-200 overflow-hidden">
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-neutral-200 text-left">
@@ -220,13 +293,11 @@ export function CocinaClient({ items }: { items: StockItem[] }) {
           <tbody className="divide-y divide-neutral-100">
             {urgentes.length === 0 && resto.length === 0 && (
               <tr>
-                <td colSpan={5} className="px-5 py-10 text-center text-neutral-400 text-xs">
+                <td colSpan={6} className="px-5 py-10 text-center text-neutral-400 text-xs">
                   Sin productos activos. Cargá productos desde el panel de Productos.
                 </td>
               </tr>
             )}
-
-            {/* Urgentes primero */}
             {urgentes.map((item) => (
               <ProductRow
                 key={item.id}
@@ -236,8 +307,6 @@ export function CocinaClient({ items }: { items: StockItem[] }) {
                 highlight
               />
             ))}
-
-            {/* Resto (con toggle si hay muchos) */}
             {(showAll ? resto : resto.slice(0, 8)).map((item) => (
               <ProductRow
                 key={item.id}

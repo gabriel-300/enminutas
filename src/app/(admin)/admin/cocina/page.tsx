@@ -72,9 +72,9 @@ export default async function CocinaPage() {
   });
 
   return (
-    <div className="p-8 max-w-5xl">
-      <div className="mb-6">
-        <h1 className="text-2xl font-semibold font-display text-neutral-900">Cocina</h1>
+    <div className="p-4 md:p-8 max-w-5xl">
+      <div className="mb-5 md:mb-6">
+        <h1 className="text-xl md:text-2xl font-semibold font-display text-neutral-900">Cocina</h1>
         <p className="text-sm text-neutral-500 mt-1">Stock de producto terminado — registrá lotes y controlá niveles</p>
       </div>
       <CocinaClient items={items} />

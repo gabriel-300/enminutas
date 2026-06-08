@@ -25,43 +25,38 @@ function OrderCard({
   }[variant];
 
   return (
-    <div className={`rounded-2xl border p-5 ${cardCls}`}>
-      <div className="flex items-start justify-between gap-4">
-        <div className="min-w-0">
-          <div className="flex items-center gap-3 flex-wrap">
-            <span className="font-mono text-sm font-semibold text-neutral-900">
-              {order.order_number}
+    <div className={`rounded-2xl border p-4 md:p-5 ${cardCls}`}>
+      <div className="flex items-center gap-2 flex-wrap mb-1">
+        <span className="font-mono text-sm font-semibold text-neutral-900">
+          {order.order_number}
+        </span>
+        <span className="text-sm text-neutral-600">
+          {order.customer?.full_name ?? "—"}
+        </span>
+        {order.aprobado_at && (
+          <span className="text-xs text-neutral-400 ml-auto shrink-0">
+            {fmtFecha(order.aprobado_at, { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" })}
+          </span>
+        )}
+      </div>
+
+      <ul className="mt-2 mb-3 space-y-1">
+        {(order.lines ?? []).map((line: any, i: number) => (
+          <li key={i} className="flex items-baseline gap-2 text-sm text-neutral-700">
+            <span className="font-semibold tabular-nums w-6 shrink-0 text-right">
+              {line.quantity}×
             </span>
-            <span className="text-sm text-neutral-600">
-              {order.customer?.full_name ?? "—"}
-            </span>
-            {order.aprobado_at && (
+            <span>{line.product_snapshot?.name ?? "Producto"}</span>
+            {line.product_snapshot?.unit_label && (
               <span className="text-xs text-neutral-400">
-                Aprobado:{" "}
-                {fmtFecha(order.aprobado_at, { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" })}
+                ({line.product_snapshot.unit_label})
               </span>
             )}
-          </div>
+          </li>
+        ))}
+      </ul>
 
-          <ul className="mt-3 space-y-1">
-            {(order.lines ?? []).map((line: any, i: number) => (
-              <li key={i} className="flex items-baseline gap-2 text-sm text-neutral-700">
-                <span className="font-semibold tabular-nums w-6 shrink-0 text-right">
-                  {line.quantity}×
-                </span>
-                <span>{line.product_snapshot?.name ?? "Producto"}</span>
-                {line.product_snapshot?.unit_label && (
-                  <span className="text-xs text-neutral-400">
-                    ({line.product_snapshot.unit_label})
-                  </span>
-                )}
-              </li>
-            ))}
-          </ul>
-        </div>
-
-        {action}
-      </div>
+      {action && <div className="flex justify-end">{action}</div>}
     </div>
   );
 }
@@ -89,8 +84,8 @@ export default async function ProduccionPage() {
   const despachados = lista.filter((o) => o.status === "despachado" || o.status === "en_distribucion");
 
   return (
-    <div className="p-8 max-w-3xl">
-      <div className="mb-8">
+    <div className="p-4 md:p-8 max-w-3xl">
+      <div className="mb-6 md:mb-8">
         <h1 className="text-2xl font-semibold font-display text-neutral-900">Producción</h1>
         <p className="text-sm text-neutral-500 mt-1">
           {lista.length === 0
