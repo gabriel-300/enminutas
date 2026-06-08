@@ -25,7 +25,7 @@ export default async function AdminPedidoDetailPage({
 
   const esAdmin = user.app_metadata?.role === "admin";
 
-  const { data: order } = await (adminClient as any)
+  const { data: order, error: orderError } = await (adminClient as any)
     .from("orders")
     .select(`
       id, order_number, status, channel, total, subtotal, shipping_fee, discount,
@@ -41,6 +41,14 @@ export default async function AdminPedidoDetailPage({
     .eq("id", id)
     .single();
 
+  if (orderError) {
+    console.error("[pedido-detail] query error:", orderError);
+    return (
+      <div className="p-8 text-sm text-danger">
+        Error al cargar el pedido: {orderError.message}
+      </div>
+    );
+  }
   if (!order) notFound();
 
   const o = order as any;
