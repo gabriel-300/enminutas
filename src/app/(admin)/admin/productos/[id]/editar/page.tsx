@@ -42,7 +42,7 @@ export default async function EditarProductoPage({
   }
 
   return (
-    <div className="p-8">
+    <div className="p-4 md:p-8">
       <div className="mb-6 flex items-start justify-between">
         <div>
           <Link

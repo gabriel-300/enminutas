@@ -33,7 +33,7 @@ export default async function ClientesB2CPage() {
     .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
 
   return (
-    <div className="p-8">
+    <div className="p-4 md:p-8">
       <div className="mb-6">
         <h1 className="text-2xl font-semibold font-display text-neutral-900">Clientes B2C</h1>
         <p className="text-sm text-neutral-500 mt-1">{clientes.length} cliente{clientes.length !== 1 ? "s" : ""} registrados</p>

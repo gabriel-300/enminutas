@@ -45,7 +45,7 @@ export default async function AdminZonasPage() {
   }));
 
   return (
-    <div className="p-8">
+    <div className="p-4 md:p-8">
       <div className="mb-6">
         <h1 className="text-2xl font-semibold font-display text-neutral-900">Zonas de delivery</h1>
         <p className="text-sm text-neutral-500 mt-1">{lista.length} zona{lista.length !== 1 ? "s" : ""}</p>
