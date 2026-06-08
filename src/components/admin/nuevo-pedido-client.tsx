@@ -150,17 +150,16 @@ export function NuevoPedidoClient({
       bolsasCaja: p.bolsas_caja, precio: p.precio!, quantity: cart[p.id],
     }));
     startTransition(async () => {
-      try {
-        const { orderId } = await crearPedidoAdmin({
-          clientId: cliente.id, canal: cliente.canal_nombre,
-          zonaId: direccion?.zona_id ?? null, items, notes, paymentMethod,
-          initialStatus, discountPct: descuentoPct, discountAmount: montoDescuento,
-          shippingAddress: direccion
-            ? { calle: direccion.calle, numero: direccion.numero ?? null, piso: direccion.piso ?? null, ciudad: direccion.ciudad }
-            : null,
-        });
-        router.push(`/admin/pedidos/${orderId}`);
-      } catch (e: any) { setError(e.message ?? "Error al crear el pedido."); }
+      const result = await crearPedidoAdmin({
+        clientId: cliente.id, canal: cliente.canal_nombre,
+        zonaId: direccion?.zona_id ?? null, items, notes, paymentMethod,
+        initialStatus, discountPct: descuentoPct, discountAmount: montoDescuento,
+        shippingAddress: direccion
+          ? { calle: direccion.calle, numero: direccion.numero ?? null, piso: direccion.piso ?? null, ciudad: direccion.ciudad }
+          : null,
+      });
+      if ("error" in result) { setError(result.error); return; }
+      router.push(`/admin/pedidos/${result.orderId}`);
     });
   }
 

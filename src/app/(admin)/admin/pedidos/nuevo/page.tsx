@@ -12,7 +12,6 @@ export default async function NuevoPedidoPage({
 }: {
   searchParams: Promise<{ cliente?: string; repetir?: string }>;
 }) {
-  try {
   const sp = await searchParams;
   const supabase    = await createClient();
   const adminClient = createAdminClient() as any;
@@ -158,8 +157,4 @@ export default async function NuevoPedidoPage({
       />
     </div>
   );
-  } catch (err: unknown) {
-    console.error("[nuevo-pedido page] render error:", err);
-    throw err;
-  }
 }

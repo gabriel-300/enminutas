@@ -26,11 +26,11 @@ type CrearPedidoPayload = {
   shippingAddress?: { calle: string | null; numero: string | null; piso: string | null; ciudad: string | null } | null;
 };
 
-export async function crearPedidoAdmin(payload: CrearPedidoPayload): Promise<{ orderId: string }> {
+export async function crearPedidoAdmin(payload: CrearPedidoPayload): Promise<{ orderId: string } | { error: string }> {
   const { clientId, canal, zonaId, items, notes, paymentMethod, initialStatus, discountPct = 0, discountAmount = 0, shippingAddress } = payload;
 
-  if (!clientId)        throw new Error("Seleccioná un cliente");
-  if (items.length === 0) throw new Error("Agregá al menos un producto");
+  if (!clientId)        return { error: "Seleccioná un cliente" };
+  if (items.length === 0) return { error: "Agregá al menos un producto" };
 
   // Validar cantidades mínimas B2B
   const adminClientEarly = createAdminClient();
@@ -42,14 +42,14 @@ export async function crearPedidoAdmin(payload: CrearPedidoPayload): Promise<{ o
   for (const item of items) {
     const prod = (minimos ?? []).find((p: any) => p.id === item.productId);
     const min  = prod?.min_quantity_b2b ?? 1;
-    if (item.quantity < min) throw new Error(`"${item.name}" requiere mínimo ${min} caja${min !== 1 ? "s" : ""} (cargaste ${item.quantity})`);
+    if (item.quantity < min) return { error: `"${item.name}" requiere mínimo ${min} caja${min !== 1 ? "s" : ""} (cargaste ${item.quantity})` };
   }
 
   const authClient   = await createClient();
   const adminClient  = createAdminClient();
 
   const { data: { user } } = await authClient.auth.getUser();
-  if (!user) throw new Error("No autorizado");
+  if (!user) return { error: "No autorizado" };
 
   const callerRole = user.app_metadata?.role as string | undefined;
 
@@ -60,7 +60,7 @@ export async function crearPedidoAdmin(payload: CrearPedidoPayload): Promise<{ o
       .select("vendedor_id")
       .eq("id", clientId)
       .single();
-    if (!perfil || perfil.vendedor_id !== user.id) throw new Error("No autorizado: el cliente no te pertenece");
+    if (!perfil || perfil.vendedor_id !== user.id) return { error: "No autorizado: el cliente no te pertenece" };
   }
 
   // Totales
@@ -127,9 +127,9 @@ export async function crearPedidoAdmin(payload: CrearPedidoPayload): Promise<{ o
       .select("id")
       .single();
     if (!oErr && o) { order = o; break; }
-    if (oErr?.code !== "23505") throw new Error(oErr?.message ?? "Error al crear el pedido");
+    if (oErr?.code !== "23505") return { error: oErr?.message ?? "Error al crear el pedido" };
   }
-  if (!order) throw new Error("No se pudo generar número de pedido único. Intenta de nuevo.");
+  if (!order) return { error: "No se pudo generar número de pedido único. Intentá de nuevo." };
 
   const lines = items.map((item) => ({
     order_id:         order.id,
@@ -150,7 +150,7 @@ export async function crearPedidoAdmin(payload: CrearPedidoPayload): Promise<{ o
 
   if (linesError) {
     await adminClient.from("orders").delete().eq("id", order.id);
-    throw new Error(linesError.message);
+    return { error: linesError.message };
   }
 
   // Email al cliente
