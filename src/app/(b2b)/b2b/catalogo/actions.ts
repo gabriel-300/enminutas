@@ -16,7 +16,7 @@ type CartItem = {
   qty: number;
 };
 
-export async function confirmarPedidoB2B(items: CartItem[], notes: string | null = null) {
+export async function confirmarPedidoB2B(items: CartItem[], notes: string | null = null, zonaId: string | null = null) {
   if (items.length === 0) throw new Error("Carrito vacío");
 
   const supabase    = await createClient();
@@ -59,6 +59,7 @@ export async function confirmarPedidoB2B(items: CartItem[], notes: string | null
       shipping_method:          "b2b_despacho",
       payment_method:           "transferencia",
       notes:                    notes ?? null,
+      delivery_zone_id:         zonaId ?? null,
     })
     .select("id")
     .single();

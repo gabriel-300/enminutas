@@ -18,6 +18,8 @@ type DireccionB2B = {
   id:           string;
   alias:        string;
   calle:        string | null;
+  numero:       string | null;
+  piso:         string | null;
   ciudad:       string | null;
   zona_id:      string | null;
   zona_name:    string;
@@ -151,6 +153,9 @@ export function NuevoPedidoClient({
           clientId: cliente.id, canal: cliente.canal_nombre,
           zonaId: direccion?.zona_id ?? null, items, notes, paymentMethod,
           initialStatus, discountPct: descuentoPct, discountAmount: montoDescuento,
+          shippingAddress: direccion
+            ? { calle: direccion.calle, numero: direccion.numero ?? null, piso: direccion.piso ?? null, ciudad: direccion.ciudad }
+            : null,
         });
       } catch (e: any) { setError(e.message ?? "Error al crear el pedido."); }
     });

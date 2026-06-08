@@ -176,8 +176,28 @@ function ProductCard({
   );
 }
 
-export function CatalogoB2BClient({ products }: { products: Producto[] }) {
-  const [cart, dispatch]             = useReducer(cartReducer, []);
+const REORDER_KEY = "b2b-reorder-pending";
+
+export function CatalogoB2BClient({ products, zonaId = null }: { products: Producto[]; zonaId?: string | null }) {
+  const [cart, dispatch] = useReducer(cartReducer, undefined, (): CartItem[] => {
+    if (typeof window === "undefined") return [];
+    try {
+      const raw = localStorage.getItem(REORDER_KEY);
+      if (!raw) return [];
+      localStorage.removeItem(REORDER_KEY);
+      const qtys = JSON.parse(raw) as Record<string, number>;
+      return products
+        .filter((p) => qtys[p.id] > 0 && p.precio)
+        .map((p) => ({
+          id:          p.id,
+          name:        p.name,
+          unit_label:  p.unit_label,
+          bolsas_caja: p.bolsas_caja,
+          precio:      p.precio!,
+          qty:         qtys[p.id],
+        }));
+    } catch { return []; }
+  });
   const [activeCat, setActiveCat]    = useState<string>("todas");
   const [search, setSearch]          = useState("");
   const [nota, setNota]              = useState("");
@@ -198,7 +218,7 @@ export function CatalogoB2BClient({ products }: { products: Producto[] }) {
 
   function handleConfirmar() {
     startTransition(async () => {
-      await confirmarPedidoB2B(cart, nota.trim() || null);
+      await confirmarPedidoB2B(cart, nota.trim() || null, zonaId);
     });
   }
 

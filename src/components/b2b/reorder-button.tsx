@@ -2,8 +2,9 @@
 
 import { useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { useCartStore } from "@/store/cart";
 import { getOrderLinesForReorder } from "@/app/(b2b)/b2b/pedidos/actions";
+
+const REORDER_KEY = "b2b-reorder-pending";
 
 export function ReorderButton({
   orderId,
@@ -14,24 +15,14 @@ export function ReorderButton({
 }) {
   const [isPending, startTransition] = useTransition();
   const router = useRouter();
-  const { clearCart, addItem } = useCartStore();
 
   function handleReorder() {
     startTransition(async () => {
       try {
         const lines = await getOrderLinesForReorder(orderId);
-        clearCart();
-        for (const line of lines) {
-          addItem({
-            productId: line.productId,
-            sku:       line.sku,
-            name:      line.name,
-            price:     line.price,
-            quantity:  line.quantity,
-            unitLabel: line.unitLabel,
-            imageUrl:  line.imageUrl,
-          });
-        }
+        const qtys: Record<string, number> = {};
+        for (const line of lines) qtys[line.productId] = line.quantity;
+        localStorage.setItem(REORDER_KEY, JSON.stringify(qtys));
         router.push("/b2b/catalogo");
       } catch {
         alert("Error al cargar el pedido. Intentá de nuevo.");

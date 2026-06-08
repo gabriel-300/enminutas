@@ -62,7 +62,7 @@ export default async function NuevoPedidoPage({
     b2bIds.length > 0
       ? adminClient
           .from("direcciones_entrega")
-          .select("id, profile_id, alias, calle, ciudad, es_principal, zona_id, zona:delivery_zones!zona_id (id, name, flete_kg)")
+          .select("id, profile_id, alias, calle, numero, piso, ciudad, es_principal, zona_id, zona:delivery_zones!zona_id (id, name, flete_kg)")
           .in("profile_id", b2bIds)
           .eq("activo", true)
           .order("es_principal", { ascending: false })
@@ -85,6 +85,8 @@ export default async function NuevoPedidoPage({
       id:        d.id,
       alias:     d.alias,
       calle:     d.calle,
+      numero:    d.numero ?? null,
+      piso:      d.piso   ?? null,
       ciudad:    d.ciudad,
       zona_id:   d.zona?.id   ?? null,
       zona_name: d.zona?.name ?? "Sin zona",

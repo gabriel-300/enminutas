@@ -24,10 +24,11 @@ type CrearPedidoPayload = {
   initialStatus:  string;
   discountPct?:   number;
   discountAmount?: number;
+  shippingAddress?: { calle: string | null; numero: string | null; piso: string | null; ciudad: string | null } | null;
 };
 
 export async function crearPedidoAdmin(payload: CrearPedidoPayload) {
-  const { clientId, canal, zonaId, items, notes, paymentMethod, initialStatus, discountPct = 0, discountAmount = 0 } = payload;
+  const { clientId, canal, zonaId, items, notes, paymentMethod, initialStatus, discountPct = 0, discountAmount = 0, shippingAddress } = payload;
 
   if (!clientId)        throw new Error("Seleccioná un cliente");
   if (items.length === 0) throw new Error("Agregá al menos un producto");
@@ -77,20 +78,12 @@ export async function crearPedidoAdmin(payload: CrearPedidoPayload) {
 
   const r = (n: number) => Math.round(n * 100) / 100;
 
-  // Dirección de entrega del cliente
-  const { data: clientProfile } = await adminClient
-    .from("profiles")
-    .select("direccion_calle, direccion_numero, direccion_piso, direccion_ciudad, phone")
-    .eq("id", clientId)
-    .single();
-
-  const cp = clientProfile as any;
-  const shippingSnapshot = (cp?.direccion_calle || cp?.direccion_ciudad)
+  const shippingSnapshot = (shippingAddress?.calle || shippingAddress?.ciudad)
     ? {
-        street: cp.direccion_calle  ?? null,
-        number: cp.direccion_numero ?? null,
-        floor:  cp.direccion_piso   ?? null,
-        city:   cp.direccion_ciudad ?? null,
+        street: shippingAddress.calle  ?? null,
+        number: shippingAddress.numero ?? null,
+        floor:  shippingAddress.piso   ?? null,
+        city:   shippingAddress.ciudad ?? null,
       }
     : null;
 

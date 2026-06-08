@@ -14,7 +14,7 @@ export default async function CatalogoB2BPage() {
 
   const { data: profileRaw } = await (supabase as any)
     .from("profiles")
-    .select("full_name, descuento_extra_pct, b2b_status, canal:canales!canal_id (nombre, descuento_pct), zona:delivery_zones!zona_id (name, flete_kg)")
+    .select("full_name, descuento_extra_pct, b2b_status, zona_id, canal:canales!canal_id (nombre, descuento_pct), zona:delivery_zones!zona_id (name, flete_kg)")
     .eq("id", user.id)
     .single();
 
@@ -66,7 +66,7 @@ export default async function CatalogoB2BPage() {
         </p>
       </div>
 
-      <CatalogoB2BClient products={products} />
+      <CatalogoB2BClient products={products} zonaId={profile.zona_id ?? null} />
     </div>
   );
 }
