@@ -37,9 +37,12 @@ export default async function AdminPedidosPage() {
     .limit(200);
 
   if (clienteIds !== null) {
-    ordersQuery = clienteIds.length > 0
-      ? ordersQuery.in("customer_id", clienteIds)
-      : ordersQuery.eq("customer_id", "00000000-0000-0000-0000-000000000000"); // sin resultados
+    if (clienteIds.length === 0) {
+      // Vendedor sin clientes asignados: no tiene pedidos para ver
+      ordersQuery = ordersQuery.in("customer_id", [] as string[]).limit(0);
+    } else {
+      ordersQuery = ordersQuery.in("customer_id", clienteIds);
+    }
   }
 
   const [{ data: rawOrders, error }, { data: { users } }] = await Promise.all([

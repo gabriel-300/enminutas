@@ -12,7 +12,8 @@ export async function declararPago(orderId: string) {
     .from("orders")
     .update({ payment_declared_at: new Date().toISOString() } as any)
     .eq("id", orderId)
-    .eq("customer_id", user.id);
+    .eq("customer_id", user.id)
+    .eq("channel", "b2b_mayorista" as any);
 
   if (error) throw new Error(error.message);
   revalidatePath(`/b2b/pedidos/${orderId}`);

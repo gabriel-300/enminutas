@@ -76,8 +76,13 @@ export async function guardarNotasCliente(clienteId: string, notas: string): Pro
     if (!perfil || perfil.vendedor_id !== user.id) return { error: "No autorizado" };
   }
 
-  const { error } = await db.from("profiles").update({ notas_internas: notas || null }).eq("id", clienteId);
+  const { data: updated, error } = await db
+    .from("profiles")
+    .update({ notas_internas: notas || null })
+    .eq("id", clienteId)
+    .select("id");
   if (error) return { error: error.message };
+  if (!updated?.length) return { error: "Cliente no encontrado" };
   revalidatePath("/admin/preventista");
   revalidatePath("/admin/clientes-b2b");
   return { ok: true };

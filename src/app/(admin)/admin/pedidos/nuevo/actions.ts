@@ -33,6 +33,19 @@ export async function crearPedidoAdmin(payload: CrearPedidoPayload) {
   if (!clientId)        throw new Error("Seleccioná un cliente");
   if (items.length === 0) throw new Error("Agregá al menos un producto");
 
+  // Validar cantidades mínimas B2B
+  const adminClientEarly = createAdminClient();
+  const productIds = items.map((i) => i.productId);
+  const { data: minimos } = await (adminClientEarly as any)
+    .from("products")
+    .select("id, name, min_quantity_b2b")
+    .in("id", productIds);
+  for (const item of items) {
+    const prod = (minimos ?? []).find((p: any) => p.id === item.productId);
+    const min  = prod?.min_quantity_b2b ?? 1;
+    if (item.quantity < min) throw new Error(`"${item.name}" requiere mínimo ${min} caja${min !== 1 ? "s" : ""} (cargaste ${item.quantity})`);
+  }
+
   const authClient   = await createClient();
   const adminClient  = createAdminClient();
 
