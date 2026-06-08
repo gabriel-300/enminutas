@@ -33,8 +33,8 @@ export function precioParaCanal(
 ): PrecioB2B | null {
   if (!precio_lista) return null;
 
-  const descuento_total = (canal_descuento_pct + descuento_extra_pct) / 100;
-  const precio_canal    = precio_lista * (1 - descuento_total);
+  const descuento_total = Math.min((canal_descuento_pct + descuento_extra_pct) / 100, 1);
+  const precio_canal    = Math.max(0, precio_lista * (1 - descuento_total));
   const flete           = (kg_caja ?? 0) * flete_kg;
   const total_civa      = Math.round(precio_canal + flete);
   const por_unidad      = bolsas_caja

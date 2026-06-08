@@ -52,14 +52,15 @@ export async function marcarEnviadoProd(orderId: string) {
 
   const supabase = createAdminClient();
 
-  const { data: current } = await (supabase as any).from("orders").select("status").eq("id", orderId).single();
-  if ((current as any)?.status !== "aprobado") throw new Error("El pedido debe estar aprobado para iniciar preparación");
-
-  const { error } = await supabase
+  // Update con guard de estado para atomicidad — 0 filas = estado incorrecto
+  const { data: updated, error } = await (supabase as any)
     .from("orders")
-    .update({ status: "enviado_prod" as any })
-    .eq("id", orderId);
+    .update({ status: "enviado_prod" })
+    .eq("id", orderId)
+    .eq("status", "aprobado")
+    .select("id");
   if (error) throw new Error(error.message);
+  if (!updated?.length) throw new Error("El pedido debe estar aprobado para iniciar preparación");
   revalidatePath("/admin/produccion");
 }
 
@@ -69,7 +70,7 @@ export async function despacharPedido(orderId: string) {
 
   const supabase = createAdminClient();
 
-  const { data: current } = await (supabase as any).from("orders").select("status").eq("id", orderId).single();
+  const { data: current } = await (supabase as any).from("orders").select("status, id").eq("id", orderId).single();
   if ((current as any)?.status !== "enviado_prod") throw new Error("El pedido debe estar en preparación para despacharse");
 
   const { data: lines } = await (supabase as any)
@@ -77,14 +78,15 @@ export async function despacharPedido(orderId: string) {
     .select("product_id, quantity")
     .eq("order_id", orderId);
 
-  const { error } = await supabase
+  // Update con guard de estado para atomicidad
+  const { data: updated, error } = await (supabase as any)
     .from("orders")
-    .update({
-      status:        "despachado" as any,
-      despachado_at: new Date().toISOString(),
-    })
-    .eq("id", orderId);
+    .update({ status: "despachado", despachado_at: new Date().toISOString() })
+    .eq("id", orderId)
+    .eq("status", "enviado_prod")
+    .select("id");
   if (error) throw new Error(error.message);
+  if (!updated?.length) throw new Error("El pedido debe estar en preparación para despacharse");
 
   for (const line of (lines ?? []) as { product_id: string; quantity: number }[]) {
     await (supabase as any).rpc("decrement_stock", {
@@ -117,17 +119,16 @@ export async function confirmarPago(orderId: string) {
 
   const o = order as any;
 
+  const authClient2 = await createClient();
+  const { data: { user: adminUser } } = await authClient2.auth.getUser();
+
   const updates: Record<string, any> = {
     payment_confirmed_at: new Date().toISOString(),
   };
-  if (o?.channel === "b2b_mayorista" && o?.status === "pending_payment") {
-    const authClient = await createClient();
-    const { data: { user } } = await authClient.auth.getUser();
-    if (user) {
-      updates.status       = "aprobado";
-      updates.aprobado_por = user.id;
-      updates.aprobado_at  = new Date().toISOString();
-    }
+  if (o?.status === "pending_payment" && adminUser) {
+    updates.status       = "aprobado";
+    updates.aprobado_por = adminUser.id;
+    updates.aprobado_at  = new Date().toISOString();
   }
 
   const { error } = await (supabase as any).from("orders").update(updates).eq("id", orderId);
@@ -202,10 +203,23 @@ export async function confirmarEntrega(orderId: string) {
 }
 
 export async function agregarNota(orderId: string, nota: string) {
-  const role = await getCallerRole();
-  if (!role) throw new Error("No autorizado");
+  const authClient = await createClient();
+  const { data: { user } } = await authClient.auth.getUser();
+  if (!user) throw new Error("No autorizado");
+  const role = user.app_metadata?.role as string | undefined;
+  if (role !== "admin" && role !== "vendedor") throw new Error("No autorizado");
 
   const supabase = createAdminClient();
+
+  if (role === "vendedor") {
+    const { data: order } = await (supabase as any)
+      .from("orders")
+      .select("customer_id, customer:profiles!customer_id(vendedor_id)")
+      .eq("id", orderId)
+      .single();
+    if (!order || (order as any).customer?.vendedor_id !== user.id) throw new Error("No autorizado");
+  }
+
   const { error } = await supabase
     .from("orders")
     .update({ notes: nota.trim() || null })

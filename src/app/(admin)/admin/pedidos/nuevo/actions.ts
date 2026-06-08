@@ -54,7 +54,9 @@ export async function crearPedidoAdmin(payload: CrearPedidoPayload) {
   // Totales
   const subtotalBruto    = items.reduce((s, i) => s + i.precio.total_civa * i.quantity, 0);
   const subtotal         = subtotalBruto;
-  const descuento        = discountAmount > 0 ? discountAmount : Math.round(subtotalBruto * discountPct / 100 * 100) / 100;
+  const safePct          = Math.max(0, Math.min(100, discountPct ?? 0));
+  const rawDescuento     = discountAmount > 0 ? discountAmount : Math.round(subtotalBruto * safePct / 100 * 100) / 100;
+  const descuento        = Math.max(0, Math.min(subtotalBruto, rawDescuento));
   const total            = subtotalBruto - descuento;
 
   const r = (n: number) => Math.round(n * 100) / 100;
