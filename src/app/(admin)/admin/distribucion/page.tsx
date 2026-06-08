@@ -67,7 +67,7 @@ export default async function DistribucionPage({
         shipping_snapshot,
         customer:profiles!customer_id (full_name, phone, zona:delivery_zones!zona_id (name)),
         guest_phone,
-        lines:order_lines (quantity, product_snapshot)
+        lines:order_lines (product_id, quantity, product_snapshot)
       `)
       .eq("channel", "b2b_mayorista")
       .in("status", status instanceof Array ? status : [status]);
@@ -84,7 +84,7 @@ export default async function DistribucionPage({
     (() => {
       let q = (adminClient as any)
         .from("orders")
-        .select(`id, order_number, entregado_at, customer:profiles!customer_id (full_name, zona:delivery_zones!zona_id (name)), lines:order_lines (quantity, product_snapshot)`)
+        .select(`id, order_number, entregado_at, customer:profiles!customer_id (full_name, zona:delivery_zones!zona_id (name)), lines:order_lines (product_id, quantity, product_snapshot)`)
         .eq("channel", "b2b_mayorista").eq("status", "delivered")
         .gte("entregado_at", hoyInicio.toISOString())
         .order("entregado_at", { ascending: false });
@@ -252,7 +252,16 @@ export default async function DistribucionPage({
                       <div className="flex justify-end">
                         {order.status === "despachado"
                           ? <IniciarDistribucionButton orderId={order.id} />
-                          : <ConfirmarEntregaButton orderId={order.id} />
+                          : (
+                            <ConfirmarEntregaButton
+                              orderId={order.id}
+                              lineas={(order.lines ?? []).map((l: any) => ({
+                                productId: l.product_id ?? "",
+                                name:      l.product_snapshot?.name ?? "Producto",
+                                pedido:    Number(l.quantity),
+                              }))}
+                            />
+                          )
                         }
                       </div>
                     </div>

@@ -31,7 +31,7 @@ const TAB_STATUSES: Record<string, string[]> = {
   pendientes:  ["pending_payment", "payment_review"],
   produccion:  ["aprobado", "enviado_prod", "paid", "preparing", "ready"],
   despachados: ["despachado", "shipped", "in_delivery"],
-  entregados:  ["delivered"],
+  entregados:  ["delivered", "entrega_parcial"],
 };
 
 function AprobarInlineButton({ orderId }: { orderId: string }) {

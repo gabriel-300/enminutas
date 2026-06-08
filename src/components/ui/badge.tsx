@@ -46,7 +46,8 @@ export function OrderStatusBadge({ status }: { status: string }) {
     aprobado:        { label: "Aprobado",                 variant: "success" },
     enviado_prod:    { label: "Enviado a producción",     variant: "info" },
     despachado:      { label: "Despachado",               variant: "success" },
-    en_distribucion: { label: "En distribución",          variant: "info" },
+    en_distribucion:  { label: "En distribución",          variant: "info" },
+    entrega_parcial:  { label: "Entrega parcial",          variant: "warning" },
   };
 
   const { label, variant } = config[status] ?? { label: status, variant: "default" as BadgeVariant };

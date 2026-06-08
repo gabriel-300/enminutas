@@ -237,3 +237,42 @@ export async function agregarNota(orderId: string, nota: string) {
   if (error) throw new Error(error.message);
   revalidatePath(`/admin/pedidos/${orderId}`);
 }
+
+export type LineaEntregada = {
+  productId: string;
+  name:      string;
+  pedido:    number;
+  entregado: number;
+};
+
+export async function confirmarEntregaParcial(orderId: string, lineas: LineaEntregada[]) {
+  const role = await getCallerRole();
+  if (role !== "admin" && role !== "distribucion") throw new Error("No autorizado");
+
+  const todosEntregados = lineas.every((l) => l.entregado >= l.pedido);
+
+  // Si todo fue entregado usar el flujo normal
+  if (todosEntregados) {
+    await confirmarEntrega(orderId);
+    return;
+  }
+
+  const supabase = createAdminClient();
+  const { data: updated, error } = await (supabase as any)
+    .from("orders")
+    .update({
+      status:             "entrega_parcial",
+      entregado_at:       new Date().toISOString(),
+      delivered_snapshot: { lineas, timestamp: new Date().toISOString() },
+    })
+    .eq("id", orderId)
+    .in("status", ["despachado", "en_distribucion"])
+    .select("id");
+
+  if (error) throw new Error(error.message);
+  if (!updated?.length) throw new Error("El pedido no está en estado de distribución");
+
+  revalidatePath("/admin/distribucion");
+  revalidatePath("/admin/pedidos");
+  revalidatePath("/admin/dashboard");
+}

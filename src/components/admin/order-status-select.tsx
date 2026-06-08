@@ -66,11 +66,11 @@ export function OrderStatusSelect({
     startTransition(() => updateOrderStatus(orderId, newStatus));
   }
 
-  // Si el pedido está entregado o cancelado, no hay nada que cambiar
-  if (currentStatus === "delivered" || currentStatus === "cancelled") {
+  // Si el pedido está en estado terminal, no hay nada que cambiar
+  if (currentStatus === "delivered" || currentStatus === "cancelled" || currentStatus === "entrega_parcial") {
     return (
       <span className="text-xs text-neutral-400 px-2 py-1.5 block">
-        {currentStatus === "delivered" ? "Entregado" : "Cancelado"}
+        {currentStatus === "delivered" ? "Entregado" : currentStatus === "entrega_parcial" ? "Entrega parcial" : "Cancelado"}
       </span>
     );
   }

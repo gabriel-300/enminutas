@@ -30,7 +30,7 @@ export default async function AdminPedidoDetailPage({
     .select(`
       id, order_number, status, channel, total, subtotal, shipping_fee, discount,
       payment_method, payment_declared_at, payment_confirmed_at,
-      shipping_method, shipping_snapshot, notes, created_at,
+      shipping_method, shipping_snapshot, delivered_snapshot, notes, created_at,
       guest_email, guest_phone,
       customer:profiles!customer_id (full_name, phone),
       lines:order_lines (
@@ -222,6 +222,28 @@ export default async function AdminPedidoDetailPage({
           </tbody>
         </table>
       </div>
+
+      {/* Detalle entrega parcial */}
+      {o.status === "entrega_parcial" && o.delivered_snapshot?.lineas && (
+        <div className="bg-warning-bg border border-warning/20 rounded-2xl p-5 mb-4">
+          <p className="text-sm font-medium text-warning mb-3">Entrega parcial registrada</p>
+          <div className="space-y-2">
+            {(o.delivered_snapshot.lineas as any[]).map((l: any, i: number) => (
+              <div key={i} className="flex items-center justify-between text-sm">
+                <span className="text-neutral-700 truncate flex-1 mr-4">{l.name}</span>
+                <span className={`tabular-nums font-medium ${l.entregado < l.pedido ? "text-warning" : "text-neutral-600"}`}>
+                  {l.entregado} / {l.pedido} cajas
+                </span>
+              </div>
+            ))}
+          </div>
+          {o.delivered_snapshot.timestamp && (
+            <p className="text-xs text-neutral-400 mt-3">
+              Registrado: {new Date(o.delivered_snapshot.timestamp).toLocaleString("es-AR")}
+            </p>
+          )}
+        </div>
+      )}
 
       {/* Totales */}
       <div className="bg-white rounded-2xl border border-neutral-200 p-5 sm:max-w-xs sm:ml-auto">
