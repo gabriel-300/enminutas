@@ -62,7 +62,7 @@ export default async function B2BPedidoDetailPage({
     .from("orders")
     .select(`
       id, order_number, status, total, subtotal, created_at, notes,
-      payment_declared_at, payment_confirmed_at,
+      payment_method, payment_declared_at, payment_confirmed_at,
       lines:order_lines (id, quantity, unit_price, line_total, product_snapshot)
     `)
     .eq("id", id)
@@ -80,7 +80,8 @@ export default async function B2BPedidoDetailPage({
   const bankBanco  = "";
   const bankTitular = process.env.NEXT_PUBLIC_BANK_HOLDER ?? "En Minutas";
 
-  const showBankInfo = o.status === "pending_payment" && (bankCbu || bankAlias);
+  const isTransferPayment = o.payment_method === "bank_transfer" || o.payment_method === "transferencia";
+  const showBankInfo = o.status === "pending_payment" && isTransferPayment && (bankCbu || bankAlias);
 
   return (
     <div className="max-w-3xl mx-auto px-4 md:px-6 py-5 md:py-8">
@@ -159,8 +160,8 @@ export default async function B2BPedidoDetailPage({
         </div>
       )}
 
-      {/* Declarar pago */}
-      {o.status === "pending_payment" && (
+      {/* Declarar pago — solo para pagos por transferencia */}
+      {o.status === "pending_payment" && isTransferPayment && (
         <div className="mb-6">
           {o.payment_declared_at ? (
             <div className="flex items-center gap-2 px-4 py-3 bg-success-bg rounded-xl border border-success/30 text-sm text-success font-medium">

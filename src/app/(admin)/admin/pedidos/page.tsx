@@ -15,6 +15,7 @@ export default async function AdminPedidosPage() {
 
   const adminClient = createAdminClient();
   const esVendedor = user.app_metadata?.role === "vendedor";
+  const esAdmin    = user.app_metadata?.role === "admin";
 
   // Si es vendedor, filtrar solo pedidos de sus clientes asignados
   let clienteIds: string[] | null = null;
@@ -90,7 +91,7 @@ export default async function AdminPedidosPage() {
         </Link>
       </div>
 
-      <PedidosClient orders={orders} />
+      <PedidosClient orders={orders} esAdmin={esAdmin} />
     </div>
   );
 }

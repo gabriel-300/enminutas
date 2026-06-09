@@ -3,22 +3,11 @@
 import { useState, useTransition } from "react";
 import { updateOrderStatus } from "@/app/(admin)/admin/pedidos/actions";
 
-const B2B_FLOW = [
-  "pending_payment",
-  "aprobado",
-  "enviado_prod",
-  "despachado",
-  "en_distribucion",
-  "delivered",
-];
-
+// Solo los 3 estados que updateOrderStatus permite asignar manualmente.
+// Los otros (enviado_prod, despachado, etc.) se cambian desde producción/distribución.
 const B2B_OPTIONS = [
   { value: "pending_payment",  label: "Pendiente" },
   { value: "aprobado",         label: "Aprobado" },
-  { value: "enviado_prod",     label: "En producción" },
-  { value: "despachado",       label: "Despachado" },
-  { value: "en_distribucion",  label: "En distribución" },
-  { value: "delivered",        label: "Entregado" },
   { value: "cancelled",        label: "Cancelado" },
 ];
 
@@ -47,17 +36,7 @@ export function OrderStatusSelect({
   const [localStatus, setLocalStatus] = useState(currentStatus);
   const [isPending,   startTransition] = useTransition();
 
-  // B2B: solo se puede avanzar hacia adelante en el flujo + cancelar
-  const options = channel === "b2b_mayorista"
-    ? (() => {
-        const currentIdx = B2B_FLOW.indexOf(currentStatus);
-        return B2B_OPTIONS.filter((opt) => {
-          if (opt.value === "cancelled") return currentStatus !== "delivered";
-          const optIdx = B2B_FLOW.indexOf(opt.value);
-          return optIdx >= currentIdx;
-        });
-      })()
-    : B2C_OPTIONS;
+  const options = channel === "b2b_mayorista" ? B2B_OPTIONS : B2C_OPTIONS;
 
   function handleChange(e: React.ChangeEvent<HTMLSelectElement>) {
     const newStatus = e.target.value;

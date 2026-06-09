@@ -21,7 +21,7 @@ export default async function MiCuentaPage() {
   const [{ data: profileRaw }, { data: { user: authUser } }] = await Promise.all([
     supabase
       .from("profiles")
-      .select("full_name, canal, b2b_status, zona:delivery_zones!zona_id (id, name, flete_kg)")
+      .select("full_name, canal, b2b_status, zona:delivery_zones!zona_id (id, name)")
       .eq("id", user.id)
       .single(),
     adminClient.auth.admin.getUserById(user.id),
@@ -31,10 +31,7 @@ export default async function MiCuentaPage() {
   if (!profile || profile.b2b_status !== "activo") redirect("/b2b/pendiente");
 
   const canal  = profile.canal as string | null;
-  const zona   = profile.zona as { id: string; name: string; flete_kg: number | null } | null;
-
-  const fmtPrecio = (n: number) =>
-    new Intl.NumberFormat("es-AR", { style: "currency", currency: "ARS", maximumFractionDigits: 0 }).format(n);
+  const zona   = profile.zona as { id: string; name: string } | null;
 
   return (
     <div className="max-w-2xl mx-auto px-4 md:px-6 py-5 md:py-8">
@@ -63,12 +60,6 @@ export default async function MiCuentaPage() {
         <div className="px-5 py-4">
           <p className="text-xs text-neutral-400 mb-0.5">Zona de entrega</p>
           <p className="text-sm font-medium text-neutral-900">{zona?.name ?? "—"}</p>
-        </div>
-        <div className="px-5 py-4">
-          <p className="text-xs text-neutral-400 mb-0.5">Flete por kg</p>
-          <p className="text-sm font-medium text-neutral-900">
-            {zona?.flete_kg != null ? fmtPrecio(zona.flete_kg) + " / kg" : "—"}
-          </p>
         </div>
         <div className="px-5 py-4">
           <p className="text-xs text-neutral-400 mb-0.5">Estado de cuenta</p>

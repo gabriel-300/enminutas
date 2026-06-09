@@ -54,7 +54,7 @@ function fmtDate(iso: string) {
   });
 }
 
-export function PedidosClient({ orders }: { orders: Order[] }) {
+export function PedidosClient({ orders, esAdmin = false }: { orders: Order[]; esAdmin?: boolean }) {
   const [tab, setTab]       = useState("todos");
   const [search, setSearch] = useState("");
 
@@ -162,16 +162,18 @@ export function PedidosClient({ orders }: { orders: Order[] }) {
             </div>
 
             <div className="flex items-center gap-2 flex-wrap">
-              {order.channel === "b2b_mayorista" && order.status === "pending_payment" && (
+              {esAdmin && order.channel === "b2b_mayorista" && order.status === "pending_payment" && (
                 <AprobarInlineButton orderId={order.id} />
               )}
-              <div className="flex-1 min-w-0">
-                <OrderStatusSelect
-                  orderId={order.id}
-                  currentStatus={order.status}
-                  channel={order.channel}
-                />
-              </div>
+              {esAdmin && (
+                <div className="flex-1 min-w-0">
+                  <OrderStatusSelect
+                    orderId={order.id}
+                    currentStatus={order.status}
+                    channel={order.channel}
+                  />
+                </div>
+              )}
             </div>
           </div>
         ))}
@@ -213,7 +215,7 @@ export function PedidosClient({ orders }: { orders: Order[] }) {
                         B2B
                       </span>
                     )}
-                    {order.channel === "b2b_mayorista" && order.status === "pending_payment" && (
+                    {esAdmin && order.channel === "b2b_mayorista" && order.status === "pending_payment" && (
                       <AprobarInlineButton orderId={order.id} />
                     )}
                   </div>
@@ -233,11 +235,13 @@ export function PedidosClient({ orders }: { orders: Order[] }) {
                   {fmtDate(order.created_at)}
                 </td>
                 <td className="px-4 py-3">
-                  <OrderStatusSelect
-                    orderId={order.id}
-                    currentStatus={order.status}
-                    channel={order.channel}
-                  />
+                  {esAdmin && (
+                    <OrderStatusSelect
+                      orderId={order.id}
+                      currentStatus={order.status}
+                      channel={order.channel}
+                    />
+                  )}
                 </td>
               </tr>
             ))}

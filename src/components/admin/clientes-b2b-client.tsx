@@ -426,7 +426,7 @@ function CrearClienteB2BForm({ zonas, canales }: { zonas: Zona[]; canales: Canal
               </div>
             </div>
             <div>
-              <label className="block text-xs font-medium text-neutral-500 mb-1">Dirección de entrega</label>
+              <label className="block text-xs font-medium text-neutral-500 mb-1">Dirección fiscal</label>
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                 <input name="direccion_calle"  placeholder="Calle"     className={`${inputCls} col-span-2`} disabled={isPending} />
                 <input name="direccion_numero" placeholder="Número"    className={inputCls} disabled={isPending} />
