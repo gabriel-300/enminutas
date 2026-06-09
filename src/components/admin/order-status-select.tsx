@@ -55,18 +55,20 @@ export function OrderStatusSelect({
     in_delivery:     "En camino",
   };
 
-  // Si el status actual no está en las opciones disponibles (p.ej. despachado,
-  // enviado_prod — gestionados desde producción/distribución), mostrar solo lectura
-  const inOptions = options.some((o) => o.value === currentStatus);
-  const readonlyLabel =
-    READONLY_LABELS[currentStatus] ??
-    options.find((o) => o.value === currentStatus)?.label ??
-    currentStatus;
-
-  if (!inOptions) {
+  // Estados que no se pueden modificar una vez alcanzados
+  if (currentStatus in READONLY_LABELS) {
     return (
       <span className="text-xs text-neutral-400 px-2 py-1.5 block">
-        {readonlyLabel}
+        {READONLY_LABELS[currentStatus]}
+      </span>
+    );
+  }
+
+  // Estado no reconocido y fuera de las opciones (fallback seguro)
+  if (!options.some((o) => o.value === currentStatus)) {
+    return (
+      <span className="text-xs text-neutral-400 px-2 py-1.5 block">
+        {currentStatus}
       </span>
     );
   }
