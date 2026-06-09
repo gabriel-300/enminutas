@@ -45,11 +45,28 @@ export function OrderStatusSelect({
     startTransition(() => updateOrderStatus(orderId, newStatus));
   }
 
-  // Si el pedido está en estado terminal, no hay nada que cambiar
-  if (currentStatus === "delivered" || currentStatus === "cancelled" || currentStatus === "entrega_parcial") {
+  const READONLY_LABELS: Record<string, string> = {
+    delivered:       "Entregado",
+    entrega_parcial: "Entrega parcial",
+    cancelled:       "Cancelado",
+    refunded:        "Reembolsado",
+    despachado:      "Despachado",
+    enviado_prod:    "En producción",
+    in_delivery:     "En camino",
+  };
+
+  // Si el status actual no está en las opciones disponibles (p.ej. despachado,
+  // enviado_prod — gestionados desde producción/distribución), mostrar solo lectura
+  const inOptions = options.some((o) => o.value === currentStatus);
+  const readonlyLabel =
+    READONLY_LABELS[currentStatus] ??
+    options.find((o) => o.value === currentStatus)?.label ??
+    currentStatus;
+
+  if (!inOptions) {
     return (
       <span className="text-xs text-neutral-400 px-2 py-1.5 block">
-        {currentStatus === "delivered" ? "Entregado" : currentStatus === "entrega_parcial" ? "Entrega parcial" : "Cancelado"}
+        {readonlyLabel}
       </span>
     );
   }
