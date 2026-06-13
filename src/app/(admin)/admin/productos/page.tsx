@@ -41,12 +41,20 @@ export default async function AdminProductosPage() {
             {products?.length ?? 0} productos
           </p>
         </div>
-        <Link
-          href="/admin/productos/nuevo"
-          className="shrink-0 inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-tierra-700 text-white text-sm font-medium hover:bg-tierra-800 transition-colors"
-        >
-          + Nuevo producto
-        </Link>
+        <div className="flex items-center gap-2 shrink-0">
+          <Link
+            href="/admin/productos/importar"
+            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl border border-neutral-200 text-sm font-medium text-neutral-600 hover:bg-neutral-50 transition-colors"
+          >
+            ↑ Importar precios
+          </Link>
+          <Link
+            href="/admin/productos/nuevo"
+            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-tierra-700 text-white text-sm font-medium hover:bg-tierra-800 transition-colors"
+          >
+            + Nuevo producto
+          </Link>
+        </div>
       </div>
 
       <ProductsAdminClient products={products as any[]} />
