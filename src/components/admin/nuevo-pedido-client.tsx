@@ -139,7 +139,8 @@ export function NuevoPedidoClient({
     if (filterLinea !== "todas" && p.linea !== filterLinea) return false;
     if (search) {
       const q = search.toLowerCase();
-      if (!p.name.toLowerCase().includes(q) && !p.sku.toLowerCase().includes(q)) return false;
+      const codigoStr = p.codigo != null ? String(p.codigo) : "";
+      if (!p.name.toLowerCase().includes(q) && !p.sku.toLowerCase().includes(q) && !codigoStr.includes(q)) return false;
     }
     return true;
   });
@@ -309,6 +310,7 @@ export function NuevoPedidoClient({
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-neutral-200 text-left">
+                <th className="px-4 py-3 font-medium text-neutral-500 w-16">Cód.</th>
                 <th className="px-4 py-3 font-medium text-neutral-500">Producto</th>
                 <th className="px-4 py-3 font-medium text-neutral-500 text-right">FINAL c/IVA por caja</th>
                 <th className="px-4 py-3 font-medium text-neutral-500 text-center w-36">Cantidad</th>
@@ -318,7 +320,7 @@ export function NuevoPedidoClient({
             <tbody className="divide-y divide-neutral-100">
               {filtered.length === 0 && (
                 <tr>
-                  <td colSpan={4} className="px-4 py-10 text-center text-neutral-400">No hay productos.</td>
+                  <td colSpan={5} className="px-4 py-10 text-center text-neutral-400">No hay productos.</td>
                 </tr>
               )}
               {filtered.map((p) => {
@@ -326,6 +328,9 @@ export function NuevoPedidoClient({
                 const hasPrice = !!p.precio && !!cliente;
                 return (
                   <tr key={p.id} className={`hover:bg-neutral-50 transition-colors ${qty > 0 ? "bg-crema-50" : ""}`}>
+                    <td className="px-4 py-3 tabular-nums text-xs font-mono text-tierra-700 font-semibold">
+                      {p.codigo ?? "—"}
+                    </td>
                     <td className="px-4 py-3">
                       <p className="font-medium text-neutral-900">{p.name}</p>
                       <p className="text-xs text-neutral-400 mt-0.5">
