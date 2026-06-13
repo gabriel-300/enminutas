@@ -6,6 +6,10 @@
    ───────────────────────────────────────────── */
 
 @theme {
+  /* ── Base */
+  --color-white: #ffffff;
+  --color-black: #000000;
+
   /* ── Paleta Azul Glaciar (primario de marca) */
   --color-tierra-900: #040C1A;
   --color-tierra-800: #07152A;
