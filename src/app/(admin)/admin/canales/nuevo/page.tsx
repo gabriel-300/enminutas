@@ -18,8 +18,58 @@ export default async function NuevoCanalPage() {
       </Link>
       <h1 className="text-2xl font-semibold font-display text-neutral-900 mb-6">Nuevo canal</h1>
 
-      <form action={crearCanal} className="bg-white rounded-2xl border border-neutral-200 p-6 space-y-4">
-        <CanalFields />
+      <form action={crearCanal} className="bg-white rounded-2xl border border-neutral-200 p-6 space-y-5">
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <label className="block text-xs font-medium text-neutral-500 mb-1">Nombre *</label>
+            <input name="nombre" required placeholder="Gastronomía"
+              className="w-full px-3 py-2 text-sm border border-neutral-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-tierra-700/20" />
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-neutral-500 mb-1">Slug * <span className="font-normal text-neutral-400">(único)</span></label>
+            <input name="slug" required placeholder="gastro"
+              className="w-full px-3 py-2 text-sm border border-neutral-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-tierra-700/20 font-mono" />
+          </div>
+        </div>
+
+        {/* Márgenes v5 */}
+        <div>
+          <p className="text-xs font-semibold text-neutral-500 uppercase tracking-wide mb-3">Márgenes de precio (fórmula v5)</p>
+          <div className="grid grid-cols-3 gap-3">
+            <div>
+              <label className="block text-xs font-medium text-neutral-500 mb-1">Margen std %</label>
+              <input name="margen_std" type="number" defaultValue={40} min="0" max="99" step="1" required
+                className="w-full px-3 py-2 text-sm border border-neutral-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-tierra-700/20" />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-neutral-500 mb-1">Margen premium %</label>
+              <input name="margen_premium" type="number" defaultValue={45} min="0" max="99" step="1" required
+                className="w-full px-3 py-2 text-sm border border-neutral-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-tierra-700/20" />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-neutral-500 mb-1">Markup PVP %</label>
+              <input name="markup_pvp" type="number" defaultValue={80} min="0" max="500" step="1" required
+                className="w-full px-3 py-2 text-sm border border-neutral-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-tierra-700/20" />
+            </div>
+          </div>
+          <p className="text-xs text-neutral-400 mt-2">
+            Ingresá el valor en porcentaje (ej: 40 = 40%). El cálculo usa la fórmula: lista = costo / (1 − margen) + packaging.
+          </p>
+        </div>
+
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <label className="block text-xs font-medium text-neutral-500 mb-1">Orden</label>
+            <input name="sort_order" type="number" defaultValue={0} min="0"
+              className="w-full px-3 py-2 text-sm border border-neutral-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-tierra-700/20" />
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-neutral-500 mb-1">Desc. lista % (legado)</label>
+            <input name="descuento_pct" type="number" defaultValue={0} min="0" max="99" step="0.01"
+              className="w-full px-3 py-2 text-sm border border-neutral-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-tierra-700/20" />
+          </div>
+        </div>
+
         <div className="flex gap-3 pt-2">
           <button type="submit" className="px-5 py-2.5 rounded-xl bg-tierra-700 text-white text-sm font-medium hover:bg-tierra-800 transition-colors">
             Crear canal
@@ -30,36 +80,5 @@ export default async function NuevoCanalPage() {
         </div>
       </form>
     </div>
-  );
-}
-
-function CanalFields({ defaults }: { defaults?: any }) {
-  return (
-    <>
-      <div className="grid grid-cols-2 gap-4">
-        <div>
-          <label className="block text-xs font-medium text-neutral-500 mb-1">Nombre *</label>
-          <input name="nombre" defaultValue={defaults?.nombre} required placeholder="Gastronomía"
-            className="w-full px-3 py-2 text-sm border border-neutral-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-tierra-700/20" />
-        </div>
-        <div>
-          <label className="block text-xs font-medium text-neutral-500 mb-1">Slug * <span className="font-normal text-neutral-400">(identificador único)</span></label>
-          <input name="slug" defaultValue={defaults?.slug} required placeholder="gastro"
-            className="w-full px-3 py-2 text-sm border border-neutral-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-tierra-700/20 font-mono" />
-        </div>
-      </div>
-      <div className="grid grid-cols-2 gap-4">
-        <div>
-          <label className="block text-xs font-medium text-neutral-500 mb-1">Descuento % sobre lista</label>
-          <input name="descuento_pct" type="number" defaultValue={defaults?.descuento_pct ?? 0} min="0" max="99" step="0.01"
-            className="w-full px-3 py-2 text-sm border border-neutral-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-tierra-700/20" />
-        </div>
-        <div>
-          <label className="block text-xs font-medium text-neutral-500 mb-1">Orden</label>
-          <input name="sort_order" type="number" defaultValue={defaults?.sort_order ?? 0} min="0"
-            className="w-full px-3 py-2 text-sm border border-neutral-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-tierra-700/20" />
-        </div>
-      </div>
-    </>
   );
 }

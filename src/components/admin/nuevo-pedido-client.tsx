@@ -324,7 +324,9 @@ export function NuevoPedidoClient({
                       <p className="font-medium text-neutral-900">{p.name}</p>
                       <p className="text-xs text-neutral-400 mt-0.5">
                         {p.presentacion ?? p.unit_label}
-                        {p.precio && <span className="ml-2 text-neutral-300">· {fmt(p.precio.precio_cajita)}/cajita</span>}
+                        {p.precio && (p.bolsas_caja > 1 || p.divisiones_display != null) && (
+                          <span className="ml-2 text-neutral-300">· {fmt(p.precio.precio_cajita)}/cajita</span>
+                        )}
                       </p>
                     </td>
                     <td className="px-4 py-3 text-right tabular-nums font-medium text-neutral-800">

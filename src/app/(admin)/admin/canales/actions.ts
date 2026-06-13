@@ -14,16 +14,20 @@ export async function crearCanal(formData: FormData) {
   await requireAdmin();
   const supabase = createAdminClient();
 
-  const slug          = (formData.get("slug") as string).trim().toLowerCase();
-  const nombre        = (formData.get("nombre") as string).trim();
-  const descuento_pct = Number(formData.get("descuento_pct")) || 0;
-  const sort_order    = Number(formData.get("sort_order")) || 0;
+  const slug           = (formData.get("slug") as string).trim().toLowerCase();
+  const nombre         = (formData.get("nombre") as string).trim();
+  const descuento_pct  = Number(formData.get("descuento_pct")) || 0;
+  const sort_order     = Number(formData.get("sort_order")) || 0;
+  const margen_std     = Number(formData.get("margen_std")) / 100 || 0;
+  const margen_premium = Number(formData.get("margen_premium")) / 100 || 0;
+  const markup_pvp     = Number(formData.get("markup_pvp")) / 100 || 0.80;
 
   if (!slug || !nombre) throw new Error("Slug y nombre son requeridos");
 
-  const { error } = await supabase.from("canales").insert({
+  const { error } = await (supabase as any).from("canales").insert({
     slug, nombre, descuento_pct, sort_order, activo: true,
-  } as any);
+    margen_std, margen_premium, markup_pvp,
+  });
   if (error) throw new Error(error.message);
 
   revalidatePath("/admin/canales");
@@ -34,14 +38,17 @@ export async function actualizarCanal(id: string, formData: FormData) {
   await requireAdmin();
   const supabase = createAdminClient();
 
-  const nombre        = (formData.get("nombre") as string).trim();
-  const descuento_pct = Number(formData.get("descuento_pct")) || 0;
-  const sort_order    = Number(formData.get("sort_order")) || 0;
-  const activo        = formData.get("activo") === "on";
+  const nombre         = (formData.get("nombre") as string).trim();
+  const descuento_pct  = Number(formData.get("descuento_pct")) || 0;
+  const sort_order     = Number(formData.get("sort_order")) || 0;
+  const activo         = formData.get("activo") === "on";
+  const margen_std     = Number(formData.get("margen_std")) / 100 || 0;
+  const margen_premium = Number(formData.get("margen_premium")) / 100 || 0;
+  const markup_pvp     = Number(formData.get("markup_pvp")) / 100 || 0.80;
 
   const { error } = await (supabase as any)
     .from("canales")
-    .update({ nombre, descuento_pct, sort_order, activo })
+    .update({ nombre, descuento_pct, sort_order, activo, margen_std, margen_premium, markup_pvp })
     .eq("id", id);
   if (error) throw new Error(error.message);
 
