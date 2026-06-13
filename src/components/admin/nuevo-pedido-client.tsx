@@ -61,10 +61,12 @@ export function NuevoPedidoClient({
   clientes,
   direccionesMap = {},
   productosRaw,
-  clienteInit = null,
-  itemsInit   = {},
-  esAdmin     = false,
-  tiers       = [],
+  clienteInit  = null,
+  itemsInit    = {},
+  esAdmin      = false,
+  iva_pct      = 0.21,
+  comision_pct = 0.15,
+  tiers        = [],
 }: {
   clientes:        ClienteB2B[];
   direccionesMap?: Record<string, DireccionB2B[]>;
@@ -72,6 +74,8 @@ export function NuevoPedidoClient({
   clienteInit?:    string | null;
   itemsInit?:      Record<string, number>;
   esAdmin?:        boolean;
+  iva_pct?:        number;
+  comision_pct?:   number;
   tiers?:          VolumeTier[];
 }) {
   const router = useRouter();
@@ -118,11 +122,13 @@ export function NuevoPedidoClient({
         margen_std:         cliente.margen_std,
         margen_premium:     cliente.margen_premium,
         markup_pvp:         cliente.markup_pvp,
+        iva_pct,
+        comision_pct,
         km:                 direccion?.km ?? 0,
         precio_km:          direccion?.precio_km ?? 0,
       }),
     }));
-  }, [cliente, direccion, productosRaw]);
+  }, [cliente, direccion, productosRaw, iva_pct, comision_pct]);
 
   const lineas = useMemo(
     () => Array.from(new Set(productosRaw.map((p) => p.linea))).sort(),

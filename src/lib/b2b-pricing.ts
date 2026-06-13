@@ -26,6 +26,8 @@ export function calcularPrecio(p: {
   margen_std:         number;           // ej: 0.40
   margen_premium:     number;           // ej: 0.45
   markup_pvp:         number;           // ej: 0.80
+  iva_pct?:           number;           // default 0.21
+  comision_pct?:      number;           // default 0.15
   flete_kg?:          number;           // siempre 0 en v5; contemplado para futuro
   km?:                number;
   precio_km?:         number;
@@ -33,7 +35,9 @@ export function calcularPrecio(p: {
   const r2 = (n: number) => Math.round(n * 100) / 100;
   const r0 = (n: number) => Math.round(n);
 
-  const margen = p.categoria === 'Premium' ? p.margen_premium : p.margen_std;
+  const margen      = p.categoria === 'Premium' ? p.margen_premium : p.margen_std;
+  const iva         = p.iva_pct      ?? 0.21;
+  const comision_pct = p.comision_pct ?? 0.15;
 
   // Paso 2 — Lista s/IVA
   const lista_siva = r2(
@@ -43,10 +47,10 @@ export function calcularPrecio(p: {
   );
 
   // Paso 3 — Lista c/IVA (IVA solo sobre lista_siva)
-  const lista_civa = r2(lista_siva * 1.21);
+  const lista_civa = r2(lista_siva * (1 + iva));
 
-  // Paso 4 — Comisión 15% (sin IVA adicional)
-  const comision = r2(lista_siva * 0.15);
+  // Paso 4 — Comisión (sin IVA adicional)
+  const comision = r2(lista_siva * comision_pct);
 
   // Paso 5 — FINAL c/IVA
   const flete_kg_total = r2((p.flete_kg ?? 0) * (p.bolsas_caja ?? 1));

@@ -3,6 +3,7 @@ import Link from "next/link";
 import { createClient, createAdminClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { NuevoPedidoClient } from "@/components/admin/nuevo-pedido-client";
+import { getParametros } from "@/lib/parametros";
 
 export const metadata: Metadata = { title: "Nuevo pedido — Admin En Minutas" };
 export const revalidate = 0;
@@ -13,9 +14,8 @@ export default async function NuevoPedidoPage({
   searchParams: Promise<{ cliente?: string; repetir?: string }>;
 }) {
   const sp = await searchParams;
-  const supabase    = await createClient();
+  const [supabase, params] = await Promise.all([createClient(), getParametros()]);
   const adminClient = createAdminClient() as any;
-
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
@@ -161,6 +161,8 @@ export default async function NuevoPedidoPage({
         clienteInit={sp.cliente ?? null}
         itemsInit={itemsInit}
         esAdmin={esAdmin}
+        iva_pct={params.iva_pct}
+        comision_pct={params.comision_pct}
         tiers={(rawTiers ?? []).map((t: any) => ({
           minCajas:     Number(t.min_cajas),
           descuentoPct: Number(t.descuento_pct),

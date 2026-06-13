@@ -1,9 +1,11 @@
 import { createAdminClient } from "@/lib/supabase/server";
 import { NextRequest, NextResponse } from "next/server";
 import { calcularPrecio } from "@/lib/b2b-pricing";
+import { getParametros } from "@/lib/parametros";
 
 export async function GET(req: NextRequest) {
   const adminClient = createAdminClient();
+  const params = await getParametros();
   const canalSlug = req.nextUrl.searchParams.get("canal") ?? "dist";
 
   const CANAL_LABEL: Record<string, string> = {
@@ -47,7 +49,7 @@ export async function GET(req: NextRequest) {
   const headers = [
     "Cód", "Línea", "Producto", "Presentación", "Categoría",
     "u/cajita", "cajas", "kg/caja",
-    "Lista s/IVA", "Lista c/IVA", "Comisión 15%", "FINAL s/IVA", "FINAL c/IVA",
+    "Lista s/IVA", "Lista c/IVA", `Comisión ${Math.round(params.comision_pct * 100)}%`, "FINAL s/IVA", "FINAL c/IVA",
     "$/u", "PVP/u", "PVP/cajita",
     ...zonasList.map((z) => `Flete ${z.name}`),
   ];
@@ -68,6 +70,8 @@ export async function GET(req: NextRequest) {
       margen_std:         Number(canal.margen_std),
       margen_premium:     Number(canal.margen_premium),
       markup_pvp:         Number(canal.markup_pvp),
+      iva_pct:            params.iva_pct,
+      comision_pct:       params.comision_pct,
     });
 
     const final_siva = Math.round(precio.lista_siva + precio.comision);

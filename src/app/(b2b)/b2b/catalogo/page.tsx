@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { CatalogoB2BClient } from "@/components/b2b/catalogo-client";
 import { calcularPrecio } from "@/lib/b2b-pricing";
+import { getParametros } from "@/lib/parametros";
 
 export const metadata: Metadata = { title: "Catálogo — Portal B2B En Minutas" };
 export const revalidate = 0;
@@ -31,6 +32,8 @@ export default async function CatalogoB2BPage() {
   } | null;
 
   const zona = profile.zona as { name: string; km: number; precio_km: number } | null;
+
+  const params = await getParametros();
 
   // Líneas actualmente disponibles
   const { data: lineasDisp } = await (supabase as any)
@@ -76,6 +79,8 @@ export default async function CatalogoB2BPage() {
         margen_std:         Number(canal!.margen_std),
         margen_premium:     Number(canal!.margen_premium),
         markup_pvp:         Number(canal!.markup_pvp),
+        iva_pct:            params.iva_pct,
+        comision_pct:       params.comision_pct,
         km:                 Number(zona?.km ?? 0),
         precio_km:          Number(zona?.precio_km ?? 0),
       }),
