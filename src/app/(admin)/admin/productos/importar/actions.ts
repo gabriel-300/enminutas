@@ -56,18 +56,40 @@ export async function parsearImport(formData: FormData): Promise<ParseResult | {
     const file = formData.get("archivo") as File | null;
     if (!file) return { error: "No se recibió archivo." };
 
-    const text = await file.text();
-    const lines = text.trim().split(/\r?\n/);
+    // Quitar BOM si está presente
+    const raw = file.text ? await file.text() : "";
+    const text = raw.replace(/^﻿/, "");
+    const allLines = text.trim().split(/\r?\n/);
+
+    // Saltar línea "sep=;" si Excel la agrega
+    const lines = allLines[0].toLowerCase().startsWith("sep=") ? allLines.slice(1) : allLines;
     if (lines.length < 2) return { error: "El archivo está vacío o solo tiene encabezado." };
 
-    const header = lines[0].toLowerCase().split(",").map((h) => h.trim().replace(/^"|"$/g, ""));
-    const codigoIdx   = header.indexOf("codigo");
-    const costoIdx    = header.indexOf("costo");
-    const pkgUnitIdx  = header.indexOf("pkg_unitario");
-    const pkgBultoIdx = header.indexOf("pkg_bulto");
+    // Auto-detectar separador: ; o ,
+    const sep = lines[0].includes(";") ? ";" : ",";
 
-    if (codigoIdx === -1) return { error: 'El archivo no tiene la columna "codigo".' };
-    if (costoIdx  === -1) return { error: 'El archivo no tiene la columna "costo".' };
+    // Normalizar header: quitar tildes, minúsculas, sin espacios
+    const normalizar = (s: string) =>
+      s.toLowerCase()
+        .normalize("NFD").replace(/[̀-ͯ]/g, "")
+        .replace(/^"|"$/g, "").trim()
+        .replace(/\s+/g, "_");
+
+    const headerRaw = lines[0].split(sep).map(normalizar);
+
+    // Mapeo flexible: acepta nombres en español e inglés
+    const findCol = (...names: string[]) => {
+      for (const n of names) { const i = headerRaw.indexOf(n); if (i !== -1) return i; }
+      return -1;
+    };
+
+    const codigoIdx   = findCol("codigo", "cod", "code");
+    const costoIdx    = findCol("costo_por_bolsa", "costo", "precio", "price", "cost");
+    const pkgUnitIdx  = findCol("empaque_unitario", "pkg_unitario", "pkg_unit");
+    const pkgBultoIdx = findCol("empaque_bulto", "pkg_bulto");
+
+    if (codigoIdx === -1) return { error: 'El archivo no tiene la columna "Código".' };
+    if (costoIdx  === -1) return { error: 'El archivo no tiene la columna "Costo por bolsa".' };
 
     const csvRows: Record<number, { costo: number; pkg_unitario: number; pkg_bulto: number }> = {};
     const errores: string[] = [];
@@ -76,9 +98,9 @@ export async function parsearImport(formData: FormData): Promise<ParseResult | {
       const line = lines[i].trim();
       if (!line) continue;
 
-      const cols = parseCsvLine(line);
-      const codigoRaw = cols[codigoIdx] ?? "";
-      const costoRaw  = (cols[costoIdx] ?? "").replace(",", ".");
+      const cols = sep === ";" ? line.split(";") : parseCsvLine(line);
+      const codigoRaw = (cols[codigoIdx] ?? "").trim();
+      const costoRaw  = (cols[costoIdx] ?? "").replace(/\./g, "").replace(",", ".");
 
       if (!codigoRaw) continue;
 
@@ -88,8 +110,8 @@ export async function parsearImport(formData: FormData): Promise<ParseResult | {
       if (isNaN(codigo)) { errores.push(`Fila ${i + 1}: código inválido "${codigoRaw}"`); continue; }
       if (isNaN(costo) || costo < 0) { errores.push(`Fila ${i + 1}: costo inválido "${costoRaw}"`); continue; }
 
-      const pkgU = pkgUnitIdx  !== -1 ? parseFloat((cols[pkgUnitIdx]  ?? "0").replace(",", ".")) : 0;
-      const pkgB = pkgBultoIdx !== -1 ? parseFloat((cols[pkgBultoIdx] ?? "0").replace(",", ".")) : 0;
+      const pkgU = pkgUnitIdx  !== -1 ? parseFloat((cols[pkgUnitIdx]  ?? "0").replace(/\./g, "").replace(",", ".")) : 0;
+      const pkgB = pkgBultoIdx !== -1 ? parseFloat((cols[pkgBultoIdx] ?? "0").replace(/\./g, "").replace(",", ".")) : 0;
 
       csvRows[codigo] = {
         costo,
