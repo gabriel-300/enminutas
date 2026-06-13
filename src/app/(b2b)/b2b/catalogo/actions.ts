@@ -4,16 +4,15 @@ import { createClient, createAdminClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { emailNuevoPedidoB2B } from "@/lib/email";
 
+import type { PrecioB2B } from "@/lib/b2b-pricing";
+
 type CartItem = {
   id:          string;
   name:        string;
   unit_label:  string | null;
   bolsas_caja: number | null;
-  precio: {
-    total_civa: number;
-    por_unidad: number;
-  };
-  qty: number;
+  precio:      PrecioB2B;
+  qty:         number;
 };
 
 export async function confirmarPedidoB2B(items: CartItem[], notes: string | null = null, zonaId: string | null = null) {
@@ -31,7 +30,7 @@ export async function confirmarPedidoB2B(items: CartItem[], notes: string | null
     .single();
   if (!perfil || perfil.b2b_status !== "activo") throw new Error("Tu cuenta no está activa para realizar pedidos");
 
-  const subtotal = items.reduce((s, i) => s + i.precio.total_civa * i.qty, 0);
+  const subtotal = items.reduce((s, i) => s + i.precio.final_civa * i.qty, 0);
   const r = (n: number) => Math.round(n * 100) / 100;
 
   const baseInsert = {
@@ -88,8 +87,8 @@ export async function confirmarPedidoB2B(items: CartItem[], notes: string | null
       precio:      item.precio,
     },
     quantity:   item.qty,
-    unit_price: Math.round(item.precio.total_civa * 100) / 100,
-    line_total: Math.round(item.precio.total_civa * item.qty * 100) / 100,
+    unit_price: Math.round(item.precio.final_civa * 100) / 100,
+    line_total: Math.round(item.precio.final_civa * item.qty * 100) / 100,
   }));
 
   const { error: linesError } = await supabase.from("order_lines").insert(lines as any);
@@ -109,7 +108,7 @@ export async function confirmarPedidoB2B(items: CartItem[], notes: string | null
     orderNumber: orderNum,
     clientName:  (profile?.full_name as string | null) ?? user.email ?? "—",
     clientEmail: user.email ?? "",
-    lines:       items.map((i) => ({ name: i.name, qty: i.qty, unitPrice: i.precio.total_civa })),
+    lines:       items.map((i) => ({ name: i.name, qty: i.qty, unitPrice: i.precio.final_civa })),
     total:       Math.round(subtotal * 100) / 100,
   }).catch(() => {});
 

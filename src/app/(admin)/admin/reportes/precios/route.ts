@@ -1,110 +1,100 @@
 import { createAdminClient } from "@/lib/supabase/server";
 import { NextRequest, NextResponse } from "next/server";
-
-// Fórmula de precios B2B
-function calcPrecio(
-  costo:        number,
-  kg_caja:      number,
-  bolsas_caja:  number,
-  pkg_unitario: number,
-  pkg_bulto:    number,
-  mult_bolsas:  boolean,
-  margen:       number,
-  flete_kg:     number,
-) {
-  const pkg_u = pkg_unitario ?? 0;
-  const pkg_b = pkg_bulto ?? 0;
-  const mult  = mult_bolsas ?? true;
-
-  const lista_siva = mult
-    ? (costo * bolsas_caja) / (1 - margen) + pkg_u * bolsas_caja + pkg_b
-    : costo / (1 - margen) + pkg_u + pkg_b;
-
-  const comision   = lista_siva * 0.15;
-  const flete      = kg_caja * flete_kg;
-  const total_siva = lista_siva + comision + flete;
-  const total_civa = total_siva * 1.21;
-
-  const r = (n: number) => Math.round(n * 100) / 100;
-  return { lista_siva: r(lista_siva), comision: r(comision), flete: r(flete), total_siva: r(total_siva), total_civa: r(total_civa) };
-}
+import { calcularPrecio } from "@/lib/b2b-pricing";
 
 export async function GET(req: NextRequest) {
   const adminClient = createAdminClient();
-  const canal = req.nextUrl.searchParams.get("canal") ?? "dist";
+  const canalSlug = req.nextUrl.searchParams.get("canal") ?? "dist";
 
-  const MARGEN_FIELD: Record<string, string> = {
-    dist:   "margen_dist",
-    gastro: "margen_gastro",
-    min:    "margen_min",
-  };
-  const MARGEN_DEFAULT: Record<string, number> = {
-    dist: 0.35, gastro: 0.40, min: 0.45,
-  };
   const CANAL_LABEL: Record<string, string> = {
-    dist: "Distribuidor", gastro: "Gastronomía", min: "Minorista",
+    dist:   "Distribuidor / Franquicia",
+    gastro: "Gastronomía",
+    min:    "Minorista",
   };
+
+  const { data: canal } = await (adminClient as any)
+    .from("canales")
+    .select("margen_std, margen_premium, markup_pvp")
+    .eq("slug", canalSlug)
+    .single();
+
+  if (!canal) {
+    return new NextResponse("Canal no encontrado", { status: 404 });
+  }
 
   const { data: zonas } = await (adminClient as any)
     .from("delivery_zones")
-    .select("id, name, flete_kg")
+    .select("id, name, km, precio_km")
     .order("name");
 
   const { data: rawProducts } = await (adminClient as any)
     .from("products")
     .select(`
-      id, name, sku, unit_label, bolsas_caja, kg_caja,
-      costo, pkg_unitario, pkg_bulto, mult_bolsas,
-      margen_dist, margen_gastro, margen_min,
-      category:categories!category_id (name)
+      id, name, sku, unit_label, codigo, presentacion,
+      bolsas_caja, kg_caja, u_bolsa,
+      costo, pkg_unitario, pkg_bulto,
+      categoria, divisiones_display,
+      linea:lineas_producto!linea_id (nombre)
     `)
     .eq("is_active", true)
-    .order("name");
+    .not("codigo", "is", null)
+    .order("codigo");
 
-  const margenField = MARGEN_FIELD[canal] ?? "margen_dist";
-  const margenDefault = MARGEN_DEFAULT[canal] ?? 0.35;
-
-  // Cabecera con una columna de precio total por zona
-  const zonasList = (zonas ?? []) as Array<{ id: string; name: string; flete_kg: number | null }>;
-  const activeZonas = zonasList.filter((z) => z.flete_kg != null);
+  const zonasList = (zonas ?? []) as Array<{
+    id: string; name: string; km: number; precio_km: number;
+  }>;
 
   const headers = [
-    "Categoría", "Producto", "SKU", "Presentación", "U/caja", "Kg/caja",
-    "Lista s/IVA", "Comisión (15%)",
-    ...activeZonas.map((z) => `Total c/IVA — ${z.name}`),
+    "Cód", "Línea", "Producto", "Presentación", "Categoría",
+    "u/cajita", "cajas", "kg/caja",
+    "Lista s/IVA", "Lista c/IVA", "Comisión 15%", "FINAL s/IVA", "FINAL c/IVA",
+    "$/u", "PVP/u", "PVP/cajita",
+    ...zonasList.map((z) => `Flete ${z.name}`),
   ];
 
   const rows: string[][] = [];
 
   for (const p of rawProducts ?? []) {
-    if (!p.costo || !p.kg_caja || !p.bolsas_caja) continue;
-    const margen = (p as any)[margenField] ?? margenDefault;
+    if (!p.costo || !p.bolsas_caja || !p.u_bolsa || !p.categoria) continue;
 
-    const base = calcPrecio(
-      p.costo, p.kg_caja, p.bolsas_caja,
-      p.pkg_unitario ?? 0, p.pkg_bulto ?? 0, p.mult_bolsas ?? true,
-      margen, 0,
-    );
+    const precio = calcularPrecio({
+      costo:              Number(p.costo),
+      bolsas_caja:        Number(p.bolsas_caja),
+      pkg_unitario:       Number(p.pkg_unitario ?? 0),
+      pkg_bulto:          Number(p.pkg_bulto ?? 0),
+      u_bolsa:            Number(p.u_bolsa),
+      categoria:          p.categoria,
+      divisiones_display: p.divisiones_display ?? null,
+      margen_std:         Number(canal.margen_std),
+      margen_premium:     Number(canal.margen_premium),
+      markup_pvp:         Number(canal.markup_pvp),
+    });
 
-    const zonaCols = activeZonas.map((z) => {
-      const p2 = calcPrecio(
-        p.costo, p.kg_caja, p.bolsas_caja,
-        p.pkg_unitario ?? 0, p.pkg_bulto ?? 0, p.mult_bolsas ?? true,
-        margen, z.flete_kg!,
-      );
-      return String(p2.total_civa);
+    const final_siva = Math.round(precio.lista_siva + precio.comision);
+
+    const zonaFletes = zonasList.map((z) => {
+      const costo_viaje = Math.round(z.km * 2 * z.precio_km);
+      return costo_viaje > 0 ? String(costo_viaje) : "$0";
     });
 
     rows.push([
-      (p.category as any)?.name ?? "",
+      String(p.codigo ?? ""),
+      (p.linea as any)?.nombre ?? "",
       p.name,
-      p.sku ?? "",
-      p.unit_label ?? "",
+      p.presentacion ?? p.unit_label ?? "",
+      p.categoria,
+      String(p.u_bolsa),
       String(p.bolsas_caja),
-      String(p.kg_caja),
-      String(base.lista_siva),
-      String(base.comision),
-      ...zonaCols,
+      String(p.kg_caja ?? ""),
+      String(precio.lista_siva),
+      String(precio.lista_civa),
+      String(precio.comision),
+      String(final_siva),
+      String(precio.final_civa),
+      String(precio.precio_unidad),
+      String(precio.pvp_unidad),
+      String(precio.precio_cajita),
+      ...zonaFletes,
     ]);
   }
 
@@ -112,14 +102,14 @@ export async function GET(req: NextRequest) {
     .map((row) => row.map((cell) => `"${String(cell).replace(/"/g, '""')}"`).join(","))
     .join("\n");
 
-  const canalLabel = CANAL_LABEL[canal] ?? canal;
+  const canalLabel = CANAL_LABEL[canalSlug] ?? canalSlug;
   const fecha = new Date().toISOString().slice(0, 10);
-  const filename = `lista-precios-${canal}-${fecha}.csv`;
 
   return new NextResponse(csv, {
     headers: {
       "Content-Type":        "text/csv; charset=utf-8",
-      "Content-Disposition": `attachment; filename="${filename}"`,
+      "Content-Disposition": `attachment; filename="lista-precios-${canalSlug}-${fecha}.csv"`,
+      "X-Canal":             canalLabel,
     },
   });
 }

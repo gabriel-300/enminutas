@@ -64,7 +64,7 @@ export async function crearPedidoAdmin(payload: CrearPedidoPayload): Promise<{ o
   }
 
   // Totales
-  const subtotalBruto    = items.reduce((s, i) => s + i.precio.total_civa * i.quantity, 0);
+  const subtotalBruto    = items.reduce((s, i) => s + i.precio.final_civa * i.quantity, 0);
   const subtotal         = subtotalBruto;
   const safePct          = Math.max(0, Math.min(100, discountPct ?? 0));
   const rawDescuento     = discountAmount > 0 ? discountAmount : Math.round(subtotalBruto * safePct / 100 * 100) / 100;
@@ -142,8 +142,8 @@ export async function crearPedidoAdmin(payload: CrearPedidoPayload): Promise<{ o
       precio:      item.precio,
     },
     quantity:   item.quantity,
-    unit_price: r(item.precio.total_civa),
-    line_total: r(item.precio.total_civa * item.quantity),
+    unit_price: r(item.precio.final_civa),
+    line_total: r(item.precio.final_civa * item.quantity),
   }));
 
   const { error: linesError } = await adminClient.from("order_lines").insert(lines as any);
@@ -174,7 +174,7 @@ export async function crearPedidoAdmin(payload: CrearPedidoPayload): Promise<{ o
         lines: items.map((i) => ({
           name:      i.name,
           qty:       i.quantity,
-          unitPrice: i.precio.total_civa,
+          unitPrice: i.precio.final_civa,
         })),
         total:         r(total),
         paymentMethod,

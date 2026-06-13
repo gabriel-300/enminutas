@@ -19,11 +19,9 @@ export default async function NuevoPedidoPage({
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
-  const esAdmin = user.app_metadata?.role === "admin";
-
+  const esAdmin   = user.app_metadata?.role === "admin";
   const esVendedor = user.app_metadata?.role === "vendedor";
 
-  // Obtener IDs de clientes B2B activos desde auth.users (profiles.role no es confiable)
   const { data: { users: allUsers } } = await adminClient.auth.admin.listUsers({ perPage: 1000 });
   const b2bIds = (allUsers ?? [])
     .filter((u: any) => u.app_metadata?.role === "customer_b2b")
@@ -34,7 +32,10 @@ export default async function NuevoPedidoPage({
       ? (() => {
           let q = adminClient
             .from("profiles")
-            .select(`id, full_name, descuento_extra_pct, canal:canales!canal_id (nombre, descuento_pct)`)
+            .select(`
+              id, full_name,
+              canal:canales!canal_id (nombre, slug, margen_std, margen_premium, markup_pvp)
+            `)
             .in("id", b2bIds)
             .eq("b2b_status", "activo")
             .order("full_name");
@@ -46,12 +47,15 @@ export default async function NuevoPedidoPage({
     adminClient
       .from("products")
       .select(`
-        id, sku, name, unit_label, bolsas_caja, kg_caja,
-        precio_lista,
-        category:categories!category_id (name)
+        id, sku, name, unit_label, min_quantity_b2b,
+        codigo, presentacion, u_bolsa, bolsas_caja, kg_caja,
+        costo, pkg_unitario, pkg_bulto,
+        categoria, divisiones_display,
+        linea:lineas_producto!linea_id (nombre)
       `)
       .eq("is_active", true)
-      .order("name"),
+      .not("codigo", "is", null)
+      .order("codigo"),
 
     adminClient
       .from("volume_discounts")
@@ -62,7 +66,7 @@ export default async function NuevoPedidoPage({
     b2bIds.length > 0
       ? adminClient
           .from("direcciones_entrega")
-          .select("id, profile_id, alias, calle, numero, piso, ciudad, es_principal, zona_id, zona:delivery_zones!zona_id (id, name, flete_kg)")
+          .select("id, profile_id, alias, calle, numero, piso, ciudad, es_principal, zona_id, zona:delivery_zones!zona_id (id, name, km, precio_km)")
           .in("profile_id", b2bIds)
           .eq("activo", true)
           .order("es_principal", { ascending: false })
@@ -70,50 +74,58 @@ export default async function NuevoPedidoPage({
   ]);
 
   const clientes = (rawClientes ?? []).map((c: any) => ({
-    id:                  c.id,
-    full_name:           c.full_name,
-    canal_nombre:        c.canal?.nombre        ?? "Sin canal",
-    canal_descuento_pct: Number(c.canal?.descuento_pct ?? 0),
-    descuento_extra_pct: Number(c.descuento_extra_pct  ?? 0),
+    id:              c.id,
+    full_name:       c.full_name,
+    canal_nombre:    c.canal?.nombre        ?? "Sin canal",
+    canal_slug:      c.canal?.slug          ?? "",
+    margen_std:      Number(c.canal?.margen_std     ?? 0),
+    margen_premium:  Number(c.canal?.margen_premium ?? 0),
+    markup_pvp:      Number(c.canal?.markup_pvp     ?? 0.80),
   }));
 
-  // Agrupar direcciones por cliente
   const direccionesMap: Record<string, any[]> = {};
   for (const d of (rawDirecciones ?? []) as any[]) {
     if (!direccionesMap[d.profile_id]) direccionesMap[d.profile_id] = [];
     direccionesMap[d.profile_id].push({
-      id:        d.id,
-      alias:     d.alias,
-      calle:     d.calle,
-      numero:    d.numero ?? null,
-      piso:      d.piso   ?? null,
-      ciudad:    d.ciudad,
-      zona_id:   d.zona?.id   ?? null,
-      zona_name: d.zona?.name ?? "Sin zona",
-      flete_kg:  Number(d.zona?.flete_kg ?? 0),
+      id:          d.id,
+      alias:       d.alias,
+      calle:       d.calle,
+      numero:      d.numero ?? null,
+      piso:        d.piso   ?? null,
+      ciudad:      d.ciudad,
+      zona_id:     d.zona?.id    ?? null,
+      zona_name:   d.zona?.name  ?? "Sin zona",
+      km:          Number(d.zona?.km        ?? 0),
+      precio_km:   Number(d.zona?.precio_km ?? 0),
       es_principal: d.es_principal,
     });
   }
 
   const productosRaw = (rawProducts ?? []).map((p: any) => ({
-    id:           p.id,
-    sku:          p.sku,
-    name:         p.name,
-    unit_label:   p.unit_label,
-    bolsas_caja:  p.bolsas_caja,
-    kg_caja:      p.kg_caja,
-    precio_lista: p.precio_lista ?? null,
-    categoria:    (p.category as any)?.name ?? "Sin categoría",
+    id:                 p.id,
+    sku:                p.sku,
+    name:               p.name,
+    unit_label:         p.unit_label,
+    min_quantity_b2b:   p.min_quantity_b2b ?? 1,
+    codigo:             p.codigo,
+    presentacion:       p.presentacion ?? p.unit_label,
+    u_bolsa:            Number(p.u_bolsa ?? 1),
+    bolsas_caja:        Number(p.bolsas_caja ?? 1),
+    kg_caja:            Number(p.kg_caja ?? 0),
+    costo:              Number(p.costo ?? 0),
+    pkg_unitario:       Number(p.pkg_unitario ?? 0),
+    pkg_bulto:          Number(p.pkg_bulto ?? 0),
+    categoria:          p.categoria ?? "Estándar",
+    divisiones_display: p.divisiones_display ?? null,
+    linea:              (p.linea as any)?.nombre ?? "Sin línea",
   }));
 
-  // Repetir pedido: pre-cargar líneas del pedido anterior
   let itemsInit: Record<string, number> = {};
   if (sp.repetir) {
     const { data: lines } = await adminClient
       .from("order_lines")
       .select("product_id, quantity")
       .eq("order_id", sp.repetir);
-
     for (const line of (lines ?? []) as any[]) {
       if (line.product_id) itemsInit[line.product_id] = Number(line.quantity);
     }

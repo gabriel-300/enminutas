@@ -2,50 +2,58 @@
 
 import { useState, useMemo, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { precioParaCanal, type PrecioB2B } from "@/lib/b2b-pricing";
+import { calcularPrecio, formatPrecio, type PrecioB2B } from "@/lib/b2b-pricing";
 import { crearPedidoAdmin } from "@/app/(admin)/admin/pedidos/nuevo/actions";
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
 type ClienteB2B = {
-  id:                  string;
-  full_name:           string | null;
-  canal_nombre:        string;
-  canal_descuento_pct: number;
-  descuento_extra_pct: number;
+  id:             string;
+  full_name:      string | null;
+  canal_nombre:   string;
+  canal_slug:     string;
+  margen_std:     number;
+  margen_premium: number;
+  markup_pvp:     number;
 };
 
 type DireccionB2B = {
-  id:           string;
-  alias:        string;
-  calle:        string | null;
-  numero:       string | null;
-  piso:         string | null;
-  ciudad:       string | null;
-  zona_id:      string | null;
-  zona_name:    string;
-  flete_kg:     number;
+  id:          string;
+  alias:       string;
+  calle:       string | null;
+  numero:      string | null;
+  piso:        string | null;
+  ciudad:      string | null;
+  zona_id:     string | null;
+  zona_name:   string;
+  km:          number;
+  precio_km:   number;
   es_principal: boolean;
 };
 
 type ProductoRaw = {
-  id:           string;
-  sku:          string;
-  name:         string;
-  unit_label:   string | null;
-  bolsas_caja:  number | null;
-  kg_caja:      number | null;
-  precio_lista: number | null;
-  categoria:    string;
+  id:                 string;
+  sku:                string;
+  name:               string;
+  unit_label:         string | null;
+  min_quantity_b2b:   number;
+  codigo:             number | null;
+  presentacion:       string | null;
+  u_bolsa:            number;
+  bolsas_caja:        number;
+  kg_caja:            number;
+  costo:              number;
+  pkg_unitario:       number;
+  pkg_bulto:          number;
+  categoria:          string;
+  divisiones_display: number | null;
+  linea:              string;
 };
 
 type ProductoConPrecio = ProductoRaw & { precio: PrecioB2B | null };
 type VolumeTier = { minCajas: number; descuentoPct: number; label: string };
 
-const fmt = (n: number) =>
-  new Intl.NumberFormat("es-AR", {
-    style: "currency", currency: "ARS", maximumFractionDigits: 0,
-  }).format(n);
+const fmt = formatPrecio;
 
 // ── Main component ─────────────────────────────────────────────────────────
 
@@ -73,7 +81,7 @@ export function NuevoPedidoClient({
   const [notes,         setNotes]         = useState("");
   const [paymentMethod, setPaymentMethod] = useState("transferencia");
   const [initialStatus, setInitialStatus] = useState(esAdmin ? "aprobado" : "pending_payment");
-  const [filterCat,     setFilterCat]     = useState("todas");
+  const [filterLinea,   setFilterLinea]   = useState("todas");
   const [search,        setSearch]        = useState("");
   const [error,         setError]         = useState<string | null>(null);
   const [isPending,     startTransition]  = useTransition();
@@ -85,7 +93,7 @@ export function NuevoPedidoClient({
     ?? direcciones[0]
     ?? null;
 
-  const flete_kg = direccion?.flete_kg ?? 0;
+  const costo_viaje = direccion ? Math.round(direccion.km * 2 * direccion.precio_km) : 0;
 
   function handleClienteChange(id: string) {
     setClienteId(id);
@@ -99,24 +107,30 @@ export function NuevoPedidoClient({
     if (!cliente) return productosRaw.map((p) => ({ ...p, precio: null }));
     return productosRaw.map((p) => ({
       ...p,
-      precio: precioParaCanal(
-        p.precio_lista,
-        cliente.canal_descuento_pct,
-        cliente.descuento_extra_pct,
-        flete_kg,
-        p.kg_caja,
-        p.bolsas_caja,
-      ),
+      precio: calcularPrecio({
+        costo:              p.costo,
+        bolsas_caja:        p.bolsas_caja,
+        pkg_unitario:       p.pkg_unitario,
+        pkg_bulto:          p.pkg_bulto,
+        u_bolsa:            p.u_bolsa,
+        categoria:          p.categoria,
+        divisiones_display: p.divisiones_display,
+        margen_std:         cliente.margen_std,
+        margen_premium:     cliente.margen_premium,
+        markup_pvp:         cliente.markup_pvp,
+        km:                 direccion?.km ?? 0,
+        precio_km:          direccion?.precio_km ?? 0,
+      }),
     }));
-  }, [cliente, flete_kg, productosRaw]);
+  }, [cliente, direccion, productosRaw]);
 
-  const categorias = useMemo(
-    () => Array.from(new Set(productosRaw.map((p) => p.categoria))).sort(),
+  const lineas = useMemo(
+    () => Array.from(new Set(productosRaw.map((p) => p.linea))).sort(),
     [productosRaw],
   );
 
   const filtered = productos.filter((p) => {
-    if (filterCat !== "todas" && p.categoria !== filterCat) return false;
+    if (filterLinea !== "todas" && p.linea !== filterLinea) return false;
     if (search) {
       const q = search.toLowerCase();
       if (!p.name.toLowerCase().includes(q) && !p.sku.toLowerCase().includes(q)) return false;
@@ -132,7 +146,7 @@ export function NuevoPedidoClient({
   }
 
   const cartItems   = productos.filter((p) => (cart[p.id] ?? 0) > 0 && p.precio);
-  const subtotal    = cartItems.reduce((s, p) => s + p.precio!.total_civa * cart[p.id], 0);
+  const subtotal    = cartItems.reduce((s, p) => s + p.precio!.final_civa * cart[p.id], 0);
   const totalQty    = cartItems.reduce((s, p) => s + cart[p.id], 0);
 
   const tierAplicado   = [...tiers].sort((a, b) => b.minCajas - a.minCajas).find((t) => totalQty >= t.minCajas) ?? null;
@@ -199,7 +213,6 @@ export function NuevoPedidoClient({
                     {direcciones.map((d) => (
                       <option key={d.id} value={d.id}>
                         {d.alias}{d.ciudad ? ` — ${d.ciudad}` : ""} · {d.zona_name}
-                        {d.flete_kg > 0 ? ` (flete ${fmt(d.flete_kg)}/kg)` : ""}
                       </option>
                     ))}
                   </select>
@@ -207,7 +220,11 @@ export function NuevoPedidoClient({
               )}
               <div className="flex items-center gap-2 text-xs text-neutral-500 flex-wrap">
                 <span className="px-2 py-0.5 bg-info-bg text-info rounded-full font-medium">{cliente.canal_nombre}</span>
-                {flete_kg > 0 && <span>Flete: {fmt(flete_kg)}/kg</span>}
+                {costo_viaje > 0 && (
+                  <span className="px-2 py-0.5 bg-neutral-100 rounded-full">
+                    Flete viaje: {fmt(costo_viaje)} (cobrado aparte)
+                  </span>
+                )}
               </div>
             </div>
           )}
@@ -220,14 +237,14 @@ export function NuevoPedidoClient({
             className="w-full px-3 py-2 text-sm border border-neutral-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-tierra-700/20" />
           <div className="overflow-x-auto -mx-4 px-4 md:mx-0 md:px-0">
             <div className="flex items-center gap-1 bg-white border border-neutral-200 rounded-xl p-1 w-max md:w-fit md:flex-wrap">
-              <button onClick={() => setFilterCat("todas")}
-                className={`px-3 py-1 rounded-lg text-xs font-medium transition-colors whitespace-nowrap ${filterCat === "todas" ? "bg-tierra-700 text-white" : "text-neutral-500 hover:text-neutral-800"}`}>
+              <button onClick={() => setFilterLinea("todas")}
+                className={`px-3 py-1 rounded-lg text-xs font-medium transition-colors whitespace-nowrap ${filterLinea === "todas" ? "bg-tierra-700 text-white" : "text-neutral-500 hover:text-neutral-800"}`}>
                 Todas
               </button>
-              {categorias.map((cat) => (
-                <button key={cat} onClick={() => setFilterCat(cat)}
-                  className={`px-3 py-1 rounded-lg text-xs font-medium transition-colors whitespace-nowrap ${filterCat === cat ? "bg-tierra-700 text-white" : "text-neutral-500 hover:text-neutral-800"}`}>
-                  {cat}
+              {lineas.map((l) => (
+                <button key={l} onClick={() => setFilterLinea(l)}
+                  className={`px-3 py-1 rounded-lg text-xs font-medium transition-colors whitespace-nowrap ${filterLinea === l ? "bg-tierra-700 text-white" : "text-neutral-500 hover:text-neutral-800"}`}>
+                  {l}
                 </button>
               ))}
             </div>
@@ -248,12 +265,12 @@ export function NuevoPedidoClient({
                   <div className="flex items-start justify-between gap-2 mb-2">
                     <div className="min-w-0">
                       <p className="font-medium text-neutral-900 leading-snug">{p.name}</p>
-                      <p className="text-xs text-neutral-400 font-mono mt-0.5">{p.sku} · {p.unit_label}</p>
+                      <p className="text-xs text-neutral-400 font-mono mt-0.5">{p.presentacion ?? p.unit_label}</p>
                     </div>
                     {hasPrice && (
                       <div className="text-right shrink-0">
-                        <p className="font-semibold text-sm text-neutral-800 tabular-nums">{fmt(p.precio!.total_civa)}</p>
-                        {qty > 0 && <p className="text-xs text-neutral-400 tabular-nums">= {fmt(p.precio!.total_civa * qty)}</p>}
+                        <p className="font-semibold text-sm text-neutral-800 tabular-nums">{fmt(p.precio!.final_civa)}</p>
+                        {qty > 0 && <p className="text-xs text-neutral-400 tabular-nums">= {fmt(p.precio!.final_civa * qty)}</p>}
                       </div>
                     )}
                   </div>
@@ -287,7 +304,7 @@ export function NuevoPedidoClient({
             <thead>
               <tr className="border-b border-neutral-200 text-left">
                 <th className="px-4 py-3 font-medium text-neutral-500">Producto</th>
-                <th className="px-4 py-3 font-medium text-neutral-500 text-right">Precio c/IVA por caja</th>
+                <th className="px-4 py-3 font-medium text-neutral-500 text-right">FINAL c/IVA por caja</th>
                 <th className="px-4 py-3 font-medium text-neutral-500 text-center w-36">Cantidad</th>
                 <th className="px-4 py-3 font-medium text-neutral-500 text-right w-32">Subtotal</th>
               </tr>
@@ -305,12 +322,13 @@ export function NuevoPedidoClient({
                   <tr key={p.id} className={`hover:bg-neutral-50 transition-colors ${qty > 0 ? "bg-crema-50" : ""}`}>
                     <td className="px-4 py-3">
                       <p className="font-medium text-neutral-900">{p.name}</p>
-                      <p className="text-xs text-neutral-400 font-mono mt-0.5">
-                        {p.sku} · {p.unit_label}{p.bolsas_caja ? ` · ${p.bolsas_caja} u/caja` : ""}
+                      <p className="text-xs text-neutral-400 mt-0.5">
+                        {p.presentacion ?? p.unit_label}
+                        {p.precio && <span className="ml-2 text-neutral-300">· {fmt(p.precio.precio_cajita)}/cajita</span>}
                       </p>
                     </td>
                     <td className="px-4 py-3 text-right tabular-nums font-medium text-neutral-800">
-                      {hasPrice ? fmt(p.precio!.total_civa) : (
+                      {hasPrice ? fmt(p.precio!.final_civa) : (
                         <span className="text-neutral-300 text-xs">{cliente ? "Sin datos B2B" : "—"}</span>
                       )}
                     </td>
@@ -332,7 +350,7 @@ export function NuevoPedidoClient({
                       )}
                     </td>
                     <td className="px-4 py-3 text-right tabular-nums text-neutral-700">
-                      {qty > 0 && p.precio ? fmt(p.precio.total_civa * qty) : "—"}
+                      {qty > 0 && p.precio ? fmt(p.precio.final_civa * qty) : "—"}
                     </td>
                   </tr>
                 );
@@ -363,14 +381,14 @@ export function NuevoPedidoClient({
                     <p className="text-xs text-neutral-400">{cart[p.id]} caja{cart[p.id] !== 1 ? "s" : ""}</p>
                   </div>
                   <span className="tabular-nums font-medium text-neutral-900 shrink-0">
-                    {fmt(p.precio!.total_civa * cart[p.id])}
+                    {fmt(p.precio!.final_civa * cart[p.id])}
                   </span>
                 </div>
               ))}
               <div className="pt-3 border-t border-neutral-100 space-y-1.5">
                 {tierAplicado && (
                   <div className="flex items-center justify-between px-3 py-2 rounded-xl bg-success-bg border border-success/20 text-success text-xs font-medium">
-                    <span>🎉 {tierAplicado.label}</span>
+                    <span>{tierAplicado.label}</span>
                     <span className="tabular-nums">− {fmt(montoDescuento)}</span>
                   </div>
                 )}
@@ -392,6 +410,12 @@ export function NuevoPedidoClient({
                   <span>Total c/IVA</span>
                   <span className="tabular-nums">{fmt(totalFinal)}</span>
                 </div>
+                {costo_viaje > 0 && (
+                  <div className="flex justify-between text-xs text-neutral-400">
+                    <span>+ Flete viaje ({direccion?.zona_name})</span>
+                    <span className="tabular-nums">{fmt(costo_viaje)}</span>
+                  </div>
+                )}
                 <p className="text-xs text-neutral-400">{totalQty} caja{totalQty !== 1 ? "s" : ""}</p>
               </div>
             </div>
