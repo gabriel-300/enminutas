@@ -11,15 +11,17 @@ async function requireAdmin() {
 
 export async function crearZona(formData: FormData) {
   await requireAdmin();
-  const name    = (formData.get("name") as string).trim();
-  const flete   = Number(formData.get("flete_kg")) || null;
+  const codigo       = (formData.get("codigo") as string).trim().toUpperCase();
+  const name         = (formData.get("name") as string).trim();
+  const km           = Number(formData.get("km")) || 0;
+  const precio_km    = Number(formData.get("precio_km")) || 0;
+  const capacidad_kg = Number(formData.get("capacidad_kg")) || 1200;
   if (!name) throw new Error("El nombre es requerido");
 
-  const supabase = createAdminClient();
-  const db = supabase as any;
+  const db = createAdminClient() as any;
   const { error } = await db.from("delivery_zones").insert({
-    name,
-    flete_kg: flete,
+    codigo, name, km, precio_km, capacidad_kg,
+    flete_kg: 0,
     polygon: { type: "Point", coordinates: [] },
     base_fee: 0,
     estimated_minutes: 0,
@@ -30,23 +32,25 @@ export async function crearZona(formData: FormData) {
 
 export async function actualizarZona(id: string, formData: FormData) {
   await requireAdmin();
-  const name  = (formData.get("name") as string).trim();
-  const flete = Number(formData.get("flete_kg")) || null;
+  const codigo       = (formData.get("codigo") as string).trim().toUpperCase();
+  const name         = (formData.get("name") as string).trim();
+  const km           = Number(formData.get("km")) || 0;
+  const precio_km    = Number(formData.get("precio_km")) || 0;
+  const capacidad_kg = Number(formData.get("capacidad_kg")) || 1200;
   if (!name) throw new Error("El nombre es requerido");
 
-  const supabase = createAdminClient();
-  const db = supabase as any;
-  const { error } = await db.from("delivery_zones").update({ name, flete_kg: flete }).eq("id", id);
+  const db = createAdminClient() as any;
+  const { error } = await db.from("delivery_zones")
+    .update({ codigo, name, km, precio_km, capacidad_kg, flete_kg: 0 })
+    .eq("id", id);
   if (error) throw new Error(error.message);
   revalidatePath("/admin/zonas");
 }
 
 export async function eliminarZona(id: string) {
   await requireAdmin();
-  const supabase = createAdminClient();
-  const db = supabase as any;
+  const db = createAdminClient() as any;
 
-  // Verificar que no haya pedidos activos ni clientes asignados a esta zona
   const [{ count: pedidosActivos }, { count: clientesAsignados }] = await Promise.all([
     db.from("orders")
       .select("*", { count: "exact", head: true })
