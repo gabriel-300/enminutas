@@ -13,6 +13,7 @@ type Zona = {
   precio_km:    number;
   capacidad_kg: number;
   client_count: number;
+  updated_at:   string | null;
 };
 
 function costoViaje(km: number, precio_km: number) {
@@ -77,7 +78,7 @@ function ZonaRow({ zona }: { zona: Zona }) {
           <input type="number" value={capacidad} onChange={(e) => setCapacidad(e.target.value)}
             placeholder="1200" className={`${inp} w-20`} disabled={isPending} />
         </td>
-        <td className="px-3 py-3" colSpan={2}>
+        <td className="px-3 py-3" colSpan={3}>
           <div className="flex gap-3">
             <button onClick={handleSave} disabled={isPending}
               className="text-xs text-success font-medium hover:underline disabled:opacity-50">
@@ -117,6 +118,11 @@ function ZonaRow({ zona }: { zona: Zona }) {
           <span className="size-1.5 rounded-full bg-success inline-block" />
           Activo
         </span>
+      </td>
+      <td className="px-3 py-3 text-xs text-neutral-500 whitespace-nowrap">
+        {zona.updated_at
+          ? new Date(zona.updated_at).toLocaleDateString("es-AR")
+          : <span className="text-neutral-300">—</span>}
       </td>
       <td className="px-3 py-3">
         <div className="flex gap-3">
@@ -159,13 +165,14 @@ export function ZonasClient({ zonas }: { zonas: Zona[] }) {
               <th className="px-3 py-3 font-medium text-neutral-500">Costo viaje</th>
               <th className="px-3 py-3 font-medium text-neutral-500">Capacidad kg</th>
               <th className="px-3 py-3 font-medium text-neutral-500">Estado</th>
+              <th className="px-3 py-3 font-medium text-neutral-500 whitespace-nowrap">Última act.</th>
               <th className="px-3 py-3 w-28"></th>
             </tr>
           </thead>
           <tbody className="divide-y divide-neutral-100">
             {zonas.length === 0 && (
               <tr>
-                <td colSpan={8} className="px-4 py-10 text-center text-neutral-400">
+                <td colSpan={9} className="px-4 py-10 text-center text-neutral-400">
                   No hay zonas configuradas.
                 </td>
               </tr>

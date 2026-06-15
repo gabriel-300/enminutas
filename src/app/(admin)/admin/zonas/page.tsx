@@ -15,7 +15,7 @@ export default async function AdminZonasPage() {
 
   const [{ data: zonas, error }, { data: clienteCounts }] = await Promise.all([
     db.from("delivery_zones")
-      .select("id, name, codigo, km, precio_km, capacidad_kg")
+      .select("id, name, codigo, km, precio_km, capacidad_kg, updated_at")
       .order("km", { ascending: true }),
     db.from("profiles").select("zona_id").not("zona_id", "is", null),
   ]);
@@ -42,6 +42,7 @@ export default async function AdminZonasPage() {
     precio_km:    z.precio_km ?? 0,
     capacidad_kg: z.capacidad_kg ?? 1200,
     client_count: countMap[z.id] ?? 0,
+    updated_at:   z.updated_at ?? null,
   }));
 
   return (
