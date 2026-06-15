@@ -858,11 +858,11 @@ export default async function DashboardPage() {
       .eq("status", "pending_payment")
       .lt("created_at", cutoff48h),
 
-    // Productos activos sin datos B2B (sin costo → no muestran precio en catálogo)
+    // Productos activos sin costo → no se puede calcular precio en catálogo
     db.from("products")
       .select("*", { count: "exact", head: true })
       .eq("is_active", true)
-      .is("precio_lista", null),
+      .is("costo", null),
 
     adminClient.auth.admin.listUsers({ perPage: 1000 }),
   ]);
