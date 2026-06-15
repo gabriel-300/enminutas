@@ -19,7 +19,7 @@ type Product = {
   bolsas_caja:        number | null;
   kg_caja:            number | null;
   categoria:          string | null;
-  divisiones_display: number | null;
+  updated_at:         string | null;
   linea:              { nombre: string } | null;
 };
 
@@ -110,7 +110,9 @@ function ProductMobileCard({ p }: { p: Product }) {
           {p.u_bolsa != null && <span>{p.u_bolsa} u/bolsa</span>}
           {p.bolsas_caja != null && <span>{p.bolsas_caja} bols/caja</span>}
           {p.kg_caja != null && <span>{p.kg_caja} kg/caja</span>}
-          {p.divisiones_display != null && <span>{p.divisiones_display} divis.</span>}
+          {p.updated_at && (
+            <span>Act. {new Date(p.updated_at).toLocaleDateString("es-AR")}</span>
+          )}
         </div>
         <div className="flex items-center gap-3">
           <Link href={`/admin/productos/${p.id}/editar`} className="text-xs text-tierra-700 hover:underline">Editar</Link>
@@ -164,7 +166,11 @@ function ProductRow({ p }: { p: Product }) {
       <td className="px-2 py-2 text-right text-xs tabular-nums whitespace-nowrap">{money(p.pkg_unitario)}</td>
       <td className="px-2 py-2 text-right text-xs tabular-nums whitespace-nowrap">{money(p.pkg_bulto)}</td>
       <td className="px-2 py-2 text-center"><CategoriaBadge cat={p.categoria} /></td>
-      <td className="px-2 py-2 text-center text-xs tabular-nums text-neutral-600">{num(p.divisiones_display)}</td>
+      <td className="px-2 py-2 text-center text-xs text-neutral-500 whitespace-nowrap">
+        {p.updated_at
+          ? new Date(p.updated_at).toLocaleDateString("es-AR")
+          : <span className="text-neutral-300">—</span>}
+      </td>
       <td className="px-2 py-2">
         <div className="flex justify-center">
           <ActiveToggle id={p.id} initial={p.is_active} />
@@ -234,7 +240,7 @@ export function ProductsAdminClient({ products }: { products: Product[] }) {
                 <th className="px-2 py-3 font-medium text-neutral-500 text-right text-xs whitespace-nowrap">Pkg U $</th>
                 <th className="px-2 py-3 font-medium text-neutral-500 text-right text-xs whitespace-nowrap">Pkg B $</th>
                 <th className="px-2 py-3 font-medium text-neutral-500 text-center text-xs">Categoría</th>
-                <th className="px-2 py-3 font-medium text-neutral-500 text-center text-xs whitespace-nowrap">Divis.</th>
+                <th className="px-2 py-3 font-medium text-neutral-500 text-center text-xs whitespace-nowrap">Última act.</th>
                 <th className="px-2 py-3 font-medium text-neutral-500 text-center text-xs">Activo</th>
                 <th className="px-2 py-3 w-24"></th>
               </tr>
@@ -242,7 +248,7 @@ export function ProductsAdminClient({ products }: { products: Product[] }) {
             <tbody className="divide-y divide-neutral-100">
               {filtered.length === 0 && (
                 <tr>
-                  <td colSpan={14} className="px-4 py-10 text-center text-neutral-400">Sin resultados.</td>
+                  <td colSpan={13} className="px-4 py-10 text-center text-neutral-400">Sin resultados.</td>
                 </tr>
               )}
               {filtered.map((p) => <ProductRow key={p.id} p={p} />)}

@@ -18,7 +18,7 @@ export default async function AdminProductosPage() {
       id, sku, name, is_active, presentacion,
       codigo, costo, pkg_unitario, pkg_bulto,
       u_bolsa, bolsas_caja, kg_caja,
-      categoria, divisiones_display,
+      categoria, updated_at,
       linea:lineas_producto!linea_id (nombre)
     `)
     .order("is_active", { ascending: false })
