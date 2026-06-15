@@ -15,10 +15,11 @@ export default async function AdminProductosPage() {
   const { data: products, error } = await (supabase as any)
     .from("products")
     .select(`
-      id, sku, name, is_active, unit_label,
-      stock_cajas, stock_minimo,
-      codigo, costo,
-      category:categories (name)
+      id, sku, name, is_active, presentacion,
+      codigo, costo, pkg_unitario, pkg_bulto,
+      u_bolsa, bolsas_caja, kg_caja,
+      categoria, divisiones_display,
+      linea:lineas_producto!linea_id (nombre)
     `)
     .order("is_active", { ascending: false })
     .order("codigo", { ascending: true, nullsFirst: false })
