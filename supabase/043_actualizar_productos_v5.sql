@@ -229,7 +229,7 @@ INSERT INTO products (
   sku, name, codigo, presentacion, unit_label,
   u_bolsa, bolsas_caja, kg_caja,
   costo, pkg_unitario, pkg_bulto,
-  categoria, divisiones_display, is_active, price_b2b,
+  categoria, divisiones_display, is_active, price_b2b, price_b2c,
   linea_id
 )
 SELECT
@@ -237,7 +237,7 @@ SELECT
   'Caja x 10 u', 'caja x10 u',
   1, 10, 7,
   4820, 200, 1100,
-  'Estándar', NULL, true, 0,
+  'Estándar', NULL, true, 0, 0,
   (SELECT id FROM lineas_producto WHERE nombre ILIKE 'Pizza%' LIMIT 1)
 WHERE NOT EXISTS (SELECT 1 FROM products WHERE codigo = 6001);
 
