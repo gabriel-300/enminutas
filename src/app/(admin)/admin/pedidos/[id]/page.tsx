@@ -255,28 +255,46 @@ export default async function AdminPedidoDetailPage({
 
       {/* Totales */}
       <div className="bg-white rounded-2xl border border-neutral-200 p-5 sm:max-w-xs sm:ml-auto">
-        <div className="space-y-2 text-sm">
-          <div className="flex justify-between text-neutral-600">
-            <span>Subtotal</span>
-            <span>$ {Number(o.subtotal).toLocaleString("es-AR")}</span>
-          </div>
-          {Number(o.shipping_fee) > 0 && (
-            <div className="flex justify-between text-neutral-600">
-              <span>Envío</span>
-              <span>$ {Number(o.shipping_fee).toLocaleString("es-AR")}</span>
+        {(() => {
+          const total   = Number(o.total);
+          const neto    = Math.round(total / 1.21);
+          const iva     = total - neto;
+          const fmt     = (n: number) => `$ ${Math.round(n).toLocaleString("es-AR")}`;
+          return (
+            <div className="space-y-2 text-sm">
+              {Number(o.discount) > 0 && (
+                <div className="flex justify-between text-neutral-600">
+                  <span>Bruto</span>
+                  <span>{fmt(Number(o.subtotal))}</span>
+                </div>
+              )}
+              {Number(o.discount) > 0 && (
+                <div className="flex justify-between text-success">
+                  <span>Descuento</span>
+                  <span>− {fmt(Number(o.discount))}</span>
+                </div>
+              )}
+              {Number(o.shipping_fee) > 0 && (
+                <div className="flex justify-between text-neutral-600">
+                  <span>Envío</span>
+                  <span>{fmt(Number(o.shipping_fee))}</span>
+                </div>
+              )}
+              <div className="flex justify-between text-neutral-600">
+                <span>Subtotal (neto s/IVA)</span>
+                <span>{fmt(neto)}</span>
+              </div>
+              <div className="flex justify-between text-neutral-600">
+                <span>IVA (21%)</span>
+                <span>{fmt(iva)}</span>
+              </div>
+              <div className="flex justify-between font-semibold text-neutral-900 pt-2 border-t border-neutral-100">
+                <span>Total</span>
+                <span>{fmt(total)}</span>
+              </div>
             </div>
-          )}
-          {Number(o.discount) > 0 && (
-            <div className="flex justify-between text-success">
-              <span>Descuento</span>
-              <span>− $ {Number(o.discount).toLocaleString("es-AR")}</span>
-            </div>
-          )}
-          <div className="flex justify-between font-semibold text-neutral-900 pt-2 border-t border-neutral-100">
-            <span>Total</span>
-            <span>$ {Number(o.total).toLocaleString("es-AR")}</span>
-          </div>
-        </div>
+          );
+        })()}
       </div>
 
       {/* Pago confirmado */}
