@@ -32,29 +32,35 @@ export default async function AdminStaffPage() {
   }
 
   const STAFF_ROLES = ["admin", "vendedor", "produccion", "distribucion"];
-  const staffUsers = (users ?? []).filter((u) => STAFF_ROLES.includes(u.app_metadata?.role));
-  const distIds    = staffUsers.filter((u) => u.app_metadata?.role === "distribucion").map((u) => u.id);
+  const staffUsers   = (users ?? []).filter((u) => STAFF_ROLES.includes(u.app_metadata?.role));
+  const distIds      = staffUsers.filter((u) => u.app_metadata?.role === "distribucion").map((u) => u.id);
+  const vendedorIds  = staffUsers.filter((u) => u.app_metadata?.role === "vendedor").map((u) => u.id);
+  const perfilIds    = [...new Set([...distIds, ...vendedorIds])];
 
-  // Cargar zonas asignadas a distribuidores
-  const { data: perfilesRaw } = distIds.length > 0
-    ? await (adminClient as any).from("profiles").select("id, zona_id").in("id", distIds)
+  // Cargar zonas (distribuidores) y comisión (vendedores)
+  const { data: perfilesRaw } = perfilIds.length > 0
+    ? await (adminClient as any).from("profiles").select("id, zona_id, comision_preventista_pct").in("id", perfilIds)
     : { data: [] };
 
-  const zonaByUser: Record<string, string | null> = Object.fromEntries(
-    (perfilesRaw ?? []).map((p: any) => [p.id, p.zona_id ?? null])
-  );
+  const zonaByUser: Record<string, string | null>   = {};
+  const comisionByUser: Record<string, number | null> = {};
+  for (const p of (perfilesRaw ?? []) as any[]) {
+    zonaByUser[p.id]    = p.zona_id ?? null;
+    comisionByUser[p.id] = p.comision_preventista_pct ?? null;
+  }
 
   const zonas = (zonasRaw ?? []) as { id: string; name: string }[];
 
   const staff = staffUsers
     .map((u) => ({
-      id:           u.id,
-      email:        u.email ?? "",
-      name:         (u.user_metadata?.full_name as string | null) ?? null,
-      role:         u.app_metadata?.role as string,
-      created_at:   u.created_at,
-      last_sign_in: u.last_sign_in_at ?? null,
-      zona_id:      zonaByUser[u.id] ?? null,
+      id:                       u.id,
+      email:                    u.email ?? "",
+      name:                     (u.user_metadata?.full_name as string | null) ?? null,
+      role:                     u.app_metadata?.role as string,
+      created_at:               u.created_at,
+      last_sign_in:             u.last_sign_in_at ?? null,
+      zona_id:                  zonaByUser[u.id] ?? null,
+      comision_preventista_pct: comisionByUser[u.id] ?? null,
     }))
     .sort((a, b) => {
       const order = { admin: 0, vendedor: 1, produccion: 2, distribucion: 3 };
@@ -70,7 +76,7 @@ export default async function AdminStaffPage() {
         </p>
       </div>
 
-      <StaffClient staff={staff} currentUserId={user.id} zonas={zonas} />
+      <StaffClient staff={staff as any} currentUserId={user.id} zonas={zonas} />
     </div>
   );
 }

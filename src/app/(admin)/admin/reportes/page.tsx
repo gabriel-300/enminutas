@@ -69,6 +69,7 @@ export default async function ReportesPage({
     { data: prevB2C },
     { data: rawVendedores },
     { data: rawMetas },
+    { data: rawParams },
   ] = await Promise.all([
     // Pedidos B2B del mes
     db.from("orders")
@@ -107,9 +108,9 @@ export default async function ReportesPage({
       .eq("channel", "b2c_nacional").in("status", ACTIVE_STATUSES)
       .gte("created_at", prevDesde).lte("created_at", prevHasta),
 
-    // Vendedores (para cruzar con pedidos)
+    // Vendedores con su % de comisión asignado
     db.from("profiles")
-      .select("id, full_name")
+      .select("id, full_name, comision_preventista_pct")
       .eq("role", "vendedor")
       .order("full_name"),
 
@@ -117,6 +118,10 @@ export default async function ReportesPage({
     db.from("sales_goals")
       .select("vendedor_id, objetivo")
       .eq("mes", mesParam),
+
+    // Parámetros globales (iva_pct, comision_pct)
+    db.from("parametros_globales")
+      .select("clave, valor"),
   ]);
 
   // Líneas de productos
@@ -133,8 +138,20 @@ export default async function ReportesPage({
   // ── Totales ────────────────────────────────────────────────────────────────
   const b2bOrders   = (rawB2B ?? []) as any[];
   const b2cOrders   = (rawB2C ?? []) as any[];
-  const vendedores  = (rawVendedores ?? []) as { id: string; full_name: string }[];
+  const vendedores  = (rawVendedores ?? []) as { id: string; full_name: string; comision_preventista_pct: number | null }[];
   const metasMap    = Object.fromEntries(((rawMetas ?? []) as any[]).map((m: any) => [m.vendedor_id, Number(m.objetivo)]));
+
+  // Parámetros globales
+  const paramsArr = (rawParams ?? []) as { clave: string; valor: number }[];
+  const paramVal  = (key: string, def: number) => paramsArr.find((p) => p.clave === key)?.valor ?? def;
+  const ivaPct       = paramVal("iva_pct",      0.21);
+  const comisionPct  = paramVal("comision_pct", 0.15);
+  const divisor      = 1 + ivaPct + comisionPct; // 1.36 por defecto
+
+  // Función: extrae el $ de comisión embebido en un total de pedido
+  function comisionDe(total: number, pct: number) {
+    return Math.round(total * pct / divisor);
+  }
 
   const totalB2B    = b2bOrders.reduce((s, o) => s + Number(o.total), 0);
   const totalB2C    = b2cOrders.reduce((s, o) => s + Number(o.total), 0);
@@ -157,9 +174,15 @@ export default async function ReportesPage({
   const porZona = Object.values(zonaMap).sort((a, b) => b.total - a.total);
 
   // ── Por vendedor ───────────────────────────────────────────────────────────
-  const vendedorMap: Record<string, { name: string; count: number; total: number; objetivo: number }> = {};
+  const vendedorMap: Record<string, {
+    name: string; count: number; total: number; objetivo: number;
+    comision_preventista_pct: number | null;
+  }> = {};
   for (const v of vendedores) {
-    vendedorMap[v.id] = { name: v.full_name, count: 0, total: 0, objetivo: metasMap[v.id] ?? 0 };
+    vendedorMap[v.id] = {
+      name: v.full_name, count: 0, total: 0, objetivo: metasMap[v.id] ?? 0,
+      comision_preventista_pct: v.comision_preventista_pct ?? null,
+    };
   }
   for (const o of b2bOrders) {
     const vid = (o.customer as any)?.vendedor_id;
@@ -171,6 +194,26 @@ export default async function ReportesPage({
   const porVendedor = Object.values(vendedorMap)
     .filter((v) => v.count > 0 || v.objetivo > 0)
     .sort((a, b) => b.total - a.total);
+
+  // ── Comisiones del mes (solo B2B, donde aplica la comisión de Alex) ────────
+  const comisionTotalB2B = comisionDe(totalB2B, comisionPct);
+  type FilaComision = {
+    name: string;
+    ventasB2B: number;
+    pctPreventista: number | null;
+    montoPreventista: number;
+    montoMinutas: number;
+  };
+  const comisionesPorVendedor: FilaComision[] = porVendedor
+    .filter((v) => v.total > 0)
+    .map((v) => {
+      const pct      = v.comision_preventista_pct;
+      const montoP   = pct != null ? comisionDe(v.total, pct) : 0;
+      const montoM   = comisionDe(v.total, comisionPct) - montoP;
+      return { name: v.name, ventasB2B: v.total, pctPreventista: pct, montoPreventista: montoP, montoMinutas: montoM };
+    });
+  const totalAPreventistas = comisionesPorVendedor.reduce((s, f) => s + f.montoPreventista, 0);
+  const totalMinutasNeto   = comisionTotalB2B - totalAPreventistas;
 
   // ── Top clientes ───────────────────────────────────────────────────────────
   const clientMap: Record<string, { name: string; count: number; total: number }> = {};
@@ -384,6 +427,73 @@ export default async function ReportesPage({
               </div>
             </div>
           )}
+
+          {/* Comisiones — solo para admins, no visible para Alex */}
+          <div className="bg-white rounded-2xl border border-neutral-200 overflow-hidden">
+            <div className="px-5 py-4 border-b border-neutral-100">
+              <p className="text-sm font-medium text-neutral-700">Comisiones del mes</p>
+              <p className="text-xs text-neutral-400 mt-0.5">
+                Reparto interno del {Math.round(comisionPct * 100)}% sobre ventas B2B
+              </p>
+            </div>
+
+            {/* KPIs comisión */}
+            <div className="grid grid-cols-3 divide-x divide-neutral-100 border-b border-neutral-100">
+              {[
+                { label: "Comisión total recibida", value: comisionTotalB2B, sub: `${Math.round(comisionPct * 100)}% de ${fmtK(totalB2B)}` },
+                { label: "A preventistas", value: totalAPreventistas, sub: "según % asignado" },
+                { label: "Queda en Minutas", value: totalMinutasNeto, sub: "neto", highlight: true },
+              ].map(({ label, value, sub, highlight }) => (
+                <div key={label} className="px-5 py-4">
+                  <p className="text-xs text-neutral-400 mb-1">{label}</p>
+                  <p className={`text-xl font-semibold font-display tabular-nums ${highlight ? "text-tierra-700" : "text-neutral-900"}`}>
+                    {fmtK(value)}
+                  </p>
+                  <p className="text-xs text-neutral-400 mt-0.5">{sub}</p>
+                </div>
+              ))}
+            </div>
+
+            {/* Desglose por preventista */}
+            {comisionesPorVendedor.length === 0 ? (
+              <p className="px-5 py-6 text-xs text-neutral-400 text-center">
+                Sin preventistas con ventas este mes.
+              </p>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-neutral-100 text-left">
+                      <th className="px-5 py-3 text-xs font-medium text-neutral-400">Preventista</th>
+                      <th className="px-5 py-3 text-xs font-medium text-neutral-400 text-right">Ventas B2B</th>
+                      <th className="px-5 py-3 text-xs font-medium text-neutral-400 text-right">% asignado</th>
+                      <th className="px-5 py-3 text-xs font-medium text-neutral-400 text-right">Le debemos</th>
+                      <th className="px-5 py-3 text-xs font-medium text-neutral-400 text-right">Nos queda</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-neutral-50">
+                    {comisionesPorVendedor.map((f) => (
+                      <tr key={f.name} className="hover:bg-neutral-50">
+                        <td className="px-5 py-3 font-medium text-neutral-800">{f.name}</td>
+                        <td className="px-5 py-3 text-right text-neutral-600 tabular-nums">{fmtK(f.ventasB2B)}</td>
+                        <td className="px-5 py-3 text-right tabular-nums">
+                          {f.pctPreventista != null
+                            ? <span className="text-info font-medium">{Math.round(f.pctPreventista * 100)}%</span>
+                            : <span className="text-neutral-300">sin asignar</span>}
+                        </td>
+                        <td className="px-5 py-3 text-right font-semibold text-neutral-900 tabular-nums">
+                          {f.montoPreventista > 0 ? fmtK(f.montoPreventista) : <span className="text-neutral-300">—</span>}
+                        </td>
+                        <td className="px-5 py-3 text-right font-semibold text-tierra-700 tabular-nums">
+                          {fmtK(f.montoMinutas)}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
 
           {/* Top clientes */}
           {topClientes.length > 0 && (

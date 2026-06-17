@@ -1,16 +1,17 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { cambiarRolStaff, revocarAccesoStaff, invitarStaff, crearUsuarioConPassword, resetearPasswordAdmin, enviarEmailRecuperacion, asignarZonaDistribuidor } from "@/app/(admin)/admin/staff/actions";
+import { cambiarRolStaff, revocarAccesoStaff, invitarStaff, crearUsuarioConPassword, resetearPasswordAdmin, enviarEmailRecuperacion, asignarZonaDistribuidor, actualizarComisionPreventista } from "@/app/(admin)/admin/staff/actions";
 
 type StaffMember = {
-  id:           string;
-  email:        string;
-  name:         string | null;
-  role:         string;
-  created_at:   string;
-  last_sign_in: string | null;
-  zona_id:      string | null;
+  id:                       string;
+  email:                    string;
+  name:                     string | null;
+  role:                     string;
+  created_at:               string;
+  last_sign_in:             string | null;
+  zona_id:                  string | null;
+  comision_preventista_pct: number | null;
 };
 
 type Zona = { id: string; name: string };
@@ -118,6 +119,55 @@ function ResetPasswordPanel({ member, onClose }: { member: StaffMember; onClose:
   );
 }
 
+// ── Comisión preventista input ────────────────────────────────────────────────
+
+function ComisionVendedorInput({ member }: { member: StaffMember }) {
+  const currentPct = member.comision_preventista_pct != null
+    ? Math.round(member.comision_preventista_pct * 100)
+    : "";
+  const [value, setValue]         = useState<string>(String(currentPct));
+  const [saved, setSaved]         = useState(false);
+  const [isPending, startTransition] = useTransition();
+
+  function handleSave() {
+    const num = value === "" ? null : parseFloat(value) / 100;
+    if (num !== null && (isNaN(num) || num < 0 || num > 1)) return;
+    setSaved(false);
+    startTransition(async () => {
+      await actualizarComisionPreventista(member.id, num);
+      setSaved(true);
+    });
+  }
+
+  return (
+    <div className="flex items-center gap-2 flex-wrap">
+      <span className="text-xs text-neutral-500 shrink-0">% comisión:</span>
+      <div className="flex items-center gap-1">
+        <input
+          type="number"
+          min={0}
+          max={15}
+          step={0.5}
+          value={value}
+          onChange={(e) => { setValue(e.target.value); setSaved(false); }}
+          placeholder="—"
+          disabled={isPending}
+          className="w-16 px-2 py-1 text-xs border border-neutral-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-tierra-700/20 disabled:opacity-50 tabular-nums"
+        />
+        <span className="text-xs text-neutral-400">%</span>
+      </div>
+      <button
+        onClick={handleSave}
+        disabled={isPending}
+        className="px-2.5 py-1 text-xs rounded-lg bg-tierra-700 text-white hover:bg-tierra-800 disabled:opacity-50 transition-colors"
+      >
+        {isPending ? "…" : "Guardar"}
+      </button>
+      {saved && <span className="text-xs text-success">Guardado</span>}
+    </div>
+  );
+}
+
 // ── Mobile card ───────────────────────────────────────────────────────────────
 
 function StaffMobileCard({ member, isCurrentUser, zonas = [] }: {
@@ -170,6 +220,9 @@ function StaffMobileCard({ member, isCurrentUser, zonas = [] }: {
               </select>
             )}
           </div>
+          {member.role === "vendedor" && (
+            <ComisionVendedorInput member={member} />
+          )}
           <div className="flex gap-2">
             <button onClick={() => setShowReset(!showReset)} disabled={isPending}
               className="px-3 py-1.5 text-xs rounded-lg border border-neutral-200 text-neutral-600 hover:bg-neutral-50 disabled:opacity-40">
@@ -237,6 +290,9 @@ function StaffRow({ member, isCurrentUser, zonas = [] }: {
                   <option value="">Sin zona</option>
                   {zonas.map((z) => <option key={z.id} value={z.id}>{z.name}</option>)}
                 </select>
+              )}
+              {member.role === "vendedor" && (
+                <ComisionVendedorInput member={member} />
               )}
               <button onClick={() => setShowReset(!showReset)} disabled={isPending}
                 className="text-xs text-neutral-500 hover:text-neutral-800 hover:underline disabled:opacity-40">

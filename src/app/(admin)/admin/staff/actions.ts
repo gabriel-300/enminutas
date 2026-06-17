@@ -20,6 +20,18 @@ export async function asignarZonaDistribuidor(userId: string, zonaId: string | n
   revalidatePath("/admin/distribucion");
 }
 
+export async function actualizarComisionPreventista(userId: string, pct: number | null) {
+  await requireAdmin();
+  const supabase = createAdminClient();
+  await (supabase as any).from("profiles").upsert({
+    id:                       userId,
+    comision_preventista_pct: pct,
+  });
+  revalidatePath("/admin/staff");
+  revalidatePath("/admin/reportes");
+  revalidatePath("/admin/preventista");
+}
+
 const VALID_ROLES = ["admin", "vendedor", "produccion", "distribucion"] as const;
 type StaffRole = typeof VALID_ROLES[number];
 

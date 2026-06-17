@@ -31,6 +31,16 @@ export default async function PreventistaPage() {
   const desdeMs = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
   const hastaMs = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59).toISOString();
 
+  // ── Parámetros globales para cálculo de comisión ────────────────────────
+  const { data: rawParams } = await adminClient
+    .from("parametros_globales")
+    .select("clave, valor");
+  const paramVal = (key: string, def: number) =>
+    ((rawParams ?? []) as any[]).find((p: any) => p.clave === key)?.valor ?? def;
+  const ivaPct      = paramVal("iva_pct",      0.21);
+  const comisionPct = paramVal("comision_pct", 0.15);
+  const divisorPrecio = 1 + ivaPct + comisionPct;
+
   // ── Metas de venta ───────────────────────────────────────────────────────
   // Lista de vendedores del sistema
   const { data: { users: allUsers } } = await adminClient.auth.admin.listUsers({ perPage: 1000 });
@@ -41,6 +51,17 @@ export default async function PreventistaPage() {
       nombre: u.user_metadata?.full_name ?? u.email ?? u.id,
       email:  u.email,
     }));
+
+  // Comisión asignada al vendedor logueado (si aplica)
+  let comisionPropiaConfig: number | null = null;
+  if (esVendedor) {
+    const { data: perfil } = await adminClient
+      .from("profiles")
+      .select("comision_preventista_pct")
+      .eq("id", user.id)
+      .single();
+    comisionPropiaConfig = (perfil as any)?.comision_preventista_pct ?? null;
+  }
 
   // Vendedores a mostrar en metas: todos (admin) o solo yo (vendedor)
   const vendedoresMeta = esAdmin ? vendedores
@@ -169,6 +190,17 @@ export default async function PreventistaPage() {
     return b.dias - a.dias;
   });
 
+  // Ventas del mes del propio vendedor (para su card de comisión)
+  const ventasPropias = esVendedor ? (ventasMap[user.id] ?? 0) : 0;
+  const comisionPropiaAmt = (comisionPropiaConfig != null && ventasPropias > 0)
+    ? Math.round(ventasPropias * comisionPropiaConfig / divisorPrecio)
+    : null;
+
+  const fmtARS = (n: number) =>
+    new Intl.NumberFormat("es-AR", { style: "currency", currency: "ARS", maximumFractionDigits: 0 }).format(n);
+
+  const mesNombreDisplay = new Date(mes + "-01").toLocaleDateString("es-AR", { month: "long", year: "numeric" });
+
   return (
     <div className="p-4 md:p-8 max-w-5xl space-y-5 md:space-y-6">
       <div>
@@ -177,6 +209,39 @@ export default async function PreventistaPage() {
           {esVendedor ? "Tus clientes asignados" : "Todos los clientes B2B activos"} — ordenados por inactividad
         </p>
       </div>
+
+      {/* Card de comisión propia — solo para vendedor */}
+      {esVendedor && (
+        <div className="bg-white rounded-2xl border border-neutral-200 p-5">
+          <p className="text-xs font-semibold text-neutral-400 uppercase tracking-wide mb-3 capitalize">
+            Tu comisión · {mesNombreDisplay}
+          </p>
+          {comisionPropiaConfig == null ? (
+            <p className="text-sm text-neutral-400">Aún no tenés comisión asignada. Consultá con el administrador.</p>
+          ) : (
+            <div className="flex flex-wrap gap-6">
+              <div>
+                <p className="text-xs text-neutral-400 mb-0.5">Ventas del mes</p>
+                <p className="text-xl font-semibold font-display tabular-nums text-neutral-900">
+                  {fmtARS(ventasPropias)}
+                </p>
+              </div>
+              <div>
+                <p className="text-xs text-neutral-400 mb-0.5">Tu % de comisión</p>
+                <p className="text-xl font-semibold font-display tabular-nums text-info">
+                  {Math.round(comisionPropiaConfig * 100)}%
+                </p>
+              </div>
+              <div>
+                <p className="text-xs text-neutral-400 mb-0.5">Tu comisión del mes</p>
+                <p className={`text-xl font-semibold font-display tabular-nums ${comisionPropiaAmt ? "text-tierra-700" : "text-neutral-400"}`}>
+                  {comisionPropiaAmt != null ? fmtARS(comisionPropiaAmt) : "—"}
+                </p>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Metas del mes */}
       {vendedoresMeta.length > 0 && (
