@@ -278,30 +278,34 @@ function StaffRow({ member, isCurrentUser, zonas = [] }: {
         <td className="px-4 py-3 text-xs text-neutral-400">{fmtAcceso(member.last_sign_in)}</td>
         <td className="px-4 py-3">
           {!isCurrentUser ? (
-            <div className="flex items-center gap-3">
-              <select value={member.role} onChange={(e) => handleRoleChange(e.target.value)} disabled={isPending}
-                className="text-xs border border-neutral-200 rounded-lg px-2 py-1.5 bg-white text-neutral-700 disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-tierra-700/20">
-                {ROLE_OPTIONS.map((r) => <option key={r.value} value={r.value}>{r.label}</option>)}
-              </select>
-              {member.role === "distribucion" && zonas.length > 0 && (
-                <select value={member.zona_id ?? ""} onChange={(e) => handleZonaChange(e.target.value)} disabled={isPending}
-                  className="text-xs border border-neutral-200 rounded-lg px-2 py-1.5 bg-white text-neutral-700 disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-tierra-700/20"
-                  title="Zona de distribución">
-                  <option value="">Sin zona</option>
-                  {zonas.map((z) => <option key={z.id} value={z.id}>{z.name}</option>)}
+            <div className="space-y-2">
+              {/* Fila 1: rol + zona/comisión inline + acciones de texto */}
+              <div className="flex items-center gap-3 flex-wrap">
+                <select value={member.role} onChange={(e) => handleRoleChange(e.target.value)} disabled={isPending}
+                  className="text-xs border border-neutral-200 rounded-lg px-2 py-1.5 bg-white text-neutral-700 disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-tierra-700/20">
+                  {ROLE_OPTIONS.map((r) => <option key={r.value} value={r.value}>{r.label}</option>)}
                 </select>
-              )}
+                {member.role === "distribucion" && zonas.length > 0 && (
+                  <select value={member.zona_id ?? ""} onChange={(e) => handleZonaChange(e.target.value)} disabled={isPending}
+                    className="text-xs border border-neutral-200 rounded-lg px-2 py-1.5 bg-white text-neutral-700 disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-tierra-700/20"
+                    title="Zona de distribución">
+                    <option value="">Sin zona</option>
+                    {zonas.map((z) => <option key={z.id} value={z.id}>{z.name}</option>)}
+                  </select>
+                )}
+                <button onClick={() => setShowReset(!showReset)} disabled={isPending}
+                  className="text-xs text-neutral-500 hover:text-neutral-800 hover:underline disabled:opacity-40">
+                  Contraseña
+                </button>
+                <button onClick={handleRevoke} disabled={isPending}
+                  className="text-xs text-danger hover:underline disabled:opacity-40">
+                  Revocar
+                </button>
+              </div>
+              {/* Fila 2: comisión preventista (solo vendedor) */}
               {member.role === "vendedor" && (
                 <ComisionVendedorInput member={member} />
               )}
-              <button onClick={() => setShowReset(!showReset)} disabled={isPending}
-                className="text-xs text-neutral-500 hover:text-neutral-800 hover:underline disabled:opacity-40">
-                Contraseña
-              </button>
-              <button onClick={handleRevoke} disabled={isPending}
-                className="text-xs text-danger hover:underline disabled:opacity-40">
-                Revocar
-              </button>
             </div>
           ) : (
             <span className="text-xs text-neutral-300">—</span>
