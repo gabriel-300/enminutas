@@ -433,16 +433,22 @@ export default async function ReportesPage({
             <div className="px-5 py-4 border-b border-neutral-100">
               <p className="text-sm font-medium text-neutral-700">Comisiones del mes</p>
               <p className="text-xs text-neutral-400 mt-0.5">
-                Reparto interno del {Math.round(comisionPct * 100)}% sobre ventas B2B
+                El {Math.round(comisionPct * 100)}% se aplica sobre el precio base s/IVA (lista s/IVA),
+                no sobre el total del pedido. El total c/IVA ({fmtK(totalB2B)}) ya incluye IVA ({Math.round(ivaPct * 100)}%) y comisión apilados sobre la misma base,
+                por eso la comisión representa ~{Math.round(comisionPct / divisor * 100)}% del total facturado.
               </p>
             </div>
 
             {/* KPIs comisión */}
             <div className="grid grid-cols-3 divide-x divide-neutral-100 border-b border-neutral-100">
               {[
-                { label: "Comisión total recibida", value: comisionTotalB2B, sub: `${Math.round(comisionPct * 100)}% de ${fmtK(totalB2B)}` },
-                { label: "A preventistas", value: totalAPreventistas, sub: "según % asignado" },
-                { label: "Queda en Minutas", value: totalMinutasNeto, sub: "neto", highlight: true },
+                {
+                  label: "Comisión total recibida",
+                  value: comisionTotalB2B,
+                  sub: `${Math.round(comisionPct * 100)}% × base ${fmtK(Math.round(totalB2B / divisor))} s/IVA`,
+                },
+                { label: "A preventistas", value: totalAPreventistas, sub: "según % asignado a cada uno" },
+                { label: "Queda en Minutas", value: totalMinutasNeto, sub: "comisión total − preventistas", highlight: true },
               ].map(({ label, value, sub, highlight }) => (
                 <div key={label} className="px-5 py-4">
                   <p className="text-xs text-neutral-400 mb-1">{label}</p>
