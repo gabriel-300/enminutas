@@ -15,7 +15,7 @@ const fmtK = (n: number) => {
   return fmt(n);
 };
 
-const ACTIVE_STATUSES = ["aprobado", "enviado_prod", "despachado", "delivered", "liquidado"];
+const ACTIVE_STATUSES = ["aprobado", "enviado_prod", "despachado", "delivered", "entrega_parcial", "liquidado"];
 
 function pctDelta(cur: number, prev: number) {
   if (prev === 0) return null;
