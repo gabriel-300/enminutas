@@ -477,8 +477,8 @@ export function StaffClient({ staff, currentUserId, zonas = [] }: {
             <p className="text-xs text-neutral-500">{r.desc}</p>
             <ul className="mt-2 text-xs text-neutral-400 space-y-0.5">
               {r.value === "admin" && (<><li>· Dashboard, pedidos, producción</li><li>· Productos, categorías, zonas</li><li>· Clientes B2B, staff</li></>)}
-              {r.value === "vendedor" && (<><li>· Dashboard, pedidos, producción</li><li>· Clientes B2B</li><li>· Sin acceso a configuración</li></>)}
-              {r.value === "produccion" && (<><li>· Solo vista de producción</li><li>· Dashboard</li><li>· Sin acceso a pedidos ni clientes</li></>)}
+              {r.value === "vendedor" && (<><li>· Dashboard, pedidos, preventista</li><li>· Clientes B2B</li><li>· Sin acceso a configuración ni producción</li></>)}
+              {r.value === "produccion" && (<><li>· Dashboard y producción</li><li>· Cocina / Stock completa</li><li>· Sin acceso a pedidos ni clientes</li></>)}
               {r.value === "distribucion" && (<><li>· Vista de distribución y entregas</li><li>· Sin acceso a pedidos ni clientes</li></>)}
             </ul>
           </div>
