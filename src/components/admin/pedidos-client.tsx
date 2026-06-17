@@ -54,6 +54,16 @@ function fmtDate(iso: string) {
   });
 }
 
+function fmtMonto(n: number) {
+  return `$ ${Math.round(n).toLocaleString("es-AR")}`;
+}
+
+function desgloseIVA(total: number) {
+  const neto = total / 1.21;
+  const iva  = total - neto;
+  return { neto, iva };
+}
+
 export function PedidosClient({ orders, esAdmin = false }: { orders: Order[]; esAdmin?: boolean }) {
   const [tab, setTab]       = useState("todos");
   const [search, setSearch] = useState("");
@@ -147,9 +157,14 @@ export function PedidosClient({ orders, esAdmin = false }: { orders: Order[]; es
                   </span>
                 )}
               </div>
-              <span className="font-semibold text-sm text-neutral-900 tabular-nums shrink-0">
-                $ {Number(order.total).toLocaleString("es-AR")}
-              </span>
+              <div className="text-right shrink-0">
+                <div className="font-semibold text-sm text-neutral-900 tabular-nums">
+                  {fmtMonto(order.total)}
+                </div>
+                <div className="text-[11px] text-neutral-400 tabular-nums mt-0.5">
+                  Neto {fmtMonto(desgloseIVA(order.total).neto)} · IVA {fmtMonto(desgloseIVA(order.total).iva)}
+                </div>
+              </div>
             </div>
 
             <p className="text-sm text-neutral-700 mb-1">
@@ -180,13 +195,15 @@ export function PedidosClient({ orders, esAdmin = false }: { orders: Order[]; es
       </div>
 
       {/* ── Desktop: tabla ─────────────────────────────────────────── */}
-      <div className="hidden md:block bg-white rounded-2xl border border-neutral-200 overflow-hidden">
-        <table className="w-full text-sm">
+      <div className="hidden md:block bg-white rounded-2xl border border-neutral-200 overflow-x-auto">
+        <table className="w-full min-w-[900px] text-sm">
           <thead>
             <tr className="border-b border-neutral-200 text-left">
               <th className="px-4 py-3 font-medium text-neutral-500 w-48">Nro. pedido</th>
               <th className="px-4 py-3 font-medium text-neutral-500">Cliente</th>
               <th className="px-4 py-3 font-medium text-neutral-500">Estado</th>
+              <th className="px-4 py-3 font-medium text-neutral-500 text-right">Subtotal</th>
+              <th className="px-4 py-3 font-medium text-neutral-500 text-right">IVA (21%)</th>
               <th className="px-4 py-3 font-medium text-neutral-500 text-right">Total</th>
               <th className="px-4 py-3 font-medium text-neutral-500">Fecha</th>
               <th className="px-4 py-3 font-medium text-neutral-500 w-52">Cambiar estado</th>
@@ -195,7 +212,7 @@ export function PedidosClient({ orders, esAdmin = false }: { orders: Order[]; es
           <tbody className="divide-y divide-neutral-100">
             {filtered.length === 0 && (
               <tr>
-                <td colSpan={6} className="px-4 py-12 text-center text-neutral-400">
+                <td colSpan={8} className="px-4 py-12 text-center text-neutral-400">
                   {search ? "No hay pedidos que coincidan con la búsqueda." : "No hay pedidos en esta categoría."}
                 </td>
               </tr>
@@ -228,8 +245,14 @@ export function PedidosClient({ orders, esAdmin = false }: { orders: Order[]; es
                 <td className="px-4 py-3">
                   <OrderStatusBadge status={order.status} />
                 </td>
+                <td className="px-4 py-3 text-right text-neutral-500 tabular-nums">
+                  {fmtMonto(desgloseIVA(order.total).neto)}
+                </td>
+                <td className="px-4 py-3 text-right text-neutral-500 tabular-nums">
+                  {fmtMonto(desgloseIVA(order.total).iva)}
+                </td>
                 <td className="px-4 py-3 text-right font-medium text-neutral-900 tabular-nums">
-                  $ {Number(order.total).toLocaleString("es-AR")}
+                  {fmtMonto(order.total)}
                 </td>
                 <td className="px-4 py-3 text-neutral-500 text-xs whitespace-nowrap">
                   {fmtDate(order.created_at)}
