@@ -33,7 +33,7 @@ const IC = {
   nuevoPedido:  <DI d="M12 9v6m3-3H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z" />,
 };
 
-const ACTIVE_STATUSES = ["aprobado", "enviado_prod", "despachado", "en_distribucion", "entrega_parcial", "delivered"];
+const ACTIVE_STATUSES = ["aprobado", "enviado_prod", "despachado", "en_distribucion", "entrega_parcial", "delivered", "liquidado"];
 
 const fmt = (n: number) =>
   new Intl.NumberFormat("es-AR", { style: "currency", currency: "ARS", maximumFractionDigits: 0 }).format(n);

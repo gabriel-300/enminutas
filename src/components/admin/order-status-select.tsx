@@ -46,13 +46,12 @@ export function OrderStatusSelect({
   }
 
   const READONLY_LABELS: Record<string, string> = {
-    delivered:       "Entregado",
-    entrega_parcial: "Entrega parcial",
-    cancelled:       "Cancelado",
-    refunded:        "Reembolsado",
-    despachado:      "Despachado",
-    enviado_prod:    "En producción",
-    in_delivery:     "En camino",
+    cancelled:    "Cancelado",
+    refunded:     "Reembolsado",
+    despachado:   "Despachado",
+    enviado_prod: "En producción",
+    in_delivery:  "En camino",
+    liquidado:    "Liquidado",
   };
 
   // Estados que no se pueden modificar una vez alcanzados
@@ -61,6 +60,22 @@ export function OrderStatusSelect({
       <span className="text-xs text-neutral-400 px-2 py-1.5 block">
         {READONLY_LABELS[currentStatus]}
       </span>
+    );
+  }
+
+  // Desde entregado o entrega_parcial solo se puede pasar a liquidado
+  if (currentStatus === "delivered" || currentStatus === "entrega_parcial") {
+    const currentLabel = currentStatus === "delivered" ? "Entregado" : "Entrega parcial";
+    return (
+      <select
+        value={localStatus}
+        onChange={handleChange}
+        disabled={isPending}
+        className="text-xs border border-neutral-200 rounded-lg px-2 py-1.5 bg-white text-neutral-700 w-full disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-tierra-700/20"
+      >
+        <option value={currentStatus}>{currentLabel}</option>
+        <option value="liquidado">Liquidado</option>
+      </select>
     );
   }
 

@@ -7,7 +7,7 @@ import { PreventistaClientesList } from "@/components/admin/preventista-clientes
 export const metadata: Metadata = { title: "Preventista — Admin En Minutas" };
 export const revalidate = 0;
 
-const ACTIVE_STATUSES = ["aprobado", "enviado_prod", "despachado", "delivered"];
+const ACTIVE_STATUSES = ["aprobado", "enviado_prod", "despachado", "delivered", "liquidado"];
 
 function diasDesde(dateStr: string | null): number | null {
   if (!dateStr) return null;

@@ -25,6 +25,7 @@ const TABS = [
   { key: "produccion",  label: "Producción" },
   { key: "despachados", label: "Despachados" },
   { key: "entregados",  label: "Entregados" },
+  { key: "liquidados",  label: "Liquidados" },
 ];
 
 const TAB_STATUSES: Record<string, string[]> = {
@@ -32,6 +33,7 @@ const TAB_STATUSES: Record<string, string[]> = {
   produccion:  ["aprobado", "enviado_prod", "paid", "preparing", "ready"],
   despachados: ["despachado", "shipped", "in_delivery"],
   entregados:  ["delivered", "entrega_parcial"],
+  liquidados:  ["liquidado"],
 };
 
 function AprobarInlineButton({ orderId }: { orderId: string }) {
