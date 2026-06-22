@@ -15,7 +15,7 @@ const fmtK = (n: number) => {
   return fmt(n);
 };
 
-const ACTIVE_STATUSES = ["aprobado", "enviado_prod", "despachado", "delivered", "entrega_parcial", "liquidado"];
+const ACTIVE_STATUSES = ["aprobado", "enviado_prod", "despachado", "en_distribucion", "entrega_parcial", "delivered", "liquidado"];
 
 function pctDelta(cur: number, prev: number) {
   if (prev === 0) return null;
@@ -265,10 +265,10 @@ export default async function ReportesPage({
             className="px-3 py-1.5 text-xs font-medium border border-neutral-200 rounded-lg text-neutral-600 hover:bg-neutral-50 transition-colors">
             ↓ Histórico
           </a>
-          {["dist", "gastro", "min"].map((c) => (
+          {(["dist", "gastro", "min", "eve"] as const).map((c) => (
             <a key={c} href={`/admin/reportes/precios?canal=${c}`} download
               className="px-3 py-1.5 text-xs font-medium border border-neutral-200 rounded-lg text-neutral-600 hover:bg-neutral-50 transition-colors">
-              Precios {c === "dist" ? "Dist" : c === "gastro" ? "Gastro" : "Min"} ↓
+              Precios {c === "dist" ? "Dist" : c === "gastro" ? "Gastro" : c === "min" ? "Min" : "Eve"} ↓
             </a>
           ))}
         </div>

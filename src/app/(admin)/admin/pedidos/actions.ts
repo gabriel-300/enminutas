@@ -4,6 +4,21 @@ import { createClient, createAdminClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 import { emailPagoConfirmado } from "@/lib/email";
 
+async function logOrderEvent(
+  db: ReturnType<typeof createAdminClient>,
+  orderId: string,
+  status: string,
+  message: string,
+  actorId?: string,
+) {
+  await (db as any).from("order_events").insert({
+    order_id: orderId,
+    status,
+    message,
+    actor_id: actorId ?? null,
+  });
+}
+
 async function getCallerRole(): Promise<string | null> {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
@@ -50,6 +65,7 @@ export async function aprobarPedidoB2B(orderId: string) {
 
   if (error) throw new Error(error.message);
   if (!updated?.length) throw new Error("El pedido ya fue procesado o no existe");
+  await logOrderEvent(supabase, orderId, "aprobado", "Pedido aprobado", user.id);
   revalidatePath("/admin/pedidos");
   revalidatePath(`/admin/pedidos/${orderId}`);
   revalidatePath("/admin/produccion");
@@ -70,6 +86,7 @@ export async function marcarEnviadoProd(orderId: string) {
     .select("id");
   if (error) throw new Error(error.message);
   if (!updated?.length) throw new Error("El pedido debe estar aprobado para iniciar preparación");
+  await logOrderEvent(supabase, orderId, "enviado_prod", "Enviado a producción");
   revalidatePath("/admin/produccion");
 }
 
@@ -93,6 +110,7 @@ export async function despacharPedido(orderId: string) {
     .select("id");
   if (error) throw new Error(error.message);
   if (!updated?.length) throw new Error("El pedido debe estar en preparación para despacharse");
+  await logOrderEvent(supabase, orderId, "despachado", "Pedido despachado");
 
   const stockInsuficiente: string[] = [];
   for (const line of (lines ?? []) as { product_id: string; quantity: number }[]) {
@@ -143,6 +161,7 @@ export async function confirmarPago(orderId: string) {
 
   const { error } = await (supabase as any).from("orders").update(updates).eq("id", orderId);
   if (error) throw new Error(error.message);
+  await logOrderEvent(supabase, orderId, updates.status ?? o?.status, "Pago confirmado", adminUser?.id);
   revalidatePath(`/admin/pedidos/${orderId}`);
   revalidatePath("/admin/pedidos");
   revalidatePath("/admin/produccion");
@@ -182,6 +201,7 @@ export async function iniciarDistribucion(orderId: string) {
     .select("id");
   if (error) throw new Error(error.message);
   if (!updated?.length) throw new Error("El pedido debe estar despachado para iniciar distribución");
+  await logOrderEvent(supabase, orderId, "en_distribucion", "Distribución iniciada");
 
   revalidatePath("/admin/distribucion");
   revalidatePath("/admin/produccion");
@@ -202,6 +222,7 @@ export async function confirmarEntrega(orderId: string) {
 
   if (error) throw new Error(error.message);
   if (!updated?.length) throw new Error("El pedido no está en estado de distribución");
+  await logOrderEvent(supabase, orderId, "delivered", "Entrega confirmada");
 
   revalidatePath("/admin/distribucion");
   revalidatePath("/admin/pedidos");
@@ -267,6 +288,7 @@ export async function confirmarEntregaParcial(orderId: string, lineas: LineaEntr
 
   if (error) throw new Error(error.message);
   if (!updated?.length) throw new Error("El pedido no está en estado de distribución");
+  await logOrderEvent(supabase, orderId, "entrega_parcial", "Entrega parcial confirmada");
 
   revalidatePath("/admin/distribucion");
   revalidatePath("/admin/pedidos");

@@ -4,12 +4,14 @@ import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { ArrowRight, CreditCard, Building2 } from "lucide-react";
+import { ArrowRight, CreditCard, Building2, Tag } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useCartStore } from "@/store/cart";
 import { formatCurrency } from "@/lib/utils";
 import { Button, Input } from "@/components/ui";
 import { CheckoutProgress } from "./checkout-progress";
+import type { VolumeDiscount } from "@/lib/volume-discounts";
+import { calcVolumeDiscount } from "@/lib/volume-discounts";
 
 const schema = z.object({
   fullName:   z.string().min(3, "Ingresá tu nombre completo"),
@@ -26,9 +28,9 @@ const schema = z.object({
 
 type FormData = z.infer<typeof schema>;
 
-export function ShippingStep() {
+export function ShippingStep({ discounts = [] }: { discounts?: VolumeDiscount[] }) {
   const router = useRouter();
-  const { items, subtotal, clearCart } = useCartStore();
+  const { items, subtotal, totalItems, clearCart } = useCartStore();
   const [submitting, setSubmitting] = useState(false);
   const [apiError, setApiError] = useState<string | null>(null);
 
@@ -43,8 +45,11 @@ export function ShippingStep() {
   });
 
   const paymentMethod = watch("paymentMethod");
-  const shippingFee = 4500;
-  const total = subtotal() + shippingFee;
+  const shippingFee   = 4500;
+  const sub           = subtotal();
+  const volDiscount   = calcVolumeDiscount(discounts, totalItems(), sub);
+  const discountedSub = sub - (volDiscount?.amount ?? 0);
+  const total         = discountedSub + shippingFee;
 
   async function onSubmit(data: FormData) {
     setSubmitting(true);
@@ -57,6 +62,7 @@ export function ShippingStep() {
           ...data,
           items,
           shippingFee,
+          discountPct: volDiscount?.pct ?? 0,
         }),
       });
 
@@ -218,8 +224,16 @@ export function ShippingStep() {
             <div className="border-t border-neutral-100 mt-4 pt-4 flex flex-col gap-2 text-sm">
               <div className="flex justify-between text-neutral-600">
                 <span>Subtotal</span>
-                <span>{formatCurrency(subtotal())}</span>
+                <span>{formatCurrency(sub)}</span>
               </div>
+              {volDiscount && (
+                <div className="flex justify-between text-green-600 font-medium">
+                  <span className="flex items-center gap-1">
+                    <Tag className="size-3" /> {volDiscount.label}
+                  </span>
+                  <span>− {formatCurrency(volDiscount.amount)}</span>
+                </div>
+              )}
               <div className="flex justify-between text-neutral-600">
                 <span>Correo Argentino (est.)</span>
                 <span>{formatCurrency(shippingFee)}</span>

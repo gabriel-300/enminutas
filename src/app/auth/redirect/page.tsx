@@ -15,7 +15,7 @@ export default async function AuthRedirectPage() {
   const role = data?.user?.app_metadata?.role as string | undefined;
   const b2bStatus = data?.user?.app_metadata?.b2b_status as string | undefined;
 
-  if (role === "admin" || role === "vendedor" || role === "admin_enminutas" || role === "admin_ideaia") {
+  if (role === "admin" || role === "vendedor" || role === "admin_enminutas" || role === "admin_ideia") {
     redirect("/admin/pedidos");
   } else if (role === "produccion") {
     redirect("/admin/produccion");

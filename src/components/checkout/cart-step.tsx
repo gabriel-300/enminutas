@@ -1,14 +1,16 @@
 "use client";
 
 import Link from "next/link";
-import { Minus, Plus, Trash2, Snowflake, ArrowRight } from "lucide-react";
+import { Minus, Plus, Trash2, Snowflake, ArrowRight, Tag } from "lucide-react";
 import { useCartStore } from "@/store/cart";
 import { formatCurrency } from "@/lib/utils";
 import { Button } from "@/components/ui";
 import { CheckoutProgress } from "./checkout-progress";
+import type { VolumeDiscount } from "@/lib/volume-discounts";
+import { calcVolumeDiscount } from "@/lib/volume-discounts";
 
-export function CartStep() {
-  const { items, updateQuantity, removeItem, subtotal } = useCartStore();
+export function CartStep({ discounts = [] }: { discounts?: VolumeDiscount[] }) {
+  const { items, updateQuantity, removeItem, subtotal, totalItems } = useCartStore();
 
   if (items.length === 0) {
     return (
@@ -27,6 +29,11 @@ export function CartStep() {
     );
   }
 
+  const sub      = subtotal();
+  const total_u  = totalItems();
+  const discount = calcVolumeDiscount(discounts, total_u, sub);
+  const finalTotal = sub - (discount?.amount ?? 0);
+
   return (
     <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8 py-8">
       <CheckoutProgress current={1} />
@@ -38,6 +45,16 @@ export function CartStep() {
       <div className="grid lg:grid-cols-3 gap-8">
         {/* Items */}
         <div className="lg:col-span-2 flex flex-col gap-3">
+          {/* Banner de descuento disponible */}
+          {discounts.length > 0 && !discount && (
+            <div className="flex items-center gap-2 bg-dorado-50 border border-dorado-200 rounded-xl px-4 py-3 text-sm">
+              <Tag className="size-4 text-dorado-600 shrink-0" />
+              <span className="text-dorado-800">
+                Comprá {discounts[discounts.length - 1].min_cajas}+ unidades y obtenés un {discounts[discounts.length - 1].descuento_pct}% de descuento.
+              </span>
+            </div>
+          )}
+
           {items.map((item) => (
             <div
               key={item.productId}
@@ -109,11 +126,30 @@ export function CartStep() {
               ))}
             </div>
 
-            <div className="border-t border-neutral-100 mt-4 pt-4 flex justify-between items-center">
-              <span className="text-sm text-neutral-500">Subtotal</span>
-              <span className="font-semibold text-neutral-900">{formatCurrency(subtotal())}</span>
+            <div className="border-t border-neutral-100 mt-4 pt-4 flex flex-col gap-2 text-sm">
+              <div className="flex justify-between text-neutral-600">
+                <span>Subtotal</span>
+                <span>{formatCurrency(sub)}</span>
+              </div>
+
+              {discount && (
+                <div className="flex justify-between text-green-600 font-medium">
+                  <span className="flex items-center gap-1">
+                    <Tag className="size-3" /> {discount.label}
+                  </span>
+                  <span>− {formatCurrency(discount.amount)}</span>
+                </div>
+              )}
             </div>
-            <p className="text-xs text-neutral-400 mt-1">+ envío calculado en el siguiente paso</p>
+
+            {discount && (
+              <div className="flex justify-between font-semibold text-neutral-900 text-base mt-3 pt-3 border-t border-neutral-100">
+                <span>Total c/descuento</span>
+                <span className="text-green-700">{formatCurrency(finalTotal)}</span>
+              </div>
+            )}
+
+            <p className="text-xs text-neutral-400 mt-2">+ envío calculado en el siguiente paso</p>
 
             <Button variant="gold" size="lg" className="w-full mt-5" asChild>
               <Link href="/checkout/envio">

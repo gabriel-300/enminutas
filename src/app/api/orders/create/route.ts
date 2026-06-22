@@ -26,6 +26,7 @@ const BodySchema = z.object({
   notes: z.string().optional(),
   items: z.array(ItemSchema).min(1),
   shippingFee: z.number().nonnegative().max(20000),
+  discountPct: z.number().min(0).max(50).optional(),
 });
 
 type Body = z.infer<typeof BodySchema>;
@@ -49,9 +50,22 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const data = parsed.data;
-  const subtotal = data.items.reduce((sum, i) => sum + i.price * i.quantity, 0);
-  const total = subtotal + data.shippingFee;
+  const data     = parsed.data;
+  const rawSub   = data.items.reduce((sum, i) => sum + i.price * i.quantity, 0);
+
+  // Validate discount server-side against active volume_discounts in DB
+  let verifiedDiscountPct = 0;
+  if (data.discountPct && data.discountPct > 0 && process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE_KEY) {
+    const { createClient: _createClient } = await import("@supabase/supabase-js");
+    const _db = _createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY, { auth: { autoRefreshToken: false, persistSession: false } });
+    const totalUnits = data.items.reduce((s, i) => s + i.quantity, 0);
+    const { data: vd } = await _db.from("volume_discounts").select("min_cajas, descuento_pct").eq("activo", true).lte("min_cajas", totalUnits).order("min_cajas", { ascending: false }).limit(1).maybeSingle();
+    if (vd) verifiedDiscountPct = Number(vd.descuento_pct);
+  }
+
+  const discountAmount = verifiedDiscountPct > 0 ? Math.round(rawSub * verifiedDiscountPct / 100 * 100) / 100 : 0;
+  const subtotal = rawSub - discountAmount;
+  const total    = subtotal + data.shippingFee;
   const commissionAmount = +(total * IDEAIA_RATE).toFixed(2);
 
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -59,7 +73,7 @@ export async function POST(request: NextRequest) {
 
   if (supabaseUrl && serviceKey) {
     return createOrderInSupabase({
-      data, subtotal, total, commissionAmount, supabaseUrl, serviceKey,
+      data, subtotal, total, discountAmount, commissionAmount, supabaseUrl, serviceKey,
     });
   }
 
@@ -70,11 +84,12 @@ export async function POST(request: NextRequest) {
 // ─── Supabase path ────────────────────────────────────────────────────────────
 
 async function createOrderInSupabase({
-  data, subtotal, total, commissionAmount, supabaseUrl, serviceKey,
+  data, subtotal, total, discountAmount, commissionAmount, supabaseUrl, serviceKey,
 }: {
   data: Body;
   subtotal: number;
   total: number;
+  discountAmount: number;
   commissionAmount: number;
   supabaseUrl: string;
   serviceKey: string;
@@ -103,11 +118,12 @@ async function createOrderInSupabase({
       guest_email: data.email,
       guest_phone: data.phone,
       status: "pending_payment",
-      subtotal,
+      subtotal: subtotal + discountAmount,
+      discount: discountAmount,
       shipping_fee: data.shippingFee,
       total,
-      ideaia_commission_rate: IDEAIA_RATE,
-      ideaia_commission_amount: commissionAmount,
+      ideia_commission_rate: IDEAIA_RATE,
+      ideia_commission_amount: commissionAmount,
       shipping_method: "correo_argentino",
       shipping_snapshot: shippingSnapshot,
       payment_method: data.paymentMethod,

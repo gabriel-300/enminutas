@@ -14,7 +14,7 @@ export type UserRole =
   | "customer_b2b"
   | "repartidor"
   | "admin_enminutas"
-  | "admin_ideaia";
+  | "admin_ideia";
 
 export type OrderStatus =
   | "pending_payment"
@@ -231,8 +231,8 @@ export interface Database {
           shipping_fee: number;
           discount: number;
           total: number;
-          ideaia_commission_rate: number;
-          ideaia_commission_amount: number;
+          ideia_commission_rate: number;
+          ideia_commission_amount: number;
           shipping_method: string;
           shipping_address_id: string | null;
           shipping_snapshot: Json | null;
@@ -258,8 +258,8 @@ export interface Database {
           channel: OrderChannel;
           subtotal: number;
           total: number;
-          ideaia_commission_rate: number;
-          ideaia_commission_amount: number;
+          ideia_commission_rate: number;
+          ideia_commission_amount: number;
           shipping_method: string;
         };
         Update: Partial<Database["public"]["Tables"]["orders"]["Row"]>;
@@ -268,7 +268,7 @@ export interface Database {
       platform_settings: {
         Row: {
           id: number;
-          ideaia_commission_rate: number;
+          ideia_commission_rate: number;
           bank_cbu: string;
           bank_alias: string;
           bank_holder: string;
@@ -278,7 +278,7 @@ export interface Database {
         };
         Insert: {
           id?: number;
-          ideaia_commission_rate?: number;
+          ideia_commission_rate?: number;
           bank_cbu: string;
           bank_alias: string;
           bank_holder: string;
