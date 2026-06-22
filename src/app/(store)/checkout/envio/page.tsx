@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { ShippingStep } from "@/components/checkout/shipping-step";
-import { getActiveVolumeDiscounts } from "@/lib/volume-discounts";
+import { getActiveVolumeDiscounts } from "@/lib/volume-discounts-server";
 
 export const metadata: Metadata = { title: "Datos de envío" };
 
