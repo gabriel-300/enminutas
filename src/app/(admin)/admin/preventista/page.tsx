@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { createClient, createAdminClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
+import Link from "next/link";
 import { MetaVendedorCard } from "@/components/admin/meta-vendedor-form";
 import { PreventistaClientesList } from "@/components/admin/preventista-clientes-list";
 
@@ -203,11 +204,22 @@ export default async function PreventistaPage() {
 
   return (
     <div className="p-4 md:p-8 max-w-5xl space-y-5 md:space-y-6">
-      <div>
-        <h1 className="text-xl md:text-2xl font-semibold font-display text-neutral-900">Preventista</h1>
-        <p className="text-sm text-neutral-500 mt-1">
-          {esVendedor ? "Tus clientes asignados" : "Todos los clientes B2B activos"} — ordenados por inactividad
-        </p>
+      <div className="flex items-start justify-between flex-wrap gap-3">
+        <div>
+          <h1 className="text-xl md:text-2xl font-semibold font-display text-neutral-900">Preventista</h1>
+          <p className="text-sm text-neutral-500 mt-1">
+            {esVendedor ? "Tus clientes asignados" : "Todos los clientes B2B activos"} — ordenados por inactividad
+          </p>
+        </div>
+        <Link
+          href="/admin/preventista/lista-precios"
+          className="flex items-center gap-1.5 px-3 py-1.5 border border-neutral-200 rounded-xl text-sm font-medium text-neutral-600 hover:bg-neutral-50 transition-colors"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+          </svg>
+          Lista de precios
+        </Link>
       </div>
 
       {/* Card de comisión propia — solo para vendedor */}
