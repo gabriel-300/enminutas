@@ -57,15 +57,16 @@ export default async function ListaPreciosPage({
   ]);
 
   type Fila = {
-    codigo:        number;
-    linea:         string;
-    nombre:        string;
-    presentacion:  string;
-    bolsas_caja:   number;
-    u_bolsa:       number;
-    precio_caja:   number;
-    precio_unidad: number;
-    pvp_unidad:    number;
+    codigo:          number;
+    linea:           string;
+    nombre:          string;
+    presentacion:    string;
+    bolsas_caja:     number;
+    u_bolsa:         number;
+    precio_siva:     number;
+    precio_caja:     number;
+    precio_unidad:   number;
+    pvp_unidad:      number;
   };
 
   const filas: Fila[] = [];
@@ -89,15 +90,16 @@ export default async function ListaPreciosPage({
     });
 
     filas.push({
-      codigo:        Number(p.codigo),
-      linea:         (p.linea as any)?.nombre ?? "—",
-      nombre:        p.name,
-      presentacion:  p.presentacion ?? p.unit_label ?? "—",
-      bolsas_caja:   Number(p.bolsas_caja),
-      u_bolsa:       Number(p.u_bolsa),
-      precio_caja:   precio.final_civa,
-      precio_unidad: precio.precio_unidad,
-      pvp_unidad:    precio.pvp_unidad,
+      codigo:          Number(p.codigo),
+      linea:           (p.linea as any)?.nombre ?? "—",
+      nombre:          p.name,
+      presentacion:    p.presentacion ?? p.unit_label ?? "—",
+      bolsas_caja:     Number(p.bolsas_caja),
+      u_bolsa:         Number(p.u_bolsa),
+      precio_siva:     precio.lista_siva,
+      precio_caja:     precio.final_civa,
+      precio_unidad:   precio.precio_unidad,
+      pvp_unidad:      precio.pvp_unidad,
     });
   }
 
@@ -151,6 +153,7 @@ export default async function ListaPreciosPage({
               <th className="px-3 py-3 font-semibold text-neutral-600">Presentación</th>
               <th className="px-3 py-3 font-semibold text-neutral-600 text-center w-16">Bolsas</th>
               <th className="px-3 py-3 font-semibold text-neutral-600 text-center w-14">U/bolsa</th>
+              <th className="px-3 py-3 font-semibold text-neutral-500 text-right">Precio s/IVA</th>
               <th className="px-3 py-3 font-semibold text-neutral-700 text-right">Precio caja</th>
               <th className="px-3 py-3 font-semibold text-neutral-700 text-right">Precio/u</th>
             </tr>
@@ -158,7 +161,7 @@ export default async function ListaPreciosPage({
           <tbody className="divide-y divide-neutral-100">
             {filas.length === 0 ? (
               <tr>
-                <td colSpan={8} className="px-4 py-12 text-center text-neutral-400 text-sm">
+                <td colSpan={9} className="px-4 py-12 text-center text-neutral-400 text-sm">
                   Sin productos con precios configurados para este canal.
                 </td>
               </tr>
@@ -170,6 +173,9 @@ export default async function ListaPreciosPage({
                 <td className="px-3 py-2 text-neutral-600 text-xs">{f.presentacion}</td>
                 <td className="px-3 py-2 text-center text-neutral-500">{f.bolsas_caja}</td>
                 <td className="px-3 py-2 text-center text-neutral-500">{f.u_bolsa}</td>
+                <td className="px-3 py-2 text-right text-neutral-400 tabular-nums text-xs">
+                  {formatPrecio(f.precio_siva)}
+                </td>
                 <td className="px-3 py-2 text-right font-semibold text-neutral-900 tabular-nums">
                   {formatPrecio(f.precio_caja)}
                 </td>
