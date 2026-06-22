@@ -5,14 +5,14 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 
 type Producto = {
-  id:           string;
-  codigo:       number;
-  nombre:       string;
-  linea:        string;
-  presentacion: string;
-  bolsas_caja:  number;
-  u_bolsa:      number;
-  precio_caja:  number;
+  id:            string;
+  codigo:        number;
+  nombre:        string;
+  linea:         string;
+  presentacion:  string;
+  bolsas_caja:   number;
+  u_bolsa:       number;
+  precio_caja:   number;
   precio_unidad: number;
 };
 
@@ -20,10 +20,20 @@ type Canal = { slug: string; label: string };
 
 type LineaCarrito = { producto: Producto; cajas: number };
 
+type Percepcion = {
+  id:          string;
+  descripcion: string;
+  pct:         string; // string para manejar el input libre
+};
+
 function fmt(n: number) {
   return new Intl.NumberFormat("es-AR", {
     style: "currency", currency: "ARS", maximumFractionDigits: 0,
   }).format(n);
+}
+
+function uid() {
+  return Math.random().toString(36).slice(2);
 }
 
 export function SimuladorPedido({
@@ -37,9 +47,11 @@ export function SimuladorPedido({
   canalActivo: string;
   ivaPct:      number;
 }) {
-  const router  = useRouter();
-  const [busqueda, setBusqueda] = useState("");
-  const [carrito, setCarrito]   = useState<Record<string, number>>({});
+  const router = useRouter();
+
+  const [busqueda,     setBusqueda]     = useState("");
+  const [carrito,      setCarrito]      = useState<Record<string, number>>({});
+  const [percepciones, setPercepciones] = useState<Percepcion[]>([]);
 
   const canalLabel = canales.find((c) => c.slug === canalActivo)?.label ?? canalActivo;
 
@@ -68,7 +80,7 @@ export function SimuladorPedido({
     [carrito, productos],
   );
 
-  // Totales
+  // Totales base
   const totalConIVA = lineasCarrito.reduce(
     (s, l) => s + l.producto.precio_caja * l.cajas, 0,
   );
@@ -76,6 +88,16 @@ export function SimuladorPedido({
   const totalIVA    = totalConIVA - totalSinIVA;
   const totalCajas  = lineasCarrito.reduce((s, l) => s + l.cajas, 0);
 
+  // Percepciones — la base es el subtotal s/IVA (base imponible IIBB estándar)
+  const lineasPercepcion = percepciones.map((p) => {
+    const pctNum = parseFloat(p.pct.replace(",", ".")) || 0;
+    const monto  = Math.round(totalSinIVA * pctNum / 100);
+    return { ...p, pctNum, monto };
+  });
+  const totalPercepciones = lineasPercepcion.reduce((s, p) => s + p.monto, 0);
+  const totalFinal        = totalConIVA + totalPercepciones;
+
+  // Carrito
   function setCajas(id: string, cajas: number) {
     setCarrito((prev) => {
       if (cajas <= 0) {
@@ -91,10 +113,31 @@ export function SimuladorPedido({
     setCarrito((prev) => ({ ...prev, [id]: (prev[id] ?? 0) + 1 }));
   }
 
+  // Percepciones
+  function agregarPercepcion() {
+    setPercepciones((prev) => [
+      ...prev,
+      { id: uid(), descripcion: "", pct: "" },
+    ]);
+  }
+
+  function actualizarPercepcion(id: string, campo: "descripcion" | "pct", valor: string) {
+    setPercepciones((prev) =>
+      prev.map((p) => (p.id === id ? { ...p, [campo]: valor } : p)),
+    );
+  }
+
+  function eliminarPercepcion(id: string) {
+    setPercepciones((prev) => prev.filter((p) => p.id !== id));
+  }
+
   function limpiar() {
     setCarrito({});
+    setPercepciones([]);
     setBusqueda("");
   }
+
+  const hayCarrito = lineasCarrito.length > 0;
 
   return (
     <div className="p-4 md:p-8 max-w-7xl">
@@ -116,29 +159,28 @@ export function SimuladorPedido({
         </div>
 
         {/* Selector de canal */}
-        <div className="flex items-center gap-2 flex-wrap">
-          <div className="flex gap-1 bg-neutral-100 rounded-xl p-1">
-            {canales.map((c) => (
-              <button
-                key={c.slug}
-                onClick={() => {
-                  setCarrito({});
-                  router.push(`/admin/preventista/simulador?canal=${c.slug}`);
-                }}
-                className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
-                  c.slug === canalActivo
-                    ? "bg-white text-neutral-900 shadow-sm"
-                    : "text-neutral-500 hover:text-neutral-700"
-                }`}
-              >
-                {c.label}
-              </button>
-            ))}
-          </div>
+        <div className="flex gap-1 bg-neutral-100 rounded-xl p-1">
+          {canales.map((c) => (
+            <button
+              key={c.slug}
+              onClick={() => {
+                setCarrito({});
+                setPercepciones([]);
+                router.push(`/admin/preventista/simulador?canal=${c.slug}`);
+              }}
+              className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+                c.slug === canalActivo
+                  ? "bg-white text-neutral-900 shadow-sm"
+                  : "text-neutral-500 hover:text-neutral-700"
+              }`}
+            >
+              {c.label}
+            </button>
+          ))}
         </div>
       </div>
 
-      {/* Layout: catálogo + carrito */}
+      {/* Layout: catálogo + resumen */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 items-start">
 
         {/* ── Catálogo ────────────────────────────────── */}
@@ -219,36 +261,36 @@ export function SimuladorPedido({
         {/* ── Resumen ──────────────────────────────────── */}
         <div className="space-y-3 lg:sticky lg:top-6">
 
-          {/* Totales */}
-          <div className="bg-white rounded-2xl border border-neutral-200 p-5">
-            <p className="text-xs font-semibold text-neutral-400 uppercase tracking-wide mb-4">
+          {/* Panel principal */}
+          <div className="bg-white rounded-2xl border border-neutral-200 p-5 space-y-4">
+            <p className="text-xs font-semibold text-neutral-400 uppercase tracking-wide">
               Resumen del pedido
             </p>
 
-            {lineasCarrito.length === 0 ? (
-              <p className="text-sm text-neutral-400 text-center py-4">
+            {!hayCarrito ? (
+              <p className="text-sm text-neutral-400 text-center py-2">
                 Agregá productos del catálogo
               </p>
             ) : (
               <>
-                {/* Líneas */}
-                <div className="space-y-2 mb-4">
+                {/* Líneas de productos */}
+                <div className="space-y-2">
                   {lineasCarrito.map(({ producto: p, cajas }) => (
                     <div key={p.id} className="flex items-start justify-between gap-2">
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-medium text-neutral-800 truncate">{p.nombre}</p>
-                        <p className="text-xs text-neutral-400">{cajas} caja{cajas !== 1 ? "s" : ""} × {fmt(p.precio_caja)}</p>
-                      </div>
-                      <div className="text-right shrink-0">
-                        <p className="text-sm font-semibold tabular-nums text-neutral-900">
-                          {fmt(p.precio_caja * cajas)}
+                        <p className="text-xs text-neutral-400">
+                          {cajas} caja{cajas !== 1 ? "s" : ""} × {fmt(p.precio_caja)}
                         </p>
                       </div>
+                      <p className="text-sm font-semibold tabular-nums text-neutral-900 shrink-0">
+                        {fmt(p.precio_caja * cajas)}
+                      </p>
                     </div>
                   ))}
                 </div>
 
-                {/* Desglose */}
+                {/* Desglose numérico */}
                 <div className="border-t border-neutral-100 pt-3 space-y-1.5">
                   <div className="flex justify-between text-sm text-neutral-500">
                     <span>Subtotal s/IVA</span>
@@ -258,9 +300,24 @@ export function SimuladorPedido({
                     <span>IVA ({Math.round(ivaPct * 100)}%)</span>
                     <span className="tabular-nums">{fmt(totalIVA)}</span>
                   </div>
-                  <div className="flex justify-between font-semibold text-base text-neutral-900 pt-1 border-t border-neutral-100">
+
+                  {/* Percepciones IIBB */}
+                  {lineasPercepcion.map((p) => (
+                    <div key={p.id} className="flex justify-between text-sm text-neutral-500">
+                      <span className="truncate max-w-[140px]">
+                        {p.descripcion || "Percepción IIBB"}
+                        {p.pctNum > 0 && (
+                          <span className="text-neutral-400 ml-1">({p.pctNum}%)</span>
+                        )}
+                      </span>
+                      <span className="tabular-nums shrink-0 ml-2">{fmt(p.monto)}</span>
+                    </div>
+                  ))}
+
+                  {/* Total final */}
+                  <div className="flex justify-between font-semibold text-base text-neutral-900 pt-1.5 border-t border-neutral-100 mt-1">
                     <span>Total</span>
-                    <span className="tabular-nums text-tierra-700">{fmt(totalConIVA)}</span>
+                    <span className="tabular-nums text-tierra-700">{fmt(totalFinal)}</span>
                   </div>
                   <p className="text-xs text-neutral-400 text-right">
                     {totalCajas} caja{totalCajas !== 1 ? "s" : ""}
@@ -268,10 +325,69 @@ export function SimuladorPedido({
                 </div>
               </>
             )}
+
+            {/* ── Percepciones IIBB ────────────────────── */}
+            <div className="border-t border-neutral-100 pt-4 space-y-2">
+              <div className="flex items-center justify-between">
+                <p className="text-xs font-semibold text-neutral-400 uppercase tracking-wide">
+                  Percepciones IIBB
+                </p>
+                <button
+                  onClick={agregarPercepcion}
+                  className="text-xs text-tierra-700 hover:text-tierra-800 font-medium flex items-center gap-1"
+                >
+                  + Agregar
+                </button>
+              </div>
+
+              {percepciones.length === 0 ? (
+                <p className="text-xs text-neutral-400">Sin percepciones cargadas.</p>
+              ) : (
+                <div className="space-y-2">
+                  {percepciones.map((p) => (
+                    <div key={p.id} className="flex items-center gap-2">
+                      <input
+                        type="text"
+                        placeholder="Descripción (ej. IIBB Bs.As.)"
+                        value={p.descripcion}
+                        onChange={(e) => actualizarPercepcion(p.id, "descripcion", e.target.value)}
+                        className="flex-1 min-w-0 px-2 py-1.5 text-xs border border-neutral-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-tierra-700/20"
+                      />
+                      <div className="relative w-20 shrink-0">
+                        <input
+                          type="text"
+                          inputMode="decimal"
+                          placeholder="0"
+                          value={p.pct}
+                          onChange={(e) => actualizarPercepcion(p.id, "pct", e.target.value)}
+                          className="w-full px-2 py-1.5 pr-5 text-xs border border-neutral-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-tierra-700/20 tabular-nums text-right"
+                        />
+                        <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-neutral-400 pointer-events-none">%</span>
+                      </div>
+                      <button
+                        onClick={() => eliminarPercepcion(p.id)}
+                        className="text-neutral-300 hover:text-red-400 transition-colors shrink-0"
+                        aria-label="Eliminar"
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {percepciones.length > 0 && hayCarrito && totalPercepciones > 0 && (
+                <p className="text-xs text-neutral-400">
+                  Base IIBB: {fmt(totalSinIVA)} (subtotal s/IVA)
+                </p>
+              )}
+            </div>
           </div>
 
-          {/* Acciones */}
-          {lineasCarrito.length > 0 && (
+          {/* Limpiar */}
+          {(hayCarrito || percepciones.length > 0) && (
             <button
               onClick={limpiar}
               className="w-full py-2 text-sm text-neutral-500 hover:text-neutral-700 border border-neutral-200 rounded-xl transition-colors"
