@@ -96,7 +96,7 @@ export default async function ListaPreciosPage({
       presentacion:    p.presentacion ?? p.unit_label ?? "—",
       bolsas_caja:     Number(p.bolsas_caja),
       u_bolsa:         Number(p.u_bolsa),
-      precio_siva:     precio.lista_siva,
+      precio_siva:     Math.round(precio.final_civa / (1 + params.iva_pct)),
       precio_caja:     precio.final_civa,
       precio_unidad:   precio.precio_unidad,
       pvp_unidad:      precio.pvp_unidad,
