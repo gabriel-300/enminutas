@@ -153,13 +153,12 @@ export default async function ListaPreciosPage({
               <th className="px-3 py-3 font-semibold text-neutral-600 text-center w-14">U/bolsa</th>
               <th className="px-3 py-3 font-semibold text-neutral-700 text-right">Precio caja</th>
               <th className="px-3 py-3 font-semibold text-neutral-700 text-right">Precio/u</th>
-              <th className="px-3 py-3 font-semibold text-neutral-600 text-right">PVP/u</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-neutral-100">
             {filas.length === 0 ? (
               <tr>
-                <td colSpan={9} className="px-4 py-12 text-center text-neutral-400 text-sm">
+                <td colSpan={8} className="px-4 py-12 text-center text-neutral-400 text-sm">
                   Sin productos con precios configurados para este canal.
                 </td>
               </tr>
@@ -176,9 +175,6 @@ export default async function ListaPreciosPage({
                 </td>
                 <td className="px-3 py-2 text-right font-medium text-neutral-700 tabular-nums">
                   {formatPrecio(f.precio_unidad)}
-                </td>
-                <td className="px-3 py-2 text-right text-neutral-500 tabular-nums">
-                  {formatPrecio(f.pvp_unidad)}
                 </td>
               </tr>
             ))}
