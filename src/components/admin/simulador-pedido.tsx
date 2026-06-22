@@ -143,7 +143,7 @@ export function SimuladorPedido({
     <div className="p-4 md:p-8 max-w-7xl">
 
       {/* Header */}
-      <div className="mb-5 flex items-start justify-between flex-wrap gap-3">
+      <div className="mb-5 flex items-start justify-between flex-wrap gap-3 print:hidden">
         <div>
           <div className="flex items-center gap-2 mb-1">
             <Link href="/admin/preventista" className="text-sm text-neutral-400 hover:text-neutral-600">
@@ -181,10 +181,10 @@ export function SimuladorPedido({
       </div>
 
       {/* Layout: catálogo + resumen */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 items-start">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 items-start print:block">
 
         {/* ── Catálogo ────────────────────────────────── */}
-        <div className="lg:col-span-2 space-y-3">
+        <div className="lg:col-span-2 space-y-3 print:hidden">
           <input
             type="search"
             placeholder="Buscar producto por nombre, línea o código…"
@@ -259,13 +259,35 @@ export function SimuladorPedido({
         </div>
 
         {/* ── Resumen ──────────────────────────────────── */}
-        <div className="space-y-3 lg:sticky lg:top-6">
+        <div className="space-y-3 lg:sticky lg:top-6 print:w-full print:max-w-lg print:mx-auto">
 
           {/* Panel principal */}
-          <div className="bg-white rounded-2xl border border-neutral-200 p-5 space-y-4">
-            <p className="text-xs font-semibold text-neutral-400 uppercase tracking-wide">
-              Resumen del pedido
-            </p>
+          <div className="bg-white rounded-2xl border border-neutral-200 p-5 space-y-4 print:rounded-none print:border-0 print:shadow-none">
+
+            {/* Encabezado solo al imprimir */}
+            <div className="hidden print:block mb-2">
+              <p className="text-base font-bold text-neutral-900">En Minutas — Simulador de pedido</p>
+              <p className="text-sm text-neutral-500">
+                Canal {canalLabel} · {new Date().toLocaleDateString("es-AR", { day: "2-digit", month: "long", year: "numeric" })}
+              </p>
+            </div>
+
+            <div className="flex items-center justify-between print:hidden">
+              <p className="text-xs font-semibold text-neutral-400 uppercase tracking-wide">
+                Resumen del pedido
+              </p>
+              {hayCarrito && (
+                <button
+                  onClick={() => window.print()}
+                  className="flex items-center gap-1 text-xs text-neutral-400 hover:text-neutral-700 transition-colors"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 9V2h12v7M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2M6 14h12v8H6v-8z" />
+                  </svg>
+                  Imprimir
+                </button>
+              )}
+            </div>
 
             {!hayCarrito ? (
               <p className="text-sm text-neutral-400 text-center py-2">
@@ -390,7 +412,7 @@ export function SimuladorPedido({
           {(hayCarrito || percepciones.length > 0) && (
             <button
               onClick={limpiar}
-              className="w-full py-2 text-sm text-neutral-500 hover:text-neutral-700 border border-neutral-200 rounded-xl transition-colors"
+              className="w-full py-2 text-sm text-neutral-500 hover:text-neutral-700 border border-neutral-200 rounded-xl transition-colors print:hidden"
             >
               Limpiar simulación
             </button>
