@@ -4,165 +4,132 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
 import { createBrowserClient } from "@supabase/ssr";
+import {
+  LayoutGrid, ClipboardList, Activity, Truck,
+  Users, BarChart2, DollarSign, BookOpen, Calendar,
+  ShoppingCart, Clock, User, Settings, HelpCircle,
+  ChevronLeft, ChevronRight,
+} from "lucide-react";
 
-function Icon({ children, className = "size-4 shrink-0" }: { children: React.ReactNode; className?: string }) {
-  return (
-    <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round">
-      {children}
-    </svg>
-  );
-}
-
-const ICONS: Record<string, React.ReactNode> = {
-  dashboard: <Icon><path d="M3.75 6A2.25 2.25 0 016 3.75h2.25A2.25 2.25 0 0110.5 6v2.25a2.25 2.25 0 01-2.25 2.25H6a2.25 2.25 0 01-2.25-2.25V6zM3.75 15.75A2.25 2.25 0 016 13.5h2.25a2.25 2.25 0 012.25 2.25V18a2.25 2.25 0 01-2.25 2.25H6A2.25 2.25 0 013.75 18v-2.25zM13.5 6a2.25 2.25 0 012.25-2.25H18A2.25 2.25 0 0120.25 6v2.25A2.25 2.25 0 0118 10.5h-2.25a2.25 2.25 0 01-2.25-2.25V6zM13.5 15.75a2.25 2.25 0 012.25-2.25H18a2.25 2.25 0 012.25 2.25V18A2.25 2.25 0 0118 20.25h-2.25A2.25 2.25 0 0113.5 18v-2.25z" /></Icon>,
-  pedidos: <Icon><path d="M9 12h3.75M9 15h3.75M9 18h3.75m3 .75H18a2.25 2.25 0 002.25-2.25V6.108c0-1.135-.845-2.098-1.976-2.192a48.424 48.424 0 00-1.123-.08m-5.801 0c-.065.21-.1.433-.1.664 0 .414.336.75.75.75h4.5a.75.75 0 00.75-.75 2.25 2.25 0 00-.1-.664m-5.8 0A2.251 2.251 0 0113.5 2.25H15c1.012 0 1.867.668 2.15 1.586m-5.8 0c-.376.023-.75.05-1.124.08C9.095 4.01 8.25 4.973 8.25 6.108V8.25m0 0H4.875c-.621 0-1.125.504-1.125 1.125v11.25c0 .621.504 1.125 1.125 1.125h9.75c.621 0 1.125-.504 1.125-1.125V9.375c0-.621-.504-1.125-1.125-1.125H8.25z" /></Icon>,
-  preventista: <Icon><path d="M15 19.128a9.38 9.38 0 002.625.372 9.337 9.337 0 004.121-.952 4.125 4.125 0 00-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 018.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0111.964-3.07M12 6.375a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0zm8.25 2.25a2.625 2.625 0 11-5.25 0 2.625 2.625 0 015.25 0z" /></Icon>,
-  produccion: <Icon><path d="M11.42 15.17L17.25 21A2.652 2.652 0 0021 17.25l-5.877-5.877M11.42 15.17l2.496-3.03c.317-.384.74-.626 1.208-.766M11.42 15.17l-4.655 5.653a2.548 2.548 0 11-3.586-3.586l6.837-5.63m5.108-.233c.55-.164 1.163-.188 1.743-.14a4.5 4.5 0 004.486-6.336l-3.276 3.277a3.004 3.004 0 01-2.25-2.25l3.276-3.276a4.5 4.5 0 00-6.336 4.486c.091 1.076-.071 2.264-.904 2.95l-.102.085m-1.745 1.437L5.909 7.5H4.5L2.25 3.75l1.5-1.5L7.5 4.5v1.409l4.26 4.26m-1.745 1.437l1.745-1.437m6.615 8.206L15.75 15.75M4.867 19.125h.008v.008h-.008v-.008z" /></Icon>,
-  cocina: <Icon><path d="M15.362 5.214A8.252 8.252 0 0112 21 8.25 8.25 0 016.038 7.048 8.287 8.287 0 009 9.6a8.983 8.983 0 013.361-6.867 8.21 8.21 0 003 2.48z" /><path d="M12 18a3.75 3.75 0 00.495-7.467 5.99 5.99 0 00-1.925 3.546 5.974 5.974 0 01-2.133-1A3.75 3.75 0 0012 18z" /></Icon>,
-  recetas: <Icon><path d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25" /></Icon>,
-  planificador: <Icon><path d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5m-9-6h.008v.008H12v-.008zM12 15h.008v.008H12V15zm0 2.25h.008v.008H12v-.008zM9.75 15h.008v.008H9.75V15zm0 2.25h.008v.008H9.75v-.008zM7.5 15h.008v.008H7.5V15zm0 2.25h.008v.008H7.5v-.008zm6.75-4.5h.008v.008h-.008v-.008zm0 2.25h.008v.008h-.008V15zm0 2.25h.008v.008h-.008v-.008zm2.25-4.5h.008v.008H16.5v-.008zm0 2.25h.008v.008H16.5V15z" /></Icon>,
-  compras: <Icon><path d="M2.25 3h1.386c.51 0 .955.343 1.087.835l.383 1.437M7.5 14.25a3 3 0 00-3 3h15.75m-12.75-3h11.218c1.121-2.3 2.1-4.684 2.924-7.138a60.114 60.114 0 00-16.536-1.84M7.5 14.25L5.106 5.272M6 20.25a.75.75 0 11-1.5 0 .75.75 0 011.5 0zm12.75 0a.75.75 0 11-1.5 0 .75.75 0 011.5 0z" /></Icon>,
-  historial: <Icon><path d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" /></Icon>,
-  distribucion: <Icon><path d="M8.25 18.75a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m3 0h6m-9 0H3.375a1.125 1.125 0 01-1.125-1.125V14.25m17.25 4.5a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m3 0h1.125c.621 0 1.129-.504 1.09-1.124a17.902 17.902 0 00-3.213-9.193 2.056 2.056 0 00-1.58-.86H14.25M16.5 18.75h-2.25m0-11.177v-.958c0-.568-.422-1.048-.987-1.106a48.554 48.554 0 00-10.026 0 1.106 1.106 0 00-.987 1.106v7.635m12-6.677v6.677m0 4.5v-4.5m0 0h-12" /></Icon>,
-  reportes: <Icon><path d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 013 19.875v-6.75zM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V8.625zM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V4.125z" /></Icon>,
-  liquidaciones: <Icon><path d="M2.25 18.75a60.07 60.07 0 0115.797 2.101c.727.198 1.453-.342 1.453-1.096V18.75M3.75 4.5v.75A.75.75 0 013 6h-.75m0 0v-.375c0-.621.504-1.125 1.125-1.125H20.25M2.25 6v9m18-10.5v.75c0 .414.336.75.75.75h.75m-1.5-1.5h.375c.621 0 1.125.504 1.125 1.125v9.75c0 .621-.504 1.125-1.125 1.125h-.375m1.5-1.5H21a.75.75 0 00-.75.75v.75m0 0H3.75m0 0h-.375a1.125 1.125 0 01-1.125-1.125V15m1.5 1.5v-.75A.75.75 0 003 15h-.75M15 10.5a3 3 0 11-6 0 3 3 0 016 0zm3 0h.008v.008H18V10.5zm-12 0h.008v.008H6V10.5z" /></Icon>,
-  productos: <Icon><path d="M20.25 7.5l-.625 10.632a2.25 2.25 0 01-2.247 2.118H6.622a2.25 2.25 0 01-2.247-2.118L3.75 7.5M10 11.25h4M3.375 7.5h17.25c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125z" /></Icon>,
-  categorias: <Icon><path d="M9.568 3H5.25A2.25 2.25 0 003 5.25v4.318c0 .597.237 1.17.659 1.591l9.581 9.581c.699.699 1.78.872 2.607.33a18.095 18.095 0 005.223-5.223c.542-.827.369-1.908-.33-2.607L11.16 3.66A2.25 2.25 0 009.568 3z" /><path d="M6 6h.008v.008H6V6z" /></Icon>,
-  zonas: <Icon><path d="M15 10.5a3 3 0 11-6 0 3 3 0 016 0z" /><path d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1115 0z" /></Icon>,
-  descuentos: <Icon><path d="M9 14.25l6-6m4.5-3.493V21.75l-3.75-1.5-3.75 1.5-3.75-1.5-3.75 1.5V4.757c0-1.108.806-2.057 1.907-2.185a48.507 48.507 0 0111.186 0c1.1.128 1.907 1.077 1.907 2.185zM9.75 9h.008v.008H9.75V9zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm4.125 4.5h.008v.008h-.008V13.5zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z" /></Icon>,
-  clientesB2B: <Icon><path d="M3.75 21h16.5M4.5 3h15M5.25 3v18m13.5-18v18M9 6.75h1.5m-1.5 3h1.5m-1.5 3h1.5m3-6H15m-1.5 3H15m-1.5 3H15M9 21v-3.375c0-.621.504-1.125 1.125-1.125h3.75c.621 0 1.125.504 1.125 1.125V21" /></Icon>,
-  clientesB2C: <Icon><path d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" /></Icon>,
-  staff: <Icon><path d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z" /></Icon>,
-  parametros: <Icon><path d="M9.594 3.94c.09-.542.56-.94 1.11-.94h2.593c.55 0 1.02.398 1.11.94l.213 1.281c.063.374.313.686.645.87.074.04.147.083.22.127.324.196.72.257 1.075.124l1.217-.456a1.125 1.125 0 011.37.49l1.296 2.247a1.125 1.125 0 01-.26 1.431l-1.003.827c-.293.24-.438.613-.431.992a6.759 6.759 0 010 .255c-.007.378.138.75.43.99l1.005.828c.424.35.534.954.26 1.43l-1.298 2.247a1.125 1.125 0 01-1.369.491l-1.217-.456c-.355-.133-.75-.072-1.076.124a6.57 6.57 0 01-.22.128c-.331.183-.581.495-.644.869l-.213 1.28c-.09.543-.56.941-1.11.941h-2.594c-.55 0-1.02-.398-1.11-.94l-.213-1.281c-.062-.374-.312-.686-.644-.87a6.52 6.52 0 01-.22-.127c-.325-.196-.72-.257-1.076-.124l-1.217.456a1.125 1.125 0 01-1.369-.49l-1.297-2.247a1.125 1.125 0 01.26-1.431l1.004-.827c.292-.24.437-.613.43-.992a6.932 6.932 0 010-.255c.007-.378-.138-.75-.43-.99l-1.004-.828a1.125 1.125 0 01-.26-1.43l1.297-2.247a1.125 1.125 0 011.37-.491l1.216.456c.356.133.751.072 1.076-.124.072-.044.146-.087.22-.128.332-.183.582-.495.644-.869l.214-1.281z" /><path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></Icon>,
-  ayuda: <Icon><path d="M9.879 7.519c1.171-1.025 3.071-1.025 4.242 0 1.172 1.025 1.172 2.687 0 3.712-.203.179-.43.326-.67.442-.745.361-1.45.999-1.45 1.827v.75M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9 5.25h.008v.008H12v-.008z" /></Icon>,
+type NavEntry = {
+  href: string;
+  label: string;
+  icon: React.ElementType;
+  roles: string[];
+  sublabel?: string;
 };
 
-type NavItem  = { href: string; label: string; roles: string[]; icon: keyof typeof ICONS; sub?: boolean };
-type Separator = { type: "separator"; label: string; roles: string[] };
-type Item = NavItem | Separator;
-
-const NAV: Item[] = [
-  { href: "/admin/dashboard",           label: "Dashboard",        roles: ["admin", "vendedor", "produccion", "distribucion"], icon: "dashboard" },
-  { href: "/admin/pedidos",             label: "Pedidos",          roles: ["admin", "vendedor"],                               icon: "pedidos" },
-  { href: "/admin/preventista",         label: "Preventista",      roles: ["admin", "vendedor"],                               icon: "preventista" },
-  { href: "/admin/produccion",          label: "Producción",       roles: ["admin", "produccion"],                             icon: "produccion" },
-  { href: "/admin/cocina",              label: "Cocina / Stock",   roles: ["admin", "produccion"],                             icon: "cocina" },
-  { href: "/admin/cocina/recetas",      label: "Recetas",          roles: ["admin", "produccion"],                             icon: "recetas",      sub: true },
-  { href: "/admin/cocina/planificador", label: "Planificador",     roles: ["admin", "produccion"],                             icon: "planificador", sub: true },
-  { href: "/admin/cocina/compras",      label: "Lista de compras", roles: ["admin", "produccion"],                             icon: "compras",      sub: true },
-  { href: "/admin/cocina/historial",    label: "Historial prod.",  roles: ["admin", "produccion"],                             icon: "historial",    sub: true },
-  { href: "/admin/distribucion",        label: "Distribución",     roles: ["admin", "distribucion"],                           icon: "distribucion" },
-  { href: "/admin/reportes",            label: "Reportes",         roles: ["admin"],                                           icon: "reportes" },
-  { href: "/admin/liquidaciones",       label: "Liquidaciones",    roles: ["admin"],                                           icon: "liquidaciones" },
-
-  { href: "/admin/ayuda", label: "Ayuda", roles: ["admin", "vendedor", "produccion", "distribucion"], icon: "ayuda" },
-
-  { type: "separator", label: "Configuración", roles: ["admin"] },
-
-  { href: "/admin/productos",    label: "Productos",      roles: ["admin"],             icon: "productos" },
-  { href: "/admin/categorias",   label: "Categorías",     roles: ["admin"],             icon: "categorias" },
-  { href: "/admin/canales",      label: "Canales B2B",    roles: ["admin"],             icon: "descuentos" },
-  { href: "/admin/zonas",        label: "Zonas",          roles: ["admin"],             icon: "zonas" },
-  { href: "/admin/descuentos",   label: "Descuentos vol.",roles: ["admin"],             icon: "descuentos" },
-  { href: "/admin/clientes-b2b", label: "Clientes B2B",  roles: ["admin", "vendedor"], icon: "clientesB2B" },
-  { href: "/admin/clientes-b2c", label: "Clientes B2C",  roles: ["admin"],             icon: "clientesB2C" },
-  { href: "/admin/staff",        label: "Staff",          roles: ["admin"],             icon: "staff" },
-  { href: "/admin/parametros",   label: "Parámetros",     roles: ["admin"],             icon: "parametros" },
+const GROUPS: { label?: string; items: NavEntry[] }[] = [
+  {
+    items: [
+      { href: "/admin/dashboard", label: "Dashboard",   icon: LayoutGrid,    roles: ["admin", "vendedor", "produccion", "distribucion"] },
+      { href: "/admin/pedidos",   label: "Pedidos",     icon: ClipboardList, roles: ["admin", "vendedor"] },
+    ],
+  },
+  {
+    label: "OPERACIONES",
+    items: [
+      { href: "/admin/produccion",   label: "Producción",   icon: Activity, roles: ["admin", "produccion"] },
+      { href: "/admin/distribucion", label: "Distribución", icon: Truck,    roles: ["admin", "distribucion"] },
+    ],
+  },
+  {
+    label: "COMERCIAL",
+    items: [
+      { href: "/admin/preventista",   label: "Preventista",   icon: Users,      roles: ["admin", "vendedor"] },
+      { href: "/admin/reportes",      label: "Reportes",      icon: BarChart2,  roles: ["admin"] },
+      { href: "/admin/liquidaciones", label: "Liquidaciones", icon: DollarSign, roles: ["admin"] },
+    ],
+  },
+  {
+    label: "COCINA",
+    items: [
+      { href: "/admin/cocina/recetas",      label: "Recetas",          icon: BookOpen,    roles: ["admin", "produccion"] },
+      { href: "/admin/cocina/planificador", label: "Planificador",     icon: Calendar,    roles: ["admin", "produccion"] },
+      { href: "/admin/cocina/compras",      label: "Lista de compras", icon: ShoppingCart, roles: ["admin", "produccion"] },
+      { href: "/admin/cocina/historial",    label: "Historial prod.",  icon: Clock,       roles: ["admin", "produccion"] },
+    ],
+  },
 ];
 
-const ROLE_LABEL: Record<string, string> = {
-  admin:        "Administrador",
-  vendedor:     "Vendedor",
-  produccion:   "Producción",
-  distribucion: "Distribución",
-};
+const BOTTOM_ITEMS: NavEntry[] = [
+  { href: "/admin/clientes",      label: "Clientes",      icon: User,       roles: ["admin", "vendedor"], sublabel: "B2B · B2C" },
+  { href: "/admin/configuracion", label: "Configuración", icon: Settings,   roles: ["admin"] },
+  { href: "/admin/ayuda",         label: "Ayuda",         icon: HelpCircle, roles: ["admin", "vendedor", "produccion", "distribucion"] },
+];
 
-function NavContent({
-  visibleItems,
-  pathname,
-  name,
-  email,
-  onSignOut,
-  onNavClick,
+const STORAGE_KEY = "em_sidebar_collapsed";
+
+function NavItem({
+  item,
+  active,
+  collapsed,
 }: {
-  visibleItems: Item[];
-  pathname:     string;
-  name:         string | null;
-  email:        string | null;
-  onSignOut:    () => void;
-  onNavClick?:  () => void;
+  item: NavEntry;
+  active: boolean;
+  collapsed: boolean;
 }) {
+  const Icon = item.icon;
   return (
-    <>
-      <nav className="flex-1 overflow-y-auto p-3 space-y-0.5">
-        {visibleItems.map((item, i) => {
-          if ("type" in item) {
-            return (
-              <div key={i} className="pt-3 pb-1">
-                <p className="px-3 text-[10px] font-semibold uppercase tracking-widest text-neutral-400">
-                  {item.label}
-                </p>
-              </div>
-            );
-          }
-
-          const active = item.sub
-            ? pathname === item.href
-            : pathname.startsWith(item.href);
-
-          return (
-            <Link
-              key={item.href}
-              href={item.href}
-              onClick={onNavClick}
-              className={`flex items-center gap-2.5 rounded-xl transition-all duration-150 ${
-                item.sub ? "pl-7 pr-3 py-1.5" : "px-3 py-2.5"
-              } ${
-                active
-                  ? item.sub
-                    ? "bg-tierra-50 text-tierra-700 font-medium"
-                    : "bg-tierra-700 text-white font-medium shadow-sm"
-                  : "text-neutral-500 hover:bg-neutral-100 hover:text-neutral-800"
-              }`}
-            >
-              <span className={active && !item.sub ? "text-white" : active ? "text-tierra-700" : "text-neutral-400"}>
-                {ICONS[item.icon]}
-              </span>
-              <span className={item.sub ? "text-xs" : "text-sm"}>{item.label}</span>
-            </Link>
-          );
-        })}
-      </nav>
-
-      <div className="p-4 border-t border-neutral-200 space-y-2">
-        <div>
-          <p className="text-xs font-medium text-neutral-700 truncate">{name ?? email ?? "—"}</p>
-          {name && <p className="text-xs text-neutral-400 truncate">{email}</p>}
+    <Link
+      href={item.href}
+      title={item.label}
+      style={{
+        display: "flex",
+        alignItems: "center",
+        gap: collapsed ? 0 : 12,
+        borderRadius: 9,
+        marginBottom: 2,
+        padding: collapsed ? "10px 17px" : "9px 12px",
+        whiteSpace: "nowrap",
+        transition: "background 150ms",
+        background: active ? "#16233f" : "transparent",
+        color: active ? "#ffffff" : "#3a4760",
+      }}
+      className={!active ? "hover:bg-[#eef2f7]" : ""}
+    >
+      <Icon
+        style={{
+          width: 18,
+          height: 18,
+          strokeWidth: 1.7,
+          flexShrink: 0,
+          color: active ? "#ffffff" : "#8693a8",
+        }}
+      />
+      {!collapsed && (
+        <div className="min-w-0">
+          <p className="text-sm font-medium leading-tight">{item.label}</p>
+          {item.sublabel && (
+            <p style={{ fontSize: 11, color: active ? "rgba(255,255,255,.7)" : "#aab4c4", lineHeight: 1.3 }}>
+              {item.sublabel}
+            </p>
+          )}
         </div>
-        <button
-          onClick={onSignOut}
-          className="w-full text-left text-xs text-neutral-400 hover:text-neutral-700 transition-colors py-1"
-        >
-          Cerrar sesión
-        </button>
-      </div>
-    </>
+      )}
+    </Link>
   );
 }
 
 export function AdminNav({ role, email, name }: { role: string | null; email: string | null; name: string | null }) {
   const pathname = usePathname();
   const router   = useRouter();
-  const [open, setOpen] = useState(false);
+  const [collapsed, setCollapsed] = useState(true);
+  const [ready, setReady]         = useState(false);
 
-  // Cerrar drawer al cambiar de ruta
-  useEffect(() => { setOpen(false); }, [pathname]);
-
-  // Bloquear scroll del body cuando el drawer está abierto
   useEffect(() => {
-    document.body.style.overflow = open ? "hidden" : "";
-    return () => { document.body.style.overflow = ""; };
-  }, [open]);
+    const mobile = window.innerWidth < 1024;
+    setCollapsed(mobile ? true : localStorage.getItem(STORAGE_KEY) === "true");
+    setReady(true);
+  }, []);
+
+  function toggle() {
+    setCollapsed(prev => {
+      const next = !prev;
+      localStorage.setItem(STORAGE_KEY, String(next));
+      return next;
+    });
+  }
 
   const supabase = createBrowserClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -174,80 +141,131 @@ export function AdminNav({ role, email, name }: { role: string | null; email: st
     router.push("/login");
   }
 
-  const visibleItems = NAV.filter((item) => item.roles.includes(role ?? ""));
+  function isActive(href: string) {
+    if (href === "/admin/dashboard") return pathname === href;
+    return pathname.startsWith(href);
+  }
+
+  const userInitial = (name ?? email ?? "U")[0].toUpperCase();
+  const W = collapsed ? 52 : 252;
 
   return (
-    <>
-      {/* ── Desktop sidebar ─────────────────────────────────────────── */}
-      <aside className="hidden md:flex w-60 bg-white border-r border-neutral-200 flex-col shrink-0 h-screen sticky top-0">
-        <div className="p-5 border-b border-neutral-200">
-          <Link href="/admin/dashboard" className="flex items-center gap-3 hover:opacity-80 transition-opacity">
-            <div className="size-8 rounded-lg bg-tierra-700 text-white flex items-center justify-center font-display font-bold text-sm">EM</div>
-            <div>
-              <p className="text-sm font-semibold text-neutral-900 font-display">En Minutas</p>
-              <p className="text-xs text-neutral-400">{role ? (ROLE_LABEL[role] ?? role) : "Panel admin"}</p>
-            </div>
-          </Link>
-        </div>
-        <NavContent
-          visibleItems={visibleItems}
-          pathname={pathname}
-          name={name}
-          email={email}
-          onSignOut={handleSignOut}
-        />
-      </aside>
-
-      {/* ── Mobile header bar ────────────────────────────────────────── */}
-      <header className="md:hidden fixed top-0 left-0 right-0 z-40 bg-white border-b border-neutral-200 flex items-center justify-between px-4 h-14">
-        <Link href="/admin/dashboard" className="flex items-center gap-2">
-          <div className="size-7 rounded-lg bg-tierra-700 text-white flex items-center justify-center font-display font-bold text-xs">EM</div>
-          <span className="text-sm font-semibold text-neutral-900 font-display">En Minutas</span>
-        </Link>
-        <button
-          onClick={() => setOpen(true)}
-          className="p-2 rounded-lg text-neutral-500 hover:bg-neutral-100 transition-colors"
-          aria-label="Abrir menú"
-        >
-          <svg className="size-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
-          </svg>
-        </button>
-      </header>
-
-      {/* ── Mobile drawer overlay ────────────────────────────────────── */}
-      {open && (
-        <div
-          className="md:hidden fixed inset-0 z-50 bg-black/40"
-          onClick={() => setOpen(false)}
-        />
-      )}
-
-      {/* ── Mobile drawer panel ──────────────────────────────────────── */}
-      <aside className={`md:hidden fixed top-0 left-0 bottom-0 z-50 w-72 bg-white shadow-xl flex flex-col transition-transform duration-300 ease-out ${open ? "translate-x-0" : "-translate-x-full"}`}>
-        <div className="p-4 border-b border-neutral-200 flex items-center justify-between">
-          <Link href="/admin/dashboard" className="flex items-center gap-2.5" onClick={() => setOpen(false)}>
-            <div className="size-8 rounded-lg bg-tierra-700 text-white flex items-center justify-center font-display font-bold text-sm">EM</div>
-            <div>
-              <p className="text-sm font-semibold text-neutral-900 font-display">En Minutas</p>
-              <p className="text-xs text-neutral-400">{role ? (ROLE_LABEL[role] ?? role) : "Panel admin"}</p>
-            </div>
-          </Link>
-          <button onClick={() => setOpen(false)} className="p-1.5 rounded-lg text-neutral-400 hover:bg-neutral-100">
-            <svg className="size-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-            </svg>
+    <aside
+      style={{
+        width: W,
+        minWidth: W,
+        transition: ready ? "width 220ms cubic-bezier(.4,0,.2,1)" : "none",
+      }}
+      className="shrink-0 h-screen sticky top-0 flex flex-col bg-white border-r border-[#e4e9f0] overflow-hidden z-30"
+    >
+      {/* ── Header ── */}
+      <div
+        className="shrink-0 border-b border-[#eef2f6]"
+        style={{ padding: "18px 8px 16px" }}
+      >
+        {collapsed ? (
+          <button
+            onClick={toggle}
+            title="Expandir menú"
+            className="size-9 rounded-full bg-[#16233f] text-white flex items-center justify-center font-display font-bold text-sm hover:opacity-80 transition-opacity mx-auto"
+          >
+            EM
           </button>
+        ) : (
+          <div className="flex items-center gap-2">
+            <button
+              onClick={toggle}
+              title="Colapsar menú"
+              className="size-9 rounded-full bg-[#16233f] text-white flex items-center justify-center font-display font-bold text-sm hover:opacity-80 transition-opacity shrink-0"
+            >
+              EM
+            </button>
+            <div className="flex-1 min-w-0">
+              <p className="text-base font-bold text-[#16233f] font-display whitespace-nowrap">En Minutas</p>
+              <p className="text-[11.5px] text-[#8693a8] whitespace-nowrap">Administrador</p>
+            </div>
+            <button
+              onClick={toggle}
+              title="Colapsar menú"
+              className="size-7 flex items-center justify-center rounded-lg border border-[#e4e9f0] text-[#8693a8] hover:bg-[#f0f3f7] transition-colors shrink-0"
+            >
+              <ChevronLeft className="size-4" />
+            </button>
+          </div>
+        )}
+      </div>
+
+      {/* ── Main nav ── */}
+      <nav className="flex-1 overflow-y-auto overflow-x-hidden" style={{ padding: "10px 8px 6px" }}>
+        {GROUPS.map((group, gi) => {
+          const items = group.items.filter(i => i.roles.includes(role ?? ""));
+          if (!items.length) return null;
+          return (
+            <div key={gi}>
+              {group.label && (
+                collapsed ? (
+                  <div className="my-2 mx-1 border-t border-[#f1f4f8]" />
+                ) : (
+                  <p
+                    className="font-bold uppercase text-[#c2ccda] whitespace-nowrap"
+                    style={{ fontSize: 10.5, letterSpacing: 1, padding: "14px 10px 6px" }}
+                  >
+                    {group.label}
+                  </p>
+                )
+              )}
+              {items.map(item => (
+                <NavItem
+                  key={item.href}
+                  item={item}
+                  active={isActive(item.href)}
+                  collapsed={collapsed}
+                />
+              ))}
+            </div>
+          );
+        })}
+      </nav>
+
+      {/* ── Bottom nav ── */}
+      <div className="shrink-0 border-t border-[#f1f4f8]" style={{ padding: "8px 8px 6px" }}>
+        {BOTTOM_ITEMS.filter(i => i.roles.includes(role ?? "")).map(item => (
+          <NavItem
+            key={item.href}
+            item={item}
+            active={isActive(item.href)}
+            collapsed={collapsed}
+          />
+        ))}
+      </div>
+
+      {/* ── User block ── */}
+      <div
+        className="shrink-0 border-t border-[#eef2f6] flex items-center"
+        style={{ padding: "12px 10px", gap: 10 }}
+        title={collapsed ? (email ?? undefined) : undefined}
+      >
+        <div className="size-8 rounded-full bg-[#16233f] text-white flex items-center justify-center font-bold text-[13px] shrink-0">
+          {userInitial}
         </div>
-        <NavContent
-          visibleItems={visibleItems}
-          pathname={pathname}
-          name={name}
-          email={email}
-          onSignOut={handleSignOut}
-          onNavClick={() => setOpen(false)}
-        />
-      </aside>
-    </>
+        {!collapsed && (
+          <div className="flex-1 min-w-0">
+            <p
+              className="text-xs whitespace-nowrap overflow-hidden text-ellipsis"
+              style={{ color: "#52607a" }}
+            >
+              {email ?? name ?? "—"}
+            </p>
+            <button
+              onClick={handleSignOut}
+              className="text-xs font-semibold hover:underline"
+              style={{ color: "#9e2a2a" }}
+            >
+              Cerrar sesión
+            </button>
+          </div>
+        )}
+      </div>
+    </aside>
   );
 }
