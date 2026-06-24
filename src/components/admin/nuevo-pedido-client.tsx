@@ -277,6 +277,7 @@ export function NuevoPedidoClient({
                     {hasPrice && (
                       <div className="text-right shrink-0">
                         <p className="font-semibold text-sm text-neutral-800 tabular-nums">{fmt(p.precio!.final_civa)}</p>
+                        <p className="text-xs text-neutral-400 tabular-nums">s/IVA {fmt(Math.round(p.precio!.final_civa / (1 + iva_pct)))}</p>
                         {qty > 0 && <p className="text-xs text-neutral-400 tabular-nums">= {fmt(p.precio!.final_civa * qty)}</p>}
                       </div>
                     )}
@@ -287,7 +288,16 @@ export function NuevoPedidoClient({
                         className="size-8 rounded-lg bg-neutral-100 text-neutral-700 hover:bg-neutral-200 disabled:opacity-30 flex items-center justify-center font-semibold text-lg leading-none">
                         −
                       </button>
-                      <span className="w-8 text-center text-sm font-semibold tabular-nums">{qty || "0"}</span>
+                      <input
+                        type="number"
+                        min={0}
+                        inputMode="numeric"
+                        value={qty || ""}
+                        placeholder="0"
+                        onChange={(e) => setQty(p.id, Math.max(0, parseInt(e.target.value) || 0))}
+                        onFocus={(e) => e.target.select()}
+                        className="w-10 text-center text-sm font-semibold tabular-nums border border-neutral-200 rounded-lg py-1 focus:outline-none focus:ring-2 focus:ring-tierra-700/20"
+                      />
                       <button onClick={() => setQty(p.id, qty + 1)}
                         className="size-8 rounded-lg bg-tierra-700 text-white hover:bg-tierra-800 flex items-center justify-center font-semibold text-lg leading-none">
                         +
@@ -312,7 +322,8 @@ export function NuevoPedidoClient({
               <tr className="border-b border-neutral-200 text-left">
                 <th className="px-4 py-3 font-medium text-neutral-500 w-16">Cód.</th>
                 <th className="px-4 py-3 font-medium text-neutral-500">Producto</th>
-                <th className="px-4 py-3 font-medium text-neutral-500 text-right">FINAL c/IVA por caja</th>
+                <th className="px-4 py-3 font-medium text-neutral-500 text-right">s/IVA por caja</th>
+                <th className="px-4 py-3 font-medium text-neutral-500 text-right">c/IVA por caja</th>
                 <th className="px-4 py-3 font-medium text-neutral-500 text-center w-36">Cantidad</th>
                 <th className="px-4 py-3 font-medium text-neutral-500 text-right w-32">Subtotal</th>
               </tr>
@@ -320,12 +331,13 @@ export function NuevoPedidoClient({
             <tbody className="divide-y divide-neutral-100">
               {filtered.length === 0 && (
                 <tr>
-                  <td colSpan={5} className="px-4 py-10 text-center text-neutral-400">No hay productos.</td>
+                  <td colSpan={6} className="px-4 py-10 text-center text-neutral-400">No hay productos.</td>
                 </tr>
               )}
               {filtered.map((p) => {
                 const qty      = cart[p.id] ?? 0;
                 const hasPrice = !!p.precio && !!cliente;
+                const precioSIVA = p.precio ? Math.round(p.precio.final_civa / (1 + iva_pct)) : null;
                 return (
                   <tr key={p.id} className={`hover:bg-neutral-50 transition-colors ${qty > 0 ? "bg-crema-50" : ""}`}>
                     <td className="px-4 py-3 tabular-nums text-xs font-mono text-tierra-700 font-semibold">
@@ -340,6 +352,11 @@ export function NuevoPedidoClient({
                         )}
                       </p>
                     </td>
+                    <td className="px-4 py-3 text-right tabular-nums text-neutral-500">
+                      {hasPrice && precioSIVA ? fmt(precioSIVA) : (
+                        <span className="text-neutral-300 text-xs">—</span>
+                      )}
+                    </td>
                     <td className="px-4 py-3 text-right tabular-nums font-medium text-neutral-800">
                       {hasPrice ? fmt(p.precio!.final_civa) : (
                         <span className="text-neutral-300 text-xs">{cliente ? "Sin datos B2B" : "—"}</span>
@@ -352,7 +369,16 @@ export function NuevoPedidoClient({
                             className="size-7 rounded-lg bg-neutral-100 text-neutral-700 hover:bg-neutral-200 disabled:opacity-30 transition-colors flex items-center justify-center font-semibold text-base leading-none">
                             −
                           </button>
-                          <span className="w-8 text-center text-sm font-semibold tabular-nums">{qty || ""}</span>
+                          <input
+                            type="number"
+                            min={0}
+                            inputMode="numeric"
+                            value={qty || ""}
+                            placeholder="0"
+                            onChange={(e) => setQty(p.id, Math.max(0, parseInt(e.target.value) || 0))}
+                            onFocus={(e) => e.target.select()}
+                            className="w-10 text-center text-sm font-semibold tabular-nums border border-neutral-200 rounded-lg py-1 focus:outline-none focus:ring-2 focus:ring-tierra-700/20"
+                          />
                           <button onClick={() => setQty(p.id, qty + 1)}
                             className="size-7 rounded-lg bg-tierra-700 text-white hover:bg-tierra-800 transition-colors flex items-center justify-center font-semibold text-base leading-none">
                             +
