@@ -135,7 +135,7 @@ export async function updateSession(request: NextRequest) {
     // correctly after login, so this block only handles edge cases.
     // JWT role may be wrong for staff (shows customer_b2c due to auth hook),
     // but that's acceptable here — it's a UX convenience, not a security gate.
-    if (user && !pathname.startsWith("/auth") && !pathname.startsWith("/login") && !pathname.startsWith("/admin") && !pathname.startsWith("/b2b") && !pathname.startsWith("/remito")) {
+    if (user && !pathname.startsWith("/auth") && !pathname.startsWith("/login") && !pathname.startsWith("/admin") && !pathname.startsWith("/b2b") && !pathname.startsWith("/remito") && !pathname.startsWith("/api")) {
       const jwtRole = user.app_metadata?.role as string | undefined;
 
       if (jwtRole === "customer_b2b") {

@@ -277,7 +277,7 @@ export function NuevoPedidoClient({
                     {hasPrice && (
                       <div className="text-right shrink-0">
                         <p className="font-semibold text-sm text-neutral-800 tabular-nums">{fmt(p.precio!.final_civa)}</p>
-                        <p className="text-xs text-neutral-400 tabular-nums">s/IVA {fmt(Math.round(p.precio!.final_civa / (1 + iva_pct)))}</p>
+                        <p className="text-xs text-neutral-400 tabular-nums">s/IVA {fmt(p.precio!.lista_siva)}</p>
                         {qty > 0 && <p className="text-xs text-neutral-400 tabular-nums">= {fmt(p.precio!.final_civa * qty)}</p>}
                       </div>
                     )}
@@ -337,7 +337,7 @@ export function NuevoPedidoClient({
               {filtered.map((p) => {
                 const qty      = cart[p.id] ?? 0;
                 const hasPrice = !!p.precio && !!cliente;
-                const precioSIVA = p.precio ? Math.round(p.precio.final_civa / (1 + iva_pct)) : null;
+                const precioSIVA = p.precio?.lista_siva ?? null;
                 return (
                   <tr key={p.id} className={`hover:bg-neutral-50 transition-colors ${qty > 0 ? "bg-crema-50" : ""}`}>
                     <td className="px-4 py-3 tabular-nums text-xs font-mono text-tierra-700 font-semibold">

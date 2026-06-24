@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { AdminNav } from "@/components/admin/admin-nav";
+import { ChatWidget } from "@/components/admin/chat-widget";
 import { redirect } from "next/navigation";
 
 const STAFF_ROLES = ["admin", "vendedor", "produccion", "distribucion"];
@@ -24,6 +25,7 @@ export default async function AdminLayout({
     <div className="flex min-h-screen bg-neutral-50">
       <AdminNav role={role} email={email} name={name} />
       <main className="flex-1 overflow-auto pt-14 md:pt-0">{children}</main>
+      <ChatWidget />
     </div>
   );
 }
