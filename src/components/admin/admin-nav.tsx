@@ -2,8 +2,8 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useState, useEffect } from "react";
-import { createBrowserClient } from "@supabase/ssr";
+import { useState, useEffect, useRef } from "react";
+import { createClient } from "@/lib/supabase/client";
 import {
   LayoutGrid, ClipboardList, Activity, Truck,
   Users, BarChart2, DollarSign, BookOpen, Calendar,
@@ -17,6 +17,13 @@ type NavEntry = {
   icon: React.ElementType;
   roles: string[];
   sublabel?: string;
+};
+
+const ROLE_LABEL: Record<string, string> = {
+  admin:        "Administrador",
+  vendedor:     "Vendedor",
+  produccion:   "Producción",
+  distribucion: "Distribución",
 };
 
 const GROUPS: { label?: string; items: NavEntry[] }[] = [
@@ -73,7 +80,7 @@ function NavItem({
   return (
     <Link
       href={item.href}
-      title={item.label}
+      title={collapsed ? item.label : undefined}
       style={{
         display: "flex",
         alignItems: "center",
@@ -116,6 +123,8 @@ export function AdminNav({ role, email, name }: { role: string | null; email: st
   const router   = useRouter();
   const [collapsed, setCollapsed] = useState(true);
   const [ready, setReady]         = useState(false);
+  const supabaseRef = useRef<ReturnType<typeof createClient> | null>(null);
+  if (!supabaseRef.current) supabaseRef.current = createClient();
 
   useEffect(() => {
     const mobile = window.innerWidth < 1024;
@@ -126,18 +135,20 @@ export function AdminNav({ role, email, name }: { role: string | null; email: st
   function toggle() {
     setCollapsed(prev => {
       const next = !prev;
-      localStorage.setItem(STORAGE_KEY, String(next));
+      // Solo persistir preferencia en desktop; en mobile no contaminar la clave compartida
+      if (window.innerWidth >= 1024) {
+        localStorage.setItem(STORAGE_KEY, String(next));
+      }
       return next;
     });
   }
 
-  const supabase = createBrowserClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-  );
-
   async function handleSignOut() {
-    await supabase.auth.signOut();
+    try {
+      await supabaseRef.current!.auth.signOut();
+    } catch {
+      // Si falla el signOut, igual redirigimos para limpiar el estado local
+    }
     router.push("/login");
   }
 
@@ -146,7 +157,9 @@ export function AdminNav({ role, email, name }: { role: string | null; email: st
     return pathname.startsWith(href);
   }
 
-  const userInitial = (name ?? email ?? "U")[0].toUpperCase();
+  // Fallback seguro si email es string vacío (OAuth sin email scope)
+  const userInitial = ((name || email || "U")[0] ?? "U").toUpperCase();
+  const roleLabel   = ROLE_LABEL[role ?? ""] ?? "Panel admin";
   const W = collapsed ? 52 : 252;
 
   return (
@@ -164,13 +177,16 @@ export function AdminNav({ role, email, name }: { role: string | null; email: st
         style={{ padding: "18px 8px 16px" }}
       >
         {collapsed ? (
-          <button
-            onClick={toggle}
-            title="Expandir menú"
-            className="size-9 rounded-full bg-[#16233f] text-white flex items-center justify-center font-display font-bold text-sm hover:opacity-80 transition-opacity mx-auto"
-          >
-            EM
-          </button>
+          <div className="flex flex-col items-center gap-1.5">
+            <button
+              onClick={toggle}
+              title="Expandir menú"
+              className="size-9 rounded-full bg-[#16233f] text-white flex items-center justify-center font-display font-bold text-sm hover:opacity-80 transition-opacity"
+            >
+              EM
+            </button>
+            <ChevronRight className="size-3 text-[#c2ccda]" />
+          </div>
         ) : (
           <div className="flex items-center gap-2">
             <button
@@ -182,7 +198,7 @@ export function AdminNav({ role, email, name }: { role: string | null; email: st
             </button>
             <div className="flex-1 min-w-0">
               <p className="text-base font-bold text-[#16233f] font-display whitespace-nowrap">En Minutas</p>
-              <p className="text-[11.5px] text-[#8693a8] whitespace-nowrap">Administrador</p>
+              <p className="text-[11.5px] text-[#8693a8] whitespace-nowrap">{roleLabel}</p>
             </div>
             <button
               onClick={toggle}
@@ -243,7 +259,7 @@ export function AdminNav({ role, email, name }: { role: string | null; email: st
       <div
         className="shrink-0 border-t border-[#eef2f6] flex items-center"
         style={{ padding: "12px 10px", gap: 10 }}
-        title={collapsed ? (email ?? undefined) : undefined}
+        title={collapsed ? (email || undefined) : undefined}
       >
         <div className="size-8 rounded-full bg-[#16233f] text-white flex items-center justify-center font-bold text-[13px] shrink-0">
           {userInitial}
@@ -254,7 +270,7 @@ export function AdminNav({ role, email, name }: { role: string | null; email: st
               className="text-xs whitespace-nowrap overflow-hidden text-ellipsis"
               style={{ color: "#52607a" }}
             >
-              {email ?? name ?? "—"}
+              {email || name || "—"}
             </p>
             <button
               onClick={handleSignOut}
