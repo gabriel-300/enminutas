@@ -296,7 +296,7 @@ export function NuevoPedidoClient({
                         placeholder="0"
                         onChange={(e) => setQty(p.id, Math.max(0, parseInt(e.target.value) || 0))}
                         onFocus={(e) => e.target.select()}
-                        className="w-10 text-center text-sm font-semibold tabular-nums border border-neutral-200 rounded-lg py-1 focus:outline-none focus:ring-2 focus:ring-tierra-700/20"
+                        className="w-14 text-center text-sm font-semibold tabular-nums border border-neutral-200 rounded-lg py-1 focus:outline-none focus:ring-2 focus:ring-tierra-700/20"
                       />
                       <button onClick={() => setQty(p.id, qty + 1)}
                         className="size-8 rounded-lg bg-tierra-700 text-white hover:bg-tierra-800 flex items-center justify-center font-semibold text-lg leading-none">
@@ -377,7 +377,7 @@ export function NuevoPedidoClient({
                             placeholder="0"
                             onChange={(e) => setQty(p.id, Math.max(0, parseInt(e.target.value) || 0))}
                             onFocus={(e) => e.target.select()}
-                            className="w-10 text-center text-sm font-semibold tabular-nums border border-neutral-200 rounded-lg py-1 focus:outline-none focus:ring-2 focus:ring-tierra-700/20"
+                            className="w-14 text-center text-sm font-semibold tabular-nums border border-neutral-200 rounded-lg py-1 focus:outline-none focus:ring-2 focus:ring-tierra-700/20"
                           />
                           <button onClick={() => setQty(p.id, qty + 1)}
                             className="size-7 rounded-lg bg-tierra-700 text-white hover:bg-tierra-800 transition-colors flex items-center justify-center font-semibold text-base leading-none">
