@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { createClient, createAdminClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { ReportesFilter } from "@/components/admin/reportes-filter";
+import { ExportDropdown } from "@/components/admin/export-dropdown";
 
 export const metadata: Metadata = { title: "Reportes — Admin En Minutas" };
 export const revalidate = 0;
@@ -11,26 +12,114 @@ const fmt = (n: number) =>
 
 const fmtK = (n: number) => {
   if (n >= 1_000_000) return `$${(n / 1_000_000).toFixed(1)}M`;
-  if (n >= 1_000)     return `$${Math.round(n / 1_000)}k`;
+  if (n >= 1_000) return `$${Math.round(n / 1_000)}k`;
   return fmt(n);
 };
 
-const ACTIVE_STATUSES = ["aprobado", "enviado_prod", "despachado", "en_distribucion", "entrega_parcial", "delivered", "liquidado"];
+const ACTIVE_STATUSES = [
+  "aprobado", "enviado_prod", "despachado", "en_distribucion",
+  "entrega_parcial", "delivered", "liquidado",
+];
 
-function pctDelta(cur: number, prev: number) {
-  if (prev === 0) return null;
-  return Math.round(((cur - prev) / prev) * 100);
+const CHANNEL_CFG: Record<string, { label: string; bg: string; color: string; bar: string }> = {
+  b2b_mayorista: { label: "B2B",         bg: "#eef2f7", color: "#16233f", bar: "#16233f" },
+  b2c_nacional:  { label: "Online",      bg: "#e8f0fb", color: "#2f5fd0", bar: "#2f5fd0" },
+  distribucion:  { label: "Distribución",bg: "#e6f3ef", color: "#1f7a52", bar: "#1f7a52" },
+  gastronomia:   { label: "Gastronomía", bg: "#fbf1e4", color: "#b25e09", bar: "#b25e09" },
+};
+
+const STATUS_LABELS: Record<string, string> = {
+  aprobado:        "Aprobado",
+  enviado_prod:    "En producción",
+  despachado:      "Despachado",
+  en_distribucion: "En distribución",
+  entrega_parcial: "Parcial",
+  delivered:       "Entregado",
+  liquidado:       "Liquidado",
+};
+
+// ── SVG Chart ────────────────────────────────────────────────────────────────
+
+function DailySalesChart({
+  curSeries,
+  prevSeries,
+  daysInMonth,
+}: {
+  curSeries: number[];
+  prevSeries: number[];
+  daysInMonth: number;
+}) {
+  const W = 620, H = 108, PL = 2, PR = 2, PT = 6, PB = 2;
+  const cW = W - PL - PR;
+  const cH = H - PT - PB;
+  const maxVal = Math.max(...curSeries, ...prevSeries, 1);
+
+  const xp = (i: number) => PL + (i / Math.max(daysInMonth - 1, 1)) * cW;
+  const yp = (v: number) => PT + cH - (v / maxVal) * cH;
+
+  const mkPts = (s: number[]) =>
+    s.slice(0, daysInMonth).map((v, i) => `${xp(i)},${yp(v)}`).join(" ");
+
+  const mkArea = (s: number[]) => {
+    const inner = s.slice(0, daysInMonth).map((v, i) => `${xp(i)},${yp(v)}`).join(" ");
+    return `${xp(0)},${PT + cH} ${inner} ${xp(daysInMonth - 1)},${PT + cH}`;
+  };
+
+  return (
+    <svg viewBox={`0 0 ${W} ${H}`} className="w-full" style={{ height: H }} aria-hidden>
+      <defs>
+        <linearGradient id="rpt-grad" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor="#16233f" stopOpacity="0.12" />
+          <stop offset="100%" stopColor="#16233f" stopOpacity="0" />
+        </linearGradient>
+      </defs>
+      <polygon points={mkArea(curSeries)} fill="url(#rpt-grad)" />
+      <polyline
+        points={mkPts(prevSeries)}
+        fill="none"
+        stroke="#cbd5e1"
+        strokeWidth="1.5"
+        strokeDasharray="4 3"
+      />
+      <polyline
+        points={mkPts(curSeries)}
+        fill="none"
+        stroke="#16233f"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
 }
 
-function DeltaBadge({ cur, prev }: { cur: number; prev: number }) {
-  const d = pctDelta(cur, prev);
-  if (d === null) return null;
+// ── Channel pill ─────────────────────────────────────────────────────────────
+
+function ChannelPill({ channel }: { channel: string }) {
+  const c = CHANNEL_CFG[channel] ?? { label: channel, bg: "#f3f4f6", color: "#374151" };
   return (
-    <span className={`text-xs font-medium ${d >= 0 ? "text-green-600" : "text-red-500"}`}>
+    <span
+      className="inline-block px-2 py-0.5 rounded-full text-xs font-medium leading-tight whitespace-nowrap"
+      style={{ background: c.bg, color: c.color }}
+    >
+      {c.label}
+    </span>
+  );
+}
+
+// ── Delta badge ───────────────────────────────────────────────────────────────
+
+function Delta({ cur, prev }: { cur: number; prev: number }) {
+  if (prev === 0) return null;
+  const d = Math.round(((cur - prev) / prev) * 100);
+  return (
+    <span className={`text-xs font-medium ${d >= 0 ? "text-emerald-600" : "text-red-500"}`}>
       {d >= 0 ? "▲" : "▼"} {Math.abs(d)}%
     </span>
   );
 }
+
+// ── Page ─────────────────────────────────────────────────────────────────────
 
 export default async function ReportesPage({
   searchParams,
@@ -40,92 +129,54 @@ export default async function ReportesPage({
   const sp = await searchParams;
 
   const now = new Date();
-  const mesParam = sp.mes ?? `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+  const mesParam =
+    sp.mes ?? `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
   const [yearStr, monthStr] = mesParam.split("-");
   const year  = parseInt(yearStr, 10);
   const month = parseInt(monthStr, 10);
 
-  const desde = new Date(year, month - 1, 1).toISOString();
-  const hasta = new Date(year, month, 0, 23, 59, 59).toISOString();
+  const daysInMonth = new Date(year, month, 0).getDate();
+  const desde  = new Date(year, month - 1, 1).toISOString();
+  const hasta  = new Date(year, month, 0, 23, 59, 59).toISOString();
 
-  // Mes anterior
   const prevYear  = month === 1 ? year - 1 : year;
   const prevMonth = month === 1 ? 12 : month - 1;
   const prevDesde = new Date(prevYear, prevMonth - 1, 1).toISOString();
   const prevHasta = new Date(prevYear, prevMonth, 0, 23, 59, 59).toISOString();
 
-  const supabase    = await createClient();
-  const db          = createAdminClient() as any;
+  const supabase = await createClient();
+  const db       = createAdminClient() as any;
 
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/login");
   if (user.app_metadata?.role !== "admin") redirect("/admin");
 
   const [
-    { data: rawB2B },
-    { data: rawB2C },
-    { data: rawOrderIds },
-    { data: prevB2B },
-    { data: prevB2C },
-    { data: rawVendedores },
-    { data: rawMetas },
-    { data: rawParams },
+    { data: rawCur },
+    { data: rawPrev },
   ] = await Promise.all([
-    // Pedidos B2B del mes
     db.from("orders")
       .select(`
-        id, order_number, status, total, created_at, delivery_zone_id,
-        zona:delivery_zones!delivery_zone_id (name),
-        customer:profiles!customer_id (full_name, vendedor_id)
+        id, order_number, status, total, created_at, channel,
+        customer:profiles!customer_id (full_name)
       `)
-      .eq("channel", "b2b_mayorista")
       .in("status", ACTIVE_STATUSES)
       .gte("created_at", desde)
       .lte("created_at", hasta)
       .order("created_at", { ascending: false }),
 
-    // Pedidos B2C del mes
     db.from("orders")
-      .select("id, total, created_at")
-      .eq("channel", "b2c_nacional")
+      .select("total, created_at")
       .in("status", ACTIVE_STATUSES)
-      .gte("created_at", desde)
-      .lte("created_at", hasta),
-
-    // IDs del mes para líneas de productos
-    db.from("orders")
-      .select("id")
-      .in("status", ACTIVE_STATUSES)
-      .gte("created_at", desde)
-      .lte("created_at", hasta),
-
-    // Totales mes anterior — solo para comparativa
-    db.from("orders").select("total")
-      .eq("channel", "b2b_mayorista").in("status", ACTIVE_STATUSES)
-      .gte("created_at", prevDesde).lte("created_at", prevHasta),
-
-    db.from("orders").select("total")
-      .eq("channel", "b2c_nacional").in("status", ACTIVE_STATUSES)
-      .gte("created_at", prevDesde).lte("created_at", prevHasta),
-
-    // Vendedores con su % de comisión asignado
-    db.from("profiles")
-      .select("id, full_name, comision_preventista_pct")
-      .eq("role", "vendedor")
-      .order("full_name"),
-
-    // Metas del mes seleccionado
-    db.from("sales_goals")
-      .select("vendedor_id, objetivo")
-      .eq("mes", mesParam),
-
-    // Parámetros globales (iva_pct, comision_pct)
-    db.from("parametros_globales")
-      .select("clave, valor"),
+      .gte("created_at", prevDesde)
+      .lte("created_at", prevHasta),
   ]);
 
-  // Líneas de productos
-  const orderIds = (rawOrderIds ?? []).map((o: any) => o.id);
+  const orders     = (rawCur  ?? []) as any[];
+  const prevOrders = (rawPrev ?? []) as any[];
+
+  // Order lines for top products
+  const orderIds = orders.map((o: any) => o.id);
   let rawLines: any[] = [];
   if (orderIds.length > 0) {
     const { data } = await db
@@ -135,406 +186,313 @@ export default async function ReportesPage({
     rawLines = data ?? [];
   }
 
-  // ── Totales ────────────────────────────────────────────────────────────────
-  const b2bOrders   = (rawB2B ?? []) as any[];
-  const b2cOrders   = (rawB2C ?? []) as any[];
-  const vendedores  = (rawVendedores ?? []) as { id: string; full_name: string; comision_preventista_pct: number | null }[];
-  const metasMap    = Object.fromEntries(((rawMetas ?? []) as any[]).map((m: any) => [m.vendedor_id, Number(m.objetivo)]));
+  // ── Derived data ────────────────────────────────────────────────────────────
 
-  // Parámetros globales
-  const paramsArr = (rawParams ?? []) as { clave: string; valor: number }[];
-  const paramVal  = (key: string, def: number) => paramsArr.find((p) => p.clave === key)?.valor ?? def;
-  const ivaPct       = paramVal("iva_pct",      0.21);
-  const comisionPct  = paramVal("comision_pct", 0.15);
-  const divisor      = 1 + ivaPct + comisionPct; // 1.36 por defecto
+  const totalGeneral = orders.reduce((s: number, o: any) => s + Number(o.total), 0);
+  const totalPedidos = orders.length;
+  const ticketProm   = totalPedidos > 0 ? Math.round(totalGeneral / totalPedidos) : 0;
+  const canalesSet   = new Set(orders.map((o: any) => o.channel as string));
+  const canalesCount = canalesSet.size;
 
-  // Función: extrae el $ de comisión embebido en un total de pedido
-  function comisionDe(total: number, pct: number) {
-    return Math.round(total * pct / divisor);
+  const prevTotal    = prevOrders.reduce((s: number, o: any) => s + Number(o.total), 0);
+  const prevPedidos  = prevOrders.length;
+
+  // Daily totals for chart
+  const curDayTotals  = new Array<number>(daysInMonth).fill(0);
+  const prevDayTotals = new Array<number>(daysInMonth).fill(0);
+
+  for (const o of orders) {
+    const d = new Date(o.created_at).getDate() - 1;
+    if (d >= 0 && d < daysInMonth) curDayTotals[d] += Number(o.total);
+  }
+  for (const o of prevOrders) {
+    const d = new Date(o.created_at).getDate() - 1;
+    if (d >= 0 && d < daysInMonth) prevDayTotals[d] += Number(o.total);
   }
 
-  const totalB2B    = b2bOrders.reduce((s, o) => s + Number(o.total), 0);
-  const totalB2C    = b2cOrders.reduce((s, o) => s + Number(o.total), 0);
-  const totalGeneral = totalB2B + totalB2C;
-  const totalPedidos = b2bOrders.length + b2cOrders.length;
-  const ticketProm  = totalPedidos > 0 ? Math.round(totalGeneral / totalPedidos) : 0;
-
-  const prevTotalB2B = ((prevB2B ?? []) as any[]).reduce((s, o) => s + Number(o.total), 0);
-  const prevTotalB2C = ((prevB2C ?? []) as any[]).reduce((s, o) => s + Number(o.total), 0);
-  const prevTotal    = prevTotalB2B + prevTotalB2C;
-
-  // ── Por zona ───────────────────────────────────────────────────────────────
-  const zonaMap: Record<string, { name: string; count: number; total: number }> = {};
-  for (const o of b2bOrders) {
-    const zonaNombre = (o.zona as any)?.name ?? "Sin zona";
-    if (!zonaMap[zonaNombre]) zonaMap[zonaNombre] = { name: zonaNombre, count: 0, total: 0 };
-    zonaMap[zonaNombre].count++;
-    zonaMap[zonaNombre].total += Number(o.total);
+  // Channel mix
+  const channelMap: Record<string, { count: number; total: number }> = {};
+  for (const o of orders) {
+    const ch = o.channel as string;
+    if (!channelMap[ch]) channelMap[ch] = { count: 0, total: 0 };
+    channelMap[ch].count++;
+    channelMap[ch].total += Number(o.total);
   }
-  const porZona = Object.values(zonaMap).sort((a, b) => b.total - a.total);
+  const channelMix = Object.entries(channelMap)
+    .sort(([, a], [, b]) => b.total - a.total);
 
-  // ── Por vendedor ───────────────────────────────────────────────────────────
-  const vendedorMap: Record<string, {
-    name: string; count: number; total: number; objetivo: number;
-    comision_preventista_pct: number | null;
-  }> = {};
-  for (const v of vendedores) {
-    vendedorMap[v.id] = {
-      name: v.full_name, count: 0, total: 0, objetivo: metasMap[v.id] ?? 0,
-      comision_preventista_pct: v.comision_preventista_pct ?? null,
-    };
-  }
-  for (const o of b2bOrders) {
-    const vid = (o.customer as any)?.vendedor_id;
-    if (vid && vendedorMap[vid]) {
-      vendedorMap[vid].count++;
-      vendedorMap[vid].total += Number(o.total);
-    }
-  }
-  const porVendedor = Object.values(vendedorMap)
-    .filter((v) => v.count > 0 || v.objetivo > 0)
-    .sort((a, b) => b.total - a.total);
-
-  // ── Comisiones del mes (solo B2B, donde aplica la comisión de Alex) ────────
-  const comisionTotalB2B = comisionDe(totalB2B, comisionPct);
-  type FilaComision = {
-    name: string;
-    ventasB2B: number;
-    pctPreventista: number | null;
-    montoPreventista: number;
-    montoMinutas: number;
-  };
-  const comisionesPorVendedor: FilaComision[] = porVendedor
-    .filter((v) => v.total > 0)
-    .map((v) => {
-      const pct      = v.comision_preventista_pct;
-      const montoP   = pct != null ? comisionDe(v.total, pct) : 0;
-      const montoM   = comisionDe(v.total, comisionPct) - montoP;
-      return { name: v.name, ventasB2B: v.total, pctPreventista: pct, montoPreventista: montoP, montoMinutas: montoM };
-    });
-  const totalAPreventistas = comisionesPorVendedor.reduce((s, f) => s + f.montoPreventista, 0);
-  const totalMinutasNeto   = comisionTotalB2B - totalAPreventistas;
-
-  // ── Top clientes ───────────────────────────────────────────────────────────
-  const clientMap: Record<string, { name: string; count: number; total: number }> = {};
-  for (const o of b2bOrders) {
-    const name = (o.customer as any)?.full_name ?? "—";
-    if (!clientMap[name]) clientMap[name] = { name, count: 0, total: 0 };
-    clientMap[name].count++;
-    clientMap[name].total += Number(o.total);
-  }
-  const topClientes = Object.values(clientMap).sort((a, b) => b.total - a.total).slice(0, 10);
-
-  // ── Top productos ──────────────────────────────────────────────────────────
+  // Top products
   const productMap: Record<string, { name: string; sku: string; cajas: number; total: number }> = {};
   for (const line of rawLines) {
     const pid = line.product_id;
     if (!pid) continue;
-    if (!productMap[pid]) productMap[pid] = {
-      name:  line.product?.name ?? "—",
-      sku:   line.product?.sku  ?? "—",
-      cajas: 0,
-      total: 0,
-    };
+    if (!productMap[pid]) {
+      productMap[pid] = {
+        name:  line.product?.name ?? "—",
+        sku:   line.product?.sku  ?? "—",
+        cajas: 0,
+        total: 0,
+      };
+    }
     productMap[pid].cajas += Number(line.quantity);
     productMap[pid].total += Number(line.quantity) * Number(line.unit_price ?? 0);
   }
-  const topProductos = Object.values(productMap).sort((a, b) => b.cajas - a.cajas).slice(0, 10);
+  const topProductos = Object.values(productMap)
+    .sort((a, b) => b.cajas - a.cajas)
+    .slice(0, 8);
 
+  // Recent orders table (max 20)
+  const recentOrders = orders.slice(0, 20);
+
+  // Month label
   const mesNombre = new Date(year, month - 1, 1)
     .toLocaleDateString("es-AR", { month: "long", year: "numeric" });
+
+  // ── Render ──────────────────────────────────────────────────────────────────
 
   return (
     <div className="p-4 md:p-8 max-w-6xl">
 
-      {/* Header */}
+      {/* ── Header ── */}
       <div className="mb-5 md:mb-6 flex items-start justify-between flex-wrap gap-3">
         <div>
-          <h1 className="text-xl md:text-2xl font-semibold font-display text-neutral-900 capitalize">
+          <h1 className="text-xl md:text-2xl font-semibold font-display text-[#16233f] capitalize">
             {mesNombre}
           </h1>
-          <p className="text-sm text-neutral-500 mt-0.5">Pedidos confirmados — todos los canales</p>
+          <p className="text-sm mt-0.5" style={{ color: "#8693a8" }}>
+            Pedidos confirmados — todos los canales
+          </p>
         </div>
         <div className="flex items-center gap-2 flex-wrap">
           <ReportesFilter mes={mesParam} />
-          <a href={`/api/admin/export/pedidos?mes=${mesParam}`} download
-            className="px-3 py-1.5 text-xs font-medium bg-tierra-700 text-white rounded-lg hover:bg-tierra-800 transition-colors">
-            ↓ CSV mes
-          </a>
-          <a href="/api/admin/export/pedidos" download
-            className="px-3 py-1.5 text-xs font-medium border border-neutral-200 rounded-lg text-neutral-600 hover:bg-neutral-50 transition-colors">
-            ↓ Histórico
-          </a>
-          {(["dist", "gastro", "min", "eve"] as const).map((c) => (
-            <a key={c} href={`/admin/reportes/precios?canal=${c}`} download
-              className="px-3 py-1.5 text-xs font-medium border border-neutral-200 rounded-lg text-neutral-600 hover:bg-neutral-50 transition-colors">
-              Precios {c === "dist" ? "Dist" : c === "gastro" ? "Gastro" : c === "min" ? "Min" : "Eve"} ↓
-            </a>
-          ))}
+          <ExportDropdown mesParam={mesParam} />
         </div>
       </div>
 
-      {/* KPIs */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4 mb-5 md:mb-6">
+      {/* ── KPI row ── */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4 mb-4">
         {[
-          { label: "Total del mes", value: totalGeneral, prev: prevTotal, sub: `${totalPedidos} pedido${totalPedidos !== 1 ? "s" : ""}`, highlight: true },
-          { label: "B2B Mayorista", value: totalB2B,    prev: prevTotalB2B, sub: `${b2bOrders.length} pedidos` },
-          { label: "Tienda online", value: totalB2C,    prev: prevTotalB2C, sub: `${b2cOrders.length} pedidos` },
-          { label: "Ticket promedio", value: ticketProm, prev: 0, sub: "por pedido" },
-        ].map(({ label, value, prev, sub, highlight }) => (
-          <div key={label} className="bg-white rounded-2xl border border-neutral-200 p-4 md:p-5">
-            <p className="text-xs text-neutral-400 mb-1">{label}</p>
-            <p className={`text-xl md:text-2xl font-semibold font-display tabular-nums ${highlight ? "text-tierra-700" : "text-neutral-900"}`}>
-              {fmtK(value)}
+          {
+            label: "Total del mes",
+            value: fmtK(totalGeneral),
+            sub: `${totalPedidos} pedido${totalPedidos !== 1 ? "s" : ""}`,
+            delta: <Delta cur={totalGeneral} prev={prevTotal} />,
+            highlight: true,
+          },
+          {
+            label: "Ticket promedio",
+            value: fmtK(ticketProm),
+            sub: "por pedido",
+            delta: null,
+          },
+          {
+            label: "Pedidos confirmados",
+            value: String(totalPedidos),
+            sub: "este período",
+            delta: <Delta cur={totalPedidos} prev={prevPedidos} />,
+          },
+          {
+            label: "Canales activos",
+            value: String(canalesCount),
+            sub: canalesCount === 0 ? "—" : [...canalesSet].map((c) => CHANNEL_CFG[c]?.label ?? c).join(", "),
+            delta: null,
+          },
+        ].map(({ label, value, sub, delta, highlight }) => (
+          <div
+            key={label}
+            className="bg-white rounded-2xl p-4 md:p-5"
+            style={{ border: "1px solid #e7ecf3", boxShadow: "0 1px 2px rgba(22,35,63,.04)" }}
+          >
+            <p className="text-xs mb-1" style={{ color: "#8693a8" }}>{label}</p>
+            <p
+              className={`text-xl md:text-2xl font-semibold font-display tabular-nums ${highlight ? "text-tierra-700" : ""}`}
+              style={highlight ? undefined : { color: "#16233f" }}
+            >
+              {value}
             </p>
             <div className="flex items-center gap-2 mt-1">
-              <p className="text-xs text-neutral-400">{sub}</p>
-              {prev > 0 && <DeltaBadge cur={value} prev={prev} />}
+              <p className="text-xs truncate" style={{ color: "#8693a8" }}>{sub}</p>
+              {delta}
             </div>
           </div>
         ))}
       </div>
 
-      {totalGeneral === 0 ? (
-        <div className="bg-white rounded-2xl border border-neutral-200 p-12 text-center">
-          <p className="text-neutral-400 text-sm">Sin pedidos confirmados en este período.</p>
+      {/* ── Chart ── */}
+      <div
+        className="bg-white rounded-2xl mb-4 overflow-hidden"
+        style={{ border: "1px solid #e7ecf3", boxShadow: "0 1px 2px rgba(22,35,63,.04)" }}
+      >
+        <div className="px-5 pt-4 pb-2 flex items-center justify-between">
+          <p className="text-sm font-medium" style={{ color: "#16233f" }}>
+            Ventas diarias
+          </p>
+          <div className="flex items-center gap-4 text-xs" style={{ color: "#8693a8" }}>
+            <span className="flex items-center gap-1.5">
+              <span className="inline-block w-6 h-0.5 rounded" style={{ background: "#16233f" }} />
+              Este mes
+            </span>
+            <span className="flex items-center gap-1.5">
+              <span className="inline-block w-6 rounded" style={{ height: 1.5, background: "#cbd5e1", borderTop: "1.5px dashed #cbd5e1" }} />
+              Mes anterior
+            </span>
+          </div>
+        </div>
+        <div className="px-4 pb-4">
+          <DailySalesChart
+            curSeries={curDayTotals}
+            prevSeries={prevDayTotals}
+            daysInMonth={daysInMonth}
+          />
+          {/* Day labels */}
+          <div className="flex justify-between mt-1 px-0.5">
+            {[1, Math.ceil(daysInMonth / 4), Math.ceil(daysInMonth / 2), Math.ceil(daysInMonth * 3 / 4), daysInMonth].map((d) => (
+              <span key={d} className="text-xs tabular-nums" style={{ color: "#8693a8" }}>{d}</span>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* ── Main grid ── */}
+      {totalPedidos === 0 ? (
+        <div
+          className="bg-white rounded-2xl p-12 text-center"
+          style={{ border: "1px solid #e7ecf3" }}
+        >
+          <p className="text-sm" style={{ color: "#8693a8" }}>Sin pedidos confirmados en este período.</p>
         </div>
       ) : (
-        <div className="space-y-4">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
 
-          {/* Fila: Top productos + Por zona */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-
-            {/* Top productos */}
-            <div className="bg-white rounded-2xl border border-neutral-200 overflow-hidden">
-              <div className="px-5 py-4 border-b border-neutral-100">
-                <p className="text-sm font-medium text-neutral-700">Productos más pedidos</p>
-              </div>
-              {topProductos.length === 0 ? (
-                <p className="px-5 py-8 text-center text-xs text-neutral-400">Sin datos</p>
-              ) : (
-                <div className="overflow-x-auto">
-                  <table className="w-full text-sm">
-                    <thead>
-                      <tr className="border-b border-neutral-100 text-left">
-                        <th className="px-5 py-3 text-xs font-medium text-neutral-400">Producto</th>
-                        <th className="px-5 py-3 text-xs font-medium text-neutral-400 text-right">Cajas</th>
-                        <th className="px-5 py-3 text-xs font-medium text-neutral-400 text-right">Total</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-neutral-50">
-                      {topProductos.map((p, i) => (
-                        <tr key={p.sku} className="hover:bg-neutral-50">
-                          <td className="px-5 py-2.5">
-                            <span className="text-neutral-300 mr-1.5 text-xs tabular-nums">#{i + 1}</span>
-                            <span className="font-medium text-neutral-800">{p.name}</span>
-                          </td>
-                          <td className="px-5 py-2.5 text-right font-semibold text-neutral-900 tabular-nums">{p.cajas}</td>
-                          <td className="px-5 py-2.5 text-right text-neutral-500 tabular-nums text-xs">{fmtK(p.total)}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              )}
+          {/* Left: orders table */}
+          <div
+            className="lg:col-span-2 bg-white rounded-2xl overflow-hidden"
+            style={{ border: "1px solid #e7ecf3", boxShadow: "0 1px 2px rgba(22,35,63,.04)" }}
+          >
+            <div className="px-5 py-4 border-b" style={{ borderColor: "#e7ecf3" }}>
+              <p className="text-sm font-medium" style={{ color: "#16233f" }}>Pedidos confirmados</p>
+              <p className="text-xs mt-0.5" style={{ color: "#8693a8" }}>Últimos {recentOrders.length} — todos los canales</p>
             </div>
-
-            {/* Por zona */}
-            <div className="bg-white rounded-2xl border border-neutral-200 overflow-hidden">
-              <div className="px-5 py-4 border-b border-neutral-100">
-                <p className="text-sm font-medium text-neutral-700">Ventas por zona de entrega</p>
-              </div>
-              {porZona.length === 0 ? (
-                <p className="px-5 py-8 text-center text-xs text-neutral-400">Sin datos</p>
-              ) : (
-                <div className="divide-y divide-neutral-50">
-                  {porZona.map((z) => {
-                    const pct = totalB2B > 0 ? Math.round((z.total / totalB2B) * 100) : 0;
-                    return (
-                      <div key={z.name} className="px-5 py-3 flex items-center gap-3">
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center justify-between mb-1">
-                            <span className="text-sm font-medium text-neutral-800 truncate">{z.name}</span>
-                            <span className="text-sm font-semibold tabular-nums text-neutral-900 ml-2 shrink-0">{fmtK(z.total)}</span>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <div className="flex-1 bg-neutral-100 rounded-full h-1.5">
-                              <div className="bg-tierra-600 h-1.5 rounded-full" style={{ width: `${pct}%` }} />
-                            </div>
-                            <span className="text-xs text-neutral-400 tabular-nums w-8 text-right">{pct}%</span>
-                            <span className="text-xs text-neutral-400">{z.count} ped.</span>
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b text-left" style={{ borderColor: "#e7ecf3" }}>
+                    <th className="px-4 py-3 text-xs font-medium" style={{ color: "#8693a8" }}>#</th>
+                    <th className="px-4 py-3 text-xs font-medium" style={{ color: "#8693a8" }}>Cliente</th>
+                    <th className="px-4 py-3 text-xs font-medium" style={{ color: "#8693a8" }}>Canal</th>
+                    <th className="px-4 py-3 text-xs font-medium" style={{ color: "#8693a8" }}>Estado</th>
+                    <th className="px-4 py-3 text-xs font-medium text-right" style={{ color: "#8693a8" }}>Total</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {recentOrders.map((o: any, i: number) => (
+                    <tr
+                      key={o.id}
+                      className="border-b hover:bg-neutral-50 transition-colors"
+                      style={{ borderColor: i < recentOrders.length - 1 ? "#eef2f6" : "transparent" }}
+                    >
+                      <td className="px-4 py-2.5 text-xs tabular-nums" style={{ color: "#8693a8" }}>
+                        {o.order_number ?? "—"}
+                      </td>
+                      <td className="px-4 py-2.5 font-medium truncate max-w-[140px]" style={{ color: "#16233f" }}>
+                        {(o.customer as any)?.full_name ?? "—"}
+                      </td>
+                      <td className="px-4 py-2.5">
+                        <ChannelPill channel={o.channel} />
+                      </td>
+                      <td className="px-4 py-2.5 text-xs" style={{ color: "#8693a8" }}>
+                        {STATUS_LABELS[o.status] ?? o.status}
+                      </td>
+                      <td className="px-4 py-2.5 text-right font-semibold tabular-nums" style={{ color: "#16233f" }}>
+                        {fmtK(Number(o.total))}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
           </div>
 
-          {/* Ventas por vendedor + metas */}
-          {porVendedor.length > 0 && (
-            <div className="bg-white rounded-2xl border border-neutral-200 overflow-hidden">
-              <div className="px-5 py-4 border-b border-neutral-100">
-                <p className="text-sm font-medium text-neutral-700">Rendimiento por vendedor</p>
-                <p className="text-xs text-neutral-400 mt-0.5 capitalize">Vs meta de {mesNombre}</p>
+          {/* Right column */}
+          <div className="flex flex-col gap-4">
+
+            {/* Channel mix */}
+            <div
+              className="bg-white rounded-2xl overflow-hidden"
+              style={{ border: "1px solid #e7ecf3", boxShadow: "0 1px 2px rgba(22,35,63,.04)" }}
+            >
+              <div className="px-5 py-4 border-b" style={{ borderColor: "#e7ecf3" }}>
+                <p className="text-sm font-medium" style={{ color: "#16233f" }}>Mix de canales</p>
               </div>
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="border-b border-neutral-100 text-left">
-                      <th className="px-5 py-3 text-xs font-medium text-neutral-400">Vendedor</th>
-                      <th className="px-5 py-3 text-xs font-medium text-neutral-400 text-right">Pedidos</th>
-                      <th className="px-5 py-3 text-xs font-medium text-neutral-400 text-right">Vendido</th>
-                      <th className="px-5 py-3 text-xs font-medium text-neutral-400 text-right">Meta</th>
-                      <th className="px-5 py-3 text-xs font-medium text-neutral-400">Avance</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-neutral-50">
-                    {porVendedor.map((v) => {
-                      const pct = v.objetivo > 0 ? Math.min(Math.round((v.total / v.objetivo) * 100), 100) : null;
-                      return (
-                        <tr key={v.name} className="hover:bg-neutral-50">
-                          <td className="px-5 py-3 font-medium text-neutral-800">{v.name}</td>
-                          <td className="px-5 py-3 text-right text-neutral-500">{v.count}</td>
-                          <td className="px-5 py-3 text-right font-semibold text-neutral-900 tabular-nums">{fmtK(v.total)}</td>
-                          <td className="px-5 py-3 text-right text-neutral-400 tabular-nums">
-                            {v.objetivo > 0 ? fmtK(v.objetivo) : <span className="text-neutral-200">—</span>}
-                          </td>
-                          <td className="px-5 py-3 w-36">
-                            {pct !== null ? (
-                              <div className="flex items-center gap-2">
-                                <div className="flex-1 bg-neutral-100 rounded-full h-1.5">
-                                  <div
-                                    className={`h-1.5 rounded-full ${pct >= 100 ? "bg-green-500" : pct >= 70 ? "bg-tierra-600" : "bg-yellow-400"}`}
-                                    style={{ width: `${pct}%` }}
-                                  />
-                                </div>
-                                <span className={`text-xs font-medium tabular-nums w-8 text-right ${pct >= 100 ? "text-green-600" : "text-neutral-500"}`}>
-                                  {pct}%
-                                </span>
-                              </div>
-                            ) : (
-                              <span className="text-xs text-neutral-300">Sin meta</span>
-                            )}
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
+              <div className="px-5 py-3 space-y-3">
+                {channelMix.map(([ch, data]) => {
+                  const pct = totalGeneral > 0 ? Math.round((data.total / totalGeneral) * 100) : 0;
+                  const cfg = CHANNEL_CFG[ch];
+                  return (
+                    <div key={ch}>
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="text-sm font-medium" style={{ color: "#16233f" }}>
+                          {cfg?.label ?? ch}
+                        </span>
+                        <span className="text-sm tabular-nums font-semibold" style={{ color: "#16233f" }}>
+                          {fmtK(data.total)}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <div className="flex-1 rounded-full h-1.5" style={{ background: "#eef2f6" }}>
+                          <div
+                            className="h-1.5 rounded-full transition-all"
+                            style={{ width: `${pct}%`, background: cfg?.bar ?? "#16233f" }}
+                          />
+                        </div>
+                        <span className="text-xs w-9 text-right tabular-nums" style={{ color: "#8693a8" }}>
+                          {pct}%
+                        </span>
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
             </div>
-          )}
 
-          {/* Comisiones — solo para admins, no visible para Alex */}
-          <div className="bg-white rounded-2xl border border-neutral-200 overflow-hidden">
-            <div className="px-5 py-4 border-b border-neutral-100">
-              <p className="text-sm font-medium text-neutral-700">Comisiones del mes</p>
-              <p className="text-xs text-neutral-400 mt-0.5">
-                El {Math.round(comisionPct * 100)}% se aplica sobre el precio base s/IVA (lista s/IVA),
-                no sobre el total del pedido. El total c/IVA ({fmtK(totalB2B)}) ya incluye IVA ({Math.round(ivaPct * 100)}%) y comisión apilados sobre la misma base,
-                por eso la comisión representa ~{Math.round(comisionPct / divisor * 100)}% del total facturado.
-              </p>
-            </div>
-
-            {/* KPIs comisión */}
-            <div className="grid grid-cols-3 divide-x divide-neutral-100 border-b border-neutral-100">
-              {[
-                {
-                  label: "Comisión total recibida",
-                  value: comisionTotalB2B,
-                  sub: `${Math.round(comisionPct * 100)}% × base ${fmtK(Math.round(totalB2B / divisor))} s/IVA`,
-                },
-                { label: "A preventistas", value: totalAPreventistas, sub: "según % asignado a cada uno" },
-                { label: "Queda en Minutas", value: totalMinutasNeto, sub: "comisión total − preventistas", highlight: true },
-              ].map(({ label, value, sub, highlight }) => (
-                <div key={label} className="px-5 py-4">
-                  <p className="text-xs text-neutral-400 mb-1">{label}</p>
-                  <p className={`text-xl font-semibold font-display tabular-nums ${highlight ? "text-tierra-700" : "text-neutral-900"}`}>
-                    {fmtK(value)}
-                  </p>
-                  <p className="text-xs text-neutral-400 mt-0.5">{sub}</p>
+            {/* Top products */}
+            {topProductos.length > 0 && (
+              <div
+                className="bg-white rounded-2xl overflow-hidden"
+                style={{ border: "1px solid #e7ecf3", boxShadow: "0 1px 2px rgba(22,35,63,.04)" }}
+              >
+                <div className="px-5 py-4 border-b" style={{ borderColor: "#e7ecf3" }}>
+                  <p className="text-sm font-medium" style={{ color: "#16233f" }}>Top productos</p>
+                  <p className="text-xs mt-0.5" style={{ color: "#8693a8" }}>Por cajas vendidas</p>
                 </div>
-              ))}
-            </div>
-
-            {/* Desglose por preventista */}
-            {comisionesPorVendedor.length === 0 ? (
-              <p className="px-5 py-6 text-xs text-neutral-400 text-center">
-                Sin preventistas con ventas este mes.
-              </p>
-            ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="border-b border-neutral-100 text-left">
-                      <th className="px-5 py-3 text-xs font-medium text-neutral-400">Preventista</th>
-                      <th className="px-5 py-3 text-xs font-medium text-neutral-400 text-right">Ventas B2B</th>
-                      <th className="px-5 py-3 text-xs font-medium text-neutral-400 text-right">% asignado</th>
-                      <th className="px-5 py-3 text-xs font-medium text-neutral-400 text-right">Le debemos</th>
-                      <th className="px-5 py-3 text-xs font-medium text-neutral-400 text-right">Nos queda</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-neutral-50">
-                    {comisionesPorVendedor.map((f) => (
-                      <tr key={f.name} className="hover:bg-neutral-50">
-                        <td className="px-5 py-3 font-medium text-neutral-800">{f.name}</td>
-                        <td className="px-5 py-3 text-right text-neutral-600 tabular-nums">{fmtK(f.ventasB2B)}</td>
-                        <td className="px-5 py-3 text-right tabular-nums">
-                          {f.pctPreventista != null
-                            ? <span className="text-info font-medium">{Math.round(f.pctPreventista * 100)}%</span>
-                            : <span className="text-neutral-300">sin asignar</span>}
-                        </td>
-                        <td className="px-5 py-3 text-right font-semibold text-neutral-900 tabular-nums">
-                          {f.montoPreventista > 0 ? fmtK(f.montoPreventista) : <span className="text-neutral-300">—</span>}
-                        </td>
-                        <td className="px-5 py-3 text-right font-semibold text-tierra-700 tabular-nums">
-                          {fmtK(f.montoMinutas)}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+                <div className="divide-y" style={{ borderColor: "#eef2f6" }}>
+                  {topProductos.map((p, i) => (
+                    <div key={p.sku} className="px-5 py-2.5 flex items-center gap-3">
+                      <span
+                        className="text-xs tabular-nums w-5 shrink-0 text-right font-medium"
+                        style={{ color: "#8693a8" }}
+                      >
+                        {i + 1}
+                      </span>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium truncate" style={{ color: "#16233f" }}>
+                          {p.name}
+                        </p>
+                        <p className="text-xs" style={{ color: "#8693a8" }}>{p.sku}</p>
+                      </div>
+                      <div className="text-right shrink-0">
+                        <p className="text-sm font-semibold tabular-nums" style={{ color: "#16233f" }}>
+                          {p.cajas}
+                        </p>
+                        <p className="text-xs tabular-nums" style={{ color: "#8693a8" }}>cajas</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
               </div>
             )}
+
           </div>
-
-          {/* Top clientes */}
-          {topClientes.length > 0 && (
-            <div className="bg-white rounded-2xl border border-neutral-200 overflow-hidden">
-              <div className="px-5 py-4 border-b border-neutral-100">
-                <p className="text-sm font-medium text-neutral-700">Top clientes B2B</p>
-              </div>
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="border-b border-neutral-100 text-left">
-                      <th className="px-5 py-3 text-xs font-medium text-neutral-400">Cliente</th>
-                      <th className="px-5 py-3 text-xs font-medium text-neutral-400 text-right">Pedidos</th>
-                      <th className="px-5 py-3 text-xs font-medium text-neutral-400 text-right">Total</th>
-                      <th className="px-5 py-3 text-xs font-medium text-neutral-400 text-right">Ticket prom.</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-neutral-50">
-                    {topClientes.map((c, i) => (
-                      <tr key={c.name} className="hover:bg-neutral-50">
-                        <td className="px-5 py-2.5 font-medium text-neutral-800">
-                          <span className="text-neutral-300 mr-2 tabular-nums text-xs">#{i + 1}</span>
-                          {c.name}
-                        </td>
-                        <td className="px-5 py-2.5 text-right text-neutral-500">{c.count}</td>
-                        <td className="px-5 py-2.5 text-right font-semibold text-neutral-900 tabular-nums">{fmtK(c.total)}</td>
-                        <td className="px-5 py-2.5 text-right text-neutral-400 tabular-nums">{fmtK(Math.round(c.total / c.count))}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          )}
-
         </div>
       )}
     </div>

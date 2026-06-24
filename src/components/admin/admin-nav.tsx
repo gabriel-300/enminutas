@@ -115,15 +115,17 @@ function NavContent({
               key={item.href}
               href={item.href}
               onClick={onNavClick}
-              className={`flex items-center gap-2.5 rounded-lg transition-colors ${
+              className={`flex items-center gap-2.5 rounded-xl transition-all duration-150 ${
                 item.sub ? "pl-7 pr-3 py-1.5" : "px-3 py-2.5"
               } ${
                 active
-                  ? "bg-tierra-50 text-tierra-700 font-medium"
-                  : "text-neutral-500 hover:bg-neutral-100 hover:text-neutral-900"
+                  ? item.sub
+                    ? "bg-tierra-50 text-tierra-700 font-medium"
+                    : "bg-tierra-700 text-white font-medium shadow-sm"
+                  : "text-neutral-500 hover:bg-neutral-100 hover:text-neutral-800"
               }`}
             >
-              <span className={active ? "text-tierra-700" : "text-neutral-400"}>
+              <span className={active && !item.sub ? "text-white" : active ? "text-tierra-700" : "text-neutral-400"}>
                 {ICONS[item.icon]}
               </span>
               <span className={item.sub ? "text-xs" : "text-sm"}>{item.label}</span>
