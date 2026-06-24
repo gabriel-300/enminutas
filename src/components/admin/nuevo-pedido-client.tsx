@@ -4,6 +4,7 @@ import { useState, useMemo, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { calcularPrecio, formatPrecio, type PrecioB2B } from "@/lib/b2b-pricing";
 import { crearPedidoAdmin } from "@/app/(admin)/admin/pedidos/nuevo/actions";
+import { HelpTooltip } from "@/components/ui/help-tooltip";
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
@@ -465,7 +466,10 @@ export function NuevoPedidoClient({
         <div className="bg-white rounded-2xl border border-neutral-200 p-5 space-y-4">
           {esAdmin && (
             <div>
-              <label className="block text-xs font-medium text-neutral-500 mb-1.5">Estado inicial</label>
+              <label className="flex items-center gap-1.5 text-xs font-medium text-neutral-500 mb-1.5">
+                Estado inicial
+                <HelpTooltip wide text="Aprobado: el pago ya está confirmado, el pedido entra directo a producción. Pendiente de pago: el cliente todavía no pagó, queda en espera hasta que se confirme." />
+              </label>
               <select value={initialStatus} onChange={(e) => setInitialStatus(e.target.value)}
                 className="w-full px-3 py-2 text-sm border border-neutral-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-tierra-700/20">
                 <option value="aprobado">Aprobado (va directo a producción)</option>

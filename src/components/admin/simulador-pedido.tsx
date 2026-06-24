@@ -3,6 +3,7 @@
 import { useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { HelpTooltip } from "@/components/ui/help-tooltip";
 
 type Producto = {
   id:            string;
@@ -351,8 +352,9 @@ export function SimuladorPedido({
             {/* ── Percepciones IIBB ────────────────────── */}
             <div className="border-t border-neutral-100 pt-4 space-y-2">
               <div className="flex items-center justify-between">
-                <p className="text-xs font-semibold text-neutral-400 uppercase tracking-wide">
+                <p className="flex items-center gap-1.5 text-xs font-semibold text-neutral-400 uppercase tracking-wide">
                   Percepciones IIBB
+                  <HelpTooltip wide text="Impuesto provincial de Ingresos Brutos. No todos los clientes lo pagan. El porcentaje varía según la provincia del cliente. Consultá con administración si no sabés qué % usar." />
                 </p>
                 <button
                   onClick={agregarPercepcion}

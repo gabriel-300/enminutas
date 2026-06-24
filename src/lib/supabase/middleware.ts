@@ -15,11 +15,13 @@ const PRODUCCION_ALLOWED = [
   "/admin/dashboard",
   "/admin/produccion",
   "/admin/cocina",
+  "/admin/ayuda",
 ];
 
 const DISTRIBUCION_ALLOWED = [
   "/admin/dashboard",
   "/admin/distribucion",
+  "/admin/ayuda",
 ];
 
 // Reads raw_app_meta_data via admin API, bypassing JWT claims.
