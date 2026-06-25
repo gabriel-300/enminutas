@@ -1,6 +1,7 @@
 import { createClient, createAdminClient } from "@/lib/supabase/server";
 import { redirect, notFound } from "next/navigation";
 import { PrintTrigger, PrintButton } from "@/components/remito/print-trigger";
+import { FirmaCanvas } from "@/components/remito/firma-canvas";
 import { fmtFechaSolo } from "@/lib/fecha";
 
 const fmt = (n: number) =>
@@ -36,6 +37,7 @@ export default async function RemitoPage({
       id, order_number, status, channel, total, subtotal, shipping_fee, discount,
       payment_method, payment_confirmed_at, created_at,
       customer_id, guest_email, guest_phone,
+      firma_data, firma_fecha, firma_aclaracion,
       customer:profiles!customer_id (full_name, phone),
       lines:order_lines (
         id, quantity, unit_price, line_total, product_snapshot
@@ -215,14 +217,38 @@ export default async function RemitoPage({
         {/* Firma */}
         <div style={{ borderTop: "1px solid #e5e7eb", paddingTop: 32, display: "grid", gridTemplateColumns: "1fr 1fr", gap: 40, marginTop: 8 }}>
           <div>
-            <div style={{ borderBottom: "1px solid #111", height: 40, marginBottom: 6 }} />
-            <p style={{ fontSize: 11, color: "#666", textAlign: "center" }}>Firma y aclaración — Receptor</p>
+            {o.firma_data ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={o.firma_data}
+                alt="Firma del receptor"
+                style={{ height: 60, maxWidth: "100%", objectFit: "contain", marginBottom: 6 }}
+              />
+            ) : (
+              <div style={{ borderBottom: "1px solid #111", height: 60, marginBottom: 6 }} />
+            )}
+            <p style={{ fontSize: 11, color: "#666", textAlign: "center" }}>
+              {o.firma_aclaracion
+                ? `${o.firma_aclaracion} — Receptor`
+                : "Firma y aclaración — Receptor"}
+            </p>
           </div>
           <div>
-            <div style={{ borderBottom: "1px solid #111", height: 40, marginBottom: 6 }} />
+            <div style={{ borderBottom: "1px solid #111", height: 60, marginBottom: 6, display: "flex", alignItems: "flex-end", paddingBottom: 4 }}>
+              {o.firma_fecha && (
+                <span style={{ fontSize: 13, color: "#111", fontWeight: 600 }}>
+                  {fmtFechaSolo(o.firma_fecha)}
+                </span>
+              )}
+            </div>
             <p style={{ fontSize: 11, color: "#666", textAlign: "center" }}>Fecha de recepción</p>
           </div>
         </div>
+
+        {/* Canvas de firma digital — solo en pantalla, no en impresión */}
+        {!o.firma_data && STAFF.includes(role ?? "") && (
+          <FirmaCanvas orderId={id} />
+        )}
 
         {/* Pie */}
         <div style={{ marginTop: 40, textAlign: "center", fontSize: 10, color: "#bbb" }}>
