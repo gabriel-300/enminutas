@@ -121,6 +121,16 @@ export default async function DistribucionPage({
           <h1 className="text-xl md:text-2xl font-semibold font-display text-neutral-900">Distribución</h1>
           <div className="flex gap-2 shrink-0">
             <Link
+              href="/repartidor"
+              className="flex items-center gap-1 px-2.5 py-2 rounded-xl border border-[#16233f] text-sm font-medium text-[#16233f] hover:bg-[#16233f] hover:text-white transition-colors"
+              title="App mobile para repartidores"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" className="size-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z" />
+              </svg>
+              <span className="hidden sm:inline">App repartidor</span>
+            </Link>
+            <Link
               href="/admin/distribucion/historial"
               className="flex items-center gap-1 px-2.5 py-2 rounded-xl border border-neutral-200 text-sm font-medium text-neutral-600 hover:bg-neutral-50 transition-colors"
             >

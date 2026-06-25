@@ -44,12 +44,13 @@ export const metadata: Metadata = {
     index: true,
     follow: true,
   },
+  manifest: "/manifest.json",
 };
 
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
-  themeColor: "#6B2417",
+  themeColor: "#16233f",
 };
 
 export default function RootLayout({
