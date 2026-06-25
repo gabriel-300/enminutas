@@ -8,7 +8,7 @@ import {
   LayoutGrid, ClipboardList, Activity, Truck,
   Users, BarChart2, DollarSign, BookOpen, Calendar,
   ShoppingCart, Clock, User, Settings, HelpCircle,
-  ChevronLeft, ChevronRight, Receipt, Wallet, Package, RotateCcw, FileCheck, Target, Tag, TrendingUp, Layers,
+  ChevronLeft, ChevronRight, Receipt, Wallet, Package, RotateCcw, FileCheck, Target, Tag, TrendingUp, Layers, Bell,
 } from "lucide-react";
 
 type NavEntry = {
@@ -74,6 +74,7 @@ const GROUPS: { label?: string; items: NavEntry[] }[] = [
 ];
 
 const BOTTOM_ITEMS: NavEntry[] = [
+  { href: "/admin/alertas",       label: "Alertas",       icon: Bell,       roles: ["admin"] },
   { href: "/admin/clientes",      label: "Clientes",      icon: User,       roles: ["admin", "vendedor"], sublabel: "B2B · B2C" },
   { href: "/admin/configuracion", label: "Configuración", icon: Settings,   roles: ["admin"] },
   { href: "/admin/ayuda",         label: "Ayuda",         icon: HelpCircle, roles: ["admin", "vendedor", "produccion", "distribucion"] },

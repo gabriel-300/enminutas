@@ -1232,6 +1232,11 @@ export default async function DashboardPage() {
                 ))}
               </ul>
             )}
+            <div className="px-5 py-2.5 border-t border-neutral-50">
+              <Link href="/admin/alertas" className="text-xs text-neutral-400 hover:text-[#16233f] transition-colors">
+                Ver centro de alertas (stock, lotes, cheques…) →
+              </Link>
+            </div>
           </div>
 
           {/* Preventistas del mes */}
