@@ -35,7 +35,7 @@ export default async function HojaDeRutaPage({
   let q = (adminClient as any)
     .from("orders")
     .select(`
-      id, order_number, despachado_at, entregado_at,
+      id, order_number, despachado_at, entregado_at, orden_ruta,
       shipping_snapshot,
       customer:profiles!customer_id (full_name, phone, zona:delivery_zones!zona_id (name)),
       guest_phone,
@@ -58,20 +58,33 @@ export default async function HojaDeRutaPage({
   if (esDistribucion && zonaFiltro) q = q.eq("delivery_zone_id", zonaFiltro);
 
   const { data: orders } = await q;
-  const lista = (orders ?? []) as any[];
+  const rawLista = (orders ?? []) as any[];
 
-  // Agrupar por zona
+  // Si hay orden_ruta definido, usarlo para ordenar; sino mantener despachado_at
+  const tieneOrden = rawLista.some(o => o.orden_ruta !== null);
+  const lista = tieneOrden
+    ? [...rawLista].sort((a, b) => {
+        if (a.orden_ruta !== null && b.orden_ruta !== null) return a.orden_ruta - b.orden_ruta;
+        if (a.orden_ruta !== null) return -1;
+        if (b.orden_ruta !== null) return 1;
+        return 0;
+      })
+    : rawLista;
+
+  // Agrupar por zona (solo si no hay orden personalizado; si hay orden, mostrar lista plana)
   const byZone: Record<string, any[]> = {};
   for (const order of lista) {
-    const zoneName = order.customer?.zona?.name ?? "Sin zona asignada";
+    const zoneName = tieneOrden ? "Ruta del día" : (order.customer?.zona?.name ?? "Sin zona asignada");
     if (!byZone[zoneName]) byZone[zoneName] = [];
     byZone[zoneName].push(order);
   }
-  const zoneNames = Object.keys(byZone).sort((a, b) => {
-    if (a === "Sin zona asignada") return 1;
-    if (b === "Sin zona asignada") return -1;
-    return a.localeCompare(b, "es");
-  });
+  const zoneNames = tieneOrden
+    ? ["Ruta del día"]
+    : Object.keys(byZone).sort((a, b) => {
+        if (a === "Sin zona asignada") return 1;
+        if (b === "Sin zona asignada") return -1;
+        return a.localeCompare(b, "es");
+      });
 
   const fechaDisplay = esHistorico
     ? new Date(`${fechaParam}T12:00:00`).toLocaleDateString("es-AR", {
