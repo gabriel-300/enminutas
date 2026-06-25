@@ -15,11 +15,14 @@ type Lote = {
   cantidad_actual: number;
   unidad: string;
   proveedor: string | null;
+  deposito_id: string | null;
+  deposito_nombre: string | null;
   estado: "vencido" | "critico" | "proximo" | "vigente";
   dias_restantes: number;
 };
 
-type Producto = { id: string; name: string; unit_label: string };
+type Producto  = { id: string; name: string; unit_label: string };
+type Deposito  = { id: string; nombre: string };
 
 const ESTADO_CFG = {
   vencido: { label: "Vencido",       bg: "#fef2f2", text: "#dc2626", dot: "bg-red-500" },
@@ -33,15 +36,18 @@ const today = () => new Date().toISOString().slice(0, 10);
 export function LotesClient({
   lotes,
   productos,
+  depositos,
 }: {
   lotes: Lote[];
   productos: Producto[];
+  depositos: Deposito[];
 }) {
   const formId = useId();
-  const [filtro, setFiltro] = useState<"todos" | "vencido" | "critico" | "proximo" | "vigente">("todos");
-  const [showForm, setShowForm] = useState(false);
-  const [pending, start] = useTransition();
-  const [error, setError] = useState<string | null>(null);
+  const [filtro, setFiltro]         = useState<"todos" | "vencido" | "critico" | "proximo" | "vigente">("todos");
+  const [filtroDeposito, setFiltroDeposito] = useState<string>("todos");
+  const [showForm, setShowForm]     = useState(false);
+  const [pending, start]            = useTransition();
+  const [error, setError]           = useState<string | null>(null);
 
   // Form state
   const [productoId, setProductoId]         = useState("");
@@ -53,12 +59,15 @@ export function LotesClient({
   const [proveedor, setProveedor]           = useState("");
   const [costo, setCosto]                   = useState("");
   const [obs, setObs]                       = useState("");
+  const [depositoId, setDepositoId]         = useState("");
 
   // Ajuste inline
   const [ajustando, setAjustando] = useState<string | null>(null);
   const [nuevaCant, setNuevaCant] = useState("");
 
-  const lotesFiltrados = filtro === "todos" ? lotes : lotes.filter(l => l.estado === filtro);
+  const lotesFiltrados = lotes
+    .filter(l => filtro === "todos" || l.estado === filtro)
+    .filter(l => filtroDeposito === "todos" || l.deposito_id === filtroDeposito || (filtroDeposito === "__sin__" && !l.deposito_id));
   const vencidos  = lotes.filter(l => l.estado === "vencido").length;
   const criticos  = lotes.filter(l => l.estado === "critico").length;
 
@@ -74,7 +83,7 @@ export function LotesClient({
   function resetForm() {
     setProductoId(""); setNumeroLote(""); setFechaIngreso(today());
     setFechaVenc(""); setCantidad(""); setUnidad("kg");
-    setProveedor(""); setCosto(""); setObs("");
+    setProveedor(""); setCosto(""); setObs(""); setDepositoId("");
     setError(null);
   }
 
@@ -92,9 +101,10 @@ export function LotesClient({
         fechaVencimiento: fechaVenc,
         cantidadInicial: cant,
         unidad,
-        proveedor: proveedor || undefined,
+        proveedor:     proveedor    || undefined,
         costoUnitario: costo ? parseFloat(costo.replace(",", ".")) : undefined,
-        observaciones: obs || undefined,
+        observaciones: obs          || undefined,
+        depositoId:    depositoId   || undefined,
       });
       if (res.error) { setError(res.error); return; }
       resetForm();
@@ -139,33 +149,61 @@ export function LotesClient({
       )}
 
       {/* Header acciones */}
-      <div className="flex items-center justify-between gap-4">
-        {/* Filtros */}
-        <div className="flex gap-1.5 flex-wrap">
-          {(["todos", "vencido", "critico", "proximo", "vigente"] as const).map(f => (
-            <button
-              key={f}
-              onClick={() => setFiltro(f)}
-              className={`px-3 py-1.5 rounded-xl text-xs font-medium transition-colors ${
-                filtro === f
-                  ? "bg-[#16233f] text-white"
-                  : "bg-white border border-neutral-200 text-neutral-600 hover:bg-neutral-50"
-              }`}
-            >
-              {f === "todos" ? "Todos" : ESTADO_CFG[f].label}
-              {f !== "todos" && (
-                <span className="ml-1.5 opacity-70">{lotes.filter(l => l.estado === f).length}</span>
-              )}
-            </button>
-          ))}
+      <div className="flex flex-col gap-3">
+        <div className="flex items-center justify-between gap-4">
+          {/* Filtros estado */}
+          <div className="flex gap-1.5 flex-wrap">
+            {(["todos", "vencido", "critico", "proximo", "vigente"] as const).map(f => (
+              <button
+                key={f}
+                onClick={() => setFiltro(f)}
+                className={`px-3 py-1.5 rounded-xl text-xs font-medium transition-colors ${
+                  filtro === f
+                    ? "bg-[#16233f] text-white"
+                    : "bg-white border border-neutral-200 text-neutral-600 hover:bg-neutral-50"
+                }`}
+              >
+                {f === "todos" ? "Todos" : ESTADO_CFG[f].label}
+                {f !== "todos" && (
+                  <span className="ml-1.5 opacity-70">{lotes.filter(l => l.estado === f).length}</span>
+                )}
+              </button>
+            ))}
+          </div>
+          <button
+            onClick={() => { setShowForm(v => !v); if (showForm) resetForm(); }}
+            className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#16233f] text-white text-sm font-medium hover:bg-[#1e2f52] transition-colors shrink-0"
+          >
+            {showForm ? <X className="size-4" /> : <Plus className="size-4" />}
+            {showForm ? "Cancelar" : "Nuevo lote"}
+          </button>
         </div>
-        <button
-          onClick={() => { setShowForm(v => !v); if (showForm) resetForm(); }}
-          className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#16233f] text-white text-sm font-medium hover:bg-[#1e2f52] transition-colors"
-        >
-          {showForm ? <X className="size-4" /> : <Plus className="size-4" />}
-          {showForm ? "Cancelar" : "Nuevo lote"}
-        </button>
+        {/* Filtro depósito */}
+        {depositos.length > 0 && (
+          <div className="flex gap-1.5 flex-wrap">
+            <button
+              onClick={() => setFiltroDeposito("todos")}
+              className={`px-3 py-1 rounded-xl text-xs font-medium transition-colors ${filtroDeposito === "todos" ? "bg-neutral-800 text-white" : "bg-white border border-neutral-200 text-neutral-600 hover:bg-neutral-50"}`}
+            >
+              Todos los depósitos
+            </button>
+            {depositos.map(d => (
+              <button
+                key={d.id}
+                onClick={() => setFiltroDeposito(d.id)}
+                className={`px-3 py-1 rounded-xl text-xs font-medium transition-colors ${filtroDeposito === d.id ? "bg-neutral-800 text-white" : "bg-white border border-neutral-200 text-neutral-600 hover:bg-neutral-50"}`}
+              >
+                {d.nombre}
+              </button>
+            ))}
+            <button
+              onClick={() => setFiltroDeposito("__sin__")}
+              className={`px-3 py-1 rounded-xl text-xs font-medium transition-colors ${filtroDeposito === "__sin__" ? "bg-neutral-800 text-white" : "bg-white border border-neutral-200 text-neutral-400 hover:bg-neutral-50"}`}
+            >
+              Sin asignar
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Formulario nuevo lote */}
@@ -271,16 +309,34 @@ export function LotesClient({
               </div>
             </div>
 
-            <div>
-              <label htmlFor={`${formId}-prov`} className={labelClass}>Proveedor</label>
-              <input
-                id={`${formId}-prov`}
-                type="text"
-                placeholder="Nombre del proveedor"
-                value={proveedor}
-                onChange={e => setProveedor(e.target.value)}
-                className={inputClass}
-              />
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label htmlFor={`${formId}-prov`} className={labelClass}>Proveedor</label>
+                <input
+                  id={`${formId}-prov`}
+                  type="text"
+                  placeholder="Nombre del proveedor"
+                  value={proveedor}
+                  onChange={e => setProveedor(e.target.value)}
+                  className={inputClass}
+                />
+              </div>
+              {depositos.length > 0 && (
+                <div>
+                  <label htmlFor={`${formId}-deposito`} className={labelClass}>Depósito</label>
+                  <select
+                    id={`${formId}-deposito`}
+                    value={depositoId}
+                    onChange={e => setDepositoId(e.target.value)}
+                    className={inputClass}
+                  >
+                    <option value="">Sin asignar</option>
+                    {depositos.map(d => (
+                      <option key={d.id} value={d.id}>{d.nombre}</option>
+                    ))}
+                  </select>
+                </div>
+              )}
             </div>
 
             <div>
@@ -320,6 +376,7 @@ export function LotesClient({
               <tr>
                 <th className="px-5 py-3 text-left text-xs font-semibold text-neutral-400 uppercase tracking-wide">Producto / Lote</th>
                 <th className="px-5 py-3 text-left text-xs font-semibold text-neutral-400 uppercase tracking-wide">Estado</th>
+                <th className="px-4 py-3 text-left text-xs font-semibold text-neutral-400 uppercase tracking-wide">Depósito</th>
                 <th className="px-5 py-3 text-right text-xs font-semibold text-neutral-400 uppercase tracking-wide">Vencimiento</th>
                 <th className="px-5 py-3 text-right text-xs font-semibold text-neutral-400 uppercase tracking-wide">Stock actual</th>
                 <th className="px-5 py-3 text-right text-xs font-semibold text-neutral-400 uppercase tracking-wide">Ingreso</th>
@@ -363,6 +420,9 @@ export function LotesClient({
                           ? ` (${lote.dias_restantes}d)`
                           : ` (${Math.abs(lote.dias_restantes)}d)`}
                       </span>
+                    </td>
+                    <td className="px-4 py-3.5 text-xs text-neutral-500 whitespace-nowrap">
+                      {lote.deposito_nombre ?? <span className="text-neutral-300">—</span>}
                     </td>
                     <td className="px-5 py-3.5 text-right text-neutral-600 tabular-nums whitespace-nowrap">
                       {new Date(lote.fecha_vencimiento + "T12:00:00").toLocaleDateString("es-AR")}

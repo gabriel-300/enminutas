@@ -20,6 +20,7 @@ export async function crearLote(payload: {
   proveedor?: string;
   costoUnitario?: number;
   observaciones?: string;
+  depositoId?: string;
 }): Promise<{ id?: string; error?: string }> {
   try {
     const user = await getAdminUser();
@@ -36,6 +37,7 @@ export async function crearLote(payload: {
       proveedor:         payload.proveedor?.trim() || null,
       costo_unitario:    payload.costoUnitario || null,
       observaciones:     payload.observaciones?.trim() || null,
+      deposito_id:       payload.depositoId || null,
       created_by:        user.id,
     }).select("id").single();
 

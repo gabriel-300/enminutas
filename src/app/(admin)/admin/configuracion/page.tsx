@@ -1,11 +1,12 @@
 import Link from "next/link";
-import { Settings, Package, Tag, Truck, MapPin, Percent, Users, Building2, UserCog, Sliders } from "lucide-react";
+import { Settings, Package, Tag, Truck, MapPin, Percent, Users, Building2, UserCog, Sliders, Warehouse } from "lucide-react";
 
 const ITEMS = [
   { href: "/admin/productos",    label: "Productos",        icon: Package,   desc: "Catálogo, costos y precios" },
   { href: "/admin/categorias",   label: "Categorías",       icon: Tag,       desc: "Agrupaciones del catálogo" },
   { href: "/admin/canales",      label: "Canales B2B",      icon: Building2, desc: "Configuración de canales de venta" },
   { href: "/admin/zonas",        label: "Zonas",            icon: MapPin,    desc: "Zonas de distribución" },
+  { href: "/admin/depositos",    label: "Depósitos",        icon: Warehouse, desc: "Ubicaciones físicas de almacenamiento" },
   { href: "/admin/descuentos",   label: "Descuentos vol.",  icon: Percent,   desc: "Reglas de descuento por volumen" },
   { href: "/admin/clientes-b2b", label: "Clientes B2B",    icon: Users,     desc: "Gestión de clientes mayoristas" },
   { href: "/admin/clientes-b2c", label: "Clientes B2C",    icon: Users,     desc: "Gestión de clientes minoristas" },

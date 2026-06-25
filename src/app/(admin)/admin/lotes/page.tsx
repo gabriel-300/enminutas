@@ -30,15 +30,14 @@ export default async function LotesPage() {
 
   const { data: lotesData } = await db
     .from("lotes")
-    .select("*, products(id, name)")
+    .select("*, products(id, name), deposito:depositos!deposito_id(id, nombre)")
     .eq("activo", true)
     .order("fecha_vencimiento", { ascending: true });
 
-  const { data: productosData } = await db
-    .from("products")
-    .select("id, name, unit_label")
-    .eq("is_active", true)
-    .order("name");
+  const [{ data: productosData }, { data: depositosData }] = await Promise.all([
+    db.from("products").select("id, name, unit_label").eq("is_active", true).order("name"),
+    db.from("depositos").select("id, nombre").eq("activo", true).order("nombre"),
+  ]);
 
   const lotes = ((lotesData ?? []) as any[]).map((l: any) => {
     const { estado, dias } = calcularEstado(l.fecha_vencimiento);
@@ -53,12 +52,15 @@ export default async function LotesPage() {
       cantidad_actual:  Number(l.cantidad_actual),
       unidad:           l.unidad,
       proveedor:        l.proveedor,
+      deposito_id:      l.deposito_id ?? null,
+      deposito_nombre:  l.deposito?.nombre ?? null,
       estado,
       dias_restantes:   dias,
     };
   });
 
-  const productos = (productosData ?? []) as any[];
+  const productos  = (productosData  ?? []) as any[];
+  const depositos  = (depositosData  ?? []) as any[];
 
   const vencidos = lotes.filter(l => l.estado === "vencido").length;
   const criticos = lotes.filter(l => l.estado === "critico").length;
@@ -87,7 +89,7 @@ export default async function LotesPage() {
         ))}
       </div>
 
-      <LotesClient lotes={lotes} productos={productos} />
+      <LotesClient lotes={lotes} productos={productos} depositos={depositos} />
     </div>
   );
 }
