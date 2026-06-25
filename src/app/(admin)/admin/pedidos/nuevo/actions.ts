@@ -73,7 +73,7 @@ export async function crearPedidoAdmin(payload: CrearPedidoPayload): Promise<{ o
     getParametros(),
     (adminClient as any)
       .from("profiles")
-      .select("canal")
+      .select("canal:canales!canal_id (margen_std, margen_premium, markup_pvp)")
       .eq("id", clientId)
       .single(),
     (adminClient as any)
@@ -83,15 +83,8 @@ export async function crearPedidoAdmin(payload: CrearPedidoPayload): Promise<{ o
     getActiveVolumeDiscounts(),
   ]);
 
-  const canalSlug = clientProfileRes.data?.canal as string | undefined;
-  if (!canalSlug) return { error: "El cliente no tiene canal asignado" };
-
-  const { data: canalData } = await (adminClient as any)
-    .from("canales")
-    .select("margen_std, margen_premium, markup_pvp")
-    .eq("slug", canalSlug)
-    .single();
-  if (!canalData) return { error: "Canal no encontrado" };
+  const canalData = clientProfileRes.data?.canal as { margen_std: number; margen_premium: number; markup_pvp: number } | null | undefined;
+  if (!canalData) return { error: "El cliente no tiene canal asignado" };
 
   // Validar cantidades mínimas y recalcular precios server-side
   const productMap  = new Map<string, any>((productsRes.data ?? []).map((p: any) => [p.id, p]));
