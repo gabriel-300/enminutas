@@ -324,7 +324,7 @@ export function NuevoPedidoClient({
                 <th className="px-4 py-3 font-medium text-neutral-500 w-16">Cód.</th>
                 <th className="px-4 py-3 font-medium text-neutral-500">Producto</th>
                 <th className="px-4 py-3 font-medium text-neutral-500 text-right">s/IVA por caja</th>
-                <th className="px-4 py-3 font-medium text-neutral-500 text-right">c/IVA por caja</th>
+                <th className="px-4 py-3 font-medium text-neutral-500 text-right" title="c/IVA + comisión incluida">Precio al cliente</th>
                 <th className="px-4 py-3 font-medium text-neutral-500 text-center w-36">Cantidad</th>
                 <th className="px-4 py-3 font-medium text-neutral-500 text-right w-32">Subtotal</th>
               </tr>
