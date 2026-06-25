@@ -8,7 +8,7 @@ import {
   LayoutGrid, ClipboardList, Activity, Truck,
   Users, BarChart2, DollarSign, BookOpen, Calendar,
   ShoppingCart, Clock, User, Settings, HelpCircle,
-  ChevronLeft, ChevronRight, Receipt, Wallet, Package, RotateCcw, FileCheck, Target, Tag,
+  ChevronLeft, ChevronRight, Receipt, Wallet, Package, RotateCcw, FileCheck, Target, Tag, TrendingUp,
 } from "lucide-react";
 
 type NavEntry = {
@@ -43,15 +43,21 @@ const GROUPS: { label?: string; items: NavEntry[] }[] = [
   {
     label: "COMERCIAL",
     items: [
-      { href: "/admin/preventista",   label: "Preventista",   icon: Users,      roles: ["admin", "vendedor"] },
-      { href: "/admin/reportes",      label: "Reportes",      icon: BarChart2,  roles: ["admin"] },
-      { href: "/admin/objetivos",     label: "Objetivos",     icon: Target,     roles: ["admin"] },
-      { href: "/admin/liquidaciones", label: "Liquidaciones", icon: DollarSign, roles: ["admin"] },
-      { href: "/admin/facturacion",        label: "Facturación",        icon: Receipt, roles: ["admin"] },
-      { href: "/admin/cuentas-corrientes", label: "Ctas. corrientes",   icon: Wallet,   roles: ["admin"] },
-      { href: "/admin/devoluciones",         label: "Devoluciones",      icon: RotateCcw,  roles: ["admin"] },
-      { href: "/admin/cheques",             label: "Cheques",            icon: FileCheck,  roles: ["admin"] },
-      { href: "/admin/precios-cliente",     label: "Precios cliente",    icon: Tag,        roles: ["admin"] },
+      { href: "/admin/preventista",     label: "Preventista",    icon: Users,       roles: ["admin", "vendedor"] },
+      { href: "/admin/pipeline",        label: "Pipeline",       icon: TrendingUp,  roles: ["admin", "vendedor"] },
+      { href: "/admin/reportes",        label: "Reportes",       icon: BarChart2,   roles: ["admin"] },
+      { href: "/admin/objetivos",       label: "Objetivos",      icon: Target,      roles: ["admin"] },
+      { href: "/admin/precios-cliente", label: "Precios cliente", icon: Tag,        roles: ["admin"] },
+    ],
+  },
+  {
+    label: "ADMINISTRACIÓN",
+    items: [
+      { href: "/admin/facturacion",        label: "Facturación",      icon: Receipt,   roles: ["admin"] },
+      { href: "/admin/cuentas-corrientes", label: "Ctas. corrientes", icon: Wallet,    roles: ["admin"] },
+      { href: "/admin/devoluciones",       label: "Devoluciones",     icon: RotateCcw, roles: ["admin"] },
+      { href: "/admin/cheques",            label: "Cheques",          icon: FileCheck, roles: ["admin"] },
+      { href: "/admin/liquidaciones",      label: "Liquidaciones",    icon: DollarSign, roles: ["admin"] },
     ],
   },
   {
