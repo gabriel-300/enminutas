@@ -8,7 +8,7 @@ import {
   LayoutGrid, ClipboardList, Activity, Truck,
   Users, BarChart2, DollarSign, BookOpen, Calendar,
   ShoppingCart, Clock, User, Settings, HelpCircle,
-  ChevronLeft, ChevronRight, Receipt, Wallet,
+  ChevronLeft, ChevronRight, Receipt, Wallet, Package,
 } from "lucide-react";
 
 type NavEntry = {
@@ -53,6 +53,7 @@ const GROUPS: { label?: string; items: NavEntry[] }[] = [
   {
     label: "COCINA",
     items: [
+      { href: "/admin/lotes",               label: "Lotes",            icon: Package,     roles: ["admin", "produccion"] },
       { href: "/admin/cocina/recetas",      label: "Recetas",          icon: BookOpen,    roles: ["admin", "produccion"] },
       { href: "/admin/cocina/planificador", label: "Planificador",     icon: Calendar,    roles: ["admin", "produccion"] },
       { href: "/admin/cocina/compras",      label: "Lista de compras", icon: ShoppingCart, roles: ["admin", "produccion"] },
