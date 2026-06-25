@@ -323,8 +323,8 @@ export function NuevoPedidoClient({
               <tr className="border-b border-neutral-200 text-left">
                 <th className="px-4 py-3 font-medium text-neutral-500 w-16">Cód.</th>
                 <th className="px-4 py-3 font-medium text-neutral-500">Producto</th>
-                <th className="px-4 py-3 font-medium text-neutral-500 text-right">s/IVA por caja</th>
-                <th className="px-4 py-3 font-medium text-neutral-500 text-right" title="c/IVA + comisión incluida">Precio al cliente</th>
+                <th className="px-4 py-3 font-medium text-neutral-500 text-right">Precio s/IVA</th>
+                <th className="px-4 py-3 font-medium text-neutral-500 text-right">Precio caja</th>
                 <th className="px-4 py-3 font-medium text-neutral-500 text-center w-36">Cantidad</th>
                 <th className="px-4 py-3 font-medium text-neutral-500 text-right w-32">Subtotal</th>
               </tr>
@@ -354,13 +354,13 @@ export function NuevoPedidoClient({
                       </p>
                     </td>
                     <td className="px-4 py-3 text-right tabular-nums text-neutral-500">
-                      {hasPrice && precioSIVA ? fmt(precioSIVA) : (
+                      {hasPrice ? fmt(p.precio!.lista_siva) : (
                         <span className="text-neutral-300 text-xs">—</span>
                       )}
                     </td>
-                    <td className="px-4 py-3 text-right tabular-nums font-medium text-neutral-800">
+                    <td className="px-4 py-3 text-right tabular-nums font-semibold text-neutral-900">
                       {hasPrice ? fmt(p.precio!.final_civa) : (
-                        <span className="text-neutral-300 text-xs">{cliente ? "Sin datos B2B" : "—"}</span>
+                        <span className="text-neutral-300 text-xs font-normal">{cliente ? "Sin datos B2B" : "—"}</span>
                       )}
                     </td>
                     <td className="px-4 py-3">
