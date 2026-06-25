@@ -5,6 +5,7 @@ import Link from "next/link";
 import { OrderStatusBadge } from "@/components/ui/badge";
 import { DeclararPagoButton } from "@/components/b2b/declarar-pago-button";
 import { ReorderButton } from "@/components/b2b/reorder-button";
+import { GuardarPlantillaButton } from "@/components/b2b/guardar-plantilla-button";
 import { fmtFechaHora, fmtFecha } from "@/lib/fecha";
 
 export const metadata: Metadata = { title: "Detalle de pedido — Portal B2B En Minutas" };
@@ -254,11 +255,13 @@ export default async function B2BPedidoDetailPage({
         </div>
       )}
 
-      {/* Repetir pedido */}
-      <div className="mt-6">
+      {/* Repetir pedido + plantilla */}
+      <div className="mt-6 space-y-0">
         <ReorderButton orderId={o.id} />
+        <GuardarPlantillaButton orderId={o.id} />
         <p className="text-xs text-neutral-400 text-center mt-2">
-          Se cargan los mismos productos al carrito para que puedas revisar antes de confirmar
+          Se cargan los mismos productos al carrito para que puedas revisar antes de confirmar ·{" "}
+          <a href="/b2b/plantillas" className="underline hover:text-neutral-700">Ver mis plantillas</a>
         </p>
       </div>
     </div>
