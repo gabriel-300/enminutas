@@ -478,6 +478,20 @@ export function ClientesBb2Client({
   vendedores?:  Vendedor[];
   esAdmin?:     boolean;
 }) {
+  const [query, setQuery] = useState("");
+
+  const filtrados = query.trim()
+    ? clientes.filter((c) => {
+        const q = query.toLowerCase();
+        return (
+          c.full_name?.toLowerCase().includes(q) ||
+          c.email?.toLowerCase().includes(q) ||
+          c.canal_nombre?.toLowerCase().includes(q) ||
+          c.zona?.name?.toLowerCase().includes(q)
+        );
+      })
+    : clientes;
+
   return (
     <div className="space-y-5 md:space-y-6 max-w-5xl">
       {pendingCount > 0 && (
@@ -486,12 +500,39 @@ export function ClientesBb2Client({
         </div>
       )}
 
+      {esAdmin && <CrearClienteB2BForm zonas={zonas} canales={canales} />}
+
+      {/* ── Buscador ─────────────────────────────────────────────────────── */}
+      <div className="relative">
+        <svg className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400 pointer-events-none" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+        </svg>
+        <input
+          type="text"
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          placeholder="Buscar por nombre, email, canal o zona…"
+          className="w-full pl-9 pr-4 py-2.5 text-sm border border-neutral-200 rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-tierra-700/20"
+        />
+        {query && (
+          <button onClick={() => setQuery("")} className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-neutral-600 text-lg leading-none">×</button>
+        )}
+      </div>
+
+      {query && (
+        <p className="text-xs text-neutral-400 -mt-3">
+          {filtrados.length} resultado{filtrados.length !== 1 ? "s" : ""} para &ldquo;{query}&rdquo;
+        </p>
+      )}
+
       {/* ── Mobile: cards ────────────────────────────────────────────────── */}
       <div className="md:hidden space-y-3">
-        {clientes.length === 0 ? (
-          <p className="text-sm text-neutral-400 text-center py-10">No hay clientes B2B registrados todavía.</p>
+        {filtrados.length === 0 ? (
+          <p className="text-sm text-neutral-400 text-center py-10">
+            {query ? "Sin resultados para esa búsqueda." : "No hay clientes B2B registrados todavía."}
+          </p>
         ) : (
-          clientes.map((c) => (
+          filtrados.map((c) => (
             <ClienteMobileCard key={c.id} cliente={c} zonas={zonas} canales={canales}
               vendedores={vendedores} esAdmin={esAdmin} />
           ))
@@ -513,22 +554,20 @@ export function ClientesBb2Client({
             </tr>
           </thead>
           <tbody className="divide-y divide-neutral-100">
-            {clientes.length === 0 && (
+            {filtrados.length === 0 && (
               <tr>
                 <td colSpan={7} className="px-4 py-12 text-center text-neutral-400">
-                  No hay clientes B2B registrados todavía.
+                  {query ? "Sin resultados para esa búsqueda." : "No hay clientes B2B registrados todavía."}
                 </td>
               </tr>
             )}
-            {clientes.map((c) => (
+            {filtrados.map((c) => (
               <ClienteRow key={c.id} cliente={c} zonas={zonas} canales={canales}
                 vendedores={vendedores} esAdmin={esAdmin} />
             ))}
           </tbody>
         </table>
       </div>
-
-      <CrearClienteB2BForm zonas={zonas} canales={canales} />
     </div>
   );
 }
