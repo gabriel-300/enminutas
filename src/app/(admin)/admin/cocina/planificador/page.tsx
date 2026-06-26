@@ -22,6 +22,12 @@ export default async function PlanificadorPage({
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
+  const { data: rawPendingOrders } = await adminClient
+    .from("orders")
+    .select("id")
+    .in("status", ["aprobado", "enviado_prod"]);
+  const pendingIds = (rawPendingOrders ?? []).map((o: any) => o.id as string);
+
   const [{ data: rawProducts }, { data: rawPendingLines }, { data: rawRecipes }] = await Promise.all([
     adminClient
       .from("products")
@@ -30,8 +36,8 @@ export default async function PlanificadorPage({
 
     adminClient
       .from("order_lines")
-      .select("product_id, quantity, order:orders!order_id (status)")
-      .in("order->status", ["aprobado", "enviado_prod"]),
+      .select("product_id, quantity")
+      .in("order_id", pendingIds.length > 0 ? pendingIds : ["00000000-0000-0000-0000-000000000000"]),
 
     adminClient
       .from("recipes")

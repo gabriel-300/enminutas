@@ -45,11 +45,17 @@ export default async function StockPage() {
     disponibleMap[l.producto_id] = (disponibleMap[l.producto_id] ?? 0) + Number(l.cantidad_actual);
   }
 
-  // 3. Stock comprometido: order_lines de pedidos en curso
+  // 3. Stock comprometido: primero IDs de pedidos activos, luego sus líneas
+  const { data: committedOrdersRaw } = await db
+    .from("orders")
+    .select("id")
+    .in("status", COMMITTED_STATUSES);
+  const committedOrderIds = (committedOrdersRaw ?? []).map((o: any) => o.id as string);
+
   const { data: linesRaw } = await db
     .from("order_lines")
-    .select("product_id, quantity, orders!inner(status)")
-    .in("orders.status", COMMITTED_STATUSES)
+    .select("product_id, quantity")
+    .in("order_id", committedOrderIds.length > 0 ? committedOrderIds : ["00000000-0000-0000-0000-000000000000"])
     .in("product_id", productoIds.length > 0 ? productoIds : ["00000000-0000-0000-0000-000000000000"]);
 
   const comprometidoMap: Record<string, number> = {};
