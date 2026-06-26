@@ -15,7 +15,7 @@ export default async function AdminProductosPage() {
   const { data: products, error } = await (supabase as any)
     .from("products")
     .select(`
-      id, sku, name, is_active, presentacion,
+      id, sku, name, is_active, es_muestra, presentacion,
       codigo, costo, pkg_unitario, pkg_bulto,
       u_bolsa, bolsas_caja, kg_caja,
       categoria, updated_at,

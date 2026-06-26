@@ -15,6 +15,17 @@ export async function toggleProductActive(productId: string, isActive: boolean) 
   revalidatePath("/tienda");
 }
 
+export async function toggleProductMuestra(productId: string, esMuestra: boolean) {
+  const supabase = createAdminClient() as any;
+  const { error } = await supabase
+    .from("products")
+    .update({ es_muestra: esMuestra })
+    .eq("id", productId);
+  if (error) throw new Error(error.message);
+  revalidatePath("/admin/productos");
+  revalidatePath("/admin/muestras/nueva");
+}
+
 export async function updateProductPrice(productId: string, priceB2c: number, priceB2b: number) {
   const supabase = createAdminClient();
   const { error } = await supabase

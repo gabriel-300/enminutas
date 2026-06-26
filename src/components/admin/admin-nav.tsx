@@ -7,7 +7,7 @@ import { createClient } from "@/lib/supabase/client";
 import {
   LayoutDashboard, ShoppingBag, Bell,
   Settings2, Truck,
-  Users, UserCheck, GitBranch, BarChart2, TrendingUp, Target, Tag,
+  Users, UserCheck, GitBranch, BarChart2, TrendingUp, Target, Tag, Gift,
   Package, Layers, BookOpen, Calendar, ShoppingCart, Clock,
   FileText, CreditCard, RotateCcw, CheckSquare, DollarSign,
   Settings, HelpCircle,
@@ -52,6 +52,7 @@ const SECTIONS: { label?: string; key?: string; items: NavEntry[] }[] = [
       { href: "/admin/clientes",        label: "Clientes",        icon: Users,     roles: ["admin", "vendedor"] },
       { href: "/admin/preventista",     label: "Preventista",     icon: UserCheck, roles: ["admin", "vendedor"] },
       { href: "/admin/pipeline",        label: "Pipeline",        icon: GitBranch, roles: ["admin", "vendedor"] },
+      { href: "/admin/muestras",        label: "Muestras",        icon: Gift,      roles: ["admin", "vendedor"] },
       { href: "/admin/reportes",        label: "Reportes",        icon: BarChart2, roles: ["admin"] },
       { href: "/admin/rentabilidad",    label: "Rentabilidad",    icon: TrendingUp, roles: ["admin"] },
       { href: "/admin/objetivos",       label: "Objetivos",       icon: Target,    roles: ["admin"] },

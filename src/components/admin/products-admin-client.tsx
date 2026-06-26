@@ -3,13 +3,14 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
-import { toggleProductActive, eliminarProducto } from "@/app/(admin)/admin/productos/actions";
+import { toggleProductActive, toggleProductMuestra, eliminarProducto } from "@/app/(admin)/admin/productos/actions";
 
 type Product = {
   id:                 string;
   sku:                string;
   name:               string;
   is_active:          boolean;
+  es_muestra:         boolean;
   presentacion:       string | null;
   codigo:             number | null;
   costo:              number | null;
@@ -23,7 +24,7 @@ type Product = {
   linea:              { nombre: string } | null;
 };
 
-function ActiveToggle({ id, initial }: { id: string; initial: boolean }) {
+function Toggle({ id, initial, onToggle }: { id: string; initial: boolean; onToggle: (id: string, next: boolean) => Promise<void> }) {
   const [active, setActive]          = useState(initial);
   const [isPending, startTransition] = useTransition();
 
@@ -31,7 +32,7 @@ function ActiveToggle({ id, initial }: { id: string; initial: boolean }) {
     const next = !active;
     setActive(next);
     startTransition(async () => {
-      try { await toggleProductActive(id, next); } catch { setActive(!next); }
+      try { await onToggle(id, next); } catch { setActive(!next); }
     });
   }
 
@@ -42,6 +43,12 @@ function ActiveToggle({ id, initial }: { id: string; initial: boolean }) {
     </button>
   );
 }
+
+const ActiveToggle  = ({ id, initial }: { id: string; initial: boolean }) =>
+  <Toggle id={id} initial={initial} onToggle={toggleProductActive} />;
+
+const MuestraToggle = ({ id, initial }: { id: string; initial: boolean }) =>
+  <Toggle id={id} initial={initial} onToggle={toggleProductMuestra} />;
 
 // ── CategoriaBadge ────────────────────────────────────────────────────────────
 
@@ -176,6 +183,11 @@ function ProductRow({ p }: { p: Product }) {
           <ActiveToggle id={p.id} initial={p.is_active} />
         </div>
       </td>
+      <td className="px-2 py-2" title="Habilitar para pedidos de muestra">
+        <div className="flex justify-center">
+          <MuestraToggle id={p.id} initial={p.es_muestra ?? false} />
+        </div>
+      </td>
       <td className="px-2 py-2 whitespace-nowrap">
         <div className="flex items-center gap-3">
           <Link href={`/admin/productos/${p.id}/editar`} className="text-xs text-tierra-700 hover:underline">Editar</Link>
@@ -242,13 +254,14 @@ export function ProductsAdminClient({ products }: { products: Product[] }) {
                 <th className="px-2 py-3 font-medium text-neutral-500 text-center text-xs">Categoría</th>
                 <th className="px-2 py-3 font-medium text-neutral-500 text-center text-xs whitespace-nowrap">Última act.</th>
                 <th className="px-2 py-3 font-medium text-neutral-500 text-center text-xs">Activo</th>
+                <th className="px-2 py-3 font-medium text-neutral-500 text-center text-xs">Muestra</th>
                 <th className="px-2 py-3 w-24"></th>
               </tr>
             </thead>
             <tbody className="divide-y divide-neutral-100">
               {filtered.length === 0 && (
                 <tr>
-                  <td colSpan={13} className="px-4 py-10 text-center text-neutral-400">Sin resultados.</td>
+                  <td colSpan={14} className="px-4 py-10 text-center text-neutral-400">Sin resultados.</td>
                 </tr>
               )}
               {filtered.map((p) => <ProductRow key={p.id} p={p} />)}
