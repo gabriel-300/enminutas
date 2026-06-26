@@ -10,7 +10,7 @@ import {
   Users, UserCheck, GitBranch, BarChart2, TrendingUp, Target, Tag, Gift,
   Package, Layers, BookOpen, Calendar, ShoppingCart, Clock,
   FileText, CreditCard, RotateCcw, CheckSquare, DollarSign,
-  Settings, HelpCircle,
+  Settings, HelpCircle, ChefHat,
   ChevronLeft, ChevronRight, ChevronDown,
 } from "lucide-react";
 
@@ -63,6 +63,7 @@ const SECTIONS: { label?: string; key?: string; items: NavEntry[] }[] = [
     label: "COCINA",
     key:   "cocina",
     items: [
+      { href: "/admin/cocina",               label: "Cocina",           icon: ChefHat,      roles: ["admin", "produccion"] },
       { href: "/admin/stock",                label: "Stock",            icon: Package,      roles: ["admin", "produccion"] },
       { href: "/admin/lotes",                label: "Lotes",            icon: Layers,       roles: ["admin", "produccion"] },
       { href: "/admin/cocina/recetas",       label: "Recetas",          icon: BookOpen,     roles: ["admin", "produccion"] },
