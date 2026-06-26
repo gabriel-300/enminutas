@@ -164,7 +164,7 @@ export function AdminNav({
       cursor:         "pointer",
       userSelect:     "none",
       background:     active ? "rgba(13,180,195,0.1)" : isHovered ? "rgba(255,255,255,0.04)" : "transparent",
-      color:          active ? "#c8e0f4" : isHovered ? "#7a96b2" : "#4d6882",
+      color:          active ? "#daeeff" : isHovered ? "#b8d4ea" : "#8fb0cc",
       fontWeight:     active ? 500 : 400,
       borderLeft:     active ? "2px solid #0db4c3" : "2px solid transparent",
       width:          "100%",
@@ -228,10 +228,10 @@ export function AdminNav({
                     onClick={() => toggleSection(key)}
                     style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "14px 8px 5px", cursor: "pointer", userSelect: "none" }}
                   >
-                    <span style={{ fontSize: 9.5, fontWeight: 600, letterSpacing: "0.1em", color: "#2d3f55", textTransform: "uppercase", whiteSpace: "nowrap" }}>
+                    <span style={{ fontSize: 9.5, fontWeight: 600, letterSpacing: "0.1em", color: "#4d6f8a", textTransform: "uppercase", whiteSpace: "nowrap" }}>
                       {section.label}
                     </span>
-                    <ChevronDown style={{ width: 10, height: 10, color: "#2d3f55", opacity: 0.7, flexShrink: 0, transform: isExpanded ? "rotate(0deg)" : "rotate(-90deg)", transition: "transform 0.15s" }} />
+                    <ChevronDown style={{ width: 10, height: 10, color: "#4d6f8a", opacity: 0.9, flexShrink: 0, transform: isExpanded ? "rotate(0deg)" : "rotate(-90deg)", transition: "transform 0.15s" }} />
                   </div>
                 )}
 
@@ -303,7 +303,7 @@ export function AdminNav({
           </div>
           {!collapsed && (
             <div style={{ flex: 1, minWidth: 0, overflow: "hidden" }}>
-              <div style={{ fontSize: 11, color: "#3d5472", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+              <div style={{ fontSize: 11, color: "#7a9ab8", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
                 {email || name || "—"}
               </div>
               <button
