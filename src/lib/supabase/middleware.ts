@@ -15,6 +15,9 @@ const PRODUCCION_ALLOWED = [
   "/admin/dashboard",
   "/admin/produccion",
   "/admin/cocina",
+  "/admin/stock",
+  "/admin/lotes",
+  "/admin/muestras",
   "/admin/ayuda",
 ];
 
