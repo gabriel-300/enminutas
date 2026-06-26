@@ -105,7 +105,7 @@ export function AdminNav({
   const pathname = usePathname();
   const router   = useRouter();
 
-  const [collapsed, setCollapsed]               = useState(true);
+  const [collapsed, setCollapsed]               = useState(false);
   const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({});
   const [hovered, setHovered]                   = useState<string | null>(null);
   const [ready, setReady]                       = useState(false);
