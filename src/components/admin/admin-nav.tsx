@@ -5,18 +5,21 @@ import { usePathname, useRouter } from "next/navigation";
 import { useState, useEffect, useRef } from "react";
 import { createClient } from "@/lib/supabase/client";
 import {
-  LayoutGrid, ClipboardList, Activity, Truck,
-  Users, BarChart2, DollarSign, BookOpen, Calendar,
-  ShoppingCart, Clock, User, Settings, HelpCircle,
-  ChevronLeft, ChevronRight, Receipt, Wallet, Package, RotateCcw, FileCheck, Target, Tag, TrendingUp, Layers, Bell, PieChart,
+  LayoutDashboard, ShoppingBag, Bell,
+  Settings2, Truck,
+  Users, UserCheck, GitBranch, BarChart2, TrendingUp, Target, Tag,
+  Package, Layers, BookOpen, Calendar, ShoppingCart, Clock,
+  FileText, CreditCard, RotateCcw, CheckSquare, DollarSign,
+  Settings, HelpCircle,
+  ChevronLeft, ChevronRight, ChevronDown,
 } from "lucide-react";
 
 type NavEntry = {
-  href: string;
+  href:  string;
   label: string;
-  icon: React.ElementType;
+  icon:  React.ElementType;
   roles: string[];
-  sublabel?: string;
+  badge?: boolean;
 };
 
 const ROLE_LABEL: Record<string, string> = {
@@ -26,145 +29,119 @@ const ROLE_LABEL: Record<string, string> = {
   distribucion: "Distribución",
 };
 
-const GROUPS: { label?: string; items: NavEntry[] }[] = [
+const SECTIONS: { label?: string; key?: string; items: NavEntry[] }[] = [
   {
     items: [
-      { href: "/admin/dashboard", label: "Dashboard",   icon: LayoutGrid,    roles: ["admin", "vendedor", "produccion", "distribucion"] },
-      { href: "/admin/pedidos",   label: "Pedidos",     icon: ClipboardList, roles: ["admin", "vendedor"] },
+      { href: "/admin/dashboard", label: "Dashboard", icon: LayoutDashboard, roles: ["admin", "vendedor", "produccion", "distribucion"] },
+      { href: "/admin/pedidos",   label: "Pedidos",   icon: ShoppingBag,     roles: ["admin", "vendedor"] },
+      { href: "/admin/alertas",   label: "Alertas",   icon: Bell,            roles: ["admin"], badge: true },
     ],
   },
   {
     label: "OPERACIONES",
+    key:   "operaciones",
     items: [
-      { href: "/admin/produccion",   label: "Producción",   icon: Activity, roles: ["admin", "produccion"] },
-      { href: "/admin/distribucion", label: "Distribución", icon: Truck,    roles: ["admin", "distribucion"] },
+      { href: "/admin/produccion",   label: "Producción",   icon: Settings2, roles: ["admin", "produccion"] },
+      { href: "/admin/distribucion", label: "Distribución", icon: Truck,     roles: ["admin", "distribucion"] },
     ],
   },
   {
     label: "COMERCIAL",
+    key:   "comercial",
     items: [
-      { href: "/admin/preventista",     label: "Preventista",    icon: Users,       roles: ["admin", "vendedor"] },
-      { href: "/admin/pipeline",        label: "Pipeline",       icon: TrendingUp,  roles: ["admin", "vendedor"] },
-      { href: "/admin/reportes",        label: "Reportes",       icon: BarChart2,   roles: ["admin"] },
-      { href: "/admin/rentabilidad",    label: "Rentabilidad",   icon: PieChart,    roles: ["admin"] },
-      { href: "/admin/objetivos",       label: "Objetivos",      icon: Target,      roles: ["admin"] },
-      { href: "/admin/precios-cliente", label: "Precios cliente", icon: Tag,        roles: ["admin"] },
-    ],
-  },
-  {
-    label: "ADMINISTRACIÓN",
-    items: [
-      { href: "/admin/facturacion",        label: "Facturación",      icon: Receipt,   roles: ["admin"] },
-      { href: "/admin/cuentas-corrientes", label: "Ctas. corrientes", icon: Wallet,    roles: ["admin"] },
-      { href: "/admin/devoluciones",       label: "Devoluciones",     icon: RotateCcw, roles: ["admin"] },
-      { href: "/admin/cheques",            label: "Cheques",          icon: FileCheck, roles: ["admin"] },
-      { href: "/admin/liquidaciones",      label: "Liquidaciones",    icon: DollarSign, roles: ["admin"] },
+      { href: "/admin/clientes",        label: "Clientes",        icon: Users,     roles: ["admin", "vendedor"] },
+      { href: "/admin/preventista",     label: "Preventista",     icon: UserCheck, roles: ["admin", "vendedor"] },
+      { href: "/admin/pipeline",        label: "Pipeline",        icon: GitBranch, roles: ["admin", "vendedor"] },
+      { href: "/admin/reportes",        label: "Reportes",        icon: BarChart2, roles: ["admin"] },
+      { href: "/admin/rentabilidad",    label: "Rentabilidad",    icon: TrendingUp, roles: ["admin"] },
+      { href: "/admin/objetivos",       label: "Objetivos",       icon: Target,    roles: ["admin"] },
+      { href: "/admin/precios-cliente", label: "Precios cliente", icon: Tag,       roles: ["admin"] },
     ],
   },
   {
     label: "COCINA",
+    key:   "cocina",
     items: [
-      { href: "/admin/stock",                label: "Stock",            icon: Layers,      roles: ["admin", "produccion"] },
-      { href: "/admin/lotes",               label: "Lotes",            icon: Package,     roles: ["admin", "produccion"] },
-      { href: "/admin/cocina/recetas",      label: "Recetas",          icon: BookOpen,    roles: ["admin", "produccion"] },
-      { href: "/admin/cocina/planificador", label: "Planificador",     icon: Calendar,    roles: ["admin", "produccion"] },
-      { href: "/admin/cocina/compras",      label: "Lista de compras", icon: ShoppingCart, roles: ["admin", "produccion"] },
-      { href: "/admin/cocina/historial",    label: "Historial prod.",  icon: Clock,       roles: ["admin", "produccion"] },
+      { href: "/admin/stock",                label: "Stock",            icon: Package,      roles: ["admin", "produccion"] },
+      { href: "/admin/lotes",                label: "Lotes",            icon: Layers,       roles: ["admin", "produccion"] },
+      { href: "/admin/cocina/recetas",       label: "Recetas",          icon: BookOpen,     roles: ["admin", "produccion"] },
+      { href: "/admin/cocina/planificador",  label: "Planificador",     icon: Calendar,     roles: ["admin", "produccion"] },
+      { href: "/admin/cocina/compras",       label: "Lista de compras", icon: ShoppingCart, roles: ["admin", "produccion"] },
+      { href: "/admin/cocina/historial",     label: "Historial prod.",  icon: Clock,        roles: ["admin", "produccion"] },
+    ],
+  },
+  {
+    label: "ADMINISTRACIÓN",
+    key:   "administracion",
+    items: [
+      { href: "/admin/facturacion",         label: "Facturación",      icon: FileText,    roles: ["admin"] },
+      { href: "/admin/cuentas-corrientes",  label: "Ctas. corrientes", icon: CreditCard,  roles: ["admin"] },
+      { href: "/admin/devoluciones",        label: "Devoluciones",     icon: RotateCcw,   roles: ["admin"] },
+      { href: "/admin/cheques",             label: "Cheques",          icon: CheckSquare, roles: ["admin"] },
+      { href: "/admin/liquidaciones",       label: "Liquidaciones",    icon: DollarSign,  roles: ["admin"] },
     ],
   },
 ];
 
 const BOTTOM_ITEMS: NavEntry[] = [
-  { href: "/admin/alertas",       label: "Alertas",       icon: Bell,       roles: ["admin"] },
-  { href: "/admin/clientes",      label: "Clientes",      icon: User,       roles: ["admin", "vendedor"], sublabel: "B2B · B2C" },
-  { href: "/admin/configuracion", label: "Configuración", icon: Settings,   roles: ["admin"] },
-  { href: "/admin/ayuda",         label: "Ayuda",         icon: HelpCircle, roles: ["admin", "vendedor", "produccion", "distribucion"] },
+  { href: "/admin/configuracion", label: "Configuración", icon: Settings,    roles: ["admin"] },
+  { href: "/admin/ayuda",         label: "Ayuda",         icon: HelpCircle,  roles: ["admin", "vendedor", "produccion", "distribucion"] },
 ];
 
-const STORAGE_KEY = "em_sidebar_collapsed";
+const STORAGE_KEY   = "em_sidebar_collapsed";
+const SECTIONS_KEY  = "em_sidebar_sections";
 
-function NavItem({
-  item,
-  active,
-  collapsed,
+export function AdminNav({
+  role,
+  email,
+  name,
+  alertasCount = 0,
 }: {
-  item: NavEntry;
-  active: boolean;
-  collapsed: boolean;
+  role:          string | null;
+  email:         string | null;
+  name:          string | null;
+  alertasCount?: number;
 }) {
-  const Icon = item.icon;
-  return (
-    <Link
-      href={item.href}
-      title={collapsed ? item.label : undefined}
-      style={{
-        display: "flex",
-        alignItems: "center",
-        gap: collapsed ? 0 : 12,
-        borderRadius: 9,
-        marginBottom: 2,
-        padding: collapsed ? "10px 17px" : "9px 12px",
-        whiteSpace: "nowrap",
-        transition: "background 150ms",
-        background: active ? "#16233f" : "transparent",
-        color: active ? "#ffffff" : "#3a4760",
-      }}
-      className={!active ? "hover:bg-[#eef2f7]" : ""}
-    >
-      <Icon
-        style={{
-          width: 18,
-          height: 18,
-          strokeWidth: 1.7,
-          flexShrink: 0,
-          color: active ? "#ffffff" : "#8693a8",
-        }}
-      />
-      {!collapsed && (
-        <div className="min-w-0">
-          <p className="text-sm font-medium leading-tight">{item.label}</p>
-          {item.sublabel && (
-            <p style={{ fontSize: 11, color: active ? "rgba(255,255,255,.7)" : "#aab4c4", lineHeight: 1.3 }}>
-              {item.sublabel}
-            </p>
-          )}
-        </div>
-      )}
-    </Link>
-  );
-}
-
-export function AdminNav({ role, email, name }: { role: string | null; email: string | null; name: string | null }) {
   const pathname = usePathname();
   const router   = useRouter();
-  const [collapsed, setCollapsed] = useState(true);
-  const [ready, setReady]         = useState(false);
+
+  const [collapsed, setCollapsed]               = useState(true);
+  const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({});
+  const [hovered, setHovered]                   = useState<string | null>(null);
+  const [ready, setReady]                       = useState(false);
+
   const supabaseRef = useRef<ReturnType<typeof createClient> | null>(null);
   if (!supabaseRef.current) supabaseRef.current = createClient();
 
   useEffect(() => {
     const mobile = window.innerWidth < 1024;
     setCollapsed(mobile ? true : localStorage.getItem(STORAGE_KEY) === "true");
+    try {
+      const saved = JSON.parse(localStorage.getItem(SECTIONS_KEY) || "{}");
+      setExpandedSections(saved);
+    } catch {}
     setReady(true);
   }, []);
 
   function toggle() {
     setCollapsed(prev => {
       const next = !prev;
-      // Solo persistir preferencia en desktop; en mobile no contaminar la clave compartida
-      if (window.innerWidth >= 1024) {
-        localStorage.setItem(STORAGE_KEY, String(next));
-      }
+      if (window.innerWidth >= 1024) localStorage.setItem(STORAGE_KEY, String(next));
+      return next;
+    });
+  }
+
+  function toggleSection(key: string) {
+    setExpandedSections(prev => {
+      const isCurrentlyExpanded = prev[key] !== false;
+      const next = { ...prev, [key]: !isCurrentlyExpanded };
+      try { localStorage.setItem(SECTIONS_KEY, JSON.stringify(next)); } catch {}
       return next;
     });
   }
 
   async function handleSignOut() {
-    try {
-      await supabaseRef.current!.auth.signOut();
-    } catch {
-      // Si falla el signOut, igual redirigimos para limpiar el estado local
-    }
+    try { await supabaseRef.current!.auth.signOut(); } catch {}
     router.push("/login");
   }
 
@@ -173,131 +150,200 @@ export function AdminNav({ role, email, name }: { role: string | null; email: st
     return pathname.startsWith(href);
   }
 
-  // Fallback seguro si email es string vacío (OAuth sin email scope)
+  function itemStyle(href: string, active: boolean): React.CSSProperties {
+    const isHovered = hovered === href && !active;
+    return {
+      display:        "flex",
+      alignItems:     "center",
+      gap:            collapsed ? 0 : 10,
+      justifyContent: collapsed ? "center" : "flex-start",
+      padding:        collapsed ? "9px 0" : "7px 10px",
+      borderRadius:   7,
+      cursor:         "pointer",
+      userSelect:     "none",
+      background:     active ? "rgba(13,180,195,0.1)" : isHovered ? "rgba(255,255,255,0.04)" : "transparent",
+      color:          active ? "#c8e0f4" : isHovered ? "#7a96b2" : "#4d6882",
+      fontWeight:     active ? 500 : 400,
+      borderLeft:     active ? "2px solid #0db4c3" : "2px solid transparent",
+      width:          "100%",
+      transition:     "background 0.1s, color 0.1s",
+      textDecoration: "none",
+      fontSize:       13,
+      whiteSpace:     "nowrap",
+      minWidth:       0,
+    };
+  }
+
   const userInitial = ((name || email || "U")[0] ?? "U").toUpperCase();
   const roleLabel   = ROLE_LABEL[role ?? ""] ?? "Panel admin";
-  const W = collapsed ? 52 : 252;
+  const W = collapsed ? 60 : 220;
+  const transition = ready ? "width 0.22s cubic-bezier(.4,0,.2,1), min-width 0.22s cubic-bezier(.4,0,.2,1)" : "none";
 
   return (
-    <aside
-      style={{
-        width: W,
-        minWidth: W,
-        transition: ready ? "width 220ms cubic-bezier(.4,0,.2,1)" : "none",
-      }}
-      className="shrink-0 h-screen sticky top-0 flex flex-col bg-white border-r border-[#e4e9f0] overflow-hidden z-30"
-    >
-      {/* ── Header ── */}
-      <div
-        className="shrink-0 border-b border-[#eef2f6]"
-        style={{ padding: "18px 8px 16px" }}
+    <div style={{ position: "relative", flexShrink: 0 }}>
+      <aside
+        style={{
+          width:         W,
+          minWidth:      W,
+          height:        "100vh",
+          background:    "#141c2e",
+          display:       "flex",
+          flexDirection: "column",
+          overflow:      "hidden",
+          position:      "sticky",
+          top:           0,
+          flexShrink:    0,
+          transition,
+        }}
       >
-        {collapsed ? (
-          <div className="flex flex-col items-center gap-1.5">
-            <button
-              onClick={toggle}
-              title="Expandir menú"
-              className="size-9 rounded-full bg-[#16233f] text-white flex items-center justify-center font-display font-bold text-sm hover:opacity-80 transition-opacity"
-            >
-              EM
-            </button>
-            <ChevronRight className="size-3 text-[#c2ccda]" />
+        {/* ── Marca ── */}
+        <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "16px 14px", borderBottom: "1px solid rgba(255,255,255,0.05)", minHeight: 60, overflow: "hidden", flexShrink: 0 }}>
+          <div style={{ width: 32, height: 32, minWidth: 32, background: "#0db4c3", borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, fontWeight: 700, color: "#fff", letterSpacing: "0.03em", flexShrink: 0 }}>
+            EM
           </div>
-        ) : (
-          <div className="flex items-center gap-2">
-            <button
-              onClick={toggle}
-              title="Colapsar menú"
-              className="size-9 rounded-full bg-[#16233f] text-white flex items-center justify-center font-display font-bold text-sm hover:opacity-80 transition-opacity shrink-0"
-            >
-              EM
-            </button>
-            <div className="flex-1 min-w-0">
-              <p className="text-base font-bold text-[#16233f] font-display whitespace-nowrap">En Minutas</p>
-              <p className="text-[11.5px] text-[#8693a8] whitespace-nowrap">{roleLabel}</p>
+          {!collapsed && (
+            <div style={{ minWidth: 0, overflow: "hidden" }}>
+              <div style={{ fontSize: 13.5, fontWeight: 600, color: "#dce8f5", whiteSpace: "nowrap" }}>En Minutas</div>
+              <div style={{ fontSize: 11, color: "#334a63", marginTop: 1, whiteSpace: "nowrap" }}>{roleLabel}</div>
             </div>
-            <button
-              onClick={toggle}
-              title="Colapsar menú"
-              className="size-7 flex items-center justify-center rounded-lg border border-[#e4e9f0] text-[#8693a8] hover:bg-[#f0f3f7] transition-colors shrink-0"
-            >
-              <ChevronLeft className="size-4" />
-            </button>
-          </div>
-        )}
-      </div>
-
-      {/* ── Main nav ── */}
-      <nav className="flex-1 overflow-y-auto overflow-x-hidden" style={{ padding: "10px 8px 6px" }}>
-        {GROUPS.map((group, gi) => {
-          const items = group.items.filter(i => i.roles.includes(role ?? ""));
-          if (!items.length) return null;
-          return (
-            <div key={gi}>
-              {group.label && (
-                collapsed ? (
-                  <div className="my-2 mx-1 border-t border-[#f1f4f8]" />
-                ) : (
-                  <p
-                    className="font-bold uppercase text-[#c2ccda] whitespace-nowrap"
-                    style={{ fontSize: 10.5, letterSpacing: 1, padding: "14px 10px 6px" }}
-                  >
-                    {group.label}
-                  </p>
-                )
-              )}
-              {items.map(item => (
-                <NavItem
-                  key={item.href}
-                  item={item}
-                  active={isActive(item.href)}
-                  collapsed={collapsed}
-                />
-              ))}
-            </div>
-          );
-        })}
-      </nav>
-
-      {/* ── Bottom nav ── */}
-      <div className="shrink-0 border-t border-[#f1f4f8]" style={{ padding: "8px 8px 6px" }}>
-        {BOTTOM_ITEMS.filter(i => i.roles.includes(role ?? "")).map(item => (
-          <NavItem
-            key={item.href}
-            item={item}
-            active={isActive(item.href)}
-            collapsed={collapsed}
-          />
-        ))}
-      </div>
-
-      {/* ── User block ── */}
-      <div
-        className="shrink-0 border-t border-[#eef2f6] flex items-center"
-        style={{ padding: "12px 10px", gap: 10 }}
-        title={collapsed ? (email || undefined) : undefined}
-      >
-        <div className="size-8 rounded-full bg-[#16233f] text-white flex items-center justify-center font-bold text-[13px] shrink-0">
-          {userInitial}
+          )}
         </div>
-        {!collapsed && (
-          <div className="flex-1 min-w-0">
-            <p
-              className="text-xs whitespace-nowrap overflow-hidden text-ellipsis"
-              style={{ color: "#52607a" }}
-            >
-              {email || name || "—"}
-            </p>
-            <button
-              onClick={handleSignOut}
-              className="text-xs font-semibold hover:underline"
-              style={{ color: "#9e2a2a" }}
-            >
-              Cerrar sesión
-            </button>
+
+        {/* ── Navegación ── */}
+        <nav style={{ flex: 1, overflowY: "auto", overflowX: "hidden", padding: "8px 6px" }}>
+          {SECTIONS.map((section, si) => {
+            const items = section.items.filter(i => i.roles.includes(role ?? ""));
+            if (!items.length) return null;
+
+            const key        = section.key ?? `s${si}`;
+            const isExpanded = expandedSections[key] !== false;
+            const showItems  = !section.label || collapsed || isExpanded;
+
+            return (
+              <div key={si}>
+                {section.label && !collapsed && (
+                  <div
+                    onClick={() => toggleSection(key)}
+                    style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "14px 8px 5px", cursor: "pointer", userSelect: "none" }}
+                  >
+                    <span style={{ fontSize: 9.5, fontWeight: 600, letterSpacing: "0.1em", color: "#2d3f55", textTransform: "uppercase", whiteSpace: "nowrap" }}>
+                      {section.label}
+                    </span>
+                    <ChevronDown style={{ width: 10, height: 10, color: "#2d3f55", opacity: 0.7, flexShrink: 0, transform: isExpanded ? "rotate(0deg)" : "rotate(-90deg)", transition: "transform 0.15s" }} />
+                  </div>
+                )}
+
+                {showItems && items.map(item => {
+                  const active = isActive(item.href);
+                  const Icon   = item.icon;
+                  return (
+                    <Link
+                      key={item.href}
+                      href={item.href}
+                      title={collapsed ? item.label : undefined}
+                      style={itemStyle(item.href, active)}
+                      onMouseEnter={() => setHovered(item.href)}
+                      onMouseLeave={() => setHovered(null)}
+                    >
+                      <Icon style={{ width: 16, height: 16, minWidth: 16, flexShrink: 0, strokeWidth: 1.75 }} />
+                      {!collapsed && (
+                        <>
+                          <span style={{ flex: 1, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", fontSize: 13 }}>
+                            {item.label}
+                          </span>
+                          {item.badge && alertasCount > 0 && (
+                            <span style={{ background: "#dc2626", color: "#fff", fontSize: 10, fontWeight: 600, padding: "1px 6px", borderRadius: 10, whiteSpace: "nowrap", flexShrink: 0 }}>
+                              {alertasCount}
+                            </span>
+                          )}
+                        </>
+                      )}
+                    </Link>
+                  );
+                })}
+              </div>
+            );
+          })}
+        </nav>
+
+        {/* ── Configuración + Ayuda (fijos abajo) ── */}
+        <div style={{ padding: 6, borderTop: "1px solid rgba(255,255,255,0.05)", display: "flex", flexDirection: "column", flexShrink: 0 }}>
+          {BOTTOM_ITEMS.filter(i => i.roles.includes(role ?? "")).map(item => {
+            const active = isActive(item.href);
+            const Icon   = item.icon;
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                title={collapsed ? item.label : undefined}
+                style={itemStyle(item.href, active)}
+                onMouseEnter={() => setHovered(item.href)}
+                onMouseLeave={() => setHovered(null)}
+              >
+                <Icon style={{ width: 16, height: 16, minWidth: 16, flexShrink: 0, strokeWidth: 1.75 }} />
+                {!collapsed && (
+                  <span style={{ fontSize: 13, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                    {item.label}
+                  </span>
+                )}
+              </Link>
+            );
+          })}
+        </div>
+
+        {/* ── Footer de usuario ── */}
+        <div
+          style={{ padding: "10px 12px", borderTop: "1px solid rgba(255,255,255,0.05)", display: "flex", alignItems: "center", gap: 10, overflow: "hidden", minHeight: 52, flexShrink: 0 }}
+          title={collapsed ? (email || undefined) : undefined}
+        >
+          <div style={{ width: 28, height: 28, minWidth: 28, background: "#1c2e45", borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, fontWeight: 600, color: "#5a7a9e", flexShrink: 0 }}>
+            {userInitial}
           </div>
-        )}
-      </div>
-    </aside>
+          {!collapsed && (
+            <div style={{ flex: 1, minWidth: 0, overflow: "hidden" }}>
+              <div style={{ fontSize: 11, color: "#3d5472", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                {email || name || "—"}
+              </div>
+              <button
+                onClick={handleSignOut}
+                style={{ fontSize: 11, color: "#e05252", cursor: "pointer", marginTop: 2, whiteSpace: "nowrap", background: "none", border: "none", padding: 0 }}
+              >
+                Cerrar sesión
+              </button>
+            </div>
+          )}
+        </div>
+      </aside>
+
+      {/* ── Botón colapsar/expandir (fuera del aside para no ser clippeado) ── */}
+      <button
+        onClick={toggle}
+        title={collapsed ? "Expandir menú" : "Colapsar menú"}
+        style={{
+          position:     "absolute",
+          left:         W - 11,
+          top:          18,
+          width:        22,
+          height:       22,
+          background:   "#1e2d45",
+          border:       "1px solid rgba(255,255,255,0.12)",
+          borderRadius: "50%",
+          display:      "flex",
+          alignItems:   "center",
+          justifyContent: "center",
+          cursor:       "pointer",
+          zIndex:       20,
+          transition:   ready ? "left 0.22s cubic-bezier(.4,0,.2,1)" : "none",
+          userSelect:   "none",
+          boxShadow:    "0 1px 4px rgba(0,0,0,0.35)",
+          padding:      0,
+        }}
+      >
+        {collapsed
+          ? <ChevronRight style={{ width: 10, height: 10, color: "#6b8aad", strokeWidth: 2.5 }} />
+          : <ChevronLeft  style={{ width: 10, height: 10, color: "#6b8aad", strokeWidth: 2.5 }} />
+        }
+      </button>
+    </div>
   );
 }

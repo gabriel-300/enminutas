@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { AdminNav } from "@/components/admin/admin-nav";
 import { ChatWidget } from "@/components/admin/chat-widget";
+import { getAlertasCount } from "@/lib/alertas-count";
 import { redirect } from "next/navigation";
 
 const STAFF_ROLES = ["admin", "vendedor", "produccion", "distribucion"];
@@ -21,9 +22,11 @@ export default async function AdminLayout({
   const email = user.email ?? null;
   const name  = (user.user_metadata?.full_name as string | null) ?? null;
 
+  const alertasCount = role === "admin" ? await getAlertasCount() : 0;
+
   return (
     <div className="flex min-h-screen bg-neutral-50">
-      <AdminNav role={role} email={email} name={name} />
+      <AdminNav role={role} email={email} name={name} alertasCount={alertasCount} />
       <main className="flex-1 overflow-auto">{children}</main>
       <ChatWidget />
     </div>
