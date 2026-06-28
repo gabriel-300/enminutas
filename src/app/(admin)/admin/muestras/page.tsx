@@ -29,9 +29,6 @@ export default async function MuestrasPage() {
 
   const muestras = (rawMuestras ?? []) as any[];
 
-  const pendientes = muestras.filter((m) => m.status === "aprobado").length;
-  const enProd     = muestras.filter((m) => m.status === "enviado_prod").length;
-
   return (
     <div className="p-4 md:p-8">
       <div className="mb-6 flex items-start justify-between gap-4">
@@ -39,8 +36,6 @@ export default async function MuestrasPage() {
           <h1 className="text-2xl font-semibold font-display text-neutral-900">Muestras</h1>
           <p className="text-sm text-neutral-500 mt-1">
             {muestras.length} muestra{muestras.length !== 1 ? "s" : ""}
-            {pendientes > 0 && ` · ${pendientes} pendiente${pendientes !== 1 ? "s" : ""}`}
-            {enProd     > 0 && ` · ${enProd} en producción`}
           </p>
         </div>
         {["admin", "vendedor"].includes(role ?? "") && (
@@ -53,11 +48,7 @@ export default async function MuestrasPage() {
         )}
       </div>
 
-      <MuestrasClient
-        muestras={muestras}
-        esAdmin={role === "admin"}
-        esProduccion={role === "produccion" || role === "admin"}
-      />
+      <MuestrasClient muestras={muestras} />
     </div>
   );
 }

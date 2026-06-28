@@ -40,12 +40,13 @@ export async function crearPedidoMuestra(payload: {
   const prodMap = new Map<string, any>((productos ?? []).map((p: any) => [p.id, p]));
   for (const item of items) {
     const prod = prodMap.get(item.productId);
-    if (!prod)              return { error: `Producto "${item.name}" no encontrado` };
-    if (!prod.es_muestra)   return { error: `"${item.name}" no está habilitado para muestras` };
+    if (!prod)            return { error: `Producto "${item.name}" no encontrado` };
+    if (!prod.es_muestra) return { error: `"${item.name}" no está habilitado para muestras` };
   }
 
   // Generar número de orden MST-YYYY-NNNN
   const year = new Date().getFullYear();
+  const now  = new Date().toISOString();
   let order: { id: string } | null = null;
   let orderNum = "";
 
@@ -65,30 +66,29 @@ export async function crearPedidoMuestra(payload: {
     }
     orderNum = `MST-${year}-${String(nextSeq).padStart(4, "0")}`;
 
-    const insertData: Record<string, any> = {
-      order_number:           orderNum,
-      channel:                "muestra",
-      customer_id:            null,
-      muestra_destinatario:   destinatario.trim(),
-      guest_email:            email.trim() || null,
-      guest_phone:            phone.trim() || null,
-      status:                 "aprobado",
-      aprobado_por:           user.id,
-      aprobado_at:            new Date().toISOString(),
-      subtotal:               0,
-      shipping_fee:           0,
-      discount:               0,
-      total:                  0,
-      ideia_commission_rate:  0,
-      ideia_commission_amount: 0,
-      shipping_method:        "muestra",
-      payment_method:         "muestra",
-      notes:                  notes.trim() || null,
-    };
-
     const { data: o, error: oErr } = await adminClient
       .from("orders")
-      .insert(insertData)
+      .insert({
+        order_number:            orderNum,
+        channel:                 "muestra",
+        customer_id:             null,
+        muestra_destinatario:    destinatario.trim(),
+        guest_email:             email.trim() || null,
+        guest_phone:             phone.trim() || null,
+        status:                  "despachado",
+        aprobado_por:            user.id,
+        aprobado_at:             now,
+        despachado_at:           now,
+        subtotal:                0,
+        shipping_fee:            0,
+        discount:                0,
+        total:                   0,
+        ideia_commission_rate:   0,
+        ideia_commission_amount: 0,
+        shipping_method:         "muestra",
+        payment_method:          "muestra",
+        notes:                   notes.trim() || null,
+      })
       .select("id")
       .single();
 
@@ -113,88 +113,25 @@ export async function crearPedidoMuestra(payload: {
     return { error: linesErr.message };
   }
 
-  // Log de evento
-  await adminClient.from("order_events").insert({
-    order_id:  order.id,
-    status:    "aprobado",
-    message:   `Muestra creada para ${destinatario.trim()}`,
-    actor_id:  user.id,
-  });
-
-  revalidatePath("/admin/muestras");
-  return { orderId: order.id };
-}
-
-export async function enviarMuestraAProd(orderId: string): Promise<void> {
-  const authClient = await createClient();
-  const { data: { user } } = await authClient.auth.getUser();
-  if (!user) throw new Error("No autorizado");
-  const role = user.app_metadata?.role as string | undefined;
-  if (!["admin", "produccion"].includes(role ?? "")) throw new Error("No autorizado");
-
-  const db = createAdminClient() as any;
-  const { data: updated, error } = await db
-    .from("orders")
-    .update({ status: "enviado_prod" })
-    .eq("id", orderId)
-    .eq("status", "aprobado")
-    .eq("channel", "muestra")
-    .select("id");
-
-  if (error) throw new Error(error.message);
-  if (!updated?.length) throw new Error("La muestra debe estar aprobada para enviar a producción");
-
-  await db.from("order_events").insert({
-    order_id: orderId,
-    status:   "enviado_prod",
-    message:  "Muestra enviada a producción",
-    actor_id: user.id,
-  });
-  revalidatePath("/admin/muestras");
-}
-
-export async function despacharMuestra(orderId: string): Promise<void> {
-  const authClient = await createClient();
-  const { data: { user } } = await authClient.auth.getUser();
-  if (!user) throw new Error("No autorizado");
-  const role = user.app_metadata?.role as string | undefined;
-  if (!["admin", "produccion"].includes(role ?? "")) throw new Error("No autorizado");
-
-  const db = createAdminClient() as any;
-
-  const { data: lines } = await db
-    .from("order_lines")
-    .select("product_id, quantity")
-    .eq("order_id", orderId);
-
-  const { data: updated, error } = await db
-    .from("orders")
-    .update({ status: "despachado", despachado_at: new Date().toISOString() })
-    .eq("id", orderId)
-    .eq("status", "enviado_prod")
-    .eq("channel", "muestra")
-    .select("id");
-
-  if (error) throw new Error(error.message);
-  if (!updated?.length) throw new Error("La muestra debe estar en producción para despacharse");
-
-  // Reducir stock — mismo mecanismo que pedidos regulares
-  for (const line of (lines ?? []) as { product_id: string; quantity: number }[]) {
-    await db.rpc("decrement_stock", { p_product_id: line.product_id, p_qty: line.quantity });
-    await db.from("stock_movements").insert({
-      product_id: line.product_id,
-      qty:        -line.quantity,
+  // Bajar stock inmediatamente
+  for (const item of items) {
+    await adminClient.rpc("decrement_stock", { p_product_id: item.productId, p_qty: item.quantity });
+    await adminClient.from("stock_movements").insert({
+      product_id: item.productId,
+      qty:        -item.quantity,
       type:       "muestra",
-      order_id:   orderId,
+      order_id:   order.id,
     });
   }
 
-  await db.from("order_events").insert({
-    order_id: orderId,
+  await adminClient.from("order_events").insert({
+    order_id: order.id,
     status:   "despachado",
-    message:  "Muestra despachada — stock reducido",
+    message:  `Muestra creada y despachada para ${destinatario.trim()}`,
     actor_id: user.id,
   });
+
   revalidatePath("/admin/muestras");
   revalidatePath("/admin/stock");
+  return { orderId: order.id };
 }
