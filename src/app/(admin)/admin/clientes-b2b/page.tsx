@@ -101,7 +101,7 @@ export default async function AdminClientesBb2Page() {
         <p className="text-sm text-neutral-500 mt-1">{lista.length} cliente{lista.length !== 1 ? "s" : ""} registrado{lista.length !== 1 ? "s" : ""}</p>
       </div>
 
-      <ClientesBb2Client clientes={lista} pendingCount={pendingCount} zonas={zonas} canales={canales} vendedores={vendedores} esAdmin={!esVendedor} />
+      <ClientesBb2Client clientes={lista} pendingCount={pendingCount} zonas={zonas} canales={canales} vendedores={vendedores} esAdmin={!esVendedor} esVendedor={esVendedor} />
     </div>
   );
 }

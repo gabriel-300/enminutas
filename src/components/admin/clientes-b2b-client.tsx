@@ -469,7 +469,7 @@ function CrearClienteB2BForm({ zonas, canales }: { zonas: Zona[]; canales: Canal
 // ── Main component ────────────────────────────────────────────────────────────
 
 export function ClientesBb2Client({
-  clientes, pendingCount, zonas, canales = [], vendedores = [], esAdmin = false,
+  clientes, pendingCount, zonas, canales = [], vendedores = [], esAdmin = false, esVendedor = false,
 }: {
   clientes:     Cliente[];
   pendingCount: number;
@@ -477,6 +477,7 @@ export function ClientesBb2Client({
   canales?:     Canal[];
   vendedores?:  Vendedor[];
   esAdmin?:     boolean;
+  esVendedor?:  boolean;
 }) {
   const [query, setQuery] = useState("");
 
@@ -500,7 +501,7 @@ export function ClientesBb2Client({
         </div>
       )}
 
-      {esAdmin && <CrearClienteB2BForm zonas={zonas} canales={canales} />}
+      {(esAdmin || esVendedor) && <CrearClienteB2BForm zonas={zonas} canales={canales} />}
 
       {/* ── Buscador ─────────────────────────────────────────────────────── */}
       <div className="relative">
