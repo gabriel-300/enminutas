@@ -272,8 +272,9 @@ export async function POST(req: Request) {
     try {
       resp = await orChat(model, msgs, TOOLS);
     } catch (err) {
-      console.error("OpenRouter error:", err);
-      return Response.json({ error: "Error al conectar con el asistente. Verificá la API key." }, { status: 502 });
+      const detail = err instanceof Error ? err.message : String(err);
+      console.error("OpenRouter error:", detail);
+      return Response.json({ error: `Error al conectar con el asistente: ${detail}` }, { status: 502 });
     }
 
     const msg = resp.choices[0]?.message;
