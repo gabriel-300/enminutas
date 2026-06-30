@@ -1,6 +1,13 @@
 // Cliente OpenRouter — selección automática de modelo gratuito con soporte de tools
 
-let _cached: { id: string; ts: number } | null = null;
+let _cached: { ids: string[]; ts: number } | null = null;
+
+// Modelos gratuitos confiables con soporte de tools, en orden de preferencia
+const FALLBACKS = [
+  "meta-llama/llama-3.1-8b-instruct:free",
+  "google/gemma-3-12b-it:free",
+  "mistralai/mistral-7b-instruct:free",
+];
 
 type ORModel = {
   id: string;
@@ -9,35 +16,36 @@ type ORModel = {
   context_length?: number;
 };
 
-export async function getFreeLLMModel(): Promise<string> {
-  const FALLBACK = "meta-llama/llama-3.1-8b-instruct:free";
+export async function getFreeLLMModels(): Promise<string[]> {
   const now = Date.now();
-
-  if (_cached && now - _cached.ts < 5 * 60 * 1000) return _cached.id;
+  if (_cached && now - _cached.ts < 5 * 60 * 1000) return _cached.ids;
 
   try {
     const resp = await fetch("https://openrouter.ai/api/v1/models", {
       headers: { Authorization: `Bearer ${process.env.OPENROUTER_API_KEY ?? ""}` },
       cache: "no-store",
     });
-    if (!resp.ok) return FALLBACK;
+    if (!resp.ok) return FALLBACKS;
 
     const { data } = (await resp.json()) as { data: ORModel[] };
 
     const candidates = (data ?? [])
       .filter(
         (m) =>
-          (Number(m.pricing.prompt) === 0) &&
-          (Number(m.pricing.completion) === 0) &&
+          Number(m.pricing.prompt) === 0 &&
+          Number(m.pricing.completion) === 0 &&
           m.supported_parameters?.includes("tools"),
       )
-      .sort((a, b) => (b.context_length ?? 0) - (a.context_length ?? 0));
+      .sort((a, b) => (b.context_length ?? 0) - (a.context_length ?? 0))
+      .slice(0, 5)
+      .map((m) => m.id);
 
-    const selected = candidates[0]?.id ?? FALLBACK;
-    _cached = { id: selected, ts: now };
-    return selected;
+    // Asegurar que los fallbacks conocidos estén incluidos al final
+    const ids = [...new Set([...candidates, ...FALLBACKS])];
+    _cached = { ids, ts: now };
+    return ids;
   } catch {
-    return FALLBACK;
+    return FALLBACKS;
   }
 }
 

@@ -1,7 +1,7 @@
 import { createClient, createAdminClient } from "@/lib/supabase/server";
 import { calcularPrecio } from "@/lib/b2b-pricing";
 import { getParametros } from "@/lib/parametros";
-import { getFreeLLMModel, orChat, type ORMessage } from "@/lib/openrouter";
+import { getFreeLLMModels, orChat, type ORMessage } from "@/lib/openrouter";
 
 const STAFF_ROLES = ["admin", "vendedor", "produccion", "distribucion"];
 
@@ -258,7 +258,7 @@ export async function POST(req: Request) {
 
   const history = (body.messages ?? []).slice(-20); // máx 20 turnos de contexto
 
-  const model   = await getFreeLLMModel();
+  const models  = await getFreeLLMModels();
   const system  = buildSystemPrompt(role);
 
   const msgs: ORMessage[] = [
@@ -266,13 +266,20 @@ export async function POST(req: Request) {
     ...(history as ORMessage[]),
   ];
 
+  let modelIdx = 0;
+
   // Loop agéntico (máx 4 iteraciones para evitar bucles)
   for (let i = 0; i < 4; i++) {
     let resp;
     try {
-      resp = await orChat(model, msgs, TOOLS);
+      resp = await orChat(models[modelIdx], msgs, TOOLS);
     } catch (err) {
       const detail = err instanceof Error ? err.message : String(err);
+      if (detail.includes("429") && modelIdx < models.length - 1) {
+        modelIdx++;
+        i--; // reintentar misma iteración con el siguiente modelo
+        continue;
+      }
       console.error("OpenRouter error:", detail);
       return Response.json({ error: `Error al conectar con el asistente: ${detail}` }, { status: 502 });
     }
