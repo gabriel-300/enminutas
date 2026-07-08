@@ -27,7 +27,7 @@ async function getCallerRole(): Promise<string | null> {
 }
 
 // Estados que admin puede setear manualmente (casos excepcionales)
-const ALLOWED_MANUAL_STATUSES = ["pending_payment", "aprobado", "cancelled"] as const;
+const ALLOWED_MANUAL_STATUSES = ["pending_payment", "aprobado", "cancelled", "liquidado"] as const;
 
 export async function updateOrderStatus(orderId: string, status: string) {
   const role = await getCallerRole();
