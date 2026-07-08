@@ -35,14 +35,24 @@ export function OrderStatusSelect({
 }) {
   const [localStatus, setLocalStatus] = useState(currentStatus);
   const [isPending,   startTransition] = useTransition();
+  const [error,       setError]        = useState<string | null>(null);
 
   const options = channel === "b2b_mayorista" ? B2B_OPTIONS : B2C_OPTIONS;
 
   function handleChange(e: React.ChangeEvent<HTMLSelectElement>) {
     const newStatus = e.target.value;
     if (newStatus === localStatus) return;
+    const prevStatus = localStatus;
     setLocalStatus(newStatus);
-    startTransition(() => updateOrderStatus(orderId, newStatus));
+    setError(null);
+    startTransition(async () => {
+      try {
+        await updateOrderStatus(orderId, newStatus);
+      } catch (err) {
+        setLocalStatus(prevStatus);
+        setError(err instanceof Error ? err.message : "Error al cambiar estado");
+      }
+    });
   }
 
   const READONLY_LABELS: Record<string, string> = {
@@ -53,6 +63,8 @@ export function OrderStatusSelect({
     in_delivery:  "En camino",
     liquidado:    "Liquidado",
   };
+
+  const selectCls = "text-xs border border-neutral-200 rounded-lg px-2 py-1.5 bg-white text-neutral-700 w-full disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-tierra-700/20";
 
   // Estados que no se pueden modificar una vez alcanzados
   if (currentStatus in READONLY_LABELS) {
@@ -67,15 +79,13 @@ export function OrderStatusSelect({
   if (currentStatus === "delivered" || currentStatus === "entrega_parcial") {
     const currentLabel = currentStatus === "delivered" ? "Entregado" : "Entrega parcial";
     return (
-      <select
-        value={localStatus}
-        onChange={handleChange}
-        disabled={isPending}
-        className="text-xs border border-neutral-200 rounded-lg px-2 py-1.5 bg-white text-neutral-700 w-full disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-tierra-700/20"
-      >
-        <option value={currentStatus}>{currentLabel}</option>
-        <option value="liquidado">Liquidado</option>
-      </select>
+      <div>
+        <select value={localStatus} onChange={handleChange} disabled={isPending} className={selectCls}>
+          <option value={currentStatus}>{currentLabel}</option>
+          <option value="liquidado">Liquidado</option>
+        </select>
+        {error && <p className="text-[10px] text-danger mt-1 leading-tight">{error}</p>}
+      </div>
     );
   }
 
@@ -89,17 +99,15 @@ export function OrderStatusSelect({
   }
 
   return (
-    <select
-      value={localStatus}
-      onChange={handleChange}
-      disabled={isPending}
-      className="text-xs border border-neutral-200 rounded-lg px-2 py-1.5 bg-white text-neutral-700 w-full disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-tierra-700/20"
-    >
-      {options.map((opt) => (
-        <option key={opt.value} value={opt.value}>
-          {opt.label}
-        </option>
-      ))}
-    </select>
+    <div>
+      <select value={localStatus} onChange={handleChange} disabled={isPending} className={selectCls}>
+        {options.map((opt) => (
+          <option key={opt.value} value={opt.value}>
+            {opt.label}
+          </option>
+        ))}
+      </select>
+      {error && <p className="text-[10px] text-danger mt-1 leading-tight">{error}</p>}
+    </div>
   );
 }
