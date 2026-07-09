@@ -7,7 +7,8 @@ type Msg = { role: "user" | "assistant"; content: string };
 const SUGERENCIAS = [
   "¿Qué pedidos están esperando producción?",
   "¿Cuánto sale la pizza Margarita para distribuidor?",
-  "Buscar pedido B2B-2025-0001",
+  "¿Para qué sirve el módulo de Muestras?",
+  "¿Cómo registro stock de un lote de producción?",
 ];
 
 export function ChatWidget() {

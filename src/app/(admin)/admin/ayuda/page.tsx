@@ -168,27 +168,71 @@ export default async function AyudaPage() {
               <strong>Percepciones IIBB:</strong> Ingresos Brutos es un impuesto provincial. No todos los clientes lo pagan. El porcentaje varía según la provincia y la actividad. Consultá con administración si no sabés qué porcentaje aplicar.
             </div>
           </Section>
+
+          <Section
+            title="Muestras"
+            icon={
+              <svg className="size-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M21 11.25v8.25a1.5 1.5 0 01-1.5 1.5H5.25a1.5 1.5 0 01-1.5-1.5v-8.25M12 4.875A2.625 2.625 0 109.375 7.5H12m0-2.625V7.5m0-2.625A2.625 2.625 0 1114.625 7.5H12m0 0V21m-8.625-9.75h18c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125h-18c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125z" />
+              </svg>
+            }
+          >
+            <p className="text-neutral-600">Las muestras son envíos sin costo para que los clientes potenciales prueben los productos. Se numeran con el prefijo <strong>MST-YYYY-NNNN</strong>.</p>
+            <Steps items={[
+              "Ir a Comercial → Muestras → Nueva muestra.",
+              "Completar el destinatario (nombre del cliente o local).",
+              "Seleccionar los productos marcados como muestra y las cantidades.",
+              "Crear la muestra. Queda en estado Aprobado.",
+              "Producción la prepara y cambia el estado a En producción, luego a Despachado.",
+            ]} />
+            <div className="mt-3 p-3 bg-crema-50 rounded-xl border border-tierra-700/10 text-xs text-neutral-600">
+              <strong>Stock:</strong> Las muestras descuentan stock igual que un pedido normal. El campo total siempre es $0. No requieren cliente registrado en el sistema.
+            </div>
+          </Section>
         </>
       )}
 
       {/* ── Producción ── */}
       {(esAdmin || esProduccion) && (
-        <Section
-          title="Producción — flujo de trabajo"
-          icon={
-            <svg className="size-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M11.42 15.17L17.25 21A2.652 2.652 0 0021 17.25l-5.877-5.877M11.42 15.17l2.496-3.03c.317-.384.74-.626 1.208-.766M11.42 15.17l-4.655 5.653a2.548 2.548 0 11-3.586-3.586l6.837-5.63m5.108-.233c.55-.164 1.163-.188 1.743-.14a4.5 4.5 0 004.486-6.336l-3.276 3.277a3.004 3.004 0 01-2.25-2.25l3.276-3.276a4.5 4.5 0 00-6.336 4.486c.091 1.076-.071 2.264-.904 2.95l-.102.085m-1.745 1.437L5.909 7.5H4.5L2.25 3.75l1.5-1.5L7.5 4.5v1.409l4.26 4.26m-1.745 1.437l1.745-1.437m6.615 8.206L15.75 15.75M4.867 19.125h.008v.008h-.008v-.008z" />
-            </svg>
-          }
-        >
-          <Steps items={[
-            "Los pedidos con estado Aprobado aparecen en la sección Producción listos para preparar.",
-            "Al empezar a preparar un pedido, cambiá el estado a En producción.",
-            "Cuando el pedido está listo para ser retirado, cambiá el estado a Despachado.",
-            "Desde Cocina → Planificador podés ver qué hay que preparar cada día según los pedidos activos.",
-            "Cocina → Lista de compras genera automáticamente los insumos necesarios.",
-          ]} />
-        </Section>
+        <>
+          <Section
+            title="Producción — flujo de trabajo"
+            icon={
+              <svg className="size-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M11.42 15.17L17.25 21A2.652 2.652 0 0021 17.25l-5.877-5.877M11.42 15.17l2.496-3.03c.317-.384.74-.626 1.208-.766M11.42 15.17l-4.655 5.653a2.548 2.548 0 11-3.586-3.586l6.837-5.63m5.108-.233c.55-.164 1.163-.188 1.743-.14a4.5 4.5 0 004.486-6.336l-3.276 3.277a3.004 3.004 0 01-2.25-2.25l3.276-3.276a4.5 4.5 0 00-6.336 4.486c.091 1.076-.071 2.264-.904 2.95l-.102.085m-1.745 1.437L5.909 7.5H4.5L2.25 3.75l1.5-1.5L7.5 4.5v1.409l4.26 4.26m-1.745 1.437l1.745-1.437m6.615 8.206L15.75 15.75M4.867 19.125h.008v.008h-.008v-.008z" />
+              </svg>
+            }
+          >
+            <Steps items={[
+              "Los pedidos con estado Aprobado aparecen en la sección Producción listos para preparar. Las muestras (MST-) también aparecen aquí.",
+              "Al empezar a preparar un pedido, cambiá el estado a En producción.",
+              "Cuando el pedido está listo para ser retirado, cambiá el estado a Despachado. Esto descuenta el stock automáticamente.",
+              "Desde Cocina podés ver todos los productos pendientes agrupados para preparar en lote.",
+              "Cocina → Planificador muestra qué hay que preparar cada día según los pedidos activos.",
+              "Cocina → Lista de compras genera automáticamente los insumos necesarios.",
+            ]} />
+          </Section>
+
+          <Section
+            title="Stock y lotes de producción"
+            icon={
+              <svg className="size-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M20.25 7.5l-.625 10.632a2.25 2.25 0 01-2.247 2.118H6.622a2.25 2.25 0 01-2.247-2.118L3.75 7.5M10 11.25h4M3.375 7.5h17.25c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125z" />
+              </svg>
+            }
+          >
+            <p className="text-neutral-600">El stock del sistema refleja las unidades físicas disponibles. Se actualiza de dos formas: <strong>suma</strong> cuando se registra un lote de producción, <strong>resta</strong> cuando se despacha un pedido.</p>
+            <Steps items={[
+              "Ir a Cocina → Stock. Acá se ve el inventario actual por producto.",
+              "Para agregar stock: ir a Cocina y hacer click en + Registrar (botón naranja). Completar el producto y la cantidad de unidades producidas.",
+              "El sistema guarda el lote con fecha y hora. Se puede ver el historial en Cocina → Lotes.",
+              "Cuando un pedido pasa a Despachado, el sistema descuenta automáticamente las unidades del stock.",
+            ]} />
+            <div className="mt-3 p-3 bg-neutral-50 rounded-xl border border-neutral-200 text-xs text-neutral-600">
+              <strong>¿Por qué aparece "Sin stock"?</strong> Si un producto no tiene lotes registrados, el stock es cero. Hay que registrar la producción del día antes de que los repartidores empiecen a despachar.
+            </div>
+          </Section>
+        </>
       )}
 
       {/* ── Distribución ── */}
