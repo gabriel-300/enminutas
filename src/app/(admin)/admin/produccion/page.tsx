@@ -74,7 +74,7 @@ export default async function ProduccionPage() {
     .select(`
       id, order_number, status, created_at, aprobado_at, despachado_at,
       customer:profiles!customer_id (full_name),
-      lines:order_lines (quantity, product_snapshot)
+      lines:order_lines (id, quantity, unit_price, product_id, product_snapshot)
     `)
     .eq("channel", "b2b_mayorista")
     .in("status", ["aprobado", "enviado_prod", "despachado", "en_distribucion"])
@@ -126,7 +126,18 @@ export default async function ProduccionPage() {
               <OrderCard
                 key={order.id}
                 order={order}
-                action={<DespacharButton orderId={order.id} />}
+                action={
+                  <DespacharButton
+                    orderId={order.id}
+                    lines={(order.lines ?? []).map((l: any) => ({
+                      lineId:    l.id,
+                      productId: l.product_id,
+                      name:      l.product_snapshot?.name ?? "Producto",
+                      quantity:  l.quantity,
+                      unitPrice: Number(l.unit_price),
+                    }))}
+                  />
+                }
                 variant="active"
               />
             ))}

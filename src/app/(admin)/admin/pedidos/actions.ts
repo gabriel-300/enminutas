@@ -229,6 +229,86 @@ export async function confirmarEntrega(orderId: string) {
   revalidatePath("/admin/dashboard");
 }
 
+export type LineaAjuste = {
+  lineId:            string;
+  productId:         string;
+  quantityDespacho:  number;
+  unitPrice:         number;
+};
+
+export async function despacharPedidoConAjuste(orderId: string, ajustes: LineaAjuste[]) {
+  const role = await getCallerRole();
+  if (role !== "admin" && role !== "produccion") throw new Error("No autorizado");
+
+  const supabase = createAdminClient();
+
+  // Verificar que el pedido esté en enviado_prod
+  const { data: order } = await (supabase as any)
+    .from("orders")
+    .select("id, status, subtotal, shipping_fee, discount")
+    .eq("id", orderId)
+    .single();
+  if (!order || order.status !== "enviado_prod")
+    throw new Error("El pedido debe estar en preparación para despacharse");
+
+  // Actualizar cantidades si alguna difiere
+  for (const a of ajustes) {
+    const newTotal = Math.round(a.unitPrice * a.quantityDespacho);
+    await (supabase as any)
+      .from("order_lines")
+      .update({ quantity: a.quantityDespacho, line_total: newTotal })
+      .eq("id", a.lineId);
+  }
+
+  // Recalcular subtotal y total del pedido a partir de las líneas actualizadas
+  const { data: lines } = await (supabase as any)
+    .from("order_lines")
+    .select("line_total")
+    .eq("order_id", orderId);
+  const newSubtotal = (lines as { line_total: number }[]).reduce(
+    (acc, l) => acc + Number(l.line_total), 0
+  );
+  const flete     = Number(order.shipping_fee ?? 0);
+  const descuento = Number(order.discount ?? 0);
+  const newTotal  = newSubtotal + flete - descuento;
+
+  const { data: updated, error } = await (supabase as any)
+    .from("orders")
+    .update({
+      status:       "despachado",
+      despachado_at: new Date().toISOString(),
+      subtotal:     newSubtotal,
+      total:        newTotal,
+    })
+    .eq("id", orderId)
+    .eq("status", "enviado_prod")
+    .select("id");
+  if (error) throw new Error(error.message);
+  if (!updated?.length) throw new Error("El pedido ya fue procesado");
+
+  await logOrderEvent(supabase, orderId, "despachado", "Pedido despachado con ajuste de cantidades");
+
+  // Decrementar stock con cantidades ajustadas
+  for (const a of ajustes) {
+    if (a.quantityDespacho <= 0) continue;
+    await (supabase as any).rpc("decrement_stock", {
+      p_product_id: a.productId,
+      p_qty:        a.quantityDespacho,
+    });
+    await (supabase as any).from("stock_movements").insert({
+      product_id: a.productId,
+      qty:        -a.quantityDespacho,
+      type:       "despacho",
+      order_id:   orderId,
+    });
+  }
+
+  revalidatePath("/admin/produccion");
+  revalidatePath("/admin/cocina");
+  revalidatePath("/admin/dashboard");
+  revalidatePath(`/admin/pedidos/${orderId}`);
+}
+
 export async function agregarNota(orderId: string, nota: string) {
   const authClient = await createClient();
   const { data: { user } } = await authClient.auth.getUser();
