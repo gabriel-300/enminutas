@@ -225,6 +225,23 @@ export default async function AlertasPage() {
     });
   }
 
+  // ── 8. CLIENTES B2B PENDIENTES DE APROBACIÓN ─────────────────────
+  const { count: clientesPendientes } = await db
+    .from("profiles")
+    .select("id", { count: "exact", head: true })
+    .eq("b2b_status", "pendiente");
+
+  if (clientesPendientes && clientesPendientes > 0) {
+    alertas.push({
+      nivel: "urgente",
+      categoria: "Clientes B2B",
+      titulo: `${clientesPendientes} cliente${clientesPendientes > 1 ? "s" : ""} pendiente${clientesPendientes > 1 ? "s" : ""} de aprobación`,
+      descripcion: "Un vendedor cargó clientes nuevos que requieren aprobación del administrador.",
+      href: "/admin/clientes-b2b",
+      count: clientesPendientes,
+    });
+  }
+
   // Ordenar: crítico → urgente → aviso
   const NIVEL_ORDEN = { critico: 0, urgente: 1, aviso: 2 };
   alertas.sort((a, b) => NIVEL_ORDEN[a.nivel] - NIVEL_ORDEN[b.nivel]);

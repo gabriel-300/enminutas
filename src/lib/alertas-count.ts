@@ -15,6 +15,7 @@ export async function getAlertasCount(): Promise<number> {
     db.from("cheques").select("id", { count: "exact", head: true }).in("estado", ["en_cartera", "depositado"]).lte("fecha_acreditacion", en3diasStr),
     db.from("pipeline_prospectos").select("id", { count: "exact", head: true }).not("estado", "in", '("ganado","perdido")').not("fecha_proximo_contacto", "is", null).lt("fecha_proximo_contacto", hoyStr),
     db.from("orders").select("id", { count: "exact", head: true }).in("status", ["despachado", "en_distribucion"]).lt("despachado_at", hace3dias),
+    db.from("profiles").select("id", { count: "exact", head: true }).eq("b2b_status", "pendiente"),
   ]);
 
   let count = 0;
