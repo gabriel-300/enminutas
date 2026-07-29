@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { createClient, createAdminClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
-import { NuevaMuestraClient } from "./nueva-muestra-client";
+import { NuevaMuestraClient } from "@/components/admin/muestras/nueva-muestra-client";
 
 export const metadata: Metadata = { title: "Nueva muestra — Admin En Minutas" };
 export const revalidate = 0;
@@ -16,12 +16,17 @@ export default async function NuevaMuestraPage() {
 
   const db = createAdminClient() as any;
 
-  const { data: rawProductos } = await db
-    .from("products")
-    .select("id, name, sku, codigo, presentacion")
-    .eq("is_active", true)
-    .eq("es_muestra", true)
-    .order("name");
+  const [{ data: rawProductos }, { data: rawClientes }] = await Promise.all([
+    db.from("products")
+      .select("id, name, sku, codigo, presentacion")
+      .eq("is_active", true)
+      .eq("es_muestra", true)
+      .order("name"),
+    db.from("profiles")
+      .select("id, full_name, phone")
+      .eq("role", "customer")
+      .order("full_name"),
+  ]);
 
   const productos = (rawProductos ?? []) as {
     id:           string;
@@ -29,6 +34,12 @@ export default async function NuevaMuestraPage() {
     sku:          string | null;
     codigo:       string | null;
     presentacion: string | null;
+  }[];
+
+  const clientes = (rawClientes ?? []) as {
+    id:       string;
+    full_name: string;
+    phone:    string | null;
   }[];
 
   return (
@@ -45,7 +56,7 @@ export default async function NuevaMuestraPage() {
         </p>
       </div>
 
-      <NuevaMuestraClient productos={productos} />
+      <NuevaMuestraClient productos={productos} clientes={clientes} />
     </div>
   );
 }

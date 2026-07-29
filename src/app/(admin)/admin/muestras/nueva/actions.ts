@@ -10,13 +10,15 @@ type ItemMuestra = {
 };
 
 export async function crearPedidoMuestra(payload: {
-  destinatario: string;
-  email:        string;
-  phone:        string;
-  notes:        string;
-  items:        ItemMuestra[];
+  destinatario:  string;
+  customerId?:   string;
+  email:         string;
+  phone:         string;
+  observacion:   string;
+  notes:         string;
+  items:         ItemMuestra[];
 }): Promise<{ orderId: string } | { error: string }> {
-  const { destinatario, email, phone, notes, items } = payload;
+  const { destinatario, customerId, email, phone, observacion, notes, items } = payload;
 
   if (!destinatario.trim()) return { error: "Ingresá el nombre del destinatario" };
   if (items.length === 0)    return { error: "Agregá al menos un producto" };
@@ -71,10 +73,11 @@ export async function crearPedidoMuestra(payload: {
       .insert({
         order_number:            orderNum,
         channel:                 "muestra",
-        customer_id:             null,
+        customer_id:             customerId ?? null,
         muestra_destinatario:    destinatario.trim(),
         guest_email:             email.trim() || null,
         guest_phone:             phone.trim() || null,
+        muestra_observacion:     observacion.trim() || null,
         status:                  "despachado",
         aprobado_por:            user.id,
         aprobado_at:             now,

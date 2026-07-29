@@ -21,7 +21,8 @@ export default async function MuestrasPage() {
     .from("orders")
     .select(`
       id, order_number, status, created_at, despachado_at,
-      muestra_destinatario, guest_email, guest_phone, notes,
+      muestra_destinatario, muestra_observacion, guest_phone, notes,
+      customer:profiles!customer_id (full_name),
       lines:order_lines (product_id, quantity, product_snapshot)
     `)
     .eq("channel", "muestra")

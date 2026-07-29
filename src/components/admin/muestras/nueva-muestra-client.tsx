@@ -1,33 +1,74 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState, useRef, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { crearPedidoMuestra } from "./actions";
+import { crearPedidoMuestra } from "@/app/(admin)/admin/muestras/nueva/actions";
 
 type Producto = {
-  id:          string;
-  name:        string;
-  sku:         string | null;
-  codigo:      string | null;
+  id:           string;
+  name:         string;
+  sku:          string | null;
+  codigo:       string | null;
   presentacion: string | null;
 };
 
-const inputCls = "w-full px-3 py-2 text-sm border border-neutral-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-tierra-700/20 disabled:opacity-50";
+type Cliente = {
+  id:        string;
+  full_name: string;
+  phone:     string | null;
+};
 
-export function NuevaMuestraClient({ productos }: { productos: Producto[] }) {
+const inputCls = "w-full px-3 py-2 text-sm border border-neutral-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-tierra-700/20 disabled:opacity-50";
+const textareaCls = "w-full px-3 py-2 text-sm border border-neutral-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-tierra-700/20 disabled:opacity-50 resize-none";
+
+export function NuevaMuestraClient({
+  productos,
+  clientes,
+}: {
+  productos: Producto[];
+  clientes:  Cliente[];
+}) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
-  const [error, setError]   = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
-  // Datos del destinatario
+  // Destinatario
+  const [clienteId,    setClienteId]    = useState<string | null>(null);
   const [destinatario, setDestinatario] = useState("");
-  const [email,  setEmail]  = useState("");
-  const [phone,  setPhone]  = useState("");
-  const [notes,  setNotes]  = useState("");
+  const [phone,        setPhone]        = useState("");
+  const [searchCliente, setSearchCliente] = useState("");
+  const [showDropdown,  setShowDropdown]  = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
 
-  // Items seleccionados: map productId → quantity
+  // Campos adicionales
+  const [observacion, setObservacion] = useState("");
+  const [notes,       setNotes]       = useState("");
+
+  // Productos
   const [quantities, setQuantities] = useState<Record<string, number>>({});
-  const [search, setSearch]         = useState("");
+  const [search,     setSearch]     = useState("");
+
+  const clientesFiltrados = searchCliente.trim()
+    ? clientes.filter((c) =>
+        c.full_name.toLowerCase().includes(searchCliente.toLowerCase()) ||
+        (c.phone ?? "").includes(searchCliente)
+      )
+    : clientes;
+
+  function selectCliente(c: Cliente) {
+    setClienteId(c.id);
+    setDestinatario(c.full_name);
+    setPhone(c.phone ?? "");
+    setSearchCliente(c.full_name);
+    setShowDropdown(false);
+  }
+
+  function handleSearchChange(val: string) {
+    setSearchCliente(val);
+    setDestinatario(val);
+    setClienteId(null);
+    setShowDropdown(true);
+  }
 
   const filtrados = search.trim()
     ? productos.filter((p) =>
@@ -38,11 +79,7 @@ export function NuevaMuestraClient({ productos }: { productos: Producto[] }) {
 
   function setQty(id: string, qty: number) {
     setQuantities((prev) => {
-      if (qty <= 0) {
-        const next = { ...prev };
-        delete next[id];
-        return next;
-      }
+      if (qty <= 0) { const next = { ...prev }; delete next[id]; return next; }
       return { ...prev, [id]: qty };
     });
   }
@@ -59,9 +96,10 @@ export function NuevaMuestraClient({ productos }: { productos: Producto[] }) {
     startTransition(async () => {
       const result = await crearPedidoMuestra({
         destinatario,
-        email,
+        customerId:  clienteId ?? undefined,
+        email:       "",
         phone,
-        observacion: "",
+        observacion,
         notes,
         items: seleccionados.map((p) => ({
           productId: p.id,
@@ -84,49 +122,80 @@ export function NuevaMuestraClient({ productos }: { productos: Producto[] }) {
       {/* ── Destinatario ── */}
       <div className="bg-white rounded-2xl border border-neutral-200 p-5 space-y-4">
         <h2 className="text-sm font-semibold text-neutral-800">Destinatario</h2>
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-          <div className="sm:col-span-3">
-            <label className="block text-xs font-medium text-neutral-500 mb-1">Nombre / Empresa *</label>
+
+        {/* Selector de cliente con autocompletado */}
+        <div>
+          <label className="block text-xs font-medium text-neutral-500 mb-1">
+            Nombre / Empresa *
+          </label>
+          <div className="relative" ref={dropdownRef}>
             <input
-              value={destinatario}
-              onChange={(e) => setDestinatario(e.target.value)}
-              placeholder="Ej: Restaurant La Esquina"
+              value={searchCliente || destinatario}
+              onChange={(e) => handleSearchChange(e.target.value)}
+              onFocus={() => setShowDropdown(true)}
+              onBlur={() => setTimeout(() => setShowDropdown(false), 150)}
+              placeholder="Buscar cliente registrado o escribir nombre…"
               className={inputCls}
               disabled={isPending}
+              autoComplete="off"
             />
+            {clienteId && (
+              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-success font-medium">
+                ✓ vinculado
+              </span>
+            )}
+            {showDropdown && clientesFiltrados.length > 0 && (
+              <div className="absolute z-20 top-full left-0 right-0 mt-1 bg-white border border-neutral-200 rounded-xl shadow-lg max-h-48 overflow-y-auto">
+                {clientesFiltrados.map((c) => (
+                  <button
+                    key={c.id}
+                    type="button"
+                    onMouseDown={() => selectCliente(c)}
+                    className="w-full flex items-center justify-between px-3 py-2.5 text-left hover:bg-neutral-50 transition-colors"
+                  >
+                    <span className="text-sm text-neutral-800 font-medium">{c.full_name}</span>
+                    {c.phone && <span className="text-xs text-neutral-400 ml-3">{c.phone}</span>}
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
-          <div>
-            <label className="block text-xs font-medium text-neutral-500 mb-1">Email</label>
-            <input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="contacto@empresa.com"
-              className={inputCls}
-              disabled={isPending}
-            />
-          </div>
-          <div>
-            <label className="block text-xs font-medium text-neutral-500 mb-1">Teléfono</label>
-            <input
-              type="tel"
-              value={phone}
-              onChange={(e) => setPhone(e.target.value)}
-              placeholder="+54 9 376…"
-              className={inputCls}
-              disabled={isPending}
-            />
-          </div>
-          <div>
-            <label className="block text-xs font-medium text-neutral-500 mb-1">Motivo / Notas</label>
-            <input
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-              placeholder="Degustación, visita comercial…"
-              className={inputCls}
-              disabled={isPending}
-            />
-          </div>
+        </div>
+
+        <div>
+          <label className="block text-xs font-medium text-neutral-500 mb-1">Teléfono</label>
+          <input
+            type="tel"
+            value={phone}
+            onChange={(e) => setPhone(e.target.value)}
+            placeholder="+54 9 376…"
+            className={inputCls}
+            disabled={isPending}
+          />
+        </div>
+
+        <div>
+          <label className="block text-xs font-medium text-neutral-500 mb-1">Observación</label>
+          <textarea
+            value={observacion}
+            onChange={(e) => setObservacion(e.target.value)}
+            placeholder="Degustación, visita comercial, presentación de producto…"
+            rows={2}
+            className={textareaCls}
+            disabled={isPending}
+          />
+        </div>
+
+        <div>
+          <label className="block text-xs font-medium text-neutral-500 mb-1">Nota interna</label>
+          <textarea
+            value={notes}
+            onChange={(e) => setNotes(e.target.value)}
+            placeholder="Solo visible para el equipo…"
+            rows={2}
+            className={textareaCls}
+            disabled={isPending}
+          />
         </div>
       </div>
 

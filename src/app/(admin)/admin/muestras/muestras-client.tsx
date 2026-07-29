@@ -1,15 +1,16 @@
 "use client";
 
 type Muestra = {
-  id:                   string;
-  order_number:         string;
-  created_at:           string;
-  despachado_at:        string | null;
-  muestra_destinatario: string | null;
-  guest_email:          string | null;
-  guest_phone:          string | null;
-  notes:                string | null;
-  lines:                { quantity: number; product_snapshot: { name: string } }[];
+  id:                    string;
+  order_number:          string;
+  created_at:            string;
+  despachado_at:         string | null;
+  muestra_destinatario:  string | null;
+  muestra_observacion:   string | null;
+  guest_phone:           string | null;
+  notes:                 string | null;
+  customer:              { full_name: string } | null;
+  lines:                 { quantity: number; product_snapshot: { name: string } }[];
 };
 
 export function MuestrasClient({ muestras }: { muestras: Muestra[] }) {
@@ -40,9 +41,18 @@ export function MuestrasClient({ muestras }: { muestras: Muestra[] }) {
                   <tr key={m.id} className="hover:bg-neutral-50 transition-colors align-top">
                     <td className="px-4 py-3 text-xs font-mono text-neutral-400">{m.order_number}</td>
                     <td className="px-4 py-3">
-                      <p className="font-medium text-sm text-neutral-900">{m.muestra_destinatario ?? "—"}</p>
-                      {m.guest_email && <p className="text-xs text-neutral-400">{m.guest_email}</p>}
+                      <div className="flex items-center gap-1.5">
+                        <p className="font-medium text-sm text-neutral-900">
+                          {m.muestra_destinatario ?? m.customer?.full_name ?? "—"}
+                        </p>
+                        {m.customer && (
+                          <span className="text-[10px] bg-success-bg text-success px-1.5 py-0.5 rounded-full font-medium">cliente</span>
+                        )}
+                      </div>
                       {m.guest_phone && <p className="text-xs text-neutral-400">{m.guest_phone}</p>}
+                      {m.muestra_observacion && (
+                        <p className="text-xs text-neutral-500 mt-0.5">{m.muestra_observacion}</p>
+                      )}
                     </td>
                     <td className="px-4 py-3 text-xs text-neutral-600 max-w-xs">
                       <span className="line-clamp-2">{productosResumen || "—"}</span>
