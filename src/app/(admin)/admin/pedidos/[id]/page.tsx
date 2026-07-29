@@ -32,7 +32,7 @@ export default async function AdminPedidoDetailPage({
       payment_method, payment_declared_at, payment_confirmed_at,
       shipping_method, shipping_snapshot, delivered_snapshot, notes, created_at,
       guest_email, guest_phone,
-      customer:profiles!customer_id (full_name, phone),
+      customer:profiles!customer_id (full_name, phone, vendedor_id),
       lines:order_lines (
         id, quantity, unit_price, line_total,
         product_snapshot
@@ -52,6 +52,17 @@ export default async function AdminPedidoDetailPage({
   if (!order) notFound();
 
   const o = order as any;
+
+  // Resolver nombre del vendedor asignado al cliente
+  let vendedorNombre: string | null = null;
+  if (o.customer?.vendedor_id) {
+    const { data: vend } = await (adminClient as any)
+      .from("profiles")
+      .select("full_name")
+      .eq("id", o.customer.vendedor_id)
+      .single();
+    vendedorNombre = vend?.full_name ?? null;
+  }
 
   const paymentLabel: Record<string, string> = {
     bank_transfer:    "Transferencia bancaria",
@@ -124,6 +135,11 @@ export default async function AdminPedidoDetailPage({
           <p className="text-sm font-medium text-neutral-900">{customerName}</p>
           {customerEmail && <p className="text-sm text-neutral-500 mt-1">{customerEmail}</p>}
           {customerPhone && <p className="text-sm text-neutral-500 mt-1">{customerPhone}</p>}
+          {vendedorNombre && (
+            <p className="text-xs text-neutral-400 mt-2 pt-2 border-t border-neutral-100">
+              Vendedor: <span className="font-medium text-neutral-600">{vendedorNombre}</span>
+            </p>
+          )}
         </div>
 
         {/* Pago */}

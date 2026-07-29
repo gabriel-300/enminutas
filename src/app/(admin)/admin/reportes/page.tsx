@@ -154,11 +154,12 @@ export default async function ReportesPage({
   const [
     { data: rawCur },
     { data: rawPrev },
+    { data: rawVendedores },
   ] = await Promise.all([
     db.from("orders")
       .select(`
         id, order_number, status, total, created_at, channel,
-        customer:profiles!customer_id (full_name)
+        customer:profiles!customer_id (full_name, vendedor_id)
       `)
       .in("status", ACTIVE_STATUSES)
       .gte("created_at", desde)
@@ -170,6 +171,10 @@ export default async function ReportesPage({
       .in("status", ACTIVE_STATUSES)
       .gte("created_at", prevDesde)
       .lte("created_at", prevHasta),
+
+    db.from("profiles")
+      .select("id, full_name")
+      .eq("role", "vendedor"),
   ]);
 
   const orders     = (rawCur  ?? []) as any[];
@@ -240,6 +245,22 @@ export default async function ReportesPage({
   const topProductos = Object.values(productMap)
     .sort((a, b) => b.cajas - a.cajas)
     .slice(0, 8);
+
+  // Ventas por vendedor
+  const vendedorMap: Record<string, { nombre: string; pedidos: number; total: number }> = {};
+  for (const v of rawVendedores ?? []) {
+    vendedorMap[v.id] = { nombre: v.full_name ?? "Sin nombre", pedidos: 0, total: 0 };
+  }
+  for (const o of orders) {
+    const vid = (o.customer as any)?.vendedor_id as string | undefined;
+    if (vid && vendedorMap[vid]) {
+      vendedorMap[vid].pedidos++;
+      vendedorMap[vid].total += Number(o.total);
+    }
+  }
+  const vendedorStats = Object.values(vendedorMap)
+    .filter((v) => v.pedidos > 0)
+    .sort((a, b) => b.total - a.total);
 
   // Recent orders table (max 20)
   const recentOrders = orders.slice(0, 20);
@@ -492,6 +513,67 @@ export default async function ReportesPage({
               </div>
             )}
 
+          </div>
+        </div>
+      )}
+
+      {/* ── Ventas por vendedor ── */}
+      {vendedorStats.length > 0 && (
+        <div
+          className="mt-4 bg-white rounded-2xl overflow-hidden"
+          style={{ border: "1px solid #e7ecf3", boxShadow: "0 1px 2px rgba(22,35,63,.04)" }}
+        >
+          <div className="px-5 py-4 border-b" style={{ borderColor: "#e7ecf3" }}>
+            <p className="text-sm font-medium" style={{ color: "#16233f" }}>Ventas por vendedor</p>
+            <p className="text-xs mt-0.5" style={{ color: "#8693a8" }}>
+              {mesNombre} — pedidos con cliente B2B asignado
+            </p>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b text-left" style={{ borderColor: "#e7ecf3" }}>
+                  <th className="px-5 py-3 text-xs font-medium" style={{ color: "#8693a8" }}>Vendedor</th>
+                  <th className="px-5 py-3 text-xs font-medium text-right" style={{ color: "#8693a8" }}>Pedidos</th>
+                  <th className="px-5 py-3 text-xs font-medium text-right" style={{ color: "#8693a8" }}>Total</th>
+                  <th className="px-5 py-3 text-xs font-medium text-right" style={{ color: "#8693a8" }}>Ticket prom.</th>
+                </tr>
+              </thead>
+              <tbody>
+                {vendedorStats.map((v, i) => (
+                  <tr
+                    key={v.nombre}
+                    className="border-b"
+                    style={{ borderColor: i < vendedorStats.length - 1 ? "#eef2f6" : "transparent" }}
+                  >
+                    <td className="px-5 py-3 font-medium" style={{ color: "#16233f" }}>{v.nombre}</td>
+                    <td className="px-5 py-3 text-right tabular-nums" style={{ color: "#8693a8" }}>{v.pedidos}</td>
+                    <td className="px-5 py-3 text-right font-semibold tabular-nums" style={{ color: "#16233f" }}>
+                      {fmt(v.total)}
+                    </td>
+                    <td className="px-5 py-3 text-right tabular-nums" style={{ color: "#8693a8" }}>
+                      {fmt(Math.round(v.total / v.pedidos))}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+              {vendedorStats.length > 1 && (
+                <tfoot>
+                  <tr style={{ borderTop: "2px solid #e7ecf3" }}>
+                    <td className="px-5 py-3 text-xs font-semibold" style={{ color: "#8693a8" }}>
+                      Total con vendedor asignado
+                    </td>
+                    <td className="px-5 py-3 text-right tabular-nums text-xs font-semibold" style={{ color: "#8693a8" }}>
+                      {vendedorStats.reduce((s, v) => s + v.pedidos, 0)}
+                    </td>
+                    <td className="px-5 py-3 text-right tabular-nums font-bold" style={{ color: "#16233f" }}>
+                      {fmt(vendedorStats.reduce((s, v) => s + v.total, 0))}
+                    </td>
+                    <td />
+                  </tr>
+                </tfoot>
+              )}
+            </table>
           </div>
         </div>
       )}
