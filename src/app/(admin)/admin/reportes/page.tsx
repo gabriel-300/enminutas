@@ -154,7 +154,7 @@ export default async function ReportesPage({
   const [
     { data: rawCur },
     { data: rawPrev },
-    { data: rawVendedores },
+    { data: { users: allUsers } },
   ] = await Promise.all([
     db.from("orders")
       .select(`
@@ -172,10 +172,15 @@ export default async function ReportesPage({
       .gte("created_at", prevDesde)
       .lte("created_at", prevHasta),
 
-    db.from("profiles")
-      .select("id, full_name")
-      .eq("role", "vendedor"),
+    db.auth.admin.listUsers({ perPage: 1000 }),
   ]);
+
+  const rawVendedores = (allUsers ?? [])
+    .filter((u: any) => u.app_metadata?.role === "vendedor")
+    .map((u: any) => ({
+      id:        u.id,
+      full_name: u.user_metadata?.full_name ?? u.email ?? u.id,
+    }));
 
   const orders     = (rawCur  ?? []) as any[];
   const prevOrders = (rawPrev ?? []) as any[];
