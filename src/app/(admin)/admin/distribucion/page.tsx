@@ -63,7 +63,7 @@ export default async function DistribucionPage({
     let q = db
       .from("orders")
       .select(`
-        id, order_number, status, created_at, despachado_at,
+        id, order_number, status, created_at, despachado_at, despacho_info,
         shipping_snapshot,
         customer:profiles!customer_id (full_name, phone, zona:delivery_zones!zona_id (name)),
         guest_phone,
@@ -250,11 +250,27 @@ export default async function DistribucionPage({
                         <p className="text-xs text-neutral-500 mb-1">{address}</p>
                       )}
 
-                      {/* Fecha despacho */}
+                      {/* Info de despacho */}
                       {order.despachado_at && (
-                        <p className="text-xs text-neutral-400 mb-2">
+                        <p className="text-xs text-neutral-400 mb-1">
                           Despachado: {fmtFecha(order.despachado_at, { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" })}
                         </p>
+                      )}
+                      {order.despacho_info && (
+                        <div className="flex flex-wrap gap-x-3 gap-y-0.5 text-xs text-neutral-500 mb-2">
+                          {order.despacho_info.repartidor && (
+                            <span>👤 {order.despacho_info.repartidor}</span>
+                          )}
+                          {order.despacho_info.patente && (
+                            <span>🚐 {order.despacho_info.patente}</span>
+                          )}
+                          {order.despacho_info.fecha_entrega && (
+                            <span>
+                              📅 {new Date(order.despacho_info.fecha_entrega + "T00:00:00").toLocaleDateString("es-AR", { day: "2-digit", month: "2-digit" })}
+                              {order.despacho_info.hora_entrega ? ` ${order.despacho_info.hora_entrega}` : ""}
+                            </span>
+                          )}
+                        </div>
                       )}
 
                       {/* Líneas */}

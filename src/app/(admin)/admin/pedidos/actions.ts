@@ -236,7 +236,18 @@ export type LineaAjuste = {
   unitPrice:         number;
 };
 
-export async function despacharPedidoConAjuste(orderId: string, ajustes: LineaAjuste[]) {
+export type DespachoInfo = {
+  repartidor:    string;
+  fecha_entrega: string;
+  hora_entrega:  string;
+  patente:       string;
+};
+
+export async function despacharPedidoConAjuste(
+  orderId: string,
+  ajustes: LineaAjuste[],
+  despachoInfo?: DespachoInfo,
+) {
   const role = await getCallerRole();
   if (role !== "admin" && role !== "produccion") throw new Error("No autorizado");
 
@@ -275,10 +286,11 @@ export async function despacharPedidoConAjuste(orderId: string, ajustes: LineaAj
   const { data: updated, error } = await (supabase as any)
     .from("orders")
     .update({
-      status:       "despachado",
+      status:        "despachado",
       despachado_at: new Date().toISOString(),
-      subtotal:     newSubtotal,
-      total:        newTotal,
+      subtotal:      newSubtotal,
+      total:         newTotal,
+      despacho_info: despachoInfo ?? null,
     })
     .eq("id", orderId)
     .eq("status", "enviado_prod")

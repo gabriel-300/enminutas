@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { despacharPedidoConAjuste, type LineaAjuste } from "@/app/(admin)/admin/pedidos/actions";
+import { despacharPedidoConAjuste, type LineaAjuste, type DespachoInfo } from "@/app/(admin)/admin/pedidos/actions";
 
 type Linea = {
   lineId:    string;
@@ -11,11 +11,19 @@ type Linea = {
   unitPrice: number;
 };
 
+const hoy = () => new Date().toISOString().slice(0, 10);
+
 export function DespacharButton({ orderId, lines }: { orderId: string; lines: Linea[] }) {
   const [open,      setOpen]      = useState(false);
   const [cantidades, setCantidades] = useState<Record<string, number>>(
     () => Object.fromEntries(lines.map((l) => [l.lineId, l.quantity]))
   );
+  const [info, setInfo] = useState<DespachoInfo>({
+    repartidor:    "",
+    fecha_entrega: hoy(),
+    hora_entrega:  "",
+    patente:       "",
+  });
   const [isPending, startTransition] = useTransition();
   const [error,     setError]        = useState<string | null>(null);
 
@@ -27,9 +35,12 @@ export function DespacharButton({ orderId, lines }: { orderId: string; lines: Li
       quantityDespacho: cantidades[l.lineId] ?? l.quantity,
       unitPrice:        l.unitPrice,
     }));
+    const despachoInfo = (info.repartidor || info.fecha_entrega || info.hora_entrega || info.patente)
+      ? info
+      : undefined;
     startTransition(async () => {
       try {
-        await despacharPedidoConAjuste(orderId, ajustes);
+        await despacharPedidoConAjuste(orderId, ajustes, despachoInfo);
         setOpen(false);
       } catch (err) {
         setError(err instanceof Error ? err.message : "Error al despachar");
@@ -38,6 +49,8 @@ export function DespacharButton({ orderId, lines }: { orderId: string; lines: Li
   }
 
   const hayAjuste = lines.some((l) => (cantidades[l.lineId] ?? l.quantity) !== l.quantity);
+
+  const inputCls = "w-full text-sm border border-neutral-200 rounded-lg px-2.5 py-1.5 text-neutral-800 focus:outline-none focus:ring-2 focus:ring-tierra-700/20";
 
   return (
     <>
@@ -54,13 +67,59 @@ export function DespacharButton({ orderId, lines }: { orderId: string; lines: Li
           style={{ background: "rgba(0,0,0,0.45)" }}
           onClick={(e) => { if (e.target === e.currentTarget) setOpen(false); }}
         >
-          <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm max-h-[90vh] overflow-y-auto">
             <div className="px-5 py-4 border-b border-neutral-100">
               <p className="text-sm font-semibold text-neutral-900">Confirmar despacho</p>
-              <p className="text-xs text-neutral-400 mt-0.5">Ajustá las cantidades si corresponde</p>
+              <p className="text-xs text-neutral-400 mt-0.5">Completá los datos de envío</p>
             </div>
 
+            {/* Datos del envío */}
+            <div className="px-5 py-4 space-y-3 border-b border-neutral-100">
+              <div>
+                <label className="text-xs font-medium text-neutral-500 block mb-1">Quién reparte</label>
+                <input
+                  type="text"
+                  placeholder="Nombre del repartidor"
+                  value={info.repartidor}
+                  onChange={(e) => setInfo((p) => ({ ...p, repartidor: e.target.value }))}
+                  className={inputCls}
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <label className="text-xs font-medium text-neutral-500 block mb-1">Fecha de entrega</label>
+                  <input
+                    type="date"
+                    value={info.fecha_entrega}
+                    onChange={(e) => setInfo((p) => ({ ...p, fecha_entrega: e.target.value }))}
+                    className={inputCls}
+                  />
+                </div>
+                <div>
+                  <label className="text-xs font-medium text-neutral-500 block mb-1">Hora estimada</label>
+                  <input
+                    type="time"
+                    value={info.hora_entrega}
+                    onChange={(e) => setInfo((p) => ({ ...p, hora_entrega: e.target.value }))}
+                    className={inputCls}
+                  />
+                </div>
+              </div>
+              <div>
+                <label className="text-xs font-medium text-neutral-500 block mb-1">Patente del vehículo</label>
+                <input
+                  type="text"
+                  placeholder="Ej: ABC 123"
+                  value={info.patente}
+                  onChange={(e) => setInfo((p) => ({ ...p, patente: e.target.value.toUpperCase() }))}
+                  className={inputCls}
+                />
+              </div>
+            </div>
+
+            {/* Cantidades */}
             <div className="px-5 py-4 space-y-3">
+              <p className="text-xs font-medium text-neutral-500">Cantidades a despachar</p>
               {lines.map((l) => {
                 const val = cantidades[l.lineId] ?? l.quantity;
                 const reducido = val < l.quantity;

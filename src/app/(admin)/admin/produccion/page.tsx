@@ -56,6 +56,22 @@ function OrderCard({
         ))}
       </ul>
 
+      {order.despacho_info && (
+        <div className="mt-2 mb-1 flex flex-wrap gap-x-4 gap-y-0.5 text-xs text-neutral-500">
+          {order.despacho_info.repartidor && (
+            <span>👤 {order.despacho_info.repartidor}</span>
+          )}
+          {order.despacho_info.patente && (
+            <span>🚐 {order.despacho_info.patente}</span>
+          )}
+          {order.despacho_info.fecha_entrega && (
+            <span>📅 {new Date(order.despacho_info.fecha_entrega + "T00:00:00").toLocaleDateString("es-AR", { day: "2-digit", month: "2-digit" })}
+              {order.despacho_info.hora_entrega ? ` ${order.despacho_info.hora_entrega}` : ""}
+            </span>
+          )}
+        </div>
+      )}
+
       {action && <div className="flex justify-end">{action}</div>}
     </div>
   );
@@ -72,7 +88,7 @@ export default async function ProduccionPage() {
   const { data: orders } = await (adminClient as any)
     .from("orders")
     .select(`
-      id, order_number, status, created_at, aprobado_at, despachado_at,
+      id, order_number, status, created_at, aprobado_at, despachado_at, despacho_info,
       customer:profiles!customer_id (full_name),
       lines:order_lines (id, quantity, unit_price, product_id, product_snapshot)
     `)
