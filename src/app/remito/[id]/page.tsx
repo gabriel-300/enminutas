@@ -191,7 +191,7 @@ export default async function RemitoPage({
             {subtotal > 0 && (
               <div style={{ display: "flex", justifyContent: "space-between", padding: "4px 0", color: "#555" }}>
                 <span>Subtotal s/IVA</span>
-                <span style={{ fontFamily: "monospace" }}>{fmt(subtotal)}</span>
+                <span style={{ fontFamily: "monospace" }}>{fmt(Math.round(subtotal / 1.21))}</span>
               </div>
             )}
             {flete > 0 && (
