@@ -17,6 +17,7 @@ type Order = {
   customer_name:  string | null;
   customer_email: string | null;
   canal:          string | null;
+  vendedor_name:  string | null;
 };
 
 const TABS = [
@@ -169,9 +170,12 @@ export function PedidosClient({ orders, esAdmin = false }: { orders: Order[]; es
               </div>
             </div>
 
-            <p className="text-sm text-neutral-700 mb-1">
+            <p className="text-sm text-neutral-700">
               {order.customer_name ?? order.customer_email ?? "Invitado"}
             </p>
+            {order.vendedor_name && (
+              <p className="text-xs text-neutral-400 mb-1">Vendedor: {order.vendedor_name}</p>
+            )}
 
             <div className="flex items-center gap-2 flex-wrap mb-3">
               <OrderStatusBadge status={order.status} />
@@ -198,11 +202,12 @@ export function PedidosClient({ orders, esAdmin = false }: { orders: Order[]; es
 
       {/* ── Desktop: tabla ─────────────────────────────────────────── */}
       <div className="hidden md:block bg-white rounded-2xl border border-neutral-200 overflow-x-auto">
-        <table className="w-full min-w-[900px] text-sm">
+        <table className="w-full min-w-[1020px] text-sm">
           <thead>
             <tr className="border-b border-neutral-200 text-left">
               <th className="px-4 py-3 font-medium text-neutral-500 w-48">Nro. pedido</th>
               <th className="px-4 py-3 font-medium text-neutral-500">Cliente</th>
+              <th className="px-4 py-3 font-medium text-neutral-500">Vendedor</th>
               <th className="px-4 py-3 font-medium text-neutral-500">Estado</th>
               <th className="px-4 py-3 font-medium text-neutral-500 text-right">Subtotal</th>
               <th className="px-4 py-3 font-medium text-neutral-500 text-right">IVA (21%)</th>
@@ -214,7 +219,7 @@ export function PedidosClient({ orders, esAdmin = false }: { orders: Order[]; es
           <tbody className="divide-y divide-neutral-100">
             {filtered.length === 0 && (
               <tr>
-                <td colSpan={8} className="px-4 py-12 text-center text-neutral-400">
+                <td colSpan={9} className="px-4 py-12 text-center text-neutral-400">
                   {search ? "No hay pedidos que coincidan con la búsqueda." : "No hay pedidos en esta categoría."}
                 </td>
               </tr>
@@ -243,6 +248,9 @@ export function PedidosClient({ orders, esAdmin = false }: { orders: Order[]; es
                   <span className="text-neutral-800">
                     {order.customer_name ?? order.customer_email ?? "Invitado"}
                   </span>
+                </td>
+                <td className="px-4 py-3 text-neutral-500 text-xs">
+                  {order.vendedor_name ?? <span className="text-neutral-300">—</span>}
                 </td>
                 <td className="px-4 py-3">
                   <OrderStatusBadge status={order.status} />

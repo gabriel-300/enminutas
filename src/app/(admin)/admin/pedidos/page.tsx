@@ -32,7 +32,7 @@ export default async function AdminPedidosPage() {
     .select(`
       id, order_number, channel, status, total, payment_method, created_at,
       customer_id, guest_email,
-      customer:profiles!customer_id (full_name, canal)
+      customer:profiles!customer_id (full_name, canal, vendedor_id)
     `)
     .order("created_at", { ascending: false })
     .limit(200);
@@ -63,6 +63,24 @@ export default async function AdminPedidosPage() {
     (users ?? []).map((u) => [u.id, u.email ?? ""])
   );
 
+  // Resolver nombres de vendedores en un solo query
+  const vendedorIds = [...new Set(
+    (rawOrders ?? [])
+      .map((o: any) => o.customer?.vendedor_id as string | undefined)
+      .filter(Boolean)
+  )] as string[];
+
+  let vendedorNombreMap: Record<string, string> = {};
+  if (vendedorIds.length > 0) {
+    const { data: vendedores } = await (adminClient as any)
+      .from("profiles")
+      .select("id, full_name")
+      .in("id", vendedorIds);
+    vendedorNombreMap = Object.fromEntries(
+      (vendedores ?? []).map((v: any) => [v.id, v.full_name ?? ""])
+    );
+  }
+
   const orders = (rawOrders ?? []).map((o: any) => ({
     id: o.id,
     order_number: o.order_number,
@@ -74,6 +92,7 @@ export default async function AdminPedidosPage() {
     customer_name:  o.customer?.full_name ?? (o.customer_id ? emailMap[o.customer_id] : null) ?? null,
     customer_email: o.guest_email ?? null,
     canal:          (o.customer as any)?.canal ?? null,
+    vendedor_name:  o.customer?.vendedor_id ? (vendedorNombreMap[o.customer.vendedor_id] ?? null) : null,
   }));
 
   return (
