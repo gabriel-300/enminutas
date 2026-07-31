@@ -52,6 +52,39 @@ export async function aprobarPedidoB2B(orderId: string) {
   if (!user) throw new Error("No autorizado");
   if (user.app_metadata?.role !== "admin") throw new Error("No autorizado");
 
+  // Verificar límite de crédito para pedidos en cuenta corriente
+  const { data: order } = await (supabase as any)
+    .from("orders")
+    .select("total, payment_method, customer_id, status")
+    .eq("id", orderId)
+    .single();
+
+  if (!order) throw new Error("Pedido no encontrado");
+  if (order.status !== "pending_payment") throw new Error("El pedido ya fue procesado o no existe");
+
+  if (order.payment_method === "cuenta_corriente" && order.customer_id) {
+    const { data: cuenta } = await (supabase as any)
+      .from("b2b_accounts")
+      .select("credit_limit")
+      .eq("profile_id", order.customer_id)
+      .single();
+
+    const limite = Number(cuenta?.credit_limit ?? 0);
+    if (limite > 0) {
+      const { data: movs } = await (supabase as any)
+        .from("cc_movimientos")
+        .select("monto")
+        .eq("cliente_id", order.customer_id);
+      const saldoActual = (movs ?? []).reduce((s: number, m: any) => s + Number(m.monto), 0);
+      if (saldoActual + Number(order.total) > limite) {
+        const fmt = (n: number) => new Intl.NumberFormat("es-AR", { style: "currency", currency: "ARS", maximumFractionDigits: 0 }).format(n);
+        throw new Error(
+          `Límite de crédito excedido. Saldo actual: ${fmt(saldoActual)}, pedido: ${fmt(Number(order.total))}, límite: ${fmt(limite)}.`
+        );
+      }
+    }
+  }
+
   const { data: updated, error } = await (supabase as any)
     .from("orders")
     .update({
@@ -265,7 +298,10 @@ export async function despacharPedidoConAjuste(
   ajustes: LineaAjuste[],
   despachoInfo?: DespachoInfo,
 ) {
-  const role = await getCallerRole();
+  const authClient = await createClient();
+  const { data: { user } } = await authClient.auth.getUser();
+  if (!user) throw new Error("No autorizado");
+  const role = user.app_metadata?.role as string | undefined;
   if (role !== "admin" && role !== "produccion") throw new Error("No autorizado");
 
   const supabase = createAdminClient();
@@ -273,7 +309,7 @@ export async function despacharPedidoConAjuste(
   // Verificar que el pedido esté en enviado_prod
   const { data: order } = await (supabase as any)
     .from("orders")
-    .select("id, status, subtotal, shipping_fee, discount")
+    .select("id, status, subtotal, shipping_fee, discount, payment_method, customer_id, order_number")
     .eq("id", orderId)
     .single();
   if (!order || order.status !== "enviado_prod")
@@ -316,6 +352,19 @@ export async function despacharPedidoConAjuste(
   if (!updated?.length) throw new Error("El pedido ya fue procesado");
 
   await logOrderEvent(supabase, orderId, "despachado", "Pedido despachado con ajuste de cantidades");
+
+  // Auto-cargo en cuenta corriente con el total ajustado
+  if (order.payment_method === "cuenta_corriente" && order.customer_id) {
+    await (supabase as any).from("cc_movimientos").insert({
+      cliente_id:  order.customer_id,
+      order_id:    orderId,
+      tipo:        "cargo",
+      descripcion: `Pedido ${order.order_number}`,
+      monto:       newTotal,
+      fecha:       new Date().toISOString().slice(0, 10),
+      created_by:  user.id,
+    });
+  }
 
   // Decrementar stock con cantidades ajustadas
   for (const a of ajustes) {
@@ -398,6 +447,23 @@ export async function confirmarEntregaParcial(orderId: string, lineas: LineaEntr
   if (error) throw new Error(error.message);
   if (!updated?.length) throw new Error("El pedido no está en estado de distribución");
   await logOrderEvent(supabase, orderId, "entrega_parcial", "Entrega parcial confirmada");
+
+  // Reintegrar al stock las unidades no entregadas
+  for (const linea of lineas) {
+    const noEntregado = linea.pedido - linea.entregado;
+    if (noEntregado <= 0) continue;
+    await (supabase as any).rpc("increment_stock", {
+      p_product_id: linea.productId,
+      p_qty:        noEntregado,
+    });
+    await (supabase as any).from("stock_movements").insert({
+      product_id: linea.productId,
+      qty:        noEntregado,
+      type:       "ajuste",
+      order_id:   orderId,
+      notes:      `Reintegro entrega parcial — ${noEntregado} de ${linea.pedido} no entregados`,
+    });
+  }
 
   revalidatePath("/admin/distribucion");
   revalidatePath("/admin/pedidos");
