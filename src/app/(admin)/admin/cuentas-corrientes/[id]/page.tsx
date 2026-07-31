@@ -57,7 +57,7 @@ export default async function CcDetailPage({
   // Movimientos ordenados desc
   const { data: movData } = await db
     .from("cc_movimientos")
-    .select("id, fecha, tipo, descripcion, monto, referencia")
+    .select("id, fecha, tipo, descripcion, monto, referencia, order_id")
     .eq("cliente_id", id)
     .order("fecha", { ascending: false })
     .order("created_at", { ascending: false });
@@ -66,6 +66,41 @@ export default async function CcDetailPage({
   const saldo  = movimientos.reduce((s, m) => s + Number(m.monto), 0);
   const limite = Number(cuenta.credit_limit ?? 0);
   const ag     = aging(movimientos);
+
+  // Pedidos en CC con saldo pendiente
+  const { data: pedidosCC } = await db
+    .from("orders")
+    .select("id, order_number, total, created_at, status")
+    .eq("customer_id", id)
+    .eq("payment_method", "cuenta_corriente")
+    .not("status", "in", '("cancelled","liquidado","pending_payment")')
+    .order("created_at", { ascending: true });
+
+  // Pagos ya registrados por pedido
+  const pedidoIds = (pedidosCC ?? []).map((p: any) => p.id);
+  let pagosPorPedido: Record<string, number> = {};
+  if (pedidoIds.length > 0) {
+    const { data: pagos } = await db
+      .from("cc_movimientos")
+      .select("order_id, monto")
+      .in("order_id", pedidoIds)
+      .in("tipo", ["pago", "nota_credito"]);
+    for (const p of (pagos ?? []) as any[]) {
+      pagosPorPedido[p.order_id] = (pagosPorPedido[p.order_id] ?? 0) + Math.abs(Number(p.monto));
+    }
+  }
+
+  const pedidosPendientes = (pedidosCC ?? [])
+    .map((p: any) => ({
+      id:           p.id,
+      order_number: p.order_number,
+      total:        Number(p.total),
+      pagado:       pagosPorPedido[p.id] ?? 0,
+      saldo:        Number(p.total) - (pagosPorPedido[p.id] ?? 0),
+      created_at:   p.created_at,
+      status:       p.status,
+    }))
+    .filter((p) => p.saldo > 0.5);
 
   return (
     <div className="p-4 md:p-8 max-w-4xl">
@@ -119,6 +154,7 @@ export default async function CcDetailPage({
         movimientos={movimientos}
         saldo={saldo}
         limite={limite}
+        pedidosPendientes={pedidosPendientes}
       />
     </div>
   );

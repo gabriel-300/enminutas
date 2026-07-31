@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useTransition, useId } from "react";
-import { registrarMovimiento, eliminarMovimiento, actualizarLimiteCredito } from "../actions";
+import { registrarMovimiento, eliminarMovimiento, actualizarLimiteCredito, registrarPagoOrden } from "../actions";
 import { Trash2 } from "lucide-react";
 
 const fmt = (n: number) =>
@@ -16,7 +16,160 @@ type Movimiento = {
   descripcion: string;
   monto: number;
   referencia: string | null;
+  order_id: string | null;
 };
+
+type PedidoPendiente = {
+  id:           string;
+  order_number: string;
+  total:        number;
+  pagado:       number;
+  saldo:        number;
+  created_at:   string;
+  status:       string;
+};
+
+function PagarPedidoForm({ pedido, clienteId, onDone }: {
+  pedido: PedidoPendiente; clienteId: string; onDone: () => void;
+}) {
+  const today = () => new Date().toISOString().slice(0, 10);
+  const [monto, setMonto]   = useState(String(Math.round(pedido.saldo)));
+  const [ref, setRef]       = useState("");
+  const [fecha, setFecha]   = useState(today());
+  const [error, setError]   = useState<string | null>(null);
+  const [pending, start]    = useTransition();
+
+  const inputCls = "w-full rounded-xl border border-neutral-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#16233f]/20 focus:border-[#16233f]";
+
+  function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    const montoNum = parseFloat(monto.replace(",", "."));
+    if (!montoNum || montoNum <= 0) { setError("El monto debe ser mayor a 0"); return; }
+    if (montoNum > pedido.saldo + 0.01) { setError(`El monto no puede superar el saldo ($${Math.round(pedido.saldo).toLocaleString("es-AR")})`); return; }
+    setError(null);
+    start(async () => {
+      const res = await registrarPagoOrden({
+        orderId:     pedido.id,
+        clienteId,
+        orderNumber: pedido.order_number,
+        monto:       montoNum,
+        referencia:  ref.trim() || undefined,
+        fecha,
+      });
+      if (res.error) { setError(res.error); return; }
+      onDone();
+    });
+  }
+
+  return (
+    <form onSubmit={handleSubmit} className="mt-3 pt-3 border-t border-neutral-100 space-y-3">
+      <div className="grid grid-cols-3 gap-2">
+        <div>
+          <label className="block text-xs font-medium text-neutral-400 mb-1">Monto a pagar</label>
+          <input type="number" min="0.01" step="0.01" value={monto}
+            onChange={e => setMonto(e.target.value)} required className={inputCls} disabled={pending} />
+        </div>
+        <div>
+          <label className="block text-xs font-medium text-neutral-400 mb-1">Referencia</label>
+          <input type="text" placeholder="Transf., cheque…" value={ref}
+            onChange={e => setRef(e.target.value)} className={inputCls} disabled={pending} />
+        </div>
+        <div>
+          <label className="block text-xs font-medium text-neutral-400 mb-1">Fecha</label>
+          <input type="date" value={fecha} onChange={e => setFecha(e.target.value)}
+            required className={inputCls} disabled={pending} />
+        </div>
+      </div>
+      {error && <p className="text-xs text-red-600">{error}</p>}
+      <div className="flex gap-2">
+        <button type="submit" disabled={pending}
+          className="px-4 py-2 rounded-xl bg-emerald-600 text-white text-xs font-medium hover:bg-emerald-700 disabled:opacity-50 transition-colors">
+          {pending ? "Registrando…" : "Confirmar pago"}
+        </button>
+        <button type="button" onClick={onDone} disabled={pending}
+          className="px-4 py-2 rounded-xl border border-neutral-200 text-neutral-600 text-xs hover:bg-neutral-50 disabled:opacity-50">
+          Cancelar
+        </button>
+      </div>
+    </form>
+  );
+}
+
+function PedidosPendientesSection({ pedidos, clienteId }: {
+  pedidos: PedidoPendiente[]; clienteId: string;
+}) {
+  const [openId, setOpenId] = useState<string | null>(null);
+
+  if (pedidos.length === 0) return null;
+
+  const totalPendiente = pedidos.reduce((s, p) => s + p.saldo, 0);
+
+  return (
+    <div className="bg-white rounded-2xl border border-orange-200 overflow-hidden">
+      <div className="px-5 py-4 border-b border-orange-100 flex items-center justify-between bg-orange-50">
+        <div>
+          <h2 className="text-sm font-semibold text-orange-800">Pedidos pendientes de pago</h2>
+          <p className="text-xs text-orange-600 mt-0.5">{pedidos.length} pedido{pedidos.length !== 1 ? "s" : ""} con saldo</p>
+        </div>
+        <span className="text-base font-bold text-orange-700 tabular-nums">
+          {fmt(totalPendiente)}
+        </span>
+      </div>
+      <div className="divide-y divide-neutral-100">
+        {pedidos.map((p) => {
+          const pctPagado = p.total > 0 ? Math.round((p.pagado / p.total) * 100) : 0;
+          const isParcial = p.pagado > 0;
+          const isOpen    = openId === p.id;
+          return (
+            <div key={p.id} className="px-5 py-4">
+              <div className="flex items-center justify-between gap-3 flex-wrap">
+                <div className="min-w-0">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="font-mono text-sm font-semibold text-neutral-800">{p.order_number}</span>
+                    {isParcial && (
+                      <span className="text-xs px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 font-medium">
+                        Pago parcial {pctPagado}%
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-xs text-neutral-400 mt-0.5">
+                    {new Date(p.created_at).toLocaleDateString("es-AR", { day:"2-digit", month:"2-digit", year:"2-digit" })}
+                    {isParcial && ` · Pagado: ${fmt(p.pagado)} · Pendiente: `}
+                    {!isParcial && " · Total: "}
+                  </p>
+                  {isParcial && (
+                    <div className="mt-1.5 w-48 h-1.5 bg-neutral-100 rounded-full overflow-hidden">
+                      <div className="h-full bg-amber-400 rounded-full" style={{ width: `${pctPagado}%` }} />
+                    </div>
+                  )}
+                </div>
+                <div className="flex items-center gap-3 shrink-0">
+                  <div className="text-right">
+                    <p className="text-xs text-neutral-400">Saldo</p>
+                    <p className="text-base font-bold text-red-600 tabular-nums">{fmt(p.saldo)}</p>
+                  </div>
+                  <button
+                    onClick={() => setOpenId(isOpen ? null : p.id)}
+                    className="px-3 py-1.5 rounded-xl bg-emerald-600 text-white text-xs font-medium hover:bg-emerald-700 transition-colors"
+                  >
+                    {isOpen ? "Cancelar" : "Registrar pago"}
+                  </button>
+                </div>
+              </div>
+              {isOpen && (
+                <PagarPedidoForm
+                  pedido={p}
+                  clienteId={clienteId}
+                  onDone={() => setOpenId(null)}
+                />
+              )}
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
 
 const TIPO_CFG: Record<string, { label: string; bg: string; text: string }> = {
   cargo:        { label: "Cargo",        bg: "#fef2f2", text: "#dc2626" },
@@ -30,11 +183,13 @@ export function CcClient({
   movimientos,
   saldo,
   limite,
+  pedidosPendientes = [],
 }: {
   clienteId: string;
   movimientos: Movimiento[];
   saldo: number;
   limite: number;
+  pedidosPendientes?: PedidoPendiente[];
 }) {
   const formId = useId();
   const [pending, start] = useTransition();
@@ -92,6 +247,9 @@ export function CcClient({
 
   return (
     <div className="space-y-6">
+      {/* Pedidos pendientes de pago */}
+      <PedidosPendientesSection pedidos={pedidosPendientes} clienteId={clienteId} />
+
       {/* Límite de crédito */}
       <div className="bg-white rounded-2xl border border-neutral-200 p-5 flex items-center justify-between gap-4">
         <div>
@@ -266,6 +424,12 @@ export function CcClient({
                       <td className="px-5 py-3 text-neutral-700">
                         {m.descripcion}
                         {m.referencia && <span className="text-neutral-400 text-xs ml-1">({m.referencia})</span>}
+                        {m.order_id && (
+                          <a href={`/admin/pedidos/${m.order_id}`} target="_blank"
+                            className="ml-2 text-xs text-[#16233f] hover:underline opacity-60">
+                            ver pedido ↗
+                          </a>
+                        )}
                       </td>
                       <td className={`px-5 py-3 text-right font-semibold tabular-nums ${esPositivo ? "text-red-600" : "text-emerald-600"}`}>
                         {esPositivo ? "+" : ""}{fmt(Number(m.monto))}

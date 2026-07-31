@@ -10,6 +10,56 @@ async function getAdminUser() {
   return user;
 }
 
+export async function registrarPagoOrden(payload: {
+  orderId:    string;
+  clienteId:  string;
+  orderNumber: string;
+  monto:      number;   // positivo desde el form
+  referencia?: string;
+  fecha:      string;
+}): Promise<{ error?: string; liquidado?: boolean }> {
+  try {
+    const user = await getAdminUser();
+    const db = createAdminClient() as any;
+
+    const { error } = await db.from("cc_movimientos").insert({
+      cliente_id:  payload.clienteId,
+      order_id:    payload.orderId,
+      tipo:        "pago",
+      descripcion: `Pago pedido ${payload.orderNumber}`,
+      monto:       -Math.abs(payload.monto),
+      referencia:  payload.referencia || null,
+      fecha:       payload.fecha,
+      created_by:  user.id,
+    });
+    if (error) return { error: error.message };
+
+    // Verificar si el pedido quedó saldado
+    const { data: order } = await db.from("orders").select("total").eq("id", payload.orderId).single();
+    const { data: pagos } = await db
+      .from("cc_movimientos")
+      .select("monto")
+      .eq("order_id", payload.orderId)
+      .in("tipo", ["pago", "nota_credito"]);
+
+    const totalPagado = (pagos ?? []).reduce((s: number, p: any) => s + Math.abs(Number(p.monto)), 0);
+    const totalOrden  = Number(order?.total ?? 0);
+    const liquidado   = totalPagado >= totalOrden - 0.01;
+
+    if (liquidado) {
+      await db.from("orders").update({ status: "liquidado" }).eq("id", payload.orderId);
+      revalidatePath("/admin/pedidos");
+      revalidatePath(`/admin/pedidos/${payload.orderId}`);
+    }
+
+    revalidatePath("/admin/cuentas-corrientes");
+    revalidatePath(`/admin/cuentas-corrientes/${payload.clienteId}`);
+    return { liquidado };
+  } catch (e: any) {
+    return { error: e.message };
+  }
+}
+
 export async function registrarMovimiento(payload: {
   clienteId: string;
   tipo: "cargo" | "pago" | "ajuste" | "nota_credito";

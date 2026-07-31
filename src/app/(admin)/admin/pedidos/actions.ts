@@ -91,7 +91,10 @@ export async function marcarEnviadoProd(orderId: string) {
 }
 
 export async function despacharPedido(orderId: string) {
-  const role = await getCallerRole();
+  const authClient = await createClient();
+  const { data: { user } } = await authClient.auth.getUser();
+  if (!user) throw new Error("No autorizado");
+  const role = user.app_metadata?.role as string | undefined;
   if (role !== "admin" && role !== "produccion") throw new Error("No autorizado");
 
   const supabase = createAdminClient();
@@ -107,10 +110,24 @@ export async function despacharPedido(orderId: string) {
     .update({ status: "despachado", despachado_at: new Date().toISOString() })
     .eq("id", orderId)
     .eq("status", "enviado_prod")
-    .select("id");
+    .select("id, payment_method, customer_id, total, order_number");
   if (error) throw new Error(error.message);
   if (!updated?.length) throw new Error("El pedido debe estar en preparación para despacharse");
   await logOrderEvent(supabase, orderId, "despachado", "Pedido despachado");
+
+  // Auto-cargo en cuenta corriente
+  const ord = updated[0] as any;
+  if (ord.payment_method === "cuenta_corriente" && ord.customer_id) {
+    await (supabase as any).from("cc_movimientos").insert({
+      cliente_id:  ord.customer_id,
+      order_id:    orderId,
+      tipo:        "cargo",
+      descripcion: `Pedido ${ord.order_number}`,
+      monto:       Number(ord.total),
+      fecha:       new Date().toISOString().slice(0, 10),
+      created_by:  user.id,
+    });
+  }
 
   const stockInsuficiente: string[] = [];
   for (const line of (lines ?? []) as { product_id: string; quantity: number }[]) {
