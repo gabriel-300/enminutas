@@ -155,6 +155,7 @@ export default async function ReportesPage({
     { data: rawCur },
     { data: rawPrev },
     { data: { users: allUsers } },
+    { data: rawDeuda },
   ] = await Promise.all([
     db.from("orders")
       .select(`
@@ -173,6 +174,16 @@ export default async function ReportesPage({
       .lte("created_at", prevHasta),
 
     db.auth.admin.listUsers({ perPage: 1000 }),
+
+    // Deuda en cuenta corriente: pedidos no liquidados ni cancelados
+    db.from("orders")
+      .select(`
+        id, order_number, total, created_at, status,
+        customer:profiles!customer_id (id, full_name, vendedor_id)
+      `)
+      .eq("payment_method", "cuenta_corriente")
+      .not("status", "in", '("cancelled","liquidado","pending_payment")')
+      .order("created_at", { ascending: false }),
   ]);
 
   const rawVendedores = (allUsers ?? [])
@@ -266,6 +277,42 @@ export default async function ReportesPage({
   const vendedorStats = Object.values(vendedorMap)
     .filter((v) => v.pedidos > 0)
     .sort((a, b) => b.total - a.total);
+
+  // Deuda por vendedor (cuenta corriente no liquidada)
+  const vendedorNombreMap: Record<string, string> = Object.fromEntries(
+    rawVendedores.map((v: any) => [v.id, v.full_name])
+  );
+  type ClienteDeuda = { nombre: string; pedidos: number; total: number };
+  type VendedorDeuda = { nombre: string; clientes: Record<string, ClienteDeuda>; total: number };
+  const deudaMap: Record<string, VendedorDeuda> = {};
+  let deudaSinVendedor = 0;
+
+  for (const o of (rawDeuda ?? []) as any[]) {
+    const clienteId  = o.customer?.id as string | undefined;
+    const clienteNom = o.customer?.full_name as string | undefined ?? "—";
+    const vid        = o.customer?.vendedor_id as string | undefined;
+    const monto      = Number(o.total);
+
+    if (!vid) { deudaSinVendedor += monto; continue; }
+
+    if (!deudaMap[vid]) {
+      deudaMap[vid] = {
+        nombre:   vendedorNombreMap[vid] ?? "Desconocido",
+        clientes: {},
+        total:    0,
+      };
+    }
+    if (clienteId) {
+      if (!deudaMap[vid].clientes[clienteId]) {
+        deudaMap[vid].clientes[clienteId] = { nombre: clienteNom, pedidos: 0, total: 0 };
+      }
+      deudaMap[vid].clientes[clienteId].pedidos++;
+      deudaMap[vid].clientes[clienteId].total += monto;
+    }
+    deudaMap[vid].total += monto;
+  }
+  const deudaStats = Object.values(deudaMap).sort((a, b) => b.total - a.total);
+  const deudaTotal = deudaStats.reduce((s, v) => s + v.total, 0) + deudaSinVendedor;
 
   // Recent orders table (max 20)
   const recentOrders = orders.slice(0, 20);
@@ -579,6 +626,71 @@ export default async function ReportesPage({
                 </tfoot>
               )}
             </table>
+          </div>
+        </div>
+      )}
+      {/* ── Deuda cuenta corriente por vendedor ── */}
+      {(deudaStats.length > 0 || deudaSinVendedor > 0) && (
+        <div
+          className="mt-4 bg-white rounded-2xl overflow-hidden"
+          style={{ border: "1px solid #e7ecf3", boxShadow: "0 1px 2px rgba(22,35,63,.04)" }}
+        >
+          <div className="px-5 py-4 border-b flex items-center justify-between flex-wrap gap-2" style={{ borderColor: "#e7ecf3" }}>
+            <div>
+              <p className="text-sm font-medium" style={{ color: "#16233f" }}>Deuda en cuenta corriente por vendedor</p>
+              <p className="text-xs mt-0.5" style={{ color: "#8693a8" }}>
+                Pedidos activos con pago en cuenta corriente — pendientes de liquidar
+              </p>
+            </div>
+            <span className="text-base font-bold tabular-nums" style={{ color: "#16233f" }}>
+              Total: {fmt(deudaTotal)}
+            </span>
+          </div>
+
+          <div className="divide-y" style={{ borderColor: "#eef2f6" }}>
+            {deudaStats.map((v) => {
+              const clientesList = Object.values(v.clientes).sort((a, b) => b.total - a.total);
+              return (
+                <details key={v.nombre} className="group">
+                  <summary className="px-5 py-3.5 flex items-center justify-between gap-4 cursor-pointer hover:bg-neutral-50 list-none">
+                    <div className="flex items-center gap-3">
+                      <svg className="size-3.5 text-neutral-400 group-open:rotate-90 transition-transform shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+                      </svg>
+                      <span className="text-sm font-medium" style={{ color: "#16233f" }}>{v.nombre}</span>
+                      <span className="text-xs px-2 py-0.5 rounded-full bg-neutral-100 text-neutral-500">
+                        {clientesList.length} cliente{clientesList.length !== 1 ? "s" : ""}
+                      </span>
+                    </div>
+                    <span className="text-sm font-semibold tabular-nums" style={{ color: "#b25e09" }}>
+                      {fmt(v.total)}
+                    </span>
+                  </summary>
+                  <div className="bg-neutral-50 divide-y" style={{ borderColor: "#eef2f6" }}>
+                    {clientesList.map((c) => (
+                      <div key={c.nombre} className="px-10 py-2.5 flex items-center justify-between gap-4">
+                        <div>
+                          <span className="text-sm text-neutral-700">{c.nombre}</span>
+                          <span className="ml-2 text-xs text-neutral-400">{c.pedidos} pedido{c.pedidos !== 1 ? "s" : ""}</span>
+                        </div>
+                        <span className="text-sm font-medium tabular-nums" style={{ color: "#16233f" }}>
+                          {fmt(c.total)}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </details>
+              );
+            })}
+
+            {deudaSinVendedor > 0 && (
+              <div className="px-5 py-3.5 flex items-center justify-between gap-4">
+                <span className="text-sm text-neutral-400 italic">Sin vendedor asignado</span>
+                <span className="text-sm font-semibold tabular-nums text-neutral-500">
+                  {fmt(deudaSinVendedor)}
+                </span>
+              </div>
+            )}
           </div>
         </div>
       )}
