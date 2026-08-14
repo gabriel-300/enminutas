@@ -2,7 +2,7 @@
 
 import { createClient, createAdminClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
-import { emailPagoConfirmado } from "@/lib/email";
+import { emailPagoConfirmado, emailPedidoModificadoDespacho } from "@/lib/email";
 
 async function logOrderEvent(
   db: ReturnType<typeof createAdminClient>,
@@ -310,11 +310,23 @@ export async function despacharPedidoConAjuste(
   // Verificar que el pedido esté en enviado_prod
   const { data: order } = await (supabase as any)
     .from("orders")
-    .select("id, status, subtotal, shipping_fee, discount, payment_method, customer_id, order_number")
+    .select("id, status, subtotal, shipping_fee, discount, payment_method, customer_id, order_number, customer:profiles!customer_id(full_name, vendedor_id)")
     .eq("id", orderId)
     .single();
   if (!order || order.status !== "enviado_prod")
     throw new Error("El pedido debe estar en preparación para despacharse");
+
+  // Capturar cantidades originales antes de modificar (para el email de alerta)
+  const { data: originalLines } = await (supabase as any)
+    .from("order_lines")
+    .select("id, quantity, product_snapshot")
+    .eq("order_id", orderId);
+  const originalMap = new Map<string, { quantity: number; nombre: string }>(
+    (originalLines ?? []).map((l: any) => [
+      l.id,
+      { quantity: Number(l.quantity), nombre: l.product_snapshot?.name ?? "Producto" },
+    ])
+  );
 
   // Actualizar cantidades si alguna difiere
   for (const a of ajustes) {
@@ -353,6 +365,41 @@ export async function despacharPedidoConAjuste(
   if (!updated?.length) throw new Error("El pedido ya fue procesado");
 
   await logOrderEvent(supabase, orderId, "despachado", "Pedido despachado con ajuste de cantidades");
+
+  // Email de alerta cuando alguna cantidad difiere del original
+  const lineasEmail = ajustes.map((a) => {
+    const orig = originalMap.get(a.lineId);
+    return { nombre: orig?.nombre ?? "Producto", pedido: orig?.quantity ?? a.quantityDespacho, despachado: a.quantityDespacho };
+  });
+  const hayAjuste = lineasEmail.some((l) => l.despachado !== l.pedido);
+
+  if (hayAjuste) {
+    const o = order as any;
+    const clientName: string = o.customer?.full_name ?? "Cliente";
+    let clientEmail: string | undefined;
+    let vendedorEmail: string | undefined;
+
+    if (o.customer_id) {
+      const { data: authData } = await (supabase as any).auth.admin.getUserById(o.customer_id);
+      clientEmail = authData?.user?.email;
+    }
+
+    if (o.customer?.vendedor_id) {
+      const { data: vendedores } = await (supabase as any).auth.admin.listUsers({ perPage: 500 });
+      const vend = (vendedores?.users ?? []).find((u: any) => u.id === o.customer.vendedor_id);
+      vendedorEmail = vend?.email;
+    }
+
+    emailPedidoModificadoDespacho({
+      orderId,
+      orderNumber: o.order_number,
+      clientName,
+      clientEmail,
+      vendedorEmail,
+      lineas:     lineasEmail,
+      nuevoTotal: newTotal,
+    }).catch(() => {});
+  }
 
   // Auto-cargo en cuenta corriente con el total ajustado
   if (order.payment_method === "cuenta_corriente" && order.customer_id) {

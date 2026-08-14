@@ -315,6 +315,85 @@ export async function emailPedidoAdminCreado({
   });
 }
 
+export async function emailPedidoModificadoDespacho({
+  orderId,
+  orderNumber,
+  clientName,
+  clientEmail,
+  vendedorEmail,
+  lineas,
+  nuevoTotal,
+}: {
+  orderId:       string;
+  orderNumber:   string;
+  clientName:    string;
+  clientEmail?:  string;
+  vendedorEmail?: string;
+  lineas: { nombre: string; pedido: number; despachado: number }[];
+  nuevoTotal: number;
+}) {
+  const resend = getResend();
+  if (!resend) return;
+
+  const filas = lineas
+    .map((l) => {
+      const reducido = l.despachado < l.pedido;
+      const style = reducido ? 'color:#b45309;font-weight:600' : '';
+      return `<tr>
+        <td>${l.nombre}</td>
+        <td class="right">${l.pedido}</td>
+        <td class="right" style="${style}">${l.despachado}</td>
+      </tr>`;
+    })
+    .join("");
+
+  const htmlAdmin = baseHtml(`
+    <h1>Pedido modificado al despachar</h1>
+    <p><span class="badge">${orderNumber}</span> — <strong>${clientName}</strong></p>
+    <p>Al despachar se ajustaron las cantidades por falta de mercadería:</p>
+    <table>
+      <thead><tr><th>Producto</th><th class="right">Pedido</th><th class="right">Despachado</th></tr></thead>
+      <tbody>${filas}</tbody>
+    </table>
+    <p class="total">Nuevo total c/IVA: ${fmtARS(nuevoTotal)}</p>
+    <a class="btn" href="${APP_URL}/admin/pedidos/${orderId}">Ver pedido →</a>
+  `);
+
+  const htmlCliente = baseHtml(`
+    <h1>Tu pedido fue despachado con cambios</h1>
+    <p>Hola ${clientName},</p>
+    <p>Tu pedido <strong>${orderNumber}</strong> fue despachado. Por disponibilidad de mercadería, algunas cantidades fueron ajustadas:</p>
+    <table>
+      <thead><tr><th>Producto</th><th class="right">Pedido</th><th class="right">Despachado</th></tr></thead>
+      <tbody>${filas}</tbody>
+    </table>
+    <p class="total">Total actualizado: ${fmtARS(nuevoTotal)}</p>
+    <p>Ante cualquier consulta, comunicate con tu preventista.</p>
+    <a class="btn" href="${APP_URL}/b2b/pedidos/${orderId}">Ver pedido →</a>
+  `);
+
+  const subject = `Pedido ${orderNumber} despachado con ajuste de cantidades`;
+
+  const sends = [
+    resend.emails.send({ from: FROM, to: ADMIN, subject, html: htmlAdmin }),
+  ];
+
+  if (vendedorEmail && vendedorEmail !== ADMIN) {
+    sends.push(resend.emails.send({ from: FROM, to: vendedorEmail, subject, html: htmlAdmin }));
+  }
+
+  if (clientEmail) {
+    sends.push(resend.emails.send({
+      from: FROM,
+      to:   resolveRecipient(clientEmail),
+      subject: `${IS_TEST_DOMAIN ? `[Para: ${clientEmail}] ` : ""}${subject}`,
+      html: htmlCliente,
+    }));
+  }
+
+  await Promise.allSettled(sends);
+}
+
 export async function emailPedidoB2CRecibido({
   orderNumber,
   clientEmail,
