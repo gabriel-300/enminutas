@@ -35,10 +35,10 @@ export async function registrarLote(formData: FormData) {
 
 export async function ajustarStock(formData: FormData) {
   const productId = formData.get("product_id") as string;
-  const qty       = parseInt(formData.get("qty") as string, 10);
+  const qty       = parseFloat((formData.get("qty") as string).replace(",", "."));
   const notes     = (formData.get("notes") as string | null)?.trim() || null;
   const minimoRaw = formData.get("minimo") as string | null;
-  const minimo    = minimoRaw !== null && minimoRaw !== "" ? parseInt(minimoRaw, 10) : undefined;
+  const minimo    = minimoRaw !== null && minimoRaw !== "" ? parseFloat(minimoRaw.replace(",", ".")) : undefined;
 
   if (!productId || isNaN(qty)) throw new Error("Datos inválidos");
 

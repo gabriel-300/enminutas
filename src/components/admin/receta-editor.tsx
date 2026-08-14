@@ -218,10 +218,10 @@ export function RecetaEditor({ productId, recipe }: RecetaProps) {
                   disabled={isPending}
                 />
                 <input
-                  type="number" min={0} step={0.001}
+                  type="text" inputMode="decimal"
                   placeholder="0"
                   value={ing.cantidad || ""}
-                  onChange={(e) => updateIng(i, "cantidad", parseFloat(e.target.value) || 0)}
+                  onChange={(e) => updateIng(i, "cantidad", parseFloat(e.target.value.replace(",", ".")) || 0)}
                   className="w-20 px-3 py-2 text-sm border border-neutral-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-tierra-700/20 disabled:opacity-50 text-center"
                   disabled={isPending}
                 />
@@ -236,10 +236,10 @@ export function RecetaEditor({ productId, recipe }: RecetaProps) {
                 <div className="relative w-24">
                   <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-neutral-400 pointer-events-none">$</span>
                   <input
-                    type="number" min={0} step={1}
+                    type="text" inputMode="decimal"
                     placeholder="0"
                     value={ing.costo || ""}
-                    onChange={(e) => updateIng(i, "costo", parseFloat(e.target.value) || 0)}
+                    onChange={(e) => updateIng(i, "costo", parseFloat(e.target.value.replace(",", ".")) || 0)}
                     className="w-full pl-6 pr-2 py-2 text-sm border border-neutral-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-tierra-700/20 disabled:opacity-50 text-right"
                     disabled={isPending}
                   />
@@ -289,10 +289,10 @@ export function RecetaEditor({ productId, recipe }: RecetaProps) {
                   />
                   <div className="relative">
                     <input
-                      type="number" min={0} step={0.5}
+                      type="text" inputMode="decimal"
                       placeholder="0"
                       value={step.minutes || ""}
-                      onChange={(e) => updateStep(i, "minutes", parseFloat(e.target.value) || 0)}
+                      onChange={(e) => updateStep(i, "minutes", parseFloat(e.target.value.replace(",", ".")) || 0)}
                       className={`${inputCls} pr-10`}
                       disabled={isPending}
                     />

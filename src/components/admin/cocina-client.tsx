@@ -103,8 +103,8 @@ function LoteForm({ item, onClose }: { item: StockItem; onClose: () => void }) {
             <label className="block text-xs font-medium text-neutral-500 mb-1">Stock mínimo deseado</label>
             <input
               name="minimo"
-              type="number"
-              min={0}
+              type="text"
+              inputMode="decimal"
               defaultValue={item.minimo}
               className={`${inputCls} w-28`}
               disabled={isPending}
