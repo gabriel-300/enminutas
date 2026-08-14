@@ -43,7 +43,8 @@ export function RecetaEditor({ productId, recipe }: RecetaProps) {
   const [error,   setError]   = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
 
-  const [yieldCajas, setYieldCajas] = useState(recipe?.yieldCajas ?? 1);
+  const [yieldCajasStr, setYieldCajasStr] = useState(String(recipe?.yieldCajas ?? 1));
+  const yieldCajas = parseFloat(yieldCajasStr.replace(",", ".")) || 1;
   const [notes,      setNotes]      = useState(recipe?.notes ?? "");
   const [steps,      setSteps]      = useState<Step[]>(
     recipe?.steps.length ? recipe.steps : [{ description: "", minutes: 0, notes: "" }]
@@ -98,7 +99,7 @@ export function RecetaEditor({ productId, recipe }: RecetaProps) {
 
     const fd = new FormData();
     fd.set("product_id",  productId);
-    fd.set("yield_cajas", String(yieldCajas));
+    fd.set("yield_cajas", String(parseFloat(yieldCajasStr.replace(",", ".")) || 1));
     fd.set("notes",       notes);
 
     steps.forEach((s, i) => {
@@ -150,8 +151,8 @@ export function RecetaEditor({ productId, recipe }: RecetaProps) {
               Cajas que produce este lote estándar
             </label>
             <input
-              type="number" min={0.5} step={0.5} value={yieldCajas}
-              onChange={(e) => setYieldCajas(parseFloat(e.target.value) || 1)}
+              type="text" inputMode="decimal" value={yieldCajasStr}
+              onChange={(e) => setYieldCajasStr(e.target.value)}
               className={inputCls}
               disabled={isPending}
             />
