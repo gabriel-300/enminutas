@@ -7,7 +7,7 @@ type ActionResult = { error: string } | { ok: true };
 
 export async function guardarReceta(formData: FormData): Promise<ActionResult> {
   const productId  = formData.get("product_id") as string;
-  const yieldCajas = parseInt(formData.get("yield_cajas") as string, 10) || 1;
+  const yieldCajas = parseFloat(formData.get("yield_cajas") as string) || 1;
   const notes      = (formData.get("notes") as string | null)?.trim() || null;
 
   if (!productId) return { error: "Producto requerido" };

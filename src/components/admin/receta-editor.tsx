@@ -150,8 +150,8 @@ export function RecetaEditor({ productId, recipe }: RecetaProps) {
               Cajas que produce este lote estándar
             </label>
             <input
-              type="number" min={1} value={yieldCajas}
-              onChange={(e) => setYieldCajas(parseInt(e.target.value) || 1)}
+              type="number" min={0.5} step={0.5} value={yieldCajas}
+              onChange={(e) => setYieldCajas(parseFloat(e.target.value) || 1)}
               className={inputCls}
               disabled={isPending}
             />
