@@ -100,7 +100,7 @@ export default async function CcDetailPage({
       created_at:   p.created_at,
       status:       p.status,
     }))
-    .filter((p) => p.saldo > 0.5);
+    .filter((p: { saldo: number }) => p.saldo > 0.5);
 
   return (
     <div className="p-4 md:p-8 max-w-4xl">
