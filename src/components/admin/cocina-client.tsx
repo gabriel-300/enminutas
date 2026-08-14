@@ -88,8 +88,10 @@ function LoteForm({ item, onClose }: { item: StockItem; onClose: () => void }) {
           </label>
           <input
             name="qty"
-            type="number"
-            min={mode === "lote" ? 1 : 0}
+            type="text"
+            inputMode="decimal"
+            min={mode === "lote" ? 0.5 : 0}
+            step={0.5}
             defaultValue={mode === "lote" ? sugerido : item.stock}
             required
             className={`${inputCls} w-28`}

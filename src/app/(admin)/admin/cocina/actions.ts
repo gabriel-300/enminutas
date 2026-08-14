@@ -5,7 +5,7 @@ import { revalidatePath } from "next/cache";
 
 export async function registrarLote(formData: FormData) {
   const productId = formData.get("product_id") as string;
-  const qty       = parseInt(formData.get("qty") as string, 10);
+  const qty       = parseFloat((formData.get("qty") as string).replace(",", "."));
   const notes     = (formData.get("notes") as string | null)?.trim() || null;
 
   if (!productId || !qty || qty <= 0) throw new Error("Datos inválidos");
