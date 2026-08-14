@@ -38,8 +38,8 @@ export default async function RepartidorPage() {
       `)
       .eq("channel", "b2b_mayorista")
       .in("status", statuses);
-    if (esDistrib) {
-      q = q.eq("delivery_zone_id", zonaId ?? "00000000-0000-0000-0000-000000000000");
+    if (esDistrib && zonaId) {
+      q = q.eq("delivery_zone_id", zonaId);
     }
     return q;
   };
@@ -54,7 +54,7 @@ export default async function RepartidorPage() {
         .eq("status", "delivered")
         .gte("entregado_at", hoyInicio.toISOString())
         .order("entregado_at", { ascending: false });
-      if (esDistrib) q = q.eq("delivery_zone_id", zonaId ?? "00000000-0000-0000-0000-000000000000");
+      if (esDistrib && zonaId) q = q.eq("delivery_zone_id", zonaId);
       return q;
     })(),
   ]);
