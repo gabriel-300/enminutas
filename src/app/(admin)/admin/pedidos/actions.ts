@@ -182,6 +182,7 @@ export async function despacharPedido(orderId: string) {
   revalidatePath("/admin/produccion");
   revalidatePath("/admin/cocina");
   revalidatePath("/admin/dashboard");
+  revalidatePath(`/remito/${orderId}`);
 }
 
 export async function confirmarPago(orderId: string) {
@@ -385,6 +386,7 @@ export async function despacharPedidoConAjuste(
   revalidatePath("/admin/cocina");
   revalidatePath("/admin/dashboard");
   revalidatePath(`/admin/pedidos/${orderId}`);
+  revalidatePath(`/remito/${orderId}`);
 }
 
 export async function agregarNota(orderId: string, nota: string) {

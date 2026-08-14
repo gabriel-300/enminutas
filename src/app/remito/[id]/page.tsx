@@ -4,6 +4,8 @@ import { PrintTrigger, PrintButton } from "@/components/remito/print-trigger";
 import { FirmaCanvas } from "@/components/remito/firma-canvas";
 import { fmtFechaSolo } from "@/lib/fecha";
 
+export const revalidate = 0;
+
 const fmt = (n: number) =>
   new Intl.NumberFormat("es-AR", {
     style: "currency", currency: "ARS", maximumFractionDigits: 0,
@@ -166,7 +168,7 @@ export default async function RemitoPage({
             </tr>
           </thead>
           <tbody>
-            {(o.lines ?? []).map((line: any, i: number) => (
+            {(o.lines ?? []).filter((line: any) => Number(line.quantity) > 0).map((line: any, i: number) => (
               <tr key={line.id} style={{ borderBottom: "1px solid #f3f4f6", background: i % 2 === 0 ? "white" : "#fafafa" }}>
                 <td style={{ padding: "10px 6px", color: "#111" }}>
                   <div style={{ fontWeight: 500 }}>{line.product_snapshot?.name ?? "Producto"}</div>
