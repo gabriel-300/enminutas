@@ -39,7 +39,7 @@ export default async function RemitoPage({
       id, order_number, status, channel, total, subtotal, shipping_fee, discount,
       payment_method, payment_confirmed_at, created_at,
       customer_id, guest_email, guest_phone,
-      firma_data, firma_fecha, firma_aclaracion,
+      firma_data, firma_fecha, firma_aclaracion, despacho_info,
       customer:profiles!customer_id (full_name, phone),
       lines:order_lines (
         id, quantity, unit_price, line_total, product_snapshot
@@ -156,6 +156,41 @@ export default async function RemitoPage({
             )}
           </div>
         </div>
+
+        {/* Info de despacho */}
+        {o.despacho_info && (
+          <div className="mb-8">
+            <p style={{ fontSize: 10, fontWeight: 600, color: "#999", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 8 }}>
+              Entrega
+            </p>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "4px 32px", fontSize: 13 }}>
+              {o.despacho_info.repartidor && (
+                <div>
+                  <span style={{ color: "#666" }}>Entregó: </span>
+                  <span style={{ fontWeight: 600, color: "#111" }}>{o.despacho_info.repartidor}</span>
+                </div>
+              )}
+              {o.despacho_info.fecha_entrega && (
+                <div>
+                  <span style={{ color: "#666" }}>Fecha: </span>
+                  <span style={{ color: "#111" }}>{fmtFechaSolo(o.despacho_info.fecha_entrega)}</span>
+                </div>
+              )}
+              {o.despacho_info.hora_entrega && (
+                <div>
+                  <span style={{ color: "#666" }}>Hora: </span>
+                  <span style={{ color: "#111" }}>{o.despacho_info.hora_entrega}</span>
+                </div>
+              )}
+              {o.despacho_info.patente && (
+                <div>
+                  <span style={{ color: "#666" }}>Vehículo: </span>
+                  <span style={{ color: "#111", fontFamily: "monospace" }}>{o.despacho_info.patente}</span>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
 
         {/* Tabla de productos */}
         <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13, marginBottom: 24 }}>
