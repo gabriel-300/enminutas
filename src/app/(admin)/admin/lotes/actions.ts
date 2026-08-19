@@ -41,7 +41,11 @@ export async function crearLote(payload: {
       created_by:        user.id,
     }).select("id").single();
 
-    if (error) return { error: error.message };
+    if (error) {
+      if (error.code === "23505" || error.message?.includes("idx_lotes_numero_unico"))
+        return { error: `El lote "${payload.numeroLote}" ya existe para este producto. Usá otro número de lote.` };
+      return { error: error.message };
+    }
     revalidatePath("/admin/lotes");
     return { id: data.id };
   } catch (e: any) {
