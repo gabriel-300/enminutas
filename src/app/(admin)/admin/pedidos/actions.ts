@@ -162,13 +162,11 @@ export async function despacharPedido(orderId: string) {
     });
   }
 
-  const stockInsuficiente: string[] = [];
   for (const line of (lines ?? []) as { product_id: string; quantity: number }[]) {
-    const { data: suficiente } = await (supabase as any).rpc("decrement_stock", {
+    await (supabase as any).rpc("consume_lote_stock", {
       p_product_id: line.product_id,
       p_qty:        line.quantity,
     });
-    if (suficiente === false) stockInsuficiente.push(line.product_id);
     await (supabase as any).from("stock_movements").insert({
       product_id: line.product_id,
       qty:        -line.quantity,
@@ -417,7 +415,7 @@ export async function despacharPedidoConAjuste(
   // Decrementar stock con cantidades ajustadas
   for (const a of ajustes) {
     if (a.quantityDespacho <= 0) continue;
-    await (supabase as any).rpc("decrement_stock", {
+    await (supabase as any).rpc("consume_lote_stock", {
       p_product_id: a.productId,
       p_qty:        a.quantityDespacho,
     });
