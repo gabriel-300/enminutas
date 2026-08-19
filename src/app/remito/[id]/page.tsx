@@ -116,7 +116,7 @@ export default async function RemitoPage({
           </div>
           <div style={{ textAlign: "right" }}>
             <p style={{ fontSize: 22, fontWeight: 700, color: "#111", fontFamily: "monospace" }}>{o.order_number}</p>
-            <p style={{ fontSize: 12, color: "#666", marginTop: 2 }}>REMITO — {fecha}</p>
+            <p style={{ fontSize: 12, color: "#666", marginTop: 2 }}>REMITO · <span style={{ color: "#999" }}>Fecha pedido:</span> {fecha}</p>
             <p style={{ fontSize: 11, marginTop: 4, fontWeight: 600, padding: "2px 8px", borderRadius: 4, display: "inline-block",
               background: o.status === "delivered" ? "#dcfce7" : "#fef9c3",
               color: o.status === "delivered" ? "#166534" : "#854d0e",
@@ -172,7 +172,7 @@ export default async function RemitoPage({
               )}
               {o.despacho_info.fecha_entrega && (
                 <div>
-                  <span style={{ color: "#666" }}>Fecha: </span>
+                  <span style={{ color: "#666" }}>Fecha de entrega: </span>
                   <span style={{ color: "#111" }}>{fmtFechaSolo(o.despacho_info.fecha_entrega)}</span>
                 </div>
               )}
