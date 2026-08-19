@@ -58,7 +58,7 @@ export default async function ClienteB2BDetailPage({
     adminClient.auth.admin.getUserById(id),
     (adminClient as any)
       .from("orders")
-      .select("id, order_number, status, total, created_at, payment_confirmed_at")
+      .select("id, order_number, status, total, created_at, payment_confirmed_at, entregado_at")
       .eq("customer_id", id)
       .eq("channel", "b2b_mayorista")
       .order("created_at", { ascending: false }),
@@ -192,7 +192,10 @@ export default async function ClienteB2BDetailPage({
                     </Link>
                     <div className="flex items-center gap-2 mt-1">
                       <OrderStatusBadge status={o.status} />
-                      <span className="text-xs text-neutral-400">{fmtFechaSolo(o.created_at)}</span>
+                      <span className="text-xs text-neutral-400">Pedido: {fmtFechaSolo(o.created_at)}</span>
+                      {o.entregado_at && (
+                        <span className="text-xs text-neutral-400">· Entrega: {fmtFechaSolo(o.entregado_at)}</span>
+                      )}
                     </div>
                   </div>
                   <span className="font-semibold text-sm text-neutral-900 tabular-nums shrink-0">
@@ -207,7 +210,8 @@ export default async function ClienteB2BDetailPage({
               <thead>
                 <tr className="text-left border-b border-neutral-100">
                   <th className="px-5 py-3 text-xs font-medium text-neutral-400">Nro.</th>
-                  <th className="px-5 py-3 text-xs font-medium text-neutral-400">Fecha</th>
+                  <th className="px-5 py-3 text-xs font-medium text-neutral-400">Fecha pedido</th>
+                  <th className="px-5 py-3 text-xs font-medium text-neutral-400">Fecha entrega</th>
                   <th className="px-5 py-3 text-xs font-medium text-neutral-400">Estado</th>
                   <th className="px-5 py-3 text-xs font-medium text-neutral-400 text-right">Total</th>
                 </tr>
@@ -222,6 +226,7 @@ export default async function ClienteB2BDetailPage({
                       </Link>
                     </td>
                     <td className="px-5 py-3 text-neutral-500 text-xs">{fmtFechaSolo(o.created_at)}</td>
+                    <td className="px-5 py-3 text-neutral-500 text-xs">{o.entregado_at ? fmtFechaSolo(o.entregado_at) : "—"}</td>
                     <td className="px-5 py-3"><OrderStatusBadge status={o.status} /></td>
                     <td className="px-5 py-3 text-right font-medium text-neutral-900 tabular-nums">
                       {fmt(Number(o.total))}
