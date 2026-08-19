@@ -1,8 +1,8 @@
 // Fórmula de precios B2B — En Minutas v5
 // Especificación: EnMinutas_EspecTecnica_ListaPrecios_v5.pdf
 //
-// FINAL c/IVA = (lista_siva × 1.21) + (lista_siva × 0.15)
-// El IVA se aplica SOLO sobre lista_siva, NO sobre la comisión.
+// FINAL c/IVA = (lista_siva + comisión) × 1.21
+// El IVA se aplica sobre la base total (lista_siva + comisión).
 
 export type PrecioB2B = {
   lista_siva:    number;
@@ -52,9 +52,9 @@ export function calcularPrecio(p: {
   // Paso 4 — Comisión (sin IVA adicional)
   const comision = r2(lista_siva * comision_pct);
 
-  // Paso 5 — FINAL c/IVA
+  // Paso 5 — FINAL c/IVA: IVA sobre (lista_siva + comisión)
   const flete_kg_total = r2((p.flete_kg ?? 0) * (p.bolsas_caja ?? 1));
-  const final_civa = r0(lista_civa + comision + flete_kg_total);
+  const final_civa = r0((lista_siva + comision + flete_kg_total) * (1 + iva));
 
   // Paso 6 — Precio por unidad
   const div_unidades = p.divisiones_display != null
