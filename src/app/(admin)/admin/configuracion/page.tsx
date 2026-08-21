@@ -1,8 +1,9 @@
 import Link from "next/link";
-import { Settings, Package, Tag, Truck, MapPin, Percent, Users, Building2, UserCog, Sliders, Warehouse } from "lucide-react";
+import { Settings, Package, Tag, Truck, MapPin, Percent, Users, Building2, UserCog, Sliders, Warehouse, Layers } from "lucide-react";
 
 const ITEMS = [
   { href: "/admin/productos",    label: "Productos",        icon: Package,   desc: "Catálogo, costos y precios" },
+  { href: "/admin/lineas",       label: "Líneas",           icon: Layers,    desc: "Líneas de producto del catálogo" },
   { href: "/admin/categorias",   label: "Categorías",       icon: Tag,       desc: "Agrupaciones del catálogo" },
   { href: "/admin/canales",      label: "Canales B2B",      icon: Building2, desc: "Configuración de canales de venta" },
   { href: "/admin/zonas",        label: "Zonas",            icon: MapPin,    desc: "Zonas de distribución" },
