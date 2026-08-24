@@ -28,6 +28,20 @@ export async function crearLinea(nombre: string): Promise<{ error?: string }> {
   }
 }
 
+export async function editarLinea(id: number, nombre: string): Promise<{ error?: string }> {
+  try {
+    await requireAdmin();
+    const db = createAdminClient() as any;
+    const { error } = await db.from("lineas_producto").update({ nombre: nombre.trim() }).eq("id", id);
+    if (error) return { error: error.message };
+    revalidatePath("/admin/lineas");
+    revalidatePath("/admin/productos");
+    return {};
+  } catch (e: any) {
+    return { error: e.message };
+  }
+}
+
 export async function eliminarLinea(id: number): Promise<{ error?: string }> {
   try {
     await requireAdmin();
