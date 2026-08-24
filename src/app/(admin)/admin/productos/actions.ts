@@ -71,7 +71,7 @@ function parseB2vPayload(formData: FormData): Record<string, any> {
   };
 }
 
-export async function crearProducto(formData: FormData) {
+export async function crearProducto(formData: FormData): Promise<{ error: string } | void> {
   const supabase = createAdminClient();
 
   const payload = parseB2vPayload(formData);
@@ -89,7 +89,11 @@ export async function crearProducto(formData: FormData) {
   payload.slug = slug;
 
   const { error } = await (supabase as any).from("products").insert(payload);
-  if (error) throw new Error(error.message);
+  if (error) {
+    if (error.code === "23505" && error.message?.includes("sku"))
+      return { error: `El SKU "${payload.sku}" ya existe. Usá otro código.` };
+    return { error: error.message };
+  }
 
   revalidatePath("/admin/productos");
   revalidatePath("/tienda");

@@ -1,6 +1,6 @@
 "use client";
 
-import { useTransition } from "react";
+import { useTransition, useState } from "react";
 import { ImageUploader } from "@/components/admin/image-uploader";
 
 type Categoria = { id: string; name: string };
@@ -38,7 +38,7 @@ type Props = {
   categorias:     Categoria[];
   lineas:         Linea[];
   defaultValues?: ProductoValues;
-  action:         (formData: FormData) => Promise<void>;
+  action:         (formData: FormData) => Promise<{ error: string } | void>;
   submitLabel:    string;
   cancelHref:     string;
 };
@@ -64,11 +64,16 @@ function Field({
 
 export function ProductoForm({ categorias, lineas, defaultValues: dv = {}, action, submitLabel, cancelHref }: Props) {
   const [isPending, startTransition] = useTransition();
+  const [formError, setFormError] = useState<string | null>(null);
 
   function handleSubmit(e: React.SyntheticEvent<HTMLFormElement>) {
     e.preventDefault();
+    setFormError(null);
     const fd = new FormData(e.currentTarget);
-    startTransition(() => action(fd));
+    startTransition(async () => {
+      const result = await action(fd);
+      if (result && "error" in result) setFormError(result.error);
+    });
   }
 
   return (
@@ -202,6 +207,9 @@ export function ProductoForm({ categorias, lineas, defaultValues: dv = {}, actio
       </section>
 
       {/* ── Acciones ── */}
+      {formError && (
+        <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-xl px-4 py-3">{formError}</p>
+      )}
       <div className="flex items-center gap-3">
         <button type="submit" disabled={isPending}
           className="px-5 py-2.5 rounded-xl bg-tierra-700 text-white text-sm font-medium hover:bg-tierra-800 disabled:opacity-50 transition-colors">
