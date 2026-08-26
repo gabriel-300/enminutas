@@ -55,11 +55,13 @@ export function PagosClient({ clienteId, pagos, totalFacturado, ordenes }: Props
   const [metodo,      setMetodo]      = useState("transferencia");
   const [referencia,  setReferencia]  = useState("");
   const [notas,       setNotas]       = useState("");
-  const [imputacion,  setImputacion]  = useState<Imputacion>("pedido");
-  const [orderId,     setOrderId]     = useState("");
-  const [facturaNum,  setFacturaNum]  = useState("");
-  const [error,       setError]       = useState<string | null>(null);
-  const [isPending,   start]          = useTransition();
+  const [imputacion,      setImputacion]     = useState<Imputacion>("pedido");
+  const [orderId,         setOrderId]        = useState("");
+  const [facturaNum,      setFacturaNum]     = useState("");
+  const [marcarLiquidado, setMarcarLiquidado] = useState(false);
+  const [error,           setError]          = useState<string | null>(null);
+  const [pagoGuardado,    setPagoGuardado]   = useState<string | null>(null); // pagoId tras guardar
+  const [isPending,       start]             = useTransition();
 
   const totalPagado = pagos.reduce((s, p) => s + Number(p.monto), 0);
   const saldo       = totalFacturado - totalPagado;
@@ -70,8 +72,8 @@ export function PagosClient({ clienteId, pagos, totalFacturado, ordenes }: Props
   function reset() {
     setMonto(""); setFecha(hoy()); setMetodo("transferencia");
     setReferencia(""); setNotas(""); setImputacion("pedido");
-    setOrderId(""); setFacturaNum(""); setError(null);
-    setMostrarForm(false);
+    setOrderId(""); setFacturaNum(""); setMarcarLiquidado(false);
+    setError(null); setPagoGuardado(null); setMostrarForm(false);
   }
 
   function handleSubmit(e: React.FormEvent) {
@@ -89,13 +91,15 @@ export function PagosClient({ clienteId, pagos, totalFacturado, ordenes }: Props
     fd.set("metodo",         metodo);
     fd.set("referencia",     referencia);
     fd.set("notas",          notas);
-    fd.set("order_id",       imputacion === "pedido"   ? orderId    : "");
-    fd.set("factura_numero", imputacion === "factura"  ? facturaNum : "");
+    fd.set("order_id",        imputacion === "pedido"  ? orderId    : "");
+    fd.set("factura_numero",  imputacion === "factura" ? facturaNum : "");
+    fd.set("marcar_liquidado", marcarLiquidado ? "1" : "0");
 
     start(async () => {
       const res = await registrarPago(fd);
       if ("error" in res) { setError(res.error); return; }
-      reset();
+      setPagoGuardado(res.pagoId);
+      setMostrarForm(false);
     });
   }
 
@@ -172,12 +176,12 @@ export function PagosClient({ clienteId, pagos, totalFacturado, ordenes }: Props
 
           {/* Selector de pedido */}
           {imputacion === "pedido" && (
-            <div>
+            <div className="space-y-2">
               <label className="block text-xs font-medium text-neutral-500 mb-1">Pedido *</label>
               {ordenesActivas.length === 0 ? (
                 <p className="text-sm text-neutral-400">Este cliente no tiene pedidos activos.</p>
               ) : (
-                <select value={orderId} onChange={e => setOrderId(e.target.value)}
+                <select value={orderId} onChange={e => { setOrderId(e.target.value); setMarcarLiquidado(false); }}
                   className={inputCls} disabled={isPending}>
                   <option value="">— Seleccionar pedido —</option>
                   {ordenesActivas.map(o => (
@@ -186,6 +190,15 @@ export function PagosClient({ clienteId, pagos, totalFacturado, ordenes }: Props
                     </option>
                   ))}
                 </select>
+              )}
+              {orderId && (
+                <label className="flex items-center gap-2 cursor-pointer select-none">
+                  <input type="checkbox" checked={marcarLiquidado}
+                    onChange={e => setMarcarLiquidado(e.target.checked)}
+                    disabled={isPending}
+                    className="rounded border-neutral-300 text-tierra-700 focus:ring-tierra-700/20" />
+                  <span className="text-sm text-neutral-700">Marcar pedido como <strong>liquidado</strong></span>
+                </label>
               )}
             </div>
           )}
@@ -254,6 +267,23 @@ export function PagosClient({ clienteId, pagos, totalFacturado, ordenes }: Props
             </button>
           </div>
         </form>
+      )}
+
+      {/* Banner post-guardado con link al recibo */}
+      {pagoGuardado && (
+        <div className="px-5 py-3 bg-emerald-50 border-b border-emerald-100 flex items-center justify-between gap-3 flex-wrap">
+          <p className="text-sm text-emerald-700 font-medium">✓ Pago registrado correctamente</p>
+          <div className="flex items-center gap-3">
+            <a href={`/admin/clientes-b2b/recibo/${pagoGuardado}`} target="_blank"
+              className="px-3 py-1.5 text-sm font-medium rounded-lg border border-emerald-600 text-emerald-700 hover:bg-emerald-100 transition-colors">
+              Imprimir recibo
+            </a>
+            <button type="button" onClick={() => setPagoGuardado(null)}
+              className="text-xs text-emerald-400 hover:text-emerald-700">
+              ✕
+            </button>
+          </div>
+        </div>
       )}
 
       {/* Historial */}
