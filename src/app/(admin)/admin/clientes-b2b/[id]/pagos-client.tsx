@@ -325,10 +325,16 @@ export function PagosClient({ clienteId, pagos, totalFacturado, ordenes }: Props
                   )}
                 </div>
               </div>
-              <button type="button" onClick={() => handleEliminar(p.id)} disabled={isPending}
-                className="text-xs text-neutral-300 hover:text-red-500 disabled:opacity-40 shrink-0 transition-colors pt-0.5">
-                Eliminar
-              </button>
+              <div className="flex flex-col items-end gap-1 shrink-0">
+                <a href={`/admin/clientes-b2b/recibo/${p.id}`} target="_blank"
+                  className="text-xs text-tierra-700 hover:underline font-medium">
+                  Recibo
+                </a>
+                <button type="button" onClick={() => handleEliminar(p.id)} disabled={isPending}
+                  className="text-xs text-neutral-300 hover:text-red-500 disabled:opacity-40 transition-colors">
+                  Eliminar
+                </button>
+              </div>
             </div>
           ))}
         </div>
