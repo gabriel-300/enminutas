@@ -16,7 +16,7 @@ export default async function CatalogoB2BPage() {
   const { data: profileRaw } = await (supabase as any)
     .from("profiles")
     .select(`
-      full_name, b2b_status, zona_id,
+      full_name, b2b_status, zona_id, comision_pct_override,
       canal:canales!canal_id (nombre, slug, margen_std, margen_premium, markup_pvp),
       zona:delivery_zones!zona_id (name, km, precio_km)
     `)
@@ -80,7 +80,9 @@ export default async function CatalogoB2BPage() {
         margen_premium:     Number(canal!.margen_premium),
         markup_pvp:         Number(canal!.markup_pvp),
         iva_pct:            params.iva_pct,
-        comision_pct:       params.comision_pct,
+        comision_pct:       profile.comision_pct_override != null
+                              ? Number(profile.comision_pct_override)
+                              : params.comision_pct,
         km:                 Number(zona?.km ?? 0),
         precio_km:          Number(zona?.precio_km ?? 0),
       }),

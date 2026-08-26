@@ -9,13 +9,14 @@ import { HelpTooltip } from "@/components/ui/help-tooltip";
 // ── Types ──────────────────────────────────────────────────────────────────
 
 type ClienteB2B = {
-  id:             string;
-  full_name:      string | null;
-  canal_nombre:   string;
-  canal_slug:     string;
-  margen_std:     number;
-  margen_premium: number;
-  markup_pvp:     number;
+  id:                    string;
+  full_name:             string | null;
+  canal_nombre:          string;
+  canal_slug:            string;
+  margen_std:            number;
+  margen_premium:        number;
+  markup_pvp:            number;
+  comision_pct_override: number | null;
 };
 
 type DireccionB2B = {
@@ -124,7 +125,7 @@ export function NuevoPedidoClient({
         margen_premium:     cliente.margen_premium,
         markup_pvp:         cliente.markup_pvp,
         iva_pct,
-        comision_pct,
+        comision_pct: cliente.comision_pct_override ?? comision_pct,
         km:                 direccion?.km ?? 0,
         precio_km:          direccion?.precio_km ?? 0,
       }),

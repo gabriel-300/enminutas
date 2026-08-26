@@ -6,6 +6,8 @@ import { OrderStatusBadge } from "@/components/ui/badge";
 import { fmtFechaLarga, fmtFechaSolo } from "@/lib/fecha";
 import { DireccionesClient } from "./direcciones-client";
 import { PagosClient, type Pago, type OrdenResumen } from "./pagos-client";
+import { ComisionEdit } from "./comision-edit";
+import { getParametros } from "@/lib/parametros";
 
 export const metadata: Metadata = { title: "Historial de cliente — Admin En Minutas" };
 export const revalidate = 0;
@@ -27,6 +29,7 @@ export default async function ClienteB2BDetailPage({
   const { id } = await params;
   const supabase    = await createClient();
   const adminClient = createAdminClient();
+  const globalParams = await getParametros();
 
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/login");
@@ -54,7 +57,7 @@ export default async function ClienteB2BDetailPage({
   ] = await Promise.all([
     (adminClient as any)
       .from("profiles")
-      .select("id, full_name, descuento_extra_pct, b2b_status, created_at, phone, document_number, canal:canales!canal_id (nombre, descuento_pct)")
+      .select("id, full_name, descuento_extra_pct, b2b_status, created_at, phone, document_number, comision_pct_override, canal:canales!canal_id (nombre, descuento_pct)")
       .eq("id", id)
       .single(),
     adminClient.auth.admin.getUserById(id),
@@ -150,6 +153,16 @@ export default async function ClienteB2BDetailPage({
               )}
             </p>
           </div>
+          {role === "admin" && (
+            <div>
+              <p className="text-xs text-neutral-400">Comisión</p>
+              <ComisionEdit
+                clienteId={id}
+                comisionOverride={profile.comision_pct_override != null ? Number(profile.comision_pct_override) : null}
+                comisionGlobal={globalParams.comision_pct}
+              />
+            </div>
+          )}
           <div>
             <p className="text-xs text-neutral-400">Estado</p>
             <p className="text-sm font-medium text-neutral-900">
