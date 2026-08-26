@@ -5,7 +5,7 @@ import Link from "next/link";
 import { OrderStatusBadge } from "@/components/ui/badge";
 import { fmtFechaLarga, fmtFechaSolo } from "@/lib/fecha";
 import { DireccionesClient } from "./direcciones-client";
-import { PagosClient, type Pago } from "./pagos-client";
+import { PagosClient, type Pago, type OrdenResumen } from "./pagos-client";
 
 export const metadata: Metadata = { title: "Historial de cliente — Admin En Minutas" };
 export const revalidate = 0;
@@ -76,7 +76,7 @@ export default async function ClienteB2BDetailPage({
       .order("name"),
     (adminClient as any)
       .from("pagos")
-      .select("id, monto, fecha, metodo, referencia, notas, created_at")
+      .select("id, monto, fecha, metodo, referencia, notas, order_id, factura_numero, created_at, order:orders!order_id(order_number, total)")
       .eq("cliente_id", id)
       .order("fecha", { ascending: false }),
   ]);
@@ -90,6 +90,13 @@ export default async function ClienteB2BDetailPage({
   const direcciones = (direccionesRaw ?? []) as any[];
   const zonas       = (zonasRaw ?? []) as { id: string; name: string; flete_kg: number }[];
   const pagos       = (pagosRaw ?? []) as Pago[];
+  const ordenes     = orders.map(o => ({
+    id:           o.id,
+    order_number: o.order_number,
+    total:        Number(o.total),
+    status:       o.status,
+    created_at:   o.created_at,
+  })) as OrdenResumen[];
 
   const totalFacturado = orders
     .filter((o) => o.status !== "cancelled")
@@ -189,6 +196,7 @@ export default async function ClienteB2BDetailPage({
           clienteId={id}
           pagos={pagos}
           totalFacturado={totalFacturado}
+          ordenes={ordenes}
         />
       </div>
 

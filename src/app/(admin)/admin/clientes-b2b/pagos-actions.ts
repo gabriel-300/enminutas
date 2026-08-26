@@ -11,8 +11,10 @@ export async function registrarPago(formData: FormData): Promise<Result> {
   const monto      = parseFloat(montoStr);
   const fecha      = (formData.get("fecha") as string)?.trim();
   const metodo     = (formData.get("metodo") as string)?.trim() || "transferencia";
-  const referencia = (formData.get("referencia") as string)?.trim() || null;
-  const notas      = (formData.get("notas") as string)?.trim() || null;
+  const referencia     = (formData.get("referencia") as string)?.trim() || null;
+  const notas          = (formData.get("notas") as string)?.trim() || null;
+  const orderId        = (formData.get("order_id") as string)?.trim() || null;
+  const facturaNumero  = (formData.get("factura_numero") as string)?.trim() || null;
 
   if (!clienteId) return { error: "Cliente requerido" };
   if (isNaN(monto) || monto <= 0) return { error: "El monto debe ser mayor a cero" };
@@ -24,13 +26,15 @@ export async function registrarPago(formData: FormData): Promise<Result> {
 
   const db = createAdminClient() as any;
   const { error } = await db.from("pagos").insert({
-    cliente_id: clienteId,
+    cliente_id:     clienteId,
     monto,
     fecha,
     metodo,
     referencia,
     notas,
-    created_by: user.id,
+    order_id:       orderId || null,
+    factura_numero: facturaNumero || null,
+    created_by:     user.id,
   });
 
   if (error) return { error: error.message };
