@@ -67,7 +67,7 @@ export function PagosClient({ clienteId, pagos, totalFacturado, ordenes }: Props
   const saldo       = totalFacturado - totalPagado;
 
   // Órdenes no canceladas para el selector
-  const ordenesActivas = ordenes.filter(o => o.status !== "cancelled");
+  const ordenesActivas = ordenes.filter(o => o.status !== "cancelled" && o.status !== "liquidado");
 
   function reset() {
     setMonto(""); setFecha(hoy()); setMetodo("transferencia");
