@@ -13,7 +13,7 @@ export type Insumo = {
   updated_at: string;
 };
 
-const UNIDADES = ["gr", "kg", "ml", "l", "u", "cc", "taza", "cdita", "cda", "kg"];
+const UNIDADES = ["gr", "kg", "ml", "l", "u", "cc", "taza", "cdita", "cda"];
 
 const fmtPrecio = (n: number) =>
   new Intl.NumberFormat("es-AR", { style: "currency", currency: "ARS", maximumFractionDigits: 4 }).format(n);
@@ -196,10 +196,25 @@ function NuevoInsumoForm({ onError }: { onError: (e: string) => void }) {
 }
 
 // ── Importador CSV ─────────────────────────────────────────────────────────────
-function ImportadorCSV() {
+function ImportadorCSV({ insumos }: { insumos: Insumo[] }) {
   const fileRef = useRef<HTMLInputElement>(null);
   const [result, setResult]   = useState<ImportResult | null>(null);
   const [isPending, start]    = useTransition();
+
+  function descargarTemplate() {
+    const header = "nombre,precio";
+    const filas = insumos.length > 0
+      ? insumos.map(i => `${i.nombre},${i.precio_unitario}`).join("\n")
+      : "Harina 000,0\nHuevo,0\nMozzarella,0";
+    const contenido = `${header}\n${filas}`;
+    const blob = new Blob([contenido], { type: "text/csv;charset=utf-8;" });
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement("a");
+    a.href     = url;
+    a.download = "precios-insumos.csv";
+    a.click();
+    URL.revokeObjectURL(url);
+  }
 
   function handleFile(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
@@ -230,12 +245,16 @@ function ImportadorCSV() {
         </div>
       </div>
 
-      <div className="flex items-center gap-3">
+      <div className="flex items-center flex-wrap gap-3">
         <label className={`flex items-center gap-2 px-4 py-2 border-2 border-dashed border-neutral-300 rounded-xl text-sm text-neutral-600 hover:border-[#16233f] hover:text-[#16233f] cursor-pointer transition-colors ${isPending ? "opacity-50 pointer-events-none" : ""}`}>
           <Upload className="size-4" />
           {isPending ? "Procesando…" : "Elegir archivo CSV"}
           <input ref={fileRef} type="file" accept=".csv,.txt" className="hidden" onChange={handleFile} disabled={isPending} />
         </label>
+        <button type="button" onClick={descargarTemplate}
+          className="flex items-center gap-1.5 text-xs text-neutral-500 hover:text-[#16233f] transition-colors">
+          ↓ Bajar template{insumos.length > 0 ? ` con los ${insumos.length} insumos actuales` : ""}
+        </button>
         <span className="text-xs text-neutral-400">Formatos: .csv · .txt · Excel guardado como CSV</span>
       </div>
 
@@ -294,7 +313,7 @@ export function InsumosClient({ insumos }: { insumos: Insumo[] }) {
         </p>
       )}
 
-      <ImportadorCSV />
+      <ImportadorCSV insumos={insumos} />
 
       <div className="bg-white rounded-2xl border border-neutral-200 overflow-hidden">
         <div className="px-5 py-3 border-b border-neutral-100 flex items-center justify-between gap-3">
