@@ -67,7 +67,7 @@ export default async function ReciboPagoPage({
 
       {/* Barra de acciones — no se imprime */}
       <div className="no-print fixed top-0 left-0 right-0 bg-neutral-900 text-white px-6 py-3 flex items-center justify-between z-50 gap-4 print:hidden">
-        <span className="text-sm text-neutral-300">Recibo de pago — {nroRecibo}</span>
+        <span className="text-sm text-neutral-300">Recibo #{nroRecibo} — Coop. Il Pane Nostro</span>
         <div className="flex gap-3">
           <a href={`/admin/clientes-b2b/${pago.cliente?.id}`}
             className="text-sm text-neutral-400 hover:text-white transition-colors">
@@ -82,8 +82,10 @@ export default async function ReciboPagoPage({
         {/* Encabezado empresa */}
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "40px", paddingBottom: "24px", borderBottom: "2px solid #1a1a18" }}>
           <div>
-            <div style={{ fontSize: "22px", fontWeight: "700", letterSpacing: "-0.02em", color: "#1a1a18" }}>En Minutas</div>
-            <div style={{ fontSize: "12px", color: "#888", marginTop: "4px" }}>Distribuidora de alimentos congelados</div>
+            <div style={{ fontSize: "16px", fontWeight: "700", letterSpacing: "-0.01em", color: "#1a1a18" }}>Cooperativa de Trabajo Il Pane Nostro Ltda.</div>
+            <div style={{ fontSize: "12px", color: "#555", marginTop: "4px" }}>CUIT: 30-71858060-5</div>
+            <div style={{ fontSize: "12px", color: "#555" }}>Ruta 12 — Garupa, Misiones</div>
+            <div style={{ fontSize: "12px", color: "#555" }}>Responsable Inscripto</div>
           </div>
           <div style={{ textAlign: "right" }}>
             <div style={{ fontSize: "11px", fontWeight: "600", letterSpacing: "0.1em", textTransform: "uppercase", color: "#888", marginBottom: "4px" }}>Recibo de pago</div>
@@ -165,7 +167,7 @@ export default async function ReciboPagoPage({
 
         {/* Pie */}
         <div style={{ marginTop: "48px", paddingTop: "16px", borderTop: "1px solid #e5e5e3", fontSize: "11px", color: "#bbb", textAlign: "center" }}>
-          En Minutas · Documento interno de cobro · Emitido el {new Date().toLocaleDateString("es-AR")}
+          Cooperativa de Trabajo Il Pane Nostro Ltda. · CUIT 30-71858060-5 · Documento interno de cobro · Emitido el {new Date().toLocaleDateString("es-AR")}
         </div>
 
       </div>
