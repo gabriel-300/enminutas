@@ -5,6 +5,7 @@ import Link from "next/link";
 import { OrderStatusBadge } from "@/components/ui/badge";
 import { fmtFechaLarga, fmtFechaSolo } from "@/lib/fecha";
 import { DireccionesClient } from "./direcciones-client";
+import { PagosClient, type Pago } from "./pagos-client";
 
 export const metadata: Metadata = { title: "Historial de cliente — Admin En Minutas" };
 export const revalidate = 0;
@@ -49,6 +50,7 @@ export default async function ClienteB2BDetailPage({
     { data: ordersRaw },
     { data: direccionesRaw },
     { data: zonasRaw },
+    { data: pagosRaw },
   ] = await Promise.all([
     (adminClient as any)
       .from("profiles")
@@ -72,6 +74,11 @@ export default async function ClienteB2BDetailPage({
       .from("delivery_zones")
       .select("id, name, flete_kg")
       .order("name"),
+    (adminClient as any)
+      .from("pagos")
+      .select("id, monto, fecha, metodo, referencia, notas, created_at")
+      .eq("cliente_id", id)
+      .order("fecha", { ascending: false }),
   ]);
 
   if (!profileRaw) notFound();
@@ -82,12 +89,14 @@ export default async function ClienteB2BDetailPage({
   const canal     = profile.canal as { nombre: string; descuento_pct: number } | null;
   const direcciones = (direccionesRaw ?? []) as any[];
   const zonas       = (zonasRaw ?? []) as { id: string; name: string; flete_kg: number }[];
+  const pagos       = (pagosRaw ?? []) as Pago[];
 
   const totalFacturado = orders
     .filter((o) => o.status !== "cancelled")
     .reduce((s: number, o: any) => s + Number(o.total), 0);
 
-  const pedidosConfirmados = orders.filter((o: any) => o.payment_confirmed_at).length;
+  const totalPagado        = pagos.reduce((s, p) => s + Number(p.monto), 0);
+  const saldoPendiente     = totalFacturado - totalPagado;
 
   return (
     <div className="p-4 md:p-8 max-w-4xl">
@@ -153,12 +162,14 @@ export default async function ClienteB2BDetailPage({
             <p className="text-2xl font-semibold font-display text-neutral-900">{orders.length}</p>
           </div>
           <div>
-            <p className="text-xs text-neutral-400">Pagos confirmados</p>
-            <p className="text-2xl font-semibold font-display text-neutral-900">{pedidosConfirmados}</p>
+            <p className="text-xs text-neutral-400">Total pagado</p>
+            <p className="text-2xl font-semibold font-display text-emerald-600">{fmt(totalPagado)}</p>
           </div>
           <div>
-            <p className="text-xs text-neutral-400">Total facturado</p>
-            <p className="text-2xl font-semibold font-display text-tierra-700">{fmt(totalFacturado)}</p>
+            <p className="text-xs text-neutral-400">Saldo pendiente</p>
+            <p className={`text-2xl font-semibold font-display ${saldoPendiente > 0 ? "text-red-600" : "text-emerald-600"}`}>
+              {saldoPendiente <= 0 ? `${fmt(Math.abs(saldoPendiente))} a favor` : fmt(saldoPendiente)}
+            </p>
           </div>
         </div>
       </div>
@@ -169,6 +180,15 @@ export default async function ClienteB2BDetailPage({
           profileId={id}
           direcciones={direcciones}
           zonas={zonas}
+        />
+      </div>
+
+      {/* Cuenta corriente / Pagos */}
+      <div className="mb-6">
+        <PagosClient
+          clienteId={id}
+          pagos={pagos}
+          totalFacturado={totalFacturado}
         />
       </div>
 
