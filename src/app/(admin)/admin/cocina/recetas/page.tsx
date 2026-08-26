@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { createClient, createAdminClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
-import { calcularPrecio } from "@/lib/b2b-pricing";
 
 export const metadata: Metadata = { title: "Recetas — Admin En Minutas" };
 export const revalidate = 0;
@@ -18,11 +17,6 @@ function fmtMin(min: number) {
   return m > 0 ? `${h}h ${m}min` : `${h}h`;
 }
 
-function margenCls(pct: number) {
-  if (pct < 20) return "text-red-600 font-semibold";
-  if (pct < 40) return "text-amber-600 font-medium";
-  return "text-emerald-600 font-medium";
-}
 
 export default async function RecetasPage() {
   const supabase    = await createClient();
@@ -31,39 +25,17 @@ export default async function RecetasPage() {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
-  const [
-    { data: rawProducts },
-    { data: rawRecipes },
-    { data: canalRef },
-    { data: paramGlobal },
-  ] = await Promise.all([
+  const [{ data: rawProducts }, { data: rawRecipes }] = await Promise.all([
     adminClient
       .from("products")
-      .select("id, name, sku, costo, bolsas_caja, pkg_unitario, pkg_bulto, u_bolsa, divisiones_display, category:categories!category_id (name)")
+      .select("id, name, sku, costo, bolsas_caja, category:categories!category_id (name)")
       .eq("is_active", true)
       .order("name"),
 
     adminClient
       .from("recipes")
       .select("id, product_id, yield_cajas, steps:recipe_steps (id, minutes), ingredients:recipe_ingredients (cantidad, insumo:insumos!insumo_id (precio_unitario))"),
-
-    adminClient
-      .from("canales")
-      .select("margen_std, margen_premium, markup_pvp")
-      .eq("slug", "dist")
-      .single(),
-
-    adminClient
-      .from("parametros_globales")
-      .select("iva_pct, comision_pct")
-      .single(),
   ]);
-
-  const margen_std     = Number(canalRef?.margen_std    ?? 0.40);
-  const margen_premium = Number(canalRef?.margen_premium ?? 0.45);
-  const markup_pvp     = Number(canalRef?.markup_pvp    ?? 0.80);
-  const iva_pct        = Number(paramGlobal?.iva_pct    ?? 0.21);
-  const comision_pct   = Number(paramGlobal?.comision_pct ?? 0.15);
 
   const recipeMap: Record<string, {
     yieldCajas:   number;
@@ -91,39 +63,19 @@ export default async function RecetasPage() {
   const conReceta = products.filter((p) => recipeMap[p.id]);
   const sinReceta = products.filter((p) => !recipeMap[p.id]);
 
-  // Compute pricing metrics per product
-  const pricingMap: Record<string, { listaSiva: number; margenPct: number; desactualizado: boolean }> = {};
+  // Compute stored cost per caja and desync per product
+  const pricingMap: Record<string, { costoProductoCaja: number; desactualizado: boolean }> = {};
   for (const p of conReceta) {
-    const r         = recipeMap[p.id];
-    const costo     = Number(p.costo ?? 0);
-    const bolsas    = Number(p.bolsas_caja ?? 0);
+    const r      = recipeMap[p.id];
+    const costo  = Number(p.costo ?? 0);
+    const bolsas = Number(p.bolsas_caja ?? 0);
     if (costo <= 0 || bolsas <= 0) continue;
 
-    const precio = calcularPrecio({
-      costo,
-      bolsas_caja:        bolsas,
-      pkg_unitario:       Number(p.pkg_unitario ?? 0),
-      pkg_bulto:          Number(p.pkg_bulto ?? 0),
-      u_bolsa:            Number(p.u_bolsa ?? 1),
-      categoria:          p.category?.name ?? "Estándar",
-      divisiones_display: p.divisiones_display != null ? Number(p.divisiones_display) : null,
-      margen_std,
-      margen_premium,
-      markup_pvp,
-      iva_pct,
-      comision_pct,
-    });
+    const costoProductoCaja = costo * bolsas;
+    const desactualizado    = r.costoCaja > 0 &&
+      Math.abs(costoProductoCaja - r.costoCaja) / r.costoCaja > 0.02;
 
-    const listaSiva   = precio.lista_siva;
-    const costoCajaReceta   = r.costoCaja;
-    const margenPct   = listaSiva > 0 ? ((listaSiva - costoCajaReceta) / listaSiva) * 100 : 0;
-
-    // Stored cost per caja = costo × bolsas_caja
-    const costoStoredCaja = costo * bolsas;
-    const desactualizado  = costoCajaReceta > 0 &&
-      Math.abs(costoStoredCaja - costoCajaReceta) / costoCajaReceta > 0.02;
-
-    pricingMap[p.id] = { listaSiva, margenPct, desactualizado };
+    pricingMap[p.id] = { costoProductoCaja, desactualizado };
   }
 
   return (
@@ -149,7 +101,7 @@ export default async function RecetasPage() {
       <div className="bg-white rounded-2xl border border-neutral-200 overflow-hidden mb-4">
         <div className="px-5 py-3 border-b border-neutral-100 flex items-center justify-between">
           <p className="text-sm font-medium text-neutral-700">Con receta ({conReceta.length})</p>
-          <p className="text-xs text-neutral-400">Precios ref. canal Distribuidor</p>
+          <p className="text-xs text-neutral-400">⚠ = costo desactualizado</p>
         </div>
         {conReceta.length === 0 ? (
           <p className="px-5 py-8 text-sm text-neutral-400 text-center">Todavía no hay recetas cargadas.</p>
@@ -162,9 +114,8 @@ export default async function RecetasPage() {
                   <th className="px-5 py-3 text-xs font-medium text-neutral-400 text-center">Lote</th>
                   <th className="px-5 py-3 text-xs font-medium text-neutral-400 text-center">Pasos</th>
                   <th className="px-5 py-3 text-xs font-medium text-neutral-400 text-center">Tiempo</th>
-                  <th className="px-5 py-3 text-xs font-medium text-neutral-400 text-right">Costo / caja</th>
-                  <th className="px-5 py-3 text-xs font-medium text-neutral-400 text-right">Lista s/IVA</th>
-                  <th className="px-5 py-3 text-xs font-medium text-neutral-400 text-right">Margen %</th>
+                  <th className="px-5 py-3 text-xs font-medium text-neutral-400 text-right">Costo receta / caja</th>
+                  <th className="px-5 py-3 text-xs font-medium text-neutral-400 text-right">Costo producto / caja</th>
                   <th className="px-5 py-3 text-xs font-medium text-neutral-400"></th>
                 </tr>
               </thead>
@@ -185,6 +136,7 @@ export default async function RecetasPage() {
                       <td className="px-5 py-3 text-center text-sm font-medium text-neutral-800">
                         {fmtMin(r.totalMinutos)}
                       </td>
+                      {/* Costo receta / caja */}
                       <td className="px-5 py-3 text-right text-sm tabular-nums">
                         {r.costoCaja > 0
                           ? <span className="font-medium text-neutral-800">{fmtPeso(r.costoCaja)}</span>
@@ -192,22 +144,13 @@ export default async function RecetasPage() {
                         }
                       </td>
 
-                      {/* Lista s/IVA */}
+                      {/* Costo producto / caja (lo que usa pricing) */}
                       <td className="px-5 py-3 text-right text-sm tabular-nums whitespace-nowrap">
                         {pricing ? (
-                          <span className="font-medium text-neutral-800">{fmtPeso(pricing.listaSiva)}</span>
-                        ) : (
-                          <span className="text-neutral-300">—</span>
-                        )}
-                      </td>
-
-                      {/* Margen % */}
-                      <td className="px-5 py-3 text-right text-sm tabular-nums whitespace-nowrap">
-                        {pricing ? (
-                          <span className={margenCls(pricing.margenPct)}>
-                            {pricing.margenPct.toFixed(0)}%
+                          <span className={pricing.desactualizado ? "font-medium text-amber-600" : "font-medium text-neutral-800"}>
+                            {fmtPeso(pricing.costoProductoCaja)}
                             {pricing.desactualizado && (
-                              <span title="El costo del producto no está sincronizado con la receta. Editá la receta y usá 'Actualizar costo del producto'."
+                              <span title="El costo guardado en el producto difiere del costo real de la receta. Editá la receta y usá 'Actualizar costo del producto'."
                                 className="ml-1 text-amber-500 cursor-help">⚠</span>
                             )}
                           </span>
@@ -233,10 +176,7 @@ export default async function RecetasPage() {
 
       {/* Leyenda */}
       <div className="flex items-center gap-4 mb-6 text-xs text-neutral-400 px-1">
-        <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-red-500 inline-block"></span> Margen &lt; 20% — revisar precio</span>
-        <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-amber-400 inline-block"></span> 20–40% — aceptable</span>
-        <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-emerald-500 inline-block"></span> &gt; 40% — saludable</span>
-        <span className="flex items-center gap-1.5">⚠ costo desactualizado</span>
+        <span>⚠ el costo guardado en el producto difiere del costo real de la receta — actualizarlo afecta el precio de lista</span>
       </div>
 
       <div className="bg-white rounded-2xl border border-neutral-200 overflow-hidden">
