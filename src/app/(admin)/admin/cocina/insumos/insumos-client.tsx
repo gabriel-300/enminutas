@@ -202,10 +202,11 @@ function ImportadorCSV({ insumos }: { insumos: Insumo[] }) {
   const [isPending, start]    = useTransition();
 
   function descargarTemplate() {
-    const header = "nombre,precio";
+    // Separador ; porque en Excel Argentina la coma es separador decimal
+    const header = "nombre;precio";
     const filas = insumos.length > 0
-      ? insumos.map(i => `${i.nombre},${i.precio_unitario}`).join("\n")
-      : "Harina 000,0\nHuevo,0\nMozzarella,0";
+      ? insumos.map(i => `${i.nombre};${i.precio_unitario}`).join("\n")
+      : "Harina 000;0\nHuevo;0\nMozzarella;0";
     const contenido = `${header}\n${filas}`;
     const blob = new Blob([contenido], { type: "text/csv;charset=utf-8;" });
     const url  = URL.createObjectURL(blob);
