@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { guardarReceta, eliminarReceta, sincronizarCostoProducto } from "@/app/(admin)/admin/cocina/recetas/actions";
 
 type Step = { description: string; minutes: number; notes: string };
-type Ing  = { insumo_id: string; cantidad: number };
+type Ing  = { insumo_id: string; cantidad: number; cantidadStr?: string };
 
 export type InsumoOpcion = {
   id: string; nombre: string; unidad: string; precio_unitario: number;
@@ -56,7 +56,9 @@ export function RecetaEditor({ productId, insumos, recipe }: RecetaProps) {
   const [steps, setSteps] = useState<Step[]>(
     recipe?.steps.length ? recipe.steps : [{ description: "", minutes: 0, notes: "" }]
   );
-  const [ings, setIngs] = useState<Ing[]>(recipe?.ingredients ?? []);
+  const [ings, setIngs] = useState<Ing[]>(
+    (recipe?.ingredients ?? []).map(i => ({ ...i, cantidadStr: i.cantidadStr ?? String(i.cantidad) }))
+  );
 
   // Mapa para lookup rápido de insumos
   const insumoMap = Object.fromEntries(insumos.map(i => [i.id, i]));
@@ -81,10 +83,16 @@ export function RecetaEditor({ productId, insumos, recipe }: RecetaProps) {
   };
 
   // ── Ingredientes ───────────────────────────────────────────────────────────
-  const addIng = () => setIngs(p => [...p, { insumo_id: "", cantidad: 0 }]);
+  const addIng = () => setIngs(p => [...p, { insumo_id: "", cantidad: 0, cantidadStr: "" }]);
   const removeIng = (i: number) => setIngs(p => p.filter((_, idx) => idx !== i));
-  const updateIng = (i: number, f: keyof Ing, v: string | number) =>
-    setIngs(p => p.map((ing, idx) => idx === i ? { ...ing, [f]: v } : ing));
+  const updateIngInsumo = (i: number, insumo_id: string) =>
+    setIngs(p => p.map((ing, idx) => idx === i ? { ...ing, insumo_id } : ing));
+  const updateIngCantidad = (i: number, raw: string) => {
+    const parsed = parseFloat(raw.replace(",", "."));
+    setIngs(p => p.map((ing, idx) =>
+      idx === i ? { ...ing, cantidadStr: raw, cantidad: isNaN(parsed) ? 0 : parsed } : ing
+    ));
+  };
 
   // ── Submit ─────────────────────────────────────────────────────────────────
   function handleSubmit(e: React.FormEvent) {
@@ -225,7 +233,7 @@ export function RecetaEditor({ productId, insumos, recipe }: RecetaProps) {
                       {/* Selector de insumo */}
                       <select
                         value={ing.insumo_id}
-                        onChange={e => updateIng(i, "insumo_id", e.target.value)}
+                        onChange={e => updateIngInsumo(i, e.target.value)}
                         disabled={isPending}
                         className="flex-1 px-3 py-2 text-sm border border-neutral-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-tierra-700/20 disabled:opacity-50 bg-white"
                       >
@@ -237,13 +245,13 @@ export function RecetaEditor({ productId, insumos, recipe }: RecetaProps) {
                         ))}
                       </select>
 
-                      {/* Cantidad */}
+                      {/* Cantidad — guardamos el string para permitir "0,5" / "0.5" */}
                       <div className="flex items-center gap-1 shrink-0">
                         <input
                           type="text" inputMode="decimal"
                           placeholder="0"
-                          value={ing.cantidad || ""}
-                          onChange={e => updateIng(i, "cantidad", parseFloat(e.target.value.replace(",", ".")) || 0)}
+                          value={ing.cantidadStr ?? ""}
+                          onChange={e => updateIngCantidad(i, e.target.value)}
                           disabled={isPending}
                           className="w-20 px-3 py-2 text-sm border border-neutral-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-tierra-700/20 disabled:opacity-50 text-center"
                         />
