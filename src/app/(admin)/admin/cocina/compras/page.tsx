@@ -39,10 +39,10 @@ export default async function ComprasPage() {
       .from("recipes")
       .select("id, product_id, yield_cajas"),
 
-    // Ingredientes en query separada para no crashear si 016 no fue corrida
+    // Ingredientes con join a insumos para obtener nombre, unidad y precio actualizado
     adminClient
       .from("recipe_ingredients")
-      .select("recipe_id, nombre, cantidad, unidad, costo"),
+      .select("recipe_id, insumo_id, cantidad, insumo:insumos!insumo_id(nombre, unidad, precio_unitario)"),
   ]);
 
   // Demanda pendiente por producto
@@ -52,15 +52,17 @@ export default async function ComprasPage() {
     demandaMap[line.product_id] = (demandaMap[line.product_id] ?? 0) + line.quantity;
   }
 
-  // Ingredientes por recipe_id
+  // Ingredientes por recipe_id (solo los que tienen insumo vinculado)
   const ingsByRecipe: Record<string, { nombre: string; cantidad: number; unidad: string; costo: number }[]> = {};
   for (const ing of (rawIngs ?? []) as any[]) {
+    if (!ing.insumo_id || !ing.insumo) continue;
     if (!ingsByRecipe[ing.recipe_id]) ingsByRecipe[ing.recipe_id] = [];
+    const precio = Number(ing.insumo.precio_unitario ?? 0);
     ingsByRecipe[ing.recipe_id].push({
-      nombre:   ing.nombre,
+      nombre:   ing.insumo.nombre,
       cantidad: Number(ing.cantidad),
-      unidad:   ing.unidad,
-      costo:    Number(ing.costo ?? 0),
+      unidad:   ing.insumo.unidad,
+      costo:    Number(ing.cantidad) * precio,
     });
   }
 

@@ -22,14 +22,17 @@ export default async function RecetasPage() {
 
     adminClient
       .from("recipes")
-      .select("id, product_id, yield_cajas, steps:recipe_steps (id, minutes), ingredients:recipe_ingredients (costo)"),
+      .select("id, product_id, yield_cajas, steps:recipe_steps (id, minutes), ingredients:recipe_ingredients (cantidad, insumo:insumos!insumo_id (precio_unitario))"),
   ]);
 
   const recipeMap: Record<string, { yieldCajas: number; totalMinutos: number; pasos: number; costoCaja: number }> = {};
   for (const r of (rawRecipes ?? []) as any[]) {
     const totalMinutos = (r.steps ?? []).reduce((s: number, st: any) => s + Number(st.minutes), 0);
-    const costoLote    = (r.ingredients ?? []).reduce((s: number, ing: any) => s + Number(ing.costo ?? 0), 0);
-    const costoCaja    = r.yield_cajas > 0 ? costoLote / r.yield_cajas : 0;
+    const costoLote    = (r.ingredients ?? []).reduce((s: number, ing: any) => {
+      const precio = Number(ing.insumo?.precio_unitario ?? 0);
+      return s + Number(ing.cantidad) * precio;
+    }, 0);
+    const costoCaja = r.yield_cajas > 0 ? costoLote / r.yield_cajas : 0;
     recipeMap[r.product_id] = { yieldCajas: r.yield_cajas, totalMinutos, pasos: r.steps?.length ?? 0, costoCaja };
   }
 

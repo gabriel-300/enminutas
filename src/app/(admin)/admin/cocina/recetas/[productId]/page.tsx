@@ -20,7 +20,7 @@ export default async function RecetaEditorPage({
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
-  const [{ data: product }, { data: recipeRaw }] = await Promise.all([
+  const [{ data: product }, { data: recipeRaw }, { data: insumosRaw }] = await Promise.all([
     adminClient
       .from("products")
       .select("id, name, sku, unit_label, bolsas_caja")
@@ -32,16 +32,23 @@ export default async function RecetaEditorPage({
       .select("id, yield_cajas, notes, steps:recipe_steps (id, step_order, description, minutes, notes)")
       .eq("product_id", productId)
       .maybeSingle(),
+
+    adminClient
+      .from("insumos")
+      .select("id, nombre, unidad, precio_unitario")
+      .order("nombre"),
   ]);
 
   if (!product) notFound();
+
+  const insumos = (insumosRaw ?? []) as { id: string; nombre: string; unidad: string; precio_unitario: number }[];
 
   // Ingredientes en query separada para que un fallo no afecte la carga de pasos
   let rawIngs: any[] = [];
   if (recipeRaw?.id) {
     const { data } = await adminClient
       .from("recipe_ingredients")
-      .select("nombre, cantidad, unidad, costo")
+      .select("insumo_id, cantidad")
       .eq("recipe_id", recipeRaw.id);
     rawIngs = data ?? [];
   }
@@ -57,12 +64,12 @@ export default async function RecetaEditorPage({
             minutes:     Number(s.minutes),
             notes:       s.notes ?? "",
           })),
-        ingredients: rawIngs.map((ing) => ({
-          nombre:   ing.nombre,
-          cantidad: Number(ing.cantidad),
-          unidad:   ing.unidad,
-          costo:    Number(ing.costo ?? 0),
-        })),
+        ingredients: rawIngs
+          .filter(ing => ing.insumo_id)
+          .map((ing) => ({
+            insumo_id: ing.insumo_id as string,
+            cantidad:  Number(ing.cantidad),
+          })),
       }
     : null;
 
@@ -79,7 +86,7 @@ export default async function RecetaEditorPage({
         </p>
       </div>
 
-      <RecetaEditor productId={productId} recipe={recipe} />
+      <RecetaEditor productId={productId} insumos={insumos} recipe={recipe} />
     </div>
   );
 }

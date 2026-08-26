@@ -5,9 +5,15 @@ import { revalidatePath } from "next/cache";
 
 type ActionResult = { error: string } | { ok: true };
 
+function revalidateAll() {
+  revalidatePath("/admin/cocina/recetas");
+  revalidatePath("/admin/cocina");
+  revalidatePath("/admin/cocina/compras");
+}
+
 export async function guardarReceta(formData: FormData): Promise<ActionResult> {
   const productId  = formData.get("product_id") as string;
-  const yieldCajas = parseFloat(formData.get("yield_cajas") as string) || 1;
+  const yieldCajas = parseFloat((formData.get("yield_cajas") as string)?.replace(",", ".")) || 1;
   const notes      = (formData.get("notes") as string | null)?.trim() || null;
 
   if (!productId) return { error: "Producto requerido" };
@@ -23,15 +29,13 @@ export async function guardarReceta(formData: FormData): Promise<ActionResult> {
     i++;
   }
 
-  // Ingredientes: ings[0][nombre], ings[0][cantidad], ings[0][unidad], ings[0][costo]
-  const ings: { nombre: string; cantidad: number; unidad: string; costo: number }[] = [];
+  // Ingredientes: ings[0][insumo_id], ings[0][cantidad]
+  const ings: { insumo_id: string; cantidad: number }[] = [];
   let j = 0;
-  while (formData.get(`ings[${j}][nombre]`) !== null) {
-    const nombre   = (formData.get(`ings[${j}][nombre]`) as string).trim();
-    const cantidad = parseFloat(formData.get(`ings[${j}][cantidad]`) as string) || 0;
-    const unidad   = (formData.get(`ings[${j}][unidad]`) as string) || "u";
-    const costo    = parseFloat(formData.get(`ings[${j}][costo]`) as string) || 0;
-    if (nombre) ings.push({ nombre, cantidad, unidad, costo });
+  while (formData.get(`ings[${j}][insumo_id]`) !== null) {
+    const insumo_id = (formData.get(`ings[${j}][insumo_id]`) as string).trim();
+    const cantidad  = parseFloat((formData.get(`ings[${j}][cantidad]`) as string)?.replace(",", ".")) || 0;
+    if (insumo_id && cantidad > 0) ings.push({ insumo_id, cantidad });
     j++;
   }
 
@@ -47,19 +51,16 @@ export async function guardarReceta(formData: FormData): Promise<ActionResult> {
   let recipeId: string;
 
   if (existing?.id) {
-    const { error: updErr } = await db
-      .from("recipes")
-      .update({ yield_cajas: yieldCajas, notes })
-      .eq("id", existing.id);
-    if (updErr) return { error: `Error al actualizar receta: ${updErr.message}` };
+    const { error } = await db.from("recipes").update({ yield_cajas: yieldCajas, notes }).eq("id", existing.id);
+    if (error) return { error: `Error al actualizar receta: ${error.message}` };
     recipeId = existing.id;
   } else {
-    const { data: inserted, error: insErr } = await db
+    const { data: inserted, error } = await db
       .from("recipes")
       .insert({ product_id: productId, yield_cajas: yieldCajas, notes })
       .select("id")
       .single();
-    if (insErr || !inserted) return { error: `Error al crear receta: ${insErr?.message ?? "sin datos"}` };
+    if (error || !inserted) return { error: `Error al crear receta: ${error?.message ?? "sin datos"}` };
     recipeId = inserted.id;
   }
 
@@ -80,28 +81,19 @@ export async function guardarReceta(formData: FormData): Promise<ActionResult> {
     if (stepsError) return { error: `Error al guardar pasos: ${stepsError.message}` };
   }
 
-  // Reemplazar ingredientes
+  // Reemplazar ingredientes (ahora con insumo_id)
   const { error: delIngsErr } = await db.from("recipe_ingredients").delete().eq("recipe_id", recipeId);
   if (delIngsErr) return { error: `Error al borrar ingredientes: ${delIngsErr.message}` };
 
   if (ings.length > 0) {
     const { error: ingsError } = await db.from("recipe_ingredients").insert(
-      ings.map((ing) => ({
-        recipe_id: recipeId,
-        nombre:    ing.nombre,
-        cantidad:  ing.cantidad,
-        unidad:    ing.unidad,
-        costo:     ing.costo,
-      }))
+      ings.map(ing => ({ recipe_id: recipeId, insumo_id: ing.insumo_id, cantidad: ing.cantidad }))
     );
     if (ingsError) return { error: `Error al guardar ingredientes: ${ingsError.message}` };
   }
 
-  revalidatePath("/admin/cocina/recetas");
+  revalidateAll();
   revalidatePath(`/admin/cocina/recetas/${productId}`);
-  revalidatePath("/admin/cocina");
-  revalidatePath("/admin/cocina/compras");
-
   return { ok: true };
 }
 
@@ -109,8 +101,43 @@ export async function eliminarReceta(productId: string): Promise<ActionResult> {
   const db = createAdminClient() as any;
   const { error } = await db.from("recipes").delete().eq("product_id", productId);
   if (error) return { error: error.message };
-  revalidatePath("/admin/cocina/recetas");
-  revalidatePath("/admin/cocina");
-  revalidatePath("/admin/cocina/compras");
+  revalidateAll();
+  return { ok: true };
+}
+
+export async function sincronizarCostoProducto(productId: string): Promise<ActionResult> {
+  const db = createAdminClient() as any;
+
+  const { data: recipe } = await db
+    .from("recipes")
+    .select("id, yield_cajas, ingredients:recipe_ingredients(cantidad, insumo:insumos!insumo_id(precio_unitario))")
+    .eq("product_id", productId)
+    .maybeSingle();
+
+  if (!recipe) return { error: "No hay receta cargada para este producto." };
+
+  const costoLote = (recipe.ingredients ?? []).reduce((s: number, ing: any) => {
+    const precio = Number(ing.insumo?.precio_unitario ?? 0);
+    return s + Number(ing.cantidad) * precio;
+  }, 0);
+
+  const yieldCajas = Number(recipe.yield_cajas) || 1;
+  const costoCaja  = costoLote / yieldCajas;
+
+  const { data: product } = await db
+    .from("products")
+    .select("bolsas_caja")
+    .eq("id", productId)
+    .single();
+
+  const bolsas = Number(product?.bolsas_caja ?? 1) || 1;
+  const costoUnidad = costoCaja / bolsas;
+
+  const { error } = await db.from("products").update({ costo: costoUnidad }).eq("id", productId);
+  if (error) return { error: error.message };
+
+  revalidatePath("/admin/productos");
+  revalidatePath("/admin/rentabilidad");
+  revalidateAll();
   return { ok: true };
 }
