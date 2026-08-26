@@ -867,9 +867,9 @@ export default async function DashboardPage() {
 
     adminClient.auth.admin.listUsers({ perPage: 1000 }),
 
-    // Ventas del mes por cliente B2B (para ranking preventistas)
+    // Ventas del mes por cliente B2B (para ranking preventistas + desglose por cliente)
     db.from("orders")
-      .select("total, customer:profiles!customer_id(vendedor_id)")
+      .select("total, customer:profiles!customer_id(id, full_name, vendedor_id)")
       .eq("channel", "b2b_mayorista")
       .in("status", ACTIVE_STATUSES)
       .gte("created_at", monthStart),
@@ -973,25 +973,38 @@ export default async function DashboardPage() {
 
   const mesNombre = now.toLocaleDateString("es-AR", { month: "long" });
 
-  // ── Preventistas ranking ──────────────────────────────────────────────
+  // ── Preventistas ranking (con/sin IVA + desglose por cliente) ──────────
+  // Mismo criterio que el resto de la app: sin IVA ≈ total (c/IVA) ÷ 1.21
+  const IVA_DIV = 1.21;
   const vendedoresUsers = (users ?? []).filter((u: any) => u.app_metadata?.role === "vendedor");
 
-  const vendedorSalesMap: Record<string, { total: number; orders: number }> = {};
+  type ClienteStat = { id: string; name: string; total: number; orders: number };
+  const vendedorSalesMap: Record<string, { total: number; orders: number; clientes: Record<string, ClienteStat> }> = {};
   for (const o of (ventasConVendedor ?? []) as any[]) {
-    const vid = (o.customer as any)?.vendedor_id;
-    if (vid) {
-      if (!vendedorSalesMap[vid]) vendedorSalesMap[vid] = { total: 0, orders: 0 };
-      vendedorSalesMap[vid].total  += Number(o.total);
-      vendedorSalesMap[vid].orders += 1;
+    const cust = o.customer as any;
+    const vid  = cust?.vendedor_id;
+    if (!vid) continue;
+    if (!vendedorSalesMap[vid]) vendedorSalesMap[vid] = { total: 0, orders: 0, clientes: {} };
+    vendedorSalesMap[vid].total  += Number(o.total);
+    vendedorSalesMap[vid].orders += 1;
+
+    const cid = cust?.id;
+    if (cid) {
+      if (!vendedorSalesMap[vid].clientes[cid]) {
+        vendedorSalesMap[vid].clientes[cid] = { id: cid, name: cust?.full_name ?? "—", total: 0, orders: 0 };
+      }
+      vendedorSalesMap[vid].clientes[cid].total  += Number(o.total);
+      vendedorSalesMap[vid].clientes[cid].orders += 1;
     }
   }
 
   const preventistasRanking = vendedoresUsers
     .map((u: any) => {
-      const stats    = vendedorSalesMap[u.id] ?? { total: 0, orders: 0 };
+      const stats    = vendedorSalesMap[u.id] ?? { total: 0, orders: 0, clientes: {} };
       const name     = u.user_metadata?.full_name ?? u.email?.split("@")[0] ?? "—";
       const initials = name.split(" ").slice(0, 2).map((w: string) => w.charAt(0).toUpperCase()).join("");
-      return { id: u.id as string, name, initials, total: stats.total, orders: stats.orders };
+      const clientes = Object.values(stats.clientes).sort((a, b) => b.total - a.total);
+      return { id: u.id as string, name, initials, total: stats.total, orders: stats.orders, clientes };
     })
     .filter((v: any) => v.total > 0 || v.orders > 0)
     .sort((a: any, b: any) => b.total - a.total)
@@ -1249,16 +1262,42 @@ export default async function DashboardPage() {
               </div>
               <ul className="divide-y divide-neutral-50">
                 {preventistasRanking.map((v, i) => (
-                  <li key={v.id} className="flex items-center gap-3 px-5 py-3">
-                    <span className="text-xs font-semibold text-neutral-300 tabular-nums w-4 shrink-0 text-center">{i + 1}</span>
-                    <div className="size-7 rounded-full bg-tierra-100 text-tierra-700 flex items-center justify-center text-[11px] font-semibold shrink-0">
-                      {v.initials}
+                  <li key={v.id} className="px-5 py-3">
+                    <div className="flex items-center gap-3">
+                      <span className="text-xs font-semibold text-neutral-300 tabular-nums w-4 shrink-0 text-center">{i + 1}</span>
+                      <div className="size-7 rounded-full bg-tierra-100 text-tierra-700 flex items-center justify-center text-[11px] font-semibold shrink-0">
+                        {v.initials}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium text-neutral-800 truncate">{v.name}</p>
+                        <p className="text-xs text-neutral-400">{v.orders} pedido{v.orders !== 1 ? "s" : ""}</p>
+                      </div>
+                      <div className="text-right shrink-0">
+                        <p className="text-sm font-semibold tabular-nums text-neutral-900">
+                          {fmtK(v.total)} <span className="text-[10px] font-normal text-neutral-400">c/IVA</span>
+                        </p>
+                        <p className="text-xs tabular-nums text-neutral-400">
+                          {fmtK(v.total / IVA_DIV)} <span className="text-[10px]">s/IVA</span>
+                        </p>
+                      </div>
                     </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-neutral-800 truncate">{v.name}</p>
-                      <p className="text-xs text-neutral-400">{v.orders} pedido{v.orders !== 1 ? "s" : ""}</p>
-                    </div>
-                    <span className="text-sm font-semibold tabular-nums text-neutral-900">{fmtK(v.total)}</span>
+                    {v.clientes.length > 0 && (
+                      <details className="mt-2 ml-7">
+                        <summary className="text-xs text-tierra-700 hover:underline cursor-pointer list-none">
+                          Por cliente ({v.clientes.length}) →
+                        </summary>
+                        <ul className="mt-1.5 space-y-1 border-l border-neutral-100 pl-3">
+                          {v.clientes.map((c) => (
+                            <li key={c.id} className="flex items-center justify-between gap-2">
+                              <span className="text-xs text-neutral-600 truncate">{c.name}</span>
+                              <span className="text-xs tabular-nums text-neutral-500 shrink-0">
+                                {fmtK(c.total)} c/IVA · {fmtK(c.total / IVA_DIV)} s/IVA
+                              </span>
+                            </li>
+                          ))}
+                        </ul>
+                      </details>
+                    )}
                   </li>
                 ))}
               </ul>
