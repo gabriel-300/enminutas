@@ -97,6 +97,21 @@ export async function guardarReceta(formData: FormData): Promise<ActionResult> {
   return { ok: true };
 }
 
+export async function actualizarCostoProducto(
+  productId: string,
+  costoNuevoPorCaja: number,
+  bolsasCaja: number,
+): Promise<ActionResult> {
+  if (costoNuevoPorCaja <= 0) return { error: "El costo debe ser mayor a cero" };
+  const bolsas = bolsasCaja > 0 ? bolsasCaja : 1;
+  const costoUnidad = costoNuevoPorCaja / bolsas;
+  const db = createAdminClient() as any;
+  const { error } = await db.from("products").update({ costo: costoUnidad }).eq("id", productId);
+  if (error) return { error: error.message };
+  revalidateAll();
+  return { ok: true };
+}
+
 export async function eliminarReceta(productId: string): Promise<ActionResult> {
   const db = createAdminClient() as any;
   const { error } = await db.from("recipes").delete().eq("product_id", productId);

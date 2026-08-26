@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { createClient, createAdminClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
+import { CostoCajaEdit } from "./costo-edit";
 
 export const metadata: Metadata = { title: "Recetas — Admin En Minutas" };
 export const revalidate = 0;
@@ -144,16 +145,15 @@ export default async function RecetasPage() {
                         }
                       </td>
 
-                      {/* Costo producto / caja (lo que usa pricing) */}
+                      {/* Costo producto / caja — editable inline */}
                       <td className="px-5 py-3 text-right text-sm tabular-nums whitespace-nowrap">
                         {pricing ? (
-                          <span className={pricing.desactualizado ? "font-medium text-amber-600" : "font-medium text-neutral-800"}>
-                            {fmtPeso(pricing.costoProductoCaja)}
-                            {pricing.desactualizado && (
-                              <span title="El costo guardado en el producto difiere del costo real de la receta. Editá la receta y usá 'Actualizar costo del producto'."
-                                className="ml-1 text-amber-500 cursor-help">⚠</span>
-                            )}
-                          </span>
+                          <CostoCajaEdit
+                            productId={p.id}
+                            costoProductoCaja={pricing.costoProductoCaja}
+                            bolsasCaja={Number(p.bolsas_caja ?? 1)}
+                            desactualizado={pricing.desactualizado}
+                          />
                         ) : (
                           <span className="text-neutral-300">—</span>
                         )}
