@@ -70,6 +70,7 @@ const SECTIONS: { label?: string; key?: string; items: NavEntry[] }[] = [
       { href: "/admin/cocina/recetas",        label: "Recetas",          icon: BookOpen,     roles: ["admin", "produccion"] },
       { href: "/admin/cocina/produccion",    label: "Producción",       icon: Factory,      roles: ["admin", "produccion"] },
       { href: "/admin/cocina/planificador",  label: "Planificador",     icon: Calendar,     roles: ["admin", "produccion"] },
+      { href: "/admin/cocina/recepciones",    label: "Recepciones",      icon: FileText,     roles: ["admin", "produccion"] },
       { href: "/admin/cocina/compras",       label: "Lista de compras", icon: ShoppingCart, roles: ["admin", "produccion"] },
       { href: "/admin/cocina/historial",     label: "Historial prod.",  icon: Clock,        roles: ["admin", "produccion"] },
     ],
