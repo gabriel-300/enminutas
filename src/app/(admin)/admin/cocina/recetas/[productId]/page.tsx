@@ -29,7 +29,7 @@ export default async function RecetaEditorPage({
 
     adminClient
       .from("recipes")
-      .select("id, yield_cajas, notes, steps:recipe_steps (id, step_order, description, minutes, notes)")
+      .select("id, yield_cajas, vida_util_dias, notes, steps:recipe_steps (id, step_order, description, minutes, notes)")
       .eq("product_id", productId)
       .maybeSingle(),
 
@@ -55,8 +55,9 @@ export default async function RecetaEditorPage({
 
   const recipe = recipeRaw
     ? {
-        yieldCajas: recipeRaw.yield_cajas,
-        notes:      recipeRaw.notes ?? "",
+        yieldCajas:   recipeRaw.yield_cajas,
+        vidaUtilDias: recipeRaw.vida_util_dias ?? 180,
+        notes:        recipeRaw.notes ?? "",
         steps: ((recipeRaw.steps ?? []) as any[])
           .sort((a, b) => a.step_order - b.step_order)
           .map((s) => ({

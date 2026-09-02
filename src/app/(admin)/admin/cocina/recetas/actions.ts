@@ -12,9 +12,10 @@ function revalidateAll() {
 }
 
 export async function guardarReceta(formData: FormData): Promise<ActionResult> {
-  const productId  = formData.get("product_id") as string;
-  const yieldCajas = parseFloat((formData.get("yield_cajas") as string)?.replace(",", ".")) || 1;
-  const notes      = (formData.get("notes") as string | null)?.trim() || null;
+  const productId    = formData.get("product_id") as string;
+  const yieldCajas   = parseFloat((formData.get("yield_cajas") as string)?.replace(",", ".")) || 1;
+  const vidaUtilDias = parseInt(formData.get("vida_util_dias") as string, 10) || 180;
+  const notes        = (formData.get("notes") as string | null)?.trim() || null;
 
   if (!productId) return { error: "Producto requerido" };
 
@@ -51,13 +52,13 @@ export async function guardarReceta(formData: FormData): Promise<ActionResult> {
   let recipeId: string;
 
   if (existing?.id) {
-    const { error } = await db.from("recipes").update({ yield_cajas: yieldCajas, notes }).eq("id", existing.id);
+    const { error } = await db.from("recipes").update({ yield_cajas: yieldCajas, vida_util_dias: vidaUtilDias, notes }).eq("id", existing.id);
     if (error) return { error: `Error al actualizar receta: ${error.message}` };
     recipeId = existing.id;
   } else {
     const { data: inserted, error } = await db
       .from("recipes")
-      .insert({ product_id: productId, yield_cajas: yieldCajas, notes })
+      .insert({ product_id: productId, yield_cajas: yieldCajas, vida_util_dias: vidaUtilDias, notes })
       .select("id")
       .single();
     if (error || !inserted) return { error: `Error al crear receta: ${error?.message ?? "sin datos"}` };

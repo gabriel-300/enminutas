@@ -102,8 +102,9 @@ export type ProductoConReceta = {
   bolsas_caja: number;
   vida_util_dias: number;
   receta: {
-    id: string;
-    yield_cajas: number;
+    id:             string;
+    yield_cajas:    number;
+    vida_util_dias: number;
     ingredients: {
       insumo_id: string;
       cantidad: number;
@@ -125,7 +126,7 @@ export async function getProductosConReceta(): Promise<ProductoConReceta[]> {
 
   const { data: recipes } = await db
     .from("recipes")
-    .select("id, product_id, yield_cajas");
+    .select("id, product_id, yield_cajas, vida_util_dias");
 
   if (!recipes?.length) return [];
 
@@ -146,8 +147,9 @@ export async function getProductosConReceta(): Promise<ProductoConReceta[]> {
   const recipeByProduct: Record<string, any> = {};
   for (const r of recipes) {
     recipeByProduct[r.product_id] = {
-      id: r.id,
-      yield_cajas: Number(r.yield_cajas),
+      id:             r.id,
+      yield_cajas:    Number(r.yield_cajas),
+      vida_util_dias: Number(r.vida_util_dias ?? 180),
       ingredients: (ingByRecipe[r.id] ?? []).map((ing: any) => ({
         insumo_id: ing.insumo_id,
         cantidad:  Number(ing.cantidad),
@@ -165,7 +167,7 @@ export async function getProductosConReceta(): Promise<ProductoConReceta[]> {
       name:           p.name,
       sku:            p.sku,
       bolsas_caja:    Number(p.bolsas_caja ?? 1),
-      vida_util_dias: Number(p.vida_util_dias ?? 180),
+      vida_util_dias: recipeByProduct[p.id]?.vida_util_dias ?? 180,
       receta:         recipeByProduct[p.id] ?? null,
     }));
 }

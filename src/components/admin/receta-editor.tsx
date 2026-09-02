@@ -15,10 +15,11 @@ type RecetaProps = {
   productId:    string;
   insumos:      InsumoOpcion[];
   recipe: {
-    yieldCajas:  number;
-    notes:       string;
-    steps:       Step[];
-    ingredients: Ing[];
+    yieldCajas:    number;
+    vidaUtilDias:  number;
+    notes:         string;
+    steps:         Step[];
+    ingredients:   Ing[];
   } | null;
 };
 
@@ -50,8 +51,9 @@ export function RecetaEditor({ productId, insumos, recipe }: RecetaProps) {
   const [success, setSuccess] = useState<string | null>(null);
   const [syncMsg, setSyncMsg] = useState<string | null>(null);
 
-  const [yieldCajasStr, setYieldCajasStr] = useState(String(recipe?.yieldCajas ?? 1));
+  const [yieldCajasStr,   setYieldCajasStr]   = useState(String(recipe?.yieldCajas ?? 1));
   const yieldCajas = parseFloat(yieldCajasStr.replace(",", ".")) || 1;
+  const [vidaUtilDias, setVidaUtilDias] = useState(recipe?.vidaUtilDias ?? 180);
   const [notes, setNotes] = useState(recipe?.notes ?? "");
   const [steps, setSteps] = useState<Step[]>(
     recipe?.steps.length ? recipe.steps : [{ description: "", minutes: 0, notes: "" }]
@@ -104,9 +106,10 @@ export function RecetaEditor({ productId, insumos, recipe }: RecetaProps) {
     setError(null); setSuccess(null); setSyncMsg(null);
 
     const fd = new FormData();
-    fd.set("product_id",  productId);
-    fd.set("yield_cajas", String(parseFloat(yieldCajasStr.replace(",", ".")) || 1));
-    fd.set("notes",       notes);
+    fd.set("product_id",     productId);
+    fd.set("yield_cajas",    String(parseFloat(yieldCajasStr.replace(",", ".")) || 1));
+    fd.set("vida_util_dias", String(vidaUtilDias));
+    fd.set("notes",          notes);
 
     steps.forEach((s, i) => {
       fd.set(`steps[${i}][description]`, s.description);
@@ -153,7 +156,7 @@ export function RecetaEditor({ productId, insumos, recipe }: RecetaProps) {
       {/* Config del lote */}
       <div className="bg-white rounded-2xl border border-neutral-200 p-5">
         <p className="text-sm font-semibold text-neutral-700 mb-4">Configuración del lote</p>
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-3 gap-4">
           <div>
             <label className="block text-xs font-medium text-neutral-500 mb-1.5">
               Cajas que produce este lote estándar
@@ -163,6 +166,17 @@ export function RecetaEditor({ productId, insumos, recipe }: RecetaProps) {
               className={inputCls} disabled={isPending} />
             <p className="text-xs text-neutral-400 mt-1">
               Los ingredientes aplican para producir {yieldCajas} caja{yieldCajas !== 1 ? "s" : ""}.
+            </p>
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-neutral-500 mb-1.5">
+              Vida útil del producto (días)
+            </label>
+            <input type="number" min="1" value={vidaUtilDias}
+              onChange={e => setVidaUtilDias(parseInt(e.target.value) || 180)}
+              className={inputCls} disabled={isPending} />
+            <p className="text-xs text-neutral-400 mt-1">
+              Se usa para calcular la fecha de vencimiento al registrar producción.
             </p>
           </div>
           <div>
