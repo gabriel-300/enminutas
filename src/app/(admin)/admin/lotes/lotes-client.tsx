@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useTransition, useId } from "react";
-import { crearLote, ajustarCantidad, darDeBajaLote } from "./actions";
-import { Plus, X, AlertTriangle, PackageX } from "lucide-react";
+import { useState, useTransition } from "react";
+import { ajustarCantidad, darDeBajaLote } from "./actions";
+import { AlertTriangle, PackageX } from "lucide-react";
 
 type Lote = {
   id: string;
@@ -42,24 +42,10 @@ export function LotesClient({
   productos: Producto[];
   depositos: Deposito[];
 }) {
-  const formId = useId();
   const [filtro, setFiltro]         = useState<"todos" | "vencido" | "critico" | "proximo" | "vigente">("todos");
   const [filtroDeposito, setFiltroDeposito] = useState<string>("todos");
-  const [showForm, setShowForm]     = useState(false);
   const [pending, start]            = useTransition();
   const [error, setError]           = useState<string | null>(null);
-
-  // Form state
-  const [productoId, setProductoId]         = useState("");
-  const [numeroLote, setNumeroLote]         = useState("");
-  const [fechaIngreso, setFechaIngreso]     = useState(today());
-  const [fechaVenc, setFechaVenc]           = useState("");
-  const [cantidad, setCantidad]             = useState("");
-  const [unidad, setUnidad]                 = useState("kg");
-  const [proveedor, setProveedor]           = useState("");
-  const [costo, setCosto]                   = useState("");
-  const [obs, setObs]                       = useState("");
-  const [depositoId, setDepositoId]         = useState("");
 
   // Ajuste inline
   const [ajustando, setAjustando] = useState<string | null>(null);
@@ -80,38 +66,6 @@ export function LotesClient({
     if (!fefoMap.has(l.producto_id)) fefoMap.set(l.producto_id, l.id);
   }
 
-  function resetForm() {
-    setProductoId(""); setNumeroLote(""); setFechaIngreso(today());
-    setFechaVenc(""); setCantidad(""); setUnidad("kg");
-    setProveedor(""); setCosto(""); setObs(""); setDepositoId("");
-    setError(null);
-  }
-
-  function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    if (!productoId) { setError("Seleccioná un producto"); return; }
-    const cant = parseFloat(cantidad.replace(",", "."));
-    if (!cant || cant <= 0) { setError("La cantidad debe ser mayor a 0"); return; }
-    setError(null);
-    start(async () => {
-      const res = await crearLote({
-        productoId,
-        numeroLote,
-        fechaIngreso,
-        fechaVencimiento: fechaVenc,
-        cantidadInicial: cant,
-        unidad,
-        proveedor:     proveedor    || undefined,
-        costoUnitario: costo ? parseFloat(costo.replace(",", ".")) : undefined,
-        observaciones: obs          || undefined,
-        depositoId:    depositoId   || undefined,
-      });
-      if (res.error) { setError(res.error); return; }
-      resetForm();
-      setShowForm(false);
-    });
-  }
-
   function handleAjuste(id: string) {
     const val = parseFloat(nuevaCant.replace(",", "."));
     if (isNaN(val) || val < 0) return;
@@ -130,9 +84,7 @@ export function LotesClient({
     });
   }
 
-  const labelClass = "block text-xs font-medium text-neutral-500 mb-1";
   const inputClass = "w-full rounded-xl border border-neutral-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#16233f]/20 focus:border-[#16233f]";
-  const productoActual = productos.find(p => p.id === productoId);
 
   return (
     <div className="space-y-5">
@@ -170,13 +122,6 @@ export function LotesClient({
               </button>
             ))}
           </div>
-          <button
-            onClick={() => { setShowForm(v => !v); if (showForm) resetForm(); }}
-            className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#16233f] text-white text-sm font-medium hover:bg-[#1e2f52] transition-colors shrink-0"
-          >
-            {showForm ? <X className="size-4" /> : <Plus className="size-4" />}
-            {showForm ? "Cancelar" : "Nuevo lote"}
-          </button>
         </div>
         {/* Filtro depósito */}
         {depositos.length > 0 && (
@@ -205,164 +150,6 @@ export function LotesClient({
           </div>
         )}
       </div>
-
-      {/* Formulario nuevo lote */}
-      {showForm && (
-        <div className="bg-white rounded-2xl border border-neutral-200 p-5">
-          <h2 className="text-sm font-semibold text-neutral-900 mb-4">Registrar nuevo lote</h2>
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label htmlFor={`${formId}-prod`} className={labelClass}>Producto *</label>
-                <select
-                  id={`${formId}-prod`}
-                  value={productoId}
-                  onChange={e => {
-                    setProductoId(e.target.value);
-                    const p = productos.find(p => p.id === e.target.value);
-                    if (p) setUnidad(p.unit_label);
-                  }}
-                  className={inputClass}
-                  required
-                >
-                  <option value="">Seleccioná un producto...</option>
-                  {productos.map(p => (
-                    <option key={p.id} value={p.id}>{p.name}</option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <label htmlFor={`${formId}-nro`} className={labelClass}>Número de lote *</label>
-                <input
-                  id={`${formId}-nro`}
-                  type="text"
-                  placeholder="Ej: L-2026-001"
-                  value={numeroLote}
-                  onChange={e => setNumeroLote(e.target.value)}
-                  className={inputClass}
-                  required
-                />
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label htmlFor={`${formId}-ingreso`} className={labelClass}>Fecha de ingreso</label>
-                <input
-                  id={`${formId}-ingreso`}
-                  type="date"
-                  value={fechaIngreso}
-                  onChange={e => setFechaIngreso(e.target.value)}
-                  className={inputClass}
-                />
-              </div>
-              <div>
-                <label htmlFor={`${formId}-venc`} className={labelClass}>Fecha de vencimiento *</label>
-                <input
-                  id={`${formId}-venc`}
-                  type="date"
-                  value={fechaVenc}
-                  onChange={e => setFechaVenc(e.target.value)}
-                  className={inputClass}
-                  required
-                />
-              </div>
-            </div>
-
-            <div className="grid grid-cols-3 gap-3">
-              <div>
-                <label htmlFor={`${formId}-cant`} className={labelClass}>Cantidad inicial *</label>
-                <input
-                  id={`${formId}-cant`}
-                  type="number"
-                  min="0.001"
-                  step="0.001"
-                  placeholder="0"
-                  value={cantidad}
-                  onChange={e => setCantidad(e.target.value)}
-                  className={inputClass}
-                  required
-                />
-              </div>
-              <div>
-                <label htmlFor={`${formId}-unidad`} className={labelClass}>Unidad</label>
-                <input
-                  id={`${formId}-unidad`}
-                  type="text"
-                  value={unidad}
-                  onChange={e => setUnidad(e.target.value)}
-                  className={inputClass}
-                />
-              </div>
-              <div>
-                <label htmlFor={`${formId}-costo`} className={labelClass}>Costo unitario ($)</label>
-                <input
-                  id={`${formId}-costo`}
-                  type="number"
-                  min="0"
-                  step="0.01"
-                  placeholder="0.00"
-                  value={costo}
-                  onChange={e => setCosto(e.target.value)}
-                  className={inputClass}
-                />
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label htmlFor={`${formId}-prov`} className={labelClass}>Proveedor</label>
-                <input
-                  id={`${formId}-prov`}
-                  type="text"
-                  placeholder="Nombre del proveedor"
-                  value={proveedor}
-                  onChange={e => setProveedor(e.target.value)}
-                  className={inputClass}
-                />
-              </div>
-              {depositos.length > 0 && (
-                <div>
-                  <label htmlFor={`${formId}-deposito`} className={labelClass}>Depósito</label>
-                  <select
-                    id={`${formId}-deposito`}
-                    value={depositoId}
-                    onChange={e => setDepositoId(e.target.value)}
-                    className={inputClass}
-                  >
-                    <option value="">Sin asignar</option>
-                    {depositos.map(d => (
-                      <option key={d.id} value={d.id}>{d.nombre}</option>
-                    ))}
-                  </select>
-                </div>
-              )}
-            </div>
-
-            <div>
-              <label htmlFor={`${formId}-obs`} className={labelClass}>Observaciones</label>
-              <input
-                id={`${formId}-obs`}
-                type="text"
-                placeholder="Notas adicionales..."
-                value={obs}
-                onChange={e => setObs(e.target.value)}
-                className={inputClass}
-              />
-            </div>
-
-            {error && <p className="text-xs text-red-600">{error}</p>}
-
-            <button
-              type="submit"
-              disabled={pending}
-              className="w-full py-2.5 rounded-xl bg-[#16233f] text-white text-sm font-medium hover:bg-[#1e2f52] transition-colors disabled:opacity-50"
-            >
-              {pending ? "Guardando..." : "Registrar lote"}
-            </button>
-          </form>
-        </div>
-      )}
 
       {/* Tabla */}
       <div className="bg-white rounded-2xl border border-neutral-200 overflow-hidden">

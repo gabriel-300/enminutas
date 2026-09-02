@@ -12,21 +12,26 @@ function revalidateAll() {
   revalidatePath("/admin/lotes");
 }
 
-// Genera número de lote: P-YYYYMMDD-NNN (correlativo del día)
-async function generarNumeroLote(db: any, fecha: string): Promise<string> {
-  const fechaStr = fecha.replace(/-/g, ""); // YYYYMMDD
-  const prefijo  = `P-${fechaStr}-`;
+// Genera número de lote: correlativo global (ej: 0045), continuando desde el máximo existente
+async function generarNumeroLote(db: any): Promise<string> {
   const { data } = await db
     .from("lotes")
     .select("numero_lote")
-    .like("numero_lote", `${prefijo}%`)
-    .order("numero_lote", { ascending: false })
-    .limit(1);
-  const ultimo = data?.[0]?.numero_lote as string | undefined;
-  const seq = ultimo
-    ? parseInt(ultimo.slice(prefijo.length), 10) + 1
-    : 1;
-  return `${prefijo}${String(seq).padStart(3, "0")}`;
+    .order("created_at", { ascending: false })
+    .limit(100);
+
+  let maxNum = 0;
+  for (const row of data ?? []) {
+    const nro = row.numero_lote as string;
+    // Extraer el número final del lote (soporta formatos "0045", "L-2026-045", "P-20260902-001", etc.)
+    const match = nro.match(/(\d+)$/);
+    if (match) {
+      const n = parseInt(match[1], 10);
+      if (n > maxNum) maxNum = n;
+    }
+  }
+
+  return String(maxNum + 1).padStart(4, "0");
 }
 
 export async function registrarProduccion(formData: FormData): Promise<Result> {
@@ -67,7 +72,7 @@ export async function registrarProduccion(formData: FormData): Promise<Result> {
   if (errProd) return { error: errProd.message };
 
   // 2. Generar número de lote y crear entrada en lotes
-  const numero_lote = await generarNumeroLote(db, fecha);
+  const numero_lote = await generarNumeroLote(db);
 
   // Calcular fecha de vencimiento
   const fechaObj = new Date(fecha + "T12:00:00");
