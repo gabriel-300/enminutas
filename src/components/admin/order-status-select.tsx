@@ -70,11 +70,10 @@ export function OrderStatusSelect({
   }
 
   const READONLY_LABELS: Record<string, string> = {
-    cancelled:    "Cancelado",
-    refunded:     "Reembolsado",
-    enviado_prod: "En producción",
-    in_delivery:  "En camino",
-    liquidado:    "Liquidado",
+    cancelled:  "Cancelado",
+    refunded:   "Reembolsado",
+    in_delivery: "En camino",
+    liquidado:  "Liquidado",
   };
 
   const selectCls = "text-xs border border-neutral-200 rounded-lg px-2 py-1.5 bg-white text-neutral-700 w-full disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-tierra-700/20";
@@ -96,6 +95,20 @@ export function OrderStatusSelect({
         <select value={localStatus} onChange={handleChange} disabled={isPending} className={selectCls}>
           <option value={currentStatus}>{currentLabel}</option>
           <option value="liquidado">Liquidado</option>
+        </select>
+        {error && <p className="text-[10px] text-danger mt-1 leading-tight">{error}</p>}
+      </div>
+    );
+  }
+
+  // Enviado a producción: solo se puede cancelar (vuelve a aprobado o cancela)
+  if (currentStatus === "enviado_prod") {
+    return (
+      <div>
+        <select value={localStatus} onChange={handleChange} disabled={isPending} className={selectCls}>
+          <option value="enviado_prod">En producción</option>
+          <option value="aprobado">Aprobado</option>
+          <option value="cancelled">Cancelado</option>
         </select>
         {error && <p className="text-[10px] text-danger mt-1 leading-tight">{error}</p>}
       </div>
