@@ -504,7 +504,7 @@ function InsumoRow({ ins, cats, onError }: { ins: Insumo; cats: Categoria[]; onE
 }
 
 // ── Formulario nuevo insumo ────────────────────────────────────────────────────
-function NuevoInsumoForm({ cats, onError }: { cats: Categoria[]; onError: (e: string) => void }) {
+function NuevoInsumoForm({ cats, nombresExistentes, onError }: { cats: Categoria[]; nombresExistentes: string[]; onError: (e: string) => void }) {
   const [open, setOpen]       = useState(false);
   const [nombre, setNombre]   = useState("");
   const [unidad, setUnidad]   = useState("gr");
@@ -541,8 +541,11 @@ function NuevoInsumoForm({ cats, onError }: { cats: Categoria[]; onError: (e: st
       <div className="flex-1 min-w-[180px]">
         <label className="block text-xs font-medium text-neutral-500 mb-1">Nombre *</label>
         <input value={nombre} onChange={e => setNombre(e.target.value)} required autoFocus
-          placeholder="Harina 000" disabled={isPending}
+          placeholder="Harina 000" disabled={isPending} list="insumos-existentes"
           className="w-full px-3 py-2 text-sm border border-neutral-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#16233f]/20" />
+        <datalist id="insumos-existentes">
+          {nombresExistentes.map(n => <option key={n} value={n} />)}
+        </datalist>
       </div>
       <div>
         <label className="block text-xs font-medium text-neutral-500 mb-1">Unidad</label>
@@ -760,7 +763,7 @@ export function InsumosClient({ insumos, categorias }: { insumos: Insumo[]; cate
 
   return (
     <div className="space-y-5">
-      <NuevoInsumoForm cats={categorias} onError={setError} />
+      <NuevoInsumoForm cats={categorias} nombresExistentes={insumos.map(i => i.nombre)} onError={setError} />
 
       {error && (
         <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-xl px-4 py-3">
