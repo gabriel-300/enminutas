@@ -16,9 +16,14 @@ const STATUS_LABEL: Record<string, string> = {
   aprobado:        "Aprobado",
   enviado_prod:    "En producción",
   despachado:      "Despachado",
+  en_distribucion: "En distribución",
+  entrega_parcial: "Entrega parcial",
   delivered:       "Entregado",
+  liquidado:       "Liquidado",
   cancelled:       "Cancelado",
 };
+
+type LineaEntregadaSnapshot = { productId: string; name: string; pedido: number; entregado: number };
 
 export default async function RemitoPage({
   params,
@@ -37,12 +42,12 @@ export default async function RemitoPage({
     .from("orders")
     .select(`
       id, order_number, status, channel, total, subtotal, shipping_fee, discount,
-      payment_method, payment_confirmed_at, created_at,
+      payment_method, payment_confirmed_at, created_at, notes, notes_visible_cliente,
       customer_id, guest_email, guest_phone,
-      firma_data, firma_fecha, firma_aclaracion, despacho_info,
+      firma_data, firma_fecha, firma_aclaracion, despacho_info, delivered_snapshot,
       customer:profiles!customer_id (full_name, phone),
       lines:order_lines (
-        id, quantity, unit_price, line_total, product_snapshot
+        id, product_id, quantity, unit_price, line_total, product_snapshot
       )
     `)
     .eq("id", id)
@@ -70,10 +75,34 @@ export default async function RemitoPage({
     cuenta_corriente: "Cuenta corriente",
   };
 
-  const subtotal    = Number(o.subtotal ?? 0);
   const flete       = Number(o.shipping_fee ?? 0);
   const descuento   = Number(o.discount ?? 0);
-  const total       = Number(o.total ?? 0);
+
+  // Si hubo entrega parcial, el remito muestra lo efectivamente entregado
+  // (no lo pedido originalmente) y recalcula los totales sobre esas cantidades.
+  const snapshot = o.delivered_snapshot as { lineas: LineaEntregadaSnapshot[] } | null;
+  const linesRaw = (o.lines ?? []) as any[];
+
+  const displayLines = snapshot?.lineas
+    ? snapshot.lineas
+        .filter((l) => l.entregado > 0)
+        .map((l) => {
+          const orig      = linesRaw.find((ol: any) => ol.product_id === l.productId);
+          const unitPrice = Number(orig?.unit_price ?? 0);
+          return {
+            id:               orig?.id ?? l.productId,
+            quantity:         l.entregado,
+            unit_price:       unitPrice,
+            line_total:       Math.round(unitPrice * l.entregado),
+            product_snapshot: orig?.product_snapshot ?? { name: l.name },
+          };
+        })
+    : linesRaw.filter((l: any) => Number(l.quantity) > 0);
+
+  const subtotal = snapshot?.lineas
+    ? displayLines.reduce((s, l) => s + l.line_total, 0)
+    : Number(o.subtotal ?? 0);
+  const total = snapshot?.lineas ? subtotal + flete - descuento : Number(o.total ?? 0);
 
   const fecha = fmtFechaSolo(o.created_at);
 
@@ -192,6 +221,23 @@ export default async function RemitoPage({
           </div>
         )}
 
+        {/* Aviso de entrega parcial */}
+        {snapshot?.lineas && (
+          <div style={{ marginBottom: 16, padding: "8px 12px", borderRadius: 6, background: "#fef9c3", color: "#854d0e", fontSize: 12 }}>
+            Entrega parcial — se muestran solo las cantidades efectivamente entregadas.
+          </div>
+        )}
+
+        {/* Notas — siempre visibles para staff; para el cliente solo si se marcaron como visibles */}
+        {o.notes && (STAFF.includes(role ?? "") || o.notes_visible_cliente) && (
+          <div style={{ marginBottom: 24 }}>
+            <p style={{ fontSize: 10, fontWeight: 600, color: "#999", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 6 }}>
+              Observaciones
+            </p>
+            <p style={{ fontSize: 13, color: "#333", whiteSpace: "pre-wrap" }}>{o.notes}</p>
+          </div>
+        )}
+
         {/* Tabla de productos */}
         <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13, marginBottom: 24 }}>
           <thead>
@@ -203,7 +249,7 @@ export default async function RemitoPage({
             </tr>
           </thead>
           <tbody>
-            {(o.lines ?? []).filter((line: any) => Number(line.quantity) > 0).map((line: any, i: number) => (
+            {displayLines.map((line: any, i: number) => (
               <tr key={line.id} style={{ borderBottom: "1px solid #f3f4f6", background: i % 2 === 0 ? "white" : "#fafafa" }}>
                 <td style={{ padding: "10px 6px", color: "#111" }}>
                   <div style={{ fontWeight: 500 }}>{line.product_snapshot?.name ?? "Producto"}</div>

@@ -434,7 +434,7 @@ export async function despacharPedidoConAjuste(
   revalidatePath(`/remito/${orderId}`);
 }
 
-export async function agregarNota(orderId: string, nota: string) {
+export async function agregarNota(orderId: string, nota: string, visibleCliente: boolean = false) {
   const authClient = await createClient();
   const { data: { user } } = await authClient.auth.getUser();
   if (!user) throw new Error("No autorizado");
@@ -452,12 +452,13 @@ export async function agregarNota(orderId: string, nota: string) {
     if (!order || (order as any).customer?.vendedor_id !== user.id) throw new Error("No autorizado");
   }
 
-  const { error } = await supabase
+  const { error } = await (supabase as any)
     .from("orders")
-    .update({ notes: nota.trim() || null })
+    .update({ notes: nota.trim() || null, notes_visible_cliente: visibleCliente })
     .eq("id", orderId);
   if (error) throw new Error(error.message);
   revalidatePath(`/admin/pedidos/${orderId}`);
+  revalidatePath(`/remito/${orderId}`);
 }
 
 export type LineaEntregada = {
@@ -515,4 +516,88 @@ export async function confirmarEntregaParcial(orderId: string, lineas: LineaEntr
   revalidatePath("/admin/distribucion");
   revalidatePath("/admin/pedidos");
   revalidatePath("/admin/dashboard");
+}
+
+// Cancela un pedido ya despachado / en distribución (antes de que se confirme
+// entrega). Revierte el stock consumido en el despacho y, si el pedido era
+// cuenta corriente, anula el cargo generado — a diferencia de updateOrderStatus,
+// que solo cambia el status sin tocar stock ni cta cte.
+export async function cancelarPedidoDistribucion(orderId: string) {
+  const authClient = await createClient();
+  const { data: { user } } = await authClient.auth.getUser();
+  if (!user || user.app_metadata?.role !== "admin") throw new Error("No autorizado");
+
+  const supabase = createAdminClient();
+
+  const { data: order } = await (supabase as any)
+    .from("orders")
+    .select("id, status, payment_method, customer_id, order_number")
+    .eq("id", orderId)
+    .single();
+  if (!order) throw new Error("Pedido no encontrado");
+  if (!["despachado", "en_distribucion"].includes(order.status))
+    throw new Error("Solo se puede cancelar desde acá un pedido despachado o en distribución");
+
+  const { data: lines } = await (supabase as any)
+    .from("order_lines")
+    .select("product_id, quantity")
+    .eq("order_id", orderId);
+
+  const { data: updated, error } = await (supabase as any)
+    .from("orders")
+    .update({ status: "cancelled" })
+    .eq("id", orderId)
+    .in("status", ["despachado", "en_distribucion"])
+    .select("id");
+  if (error) throw new Error(error.message);
+  if (!updated?.length) throw new Error("El pedido ya fue procesado");
+
+  await logOrderEvent(
+    supabase, orderId, "cancelled",
+    "Pedido cancelado desde distribución — stock y cuenta corriente revertidos",
+    user.id,
+  );
+
+  // Reintegrar el stock consumido al despachar
+  for (const line of (lines ?? []) as { product_id: string; quantity: number }[]) {
+    if (Number(line.quantity) <= 0) continue;
+    await (supabase as any).rpc("increment_stock", {
+      p_product_id: line.product_id,
+      p_qty:        Number(line.quantity),
+    });
+    await (supabase as any).from("stock_movements").insert({
+      product_id: line.product_id,
+      qty:        Number(line.quantity),
+      type:       "ajuste",
+      order_id:   orderId,
+      notes:      "Reintegro por cancelación de pedido en distribución",
+    });
+  }
+
+  // Revertir el cargo en cuenta corriente, si lo hubo
+  if (order.payment_method === "cuenta_corriente" && order.customer_id) {
+    const { data: cargo } = await (supabase as any)
+      .from("cc_movimientos")
+      .select("id, monto")
+      .eq("order_id", orderId)
+      .eq("tipo", "cargo")
+      .maybeSingle();
+
+    if (cargo) {
+      await (supabase as any).from("cc_movimientos").insert({
+        cliente_id:  order.customer_id,
+        order_id:    orderId,
+        tipo:        "ajuste",
+        descripcion: `Reversión por cancelación — Pedido ${order.order_number}`,
+        monto:       -Math.abs(Number(cargo.monto)),
+        fecha:       new Date().toISOString().slice(0, 10),
+        created_by:  user.id,
+      });
+    }
+  }
+
+  revalidatePath("/admin/distribucion");
+  revalidatePath("/admin/pedidos");
+  revalidatePath("/admin/dashboard");
+  revalidatePath(`/admin/pedidos/${orderId}`);
 }

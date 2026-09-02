@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { updateOrderStatus } from "@/app/(admin)/admin/pedidos/actions";
+import { updateOrderStatus, cancelarPedidoDistribucion } from "@/app/(admin)/admin/pedidos/actions";
 
 // Solo los 3 estados que updateOrderStatus permite asignar manualmente.
 // Los otros (enviado_prod, despachado, etc.) se cambian desde producción/distribución.
@@ -42,12 +42,26 @@ export function OrderStatusSelect({
   function handleChange(e: React.ChangeEvent<HTMLSelectElement>) {
     const newStatus = e.target.value;
     if (newStatus === localStatus) return;
+
+    const cancelandoEnDistribucion =
+      newStatus === "cancelled" && (localStatus === "despachado" || localStatus === "en_distribucion");
+    if (cancelandoEnDistribucion) {
+      const ok = confirm(
+        "¿Cancelar este pedido? Se reintegra el stock ya despachado y, si es cuenta corriente, se revierte el cargo."
+      );
+      if (!ok) return;
+    }
+
     const prevStatus = localStatus;
     setLocalStatus(newStatus);
     setError(null);
     startTransition(async () => {
       try {
-        await updateOrderStatus(orderId, newStatus);
+        if (cancelandoEnDistribucion) {
+          await cancelarPedidoDistribucion(orderId);
+        } else {
+          await updateOrderStatus(orderId, newStatus);
+        }
       } catch (err) {
         setLocalStatus(prevStatus);
         setError(err instanceof Error ? err.message : "Error al cambiar estado");
@@ -58,7 +72,6 @@ export function OrderStatusSelect({
   const READONLY_LABELS: Record<string, string> = {
     cancelled:    "Cancelado",
     refunded:     "Reembolsado",
-    despachado:   "Despachado",
     enviado_prod: "En producción",
     in_delivery:  "En camino",
     liquidado:    "Liquidado",
@@ -83,6 +96,21 @@ export function OrderStatusSelect({
         <select value={localStatus} onChange={handleChange} disabled={isPending} className={selectCls}>
           <option value={currentStatus}>{currentLabel}</option>
           <option value="liquidado">Liquidado</option>
+        </select>
+        {error && <p className="text-[10px] text-danger mt-1 leading-tight">{error}</p>}
+      </div>
+    );
+  }
+
+  // Despachado / en distribución: única acción manual posible es cancelar
+  // (revierte stock y cta cte — ver cancelarPedidoDistribucion)
+  if (currentStatus === "despachado" || currentStatus === "en_distribucion") {
+    const currentLabel = currentStatus === "despachado" ? "Despachado" : "En distribución";
+    return (
+      <div>
+        <select value={localStatus} onChange={handleChange} disabled={isPending} className={selectCls}>
+          <option value={currentStatus}>{currentLabel}</option>
+          <option value="cancelled">Cancelado</option>
         </select>
         {error && <p className="text-[10px] text-danger mt-1 leading-tight">{error}</p>}
       </div>
