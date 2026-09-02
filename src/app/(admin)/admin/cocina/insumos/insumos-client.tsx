@@ -371,49 +371,60 @@ function InsumoRow({ ins, cats, onError }: { ins: Insumo; cats: Categoria[]; onE
     return (
       <>
         <tr className="bg-blue-50/50">
-          <td className="px-4 py-2">
+          <td className="px-3 py-2">
             <input value={nombre} onChange={e => setNombre(e.target.value)}
               className={`${inputCls} w-full`} disabled={isPending} autoFocus />
           </td>
-          <td className="px-4 py-2">
+          <td className="px-3 py-2">
             <select value={unidad} onChange={e => setUnidad(e.target.value)}
-              className={`${inputCls} w-20`} disabled={isPending}>
+              className={`${inputCls} w-16`} disabled={isPending}>
               {UNIDADES.map(u => <option key={u} value={u}>{u}</option>)}
             </select>
           </td>
-          <td className="px-4 py-2">
+          <td className="px-3 py-2">
             <input value={precio} onChange={e => setPrecio(e.target.value)}
               onKeyDown={e => { if (e.key === "Enter") handleGuardar(); if (e.key === "Escape") { setEditing(false); resetState(); }}}
-              className={`${inputCls} w-28 text-right`} disabled={isPending}
+              className={`${inputCls} w-24 text-right`} disabled={isPending}
               inputMode="decimal" placeholder="0" />
           </td>
-          <td className="px-4 py-2">
+          <td className="px-3 py-2">
             <input value={proveed} onChange={e => setProveed(e.target.value)}
-              className={`${inputCls} w-full`} disabled={isPending} placeholder="Proveedor (opcional)" />
+              className={`${inputCls} w-28`} disabled={isPending} placeholder="Proveedor" />
           </td>
-          <td className="px-4 py-2">
+          <td className="px-3 py-2">
             <select value={cat} onChange={e => setCat(e.target.value)}
-              className={`${inputCls} w-36`} disabled={isPending}>
+              className={`${inputCls} w-32`} disabled={isPending}>
               {cats.map(c => <option key={c.valor} value={c.valor}>{c.nombre}</option>)}
             </select>
           </td>
-          {/* Stock control */}
-          <td className="px-4 py-2">
-            <input value={sMin} onChange={e => setSMin(e.target.value)}
-              className={`${inputCls} w-20 text-right`} disabled={isPending}
-              inputMode="decimal" placeholder="0" title="Stock mínimo" />
+          {/* Stock actual — read-only en edit */}
+          <td className="px-3 py-2 text-xs text-neutral-400 tabular-nums font-mono">
+            {fmtNum(ins.stock_actual, ins.unidad)}
           </td>
-          <td className="px-4 py-2">
-            <input value={sPed} onChange={e => setSPed(e.target.value)}
-              className={`${inputCls} w-20 text-right`} disabled={isPending}
-              inputMode="decimal" placeholder="0" title="Punto de pedido" />
+          {/* Mín / Ped / Máx en una celda */}
+          <td className="px-3 py-2">
+            <div className="flex flex-col gap-1">
+              <div className="flex items-center gap-1">
+                <span className="text-xs text-neutral-400 w-6">mín</span>
+                <input value={sMin} onChange={e => setSMin(e.target.value)}
+                  className={`${inputCls} w-20 text-right`} disabled={isPending}
+                  inputMode="decimal" placeholder="0" title="Stock mínimo" />
+              </div>
+              <div className="flex items-center gap-1">
+                <span className="text-xs text-neutral-400 w-6">ped</span>
+                <input value={sPed} onChange={e => setSPed(e.target.value)}
+                  className={`${inputCls} w-20 text-right`} disabled={isPending}
+                  inputMode="decimal" placeholder="0" title="Punto de pedido" />
+              </div>
+              <div className="flex items-center gap-1">
+                <span className="text-xs text-neutral-400 w-6">máx</span>
+                <input value={sMax} onChange={e => setSMax(e.target.value)}
+                  className={`${inputCls} w-20 text-right`} disabled={isPending}
+                  inputMode="decimal" placeholder="0" title="Stock máximo" />
+              </div>
+            </div>
           </td>
-          <td className="px-4 py-2">
-            <input value={sMax} onChange={e => setSMax(e.target.value)}
-              className={`${inputCls} w-20 text-right`} disabled={isPending}
-              inputMode="decimal" placeholder="0" title="Stock máximo" />
-          </td>
-          <td className="px-4 py-2">
+          <td className="px-3 py-2">
             <div className="flex gap-1">
               <button onClick={handleGuardar} disabled={isPending}
                 className="p-1.5 rounded-lg text-emerald-600 hover:bg-emerald-50 disabled:opacity-40">
@@ -436,19 +447,19 @@ function InsumoRow({ ins, cats, onError }: { ins: Insumo; cats: Categoria[]; onE
   return (
     <>
       <tr className="hover:bg-neutral-50 transition-colors">
-        <td className="px-4 py-3 font-medium text-neutral-900 text-sm">{ins.nombre}</td>
-        <td className="px-4 py-3 text-sm text-neutral-500 font-mono">{ins.unidad}</td>
-        <td className="px-4 py-3 text-sm font-semibold text-neutral-900 text-right tabular-nums">
+        <td className="px-3 py-2.5 font-medium text-neutral-900 text-sm">{ins.nombre}</td>
+        <td className="px-3 py-2.5 text-xs text-neutral-500 font-mono">{ins.unidad}</td>
+        <td className="px-3 py-2.5 text-sm font-semibold text-neutral-900 text-right tabular-nums">
           {fmtPrecio(ins.precio_unitario)}
         </td>
-        <td className="px-4 py-3 text-sm text-neutral-400">{ins.proveedor || "—"}</td>
-        <td className="px-4 py-3">
+        <td className="px-3 py-2.5 text-xs text-neutral-400">{ins.proveedor || "—"}</td>
+        <td className="px-3 py-2.5">
           <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${catColor(ins.categoria, cats)}`}>
             {catLabel(ins.categoria, cats)}
           </span>
         </td>
         {/* Stock actual con indicador */}
-        <td className="px-4 py-3">
+        <td className="px-3 py-2.5">
           <div className="flex items-center gap-1.5">
             <span className={`inline-block size-2 rounded-full shrink-0 ${estadoDot[estado]}`} />
             <span className={`text-xs font-mono px-1.5 py-0.5 rounded-md ${estadoBadge[estado]}`}>
@@ -456,13 +467,18 @@ function InsumoRow({ ins, cats, onError }: { ins: Insumo; cats: Categoria[]; onE
             </span>
           </div>
         </td>
-        <td className="px-4 py-3 text-xs text-neutral-400 tabular-nums font-mono">
-          {ins.stock_minimo > 0 ? fmtNum(ins.stock_minimo, ins.unidad) : "—"}
+        {/* Mínimo + Punto de pedido en una sola celda */}
+        <td className="px-3 py-2.5">
+          {ins.stock_minimo > 0 || ins.punto_pedido > 0 ? (
+            <div className="text-xs text-neutral-400 font-mono leading-tight">
+              {ins.stock_minimo > 0 && <div title="Stock mínimo">mín {fmtNum(ins.stock_minimo, ins.unidad)}</div>}
+              {ins.punto_pedido > 0 && <div title="Punto de pedido">ped {fmtNum(ins.punto_pedido, ins.unidad)}</div>}
+            </div>
+          ) : (
+            <span className="text-xs text-neutral-300">—</span>
+          )}
         </td>
-        <td className="px-4 py-3 text-xs text-neutral-400 tabular-nums font-mono">
-          {ins.punto_pedido > 0 ? fmtNum(ins.punto_pedido, ins.unidad) : "—"}
-        </td>
-        <td className="px-4 py-3">
+        <td className="px-3 py-2.5">
           <div className="flex gap-1 justify-end">
             <button onClick={() => { setIngreso(v => !v); setEditing(false); }} disabled={isPending}
               title="Registrar ingreso de stock"
@@ -789,15 +805,14 @@ export function InsumosClient({ insumos, categorias }: { insumos: Insumo[]; cate
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-neutral-100 text-left">
-                  <th className="px-4 py-3 text-xs font-semibold text-neutral-400 uppercase tracking-wide">Nombre</th>
-                  <th className="px-4 py-3 text-xs font-semibold text-neutral-400 uppercase tracking-wide">Unidad</th>
-                  <th className="px-4 py-3 text-xs font-semibold text-neutral-400 uppercase tracking-wide text-right">Precio / u.</th>
-                  <th className="px-4 py-3 text-xs font-semibold text-neutral-400 uppercase tracking-wide">Proveedor</th>
-                  <th className="px-4 py-3 text-xs font-semibold text-neutral-400 uppercase tracking-wide">Categoría</th>
-                  <th className="px-4 py-3 text-xs font-semibold text-neutral-400 uppercase tracking-wide">Stock actual</th>
-                  <th className="px-4 py-3 text-xs font-semibold text-neutral-400 uppercase tracking-wide">Mínimo</th>
-                  <th className="px-4 py-3 text-xs font-semibold text-neutral-400 uppercase tracking-wide">Pto. pedido</th>
-                  <th className="px-4 py-3"></th>
+                  <th className="px-3 py-3 text-xs font-semibold text-neutral-400 uppercase tracking-wide">Nombre</th>
+                  <th className="px-3 py-3 text-xs font-semibold text-neutral-400 uppercase tracking-wide">Un.</th>
+                  <th className="px-3 py-3 text-xs font-semibold text-neutral-400 uppercase tracking-wide text-right">Precio / u.</th>
+                  <th className="px-3 py-3 text-xs font-semibold text-neutral-400 uppercase tracking-wide">Proveedor</th>
+                  <th className="px-3 py-3 text-xs font-semibold text-neutral-400 uppercase tracking-wide">Categoría</th>
+                  <th className="px-3 py-3 text-xs font-semibold text-neutral-400 uppercase tracking-wide">Stock actual</th>
+                  <th className="px-3 py-3 text-xs font-semibold text-neutral-400 uppercase tracking-wide">Mín / Ped.</th>
+                  <th className="px-3 py-3"></th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-neutral-50">

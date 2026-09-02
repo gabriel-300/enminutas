@@ -33,7 +33,7 @@ export default async function InsumosPage() {
   })) as Insumo[];
 
   return (
-    <div className="p-4 md:p-8 max-w-5xl">
+    <div className="p-4 md:p-8">
       <div className="mb-6">
         <Link href="/admin/cocina" className="text-sm text-neutral-400 hover:text-neutral-700 mb-2 inline-block">
           ← Cocina
