@@ -10,6 +10,7 @@ function revalidateAll() {
   revalidatePath("/admin/cocina/insumos");
   revalidatePath("/admin/cocina/recetas");
   revalidatePath("/admin/lotes");
+  revalidatePath("/admin/stock");
 }
 
 // Genera número de lote: correlativo global (ej: 0045), continuando desde el máximo existente
