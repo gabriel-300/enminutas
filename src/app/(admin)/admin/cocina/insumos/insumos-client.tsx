@@ -1,11 +1,12 @@
 "use client";
 
 import { useState, useTransition, useRef, Fragment } from "react";
-import { Pencil, Trash2, Check, X, Upload, Plus, PackagePlus } from "lucide-react";
+import { Pencil, Trash2, Check, X, Upload, Plus, PackagePlus, Tag, ChevronDown } from "lucide-react";
 import {
   crearInsumo, actualizarInsumo, eliminarInsumo, importarPreciosCSV,
   ingresarStock, ajustarStock, actualizarStockControl,
-  type ImportResult,
+  crearCategoria, actualizarCategoria, eliminarCategoria,
+  type ImportResult, type Categoria,
 } from "./actions";
 
 export type Insumo = {
@@ -21,23 +22,29 @@ export type Insumo = {
 
 const UNIDADES = ["gr", "kg", "ml", "l", "u", "cc", "taza", "cdita", "cda"];
 
-const CATEGORIAS: { value: string; label: string; color: string }[] = [
-  { value: "verduras",      label: "Verduras",        color: "bg-green-100 text-green-700" },
-  { value: "frutas",        label: "Frutas",           color: "bg-orange-100 text-orange-700" },
-  { value: "carnes",        label: "Carnes",           color: "bg-red-100 text-red-700" },
-  { value: "lacteos",       label: "Lácteos",          color: "bg-sky-100 text-sky-700" },
-  { value: "panificados",   label: "Panificados",      color: "bg-amber-100 text-amber-700" },
-  { value: "condimentos",   label: "Condimentos",      color: "bg-purple-100 text-purple-700" },
-  { value: "aceites_grasas",label: "Aceites y grasas", color: "bg-yellow-100 text-yellow-700" },
-  { value: "bebidas",       label: "Bebidas",          color: "bg-cyan-100 text-cyan-700" },
-  { value: "otros",         label: "Otros",            color: "bg-neutral-100 text-neutral-500" },
+// Paleta de colores disponibles para categorías
+const COLOR_OPCIONES = [
+  { value: "bg-green-100 text-green-700",    bg: "#dcfce7", fg: "#15803d" },
+  { value: "bg-orange-100 text-orange-700",  bg: "#ffedd5", fg: "#c2410c" },
+  { value: "bg-red-100 text-red-700",        bg: "#fee2e2", fg: "#b91c1c" },
+  { value: "bg-sky-100 text-sky-700",        bg: "#e0f2fe", fg: "#0369a1" },
+  { value: "bg-amber-100 text-amber-700",    bg: "#fef3c7", fg: "#b45309" },
+  { value: "bg-purple-100 text-purple-700",  bg: "#f3e8ff", fg: "#7e22ce" },
+  { value: "bg-yellow-100 text-yellow-700",  bg: "#fefce8", fg: "#a16207" },
+  { value: "bg-cyan-100 text-cyan-700",      bg: "#cffafe", fg: "#0e7490" },
+  { value: "bg-pink-100 text-pink-700",      bg: "#fce7f3", fg: "#be185d" },
+  { value: "bg-lime-100 text-lime-700",      bg: "#ecfccb", fg: "#4d7c0f" },
+  { value: "bg-indigo-100 text-indigo-700",  bg: "#e0e7ff", fg: "#4338ca" },
+  { value: "bg-neutral-100 text-neutral-500",bg: "#f5f5f5", fg: "#737373" },
 ];
 
-function catLabel(value: string) {
-  return CATEGORIAS.find(c => c.value === value)?.label ?? value;
+const DEFAULT_COLOR = "bg-neutral-100 text-neutral-500";
+
+function catLabel(valor: string, cats: Categoria[]): string {
+  return cats.find(c => c.valor === valor)?.nombre ?? valor;
 }
-function catColor(value: string) {
-  return CATEGORIAS.find(c => c.value === value)?.color ?? "bg-neutral-100 text-neutral-500";
+function catColor(valor: string, cats: Categoria[]): string {
+  return cats.find(c => c.valor === valor)?.color ?? DEFAULT_COLOR;
 }
 
 const fmtPrecio = (n: number) =>
@@ -71,6 +78,181 @@ const estadoDot = {
   sin_control: "bg-neutral-300",
 };
 
+// ── Selector de color ──────────────────────────────────────────────────────────
+function ColorPicker({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+  return (
+    <div className="flex gap-1.5 flex-wrap">
+      {COLOR_OPCIONES.map(c => (
+        <button
+          key={c.value}
+          type="button"
+          title={c.value}
+          onClick={() => onChange(c.value)}
+          style={{ background: c.bg, border: value === c.value ? `2px solid ${c.fg}` : "2px solid transparent" }}
+          className="size-6 rounded-full transition-transform hover:scale-110"
+        />
+      ))}
+    </div>
+  );
+}
+
+// ── Gestor de categorías ───────────────────────────────────────────────────────
+function GestorCategorias({ categorias }: { categorias: Categoria[] }) {
+  const [open, setOpen]         = useState(false);
+  const [nuevoNombre, setNuevo] = useState("");
+  const [nuevoColor, setNuevoColor] = useState(DEFAULT_COLOR);
+  const [editId, setEditId]     = useState<string | null>(null);
+  const [editNombre, setEditNombre] = useState("");
+  const [editColor, setEditColor]   = useState(DEFAULT_COLOR);
+  const [error, setError]       = useState<string | null>(null);
+  const [isPending, start]      = useTransition();
+
+  function handleCrear(e: React.FormEvent) {
+    e.preventDefault();
+    if (!nuevoNombre.trim()) return;
+    start(async () => {
+      const res = await crearCategoria(nuevoNombre, nuevoColor);
+      if ("error" in res) { setError(res.error); return; }
+      setNuevo(""); setNuevoColor(DEFAULT_COLOR); setError(null);
+    });
+  }
+
+  function startEdit(cat: Categoria) {
+    setEditId(cat.id);
+    setEditNombre(cat.nombre);
+    setEditColor(cat.color);
+    setError(null);
+  }
+
+  function handleActualizar() {
+    if (!editId) return;
+    start(async () => {
+      const res = await actualizarCategoria(editId, editNombre, editColor);
+      if ("error" in res) { setError(res.error); return; }
+      setEditId(null); setError(null);
+    });
+  }
+
+  function handleEliminar(id: string, nombre: string) {
+    if (!confirm(`¿Eliminar la categoría "${nombre}"? Los insumos que la usen deben ser reasignados primero.`)) return;
+    start(async () => {
+      const res = await eliminarCategoria(id);
+      if ("error" in res) { setError(res.error); }
+    });
+  }
+
+  const inputCls = "px-2 py-1.5 text-sm border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#16233f]/20 disabled:opacity-50";
+
+  return (
+    <div className="bg-white rounded-2xl border border-neutral-200 overflow-hidden">
+      <button
+        type="button"
+        onClick={() => setOpen(v => !v)}
+        className="w-full px-5 py-3 flex items-center justify-between text-left hover:bg-neutral-50 transition-colors"
+      >
+        <div className="flex items-center gap-2">
+          <Tag className="size-4 text-neutral-400" />
+          <span className="text-sm font-semibold text-neutral-800">Gestionar categorías</span>
+          <span className="text-xs text-neutral-400">({categorias.length})</span>
+        </div>
+        <ChevronDown
+          className="size-4 text-neutral-400 transition-transform"
+          style={{ transform: open ? "rotate(180deg)" : "rotate(0deg)" }}
+        />
+      </button>
+
+      {open && (
+        <div className="border-t border-neutral-100 px-5 py-4 space-y-4">
+          {error && (
+            <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-xl px-3 py-2">
+              {error}
+              <button onClick={() => setError(null)} className="ml-2 text-red-400 hover:text-red-600 text-xs">✕</button>
+            </p>
+          )}
+
+          {/* Lista de categorías */}
+          <div className="space-y-1">
+            {categorias.map(cat => (
+              <div key={cat.id} className="flex items-center gap-3 py-2 border-b border-neutral-50 last:border-0">
+                {editId === cat.id ? (
+                  <>
+                    <div className="flex-1 flex items-center gap-3 flex-wrap">
+                      <input
+                        value={editNombre} onChange={e => setEditNombre(e.target.value)}
+                        autoFocus className={`${inputCls} w-44`} disabled={isPending}
+                      />
+                      <ColorPicker value={editColor} onChange={setEditColor} />
+                      <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${editColor}`}>
+                        {editNombre || "Vista previa"}
+                      </span>
+                    </div>
+                    <div className="flex gap-1 shrink-0">
+                      <button onClick={handleActualizar} disabled={isPending}
+                        className="p-1.5 rounded-lg text-emerald-600 hover:bg-emerald-50 disabled:opacity-40">
+                        <Check className="size-4" />
+                      </button>
+                      <button onClick={() => { setEditId(null); setError(null); }}
+                        className="p-1.5 rounded-lg text-neutral-400 hover:bg-neutral-100">
+                        <X className="size-4" />
+                      </button>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${cat.color}`}>
+                      {cat.nombre}
+                    </span>
+                    <span className="text-xs text-neutral-400 font-mono">{cat.valor}</span>
+                    <div className="flex gap-1 ml-auto shrink-0">
+                      <button onClick={() => startEdit(cat)} disabled={isPending}
+                        className="p-1.5 rounded-lg text-neutral-300 hover:text-neutral-600 hover:bg-neutral-100 transition-colors">
+                        <Pencil className="size-3.5" />
+                      </button>
+                      <button onClick={() => handleEliminar(cat.id, cat.nombre)} disabled={isPending}
+                        className="p-1.5 rounded-lg text-neutral-300 hover:text-red-500 hover:bg-red-50 transition-colors">
+                        <Trash2 className="size-3.5" />
+                      </button>
+                    </div>
+                  </>
+                )}
+              </div>
+            ))}
+          </div>
+
+          {/* Nueva categoría */}
+          <form onSubmit={handleCrear} className="pt-2 border-t border-neutral-100">
+            <p className="text-xs font-semibold text-neutral-500 uppercase tracking-wide mb-3">Nueva categoría</p>
+            <div className="flex flex-wrap gap-3 items-end">
+              <div>
+                <label className="block text-xs text-neutral-500 mb-1">Nombre</label>
+                <input
+                  value={nuevoNombre} onChange={e => setNuevo(e.target.value)}
+                  placeholder="Ej: Especias" required
+                  className={`${inputCls} w-44`} disabled={isPending}
+                />
+              </div>
+              <div>
+                <label className="block text-xs text-neutral-500 mb-1">Color</label>
+                <ColorPicker value={nuevoColor} onChange={setNuevoColor} />
+              </div>
+              {nuevoNombre && (
+                <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${nuevoColor}`}>
+                  {nuevoNombre}
+                </span>
+              )}
+              <button type="submit" disabled={isPending || !nuevoNombre.trim()}
+                className="flex items-center gap-1.5 px-4 py-1.5 bg-[#16233f] text-white text-sm font-medium rounded-xl hover:bg-[#253760] disabled:opacity-40 transition-colors">
+                <Plus className="size-4" />
+                {isPending ? "Guardando…" : "Agregar"}
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ── Mini-form ingreso de stock ────────────────────────────────────────────────
 function IngresoStockForm({ ins, onClose, onError }: {
   ins: Insumo; onClose: () => void; onError: (e: string) => void;
@@ -94,7 +276,7 @@ function IngresoStockForm({ ins, onClose, onError }: {
 
   return (
     <tr className="bg-emerald-50/60">
-      <td colSpan={8} className="px-4 py-3">
+      <td colSpan={9} className="px-4 py-3">
         <form onSubmit={handleSubmit} className="flex items-end gap-3 flex-wrap">
           <div>
             <p className="text-xs font-semibold text-emerald-700 mb-1.5">
@@ -134,7 +316,7 @@ function IngresoStockForm({ ins, onClose, onError }: {
 }
 
 // ── Fila de insumo ─────────────────────────────────────────────────────────────
-function InsumoRow({ ins, onError }: { ins: Insumo; onError: (e: string) => void }) {
+function InsumoRow({ ins, cats, onError }: { ins: Insumo; cats: Categoria[]; onError: (e: string) => void }) {
   const [editing, setEditing]   = useState(false);
   const [ingreso, setIngreso]   = useState(false);
   const [nombre, setNombre]     = useState(ins.nombre);
@@ -157,7 +339,6 @@ function InsumoRow({ ins, onError }: { ins: Insumo; onError: (e: string) => void
     start(async () => {
       const res = await actualizarInsumo(ins.id, fd);
       if ("error" in res) { onError(res.error); resetState(); return; }
-      // Guardar también los campos de stock control
       const rsc = await actualizarStockControl(
         ins.id,
         parseFloat(sMin.replace(",", ".")) || 0,
@@ -213,7 +394,7 @@ function InsumoRow({ ins, onError }: { ins: Insumo; onError: (e: string) => void
           <td className="px-4 py-2">
             <select value={cat} onChange={e => setCat(e.target.value)}
               className={`${inputCls} w-36`} disabled={isPending}>
-              {CATEGORIAS.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
+              {cats.map(c => <option key={c.valor} value={c.valor}>{c.nombre}</option>)}
             </select>
           </td>
           {/* Stock control */}
@@ -262,8 +443,8 @@ function InsumoRow({ ins, onError }: { ins: Insumo; onError: (e: string) => void
         </td>
         <td className="px-4 py-3 text-sm text-neutral-400">{ins.proveedor || "—"}</td>
         <td className="px-4 py-3">
-          <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${catColor(ins.categoria)}`}>
-            {catLabel(ins.categoria)}
+          <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${catColor(ins.categoria, cats)}`}>
+            {catLabel(ins.categoria, cats)}
           </span>
         </td>
         {/* Stock actual con indicador */}
@@ -307,7 +488,7 @@ function InsumoRow({ ins, onError }: { ins: Insumo; onError: (e: string) => void
 }
 
 // ── Formulario nuevo insumo ────────────────────────────────────────────────────
-function NuevoInsumoForm({ onError }: { onError: (e: string) => void }) {
+function NuevoInsumoForm({ cats, onError }: { cats: Categoria[]; onError: (e: string) => void }) {
   const [open, setOpen]       = useState(false);
   const [nombre, setNombre]   = useState("");
   const [unidad, setUnidad]   = useState("gr");
@@ -370,7 +551,7 @@ function NuevoInsumoForm({ onError }: { onError: (e: string) => void }) {
         <label className="block text-xs font-medium text-neutral-500 mb-1">Categoría</label>
         <select value={cat} onChange={e => setCat(e.target.value)} disabled={isPending}
           className="px-3 py-2 text-sm border border-neutral-200 rounded-xl focus:outline-none bg-white">
-          {CATEGORIAS.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
+          {cats.map(c => <option key={c.valor} value={c.valor}>{c.nombre}</option>)}
         </select>
       </div>
       <div className="flex gap-2">
@@ -480,7 +661,7 @@ function ImportadorCSV({ insumos }: { insumos: Insumo[] }) {
 }
 
 // ── Panel alertas de stock ─────────────────────────────────────────────────────
-function AlertasStock({ insumos }: { insumos: Insumo[] }) {
+function AlertasStock({ insumos, cats }: { insumos: Insumo[]; cats: Categoria[] }) {
   const criticos = insumos.filter(i => stockEstado(i) === "critico");
   const pedido   = insumos.filter(i => stockEstado(i) === "pedido");
   if (criticos.length === 0 && pedido.length === 0) return null;
@@ -496,6 +677,9 @@ function AlertasStock({ insumos }: { insumos: Insumo[] }) {
             <div className="flex items-center gap-2">
               <span className="size-2 rounded-full bg-red-500 shrink-0" />
               <span className="text-sm font-medium text-neutral-900">{i.nombre}</span>
+              <span className={`text-xs px-1.5 py-0.5 rounded-full ${catColor(i.categoria, cats)}`}>
+                {catLabel(i.categoria, cats)}
+              </span>
             </div>
             <div className="text-xs text-right">
               <span className="font-mono text-red-600 font-semibold">{fmtNum(i.stock_actual, i.unidad)}</span>
@@ -508,6 +692,9 @@ function AlertasStock({ insumos }: { insumos: Insumo[] }) {
             <div className="flex items-center gap-2">
               <span className="size-2 rounded-full bg-amber-400 shrink-0" />
               <span className="text-sm text-neutral-700">{i.nombre}</span>
+              <span className={`text-xs px-1.5 py-0.5 rounded-full ${catColor(i.categoria, cats)}`}>
+                {catLabel(i.categoria, cats)}
+              </span>
             </div>
             <div className="text-xs text-right">
               <span className="font-mono text-amber-700 font-semibold">{fmtNum(i.stock_actual, i.unidad)}</span>
@@ -521,7 +708,7 @@ function AlertasStock({ insumos }: { insumos: Insumo[] }) {
 }
 
 // ── Componente principal ───────────────────────────────────────────────────────
-export function InsumosClient({ insumos }: { insumos: Insumo[] }) {
+export function InsumosClient({ insumos, categorias }: { insumos: Insumo[]; categorias: Categoria[] }) {
   const [error, setError]         = useState<string | null>(null);
   const [busqueda, setBusqueda]   = useState("");
   const [catFiltro, setCatFiltro] = useState("");
@@ -532,25 +719,24 @@ export function InsumosClient({ insumos }: { insumos: Insumo[] }) {
     const q = busqueda.toLowerCase();
     return i.nombre.toLowerCase().includes(q)
       || (i.proveedor ?? "").toLowerCase().includes(q)
-      || catLabel(i.categoria).toLowerCase().includes(q);
+      || catLabel(i.categoria, categorias).toLowerCase().includes(q);
   });
 
-  // Agrupar por categoría (solo cuando no hay filtro de categoría activo)
+  // Agrupar por categoría cuando no hay filtros activos
   const grupos: { cat: string; items: Insumo[] }[] = [];
   if (!catFiltro && !busqueda) {
-    const orden = CATEGORIAS.map(c => c.value);
+    const ordenCats = categorias.map(c => c.valor);
     const agrupado: Record<string, Insumo[]> = {};
     for (const ins of filtrados) {
       const k = ins.categoria || "otros";
       if (!agrupado[k]) agrupado[k] = [];
       agrupado[k].push(ins);
     }
-    for (const cat of orden) {
-      if (agrupado[cat]?.length) grupos.push({ cat, items: agrupado[cat] });
+    for (const cv of ordenCats) {
+      if (agrupado[cv]?.length) grupos.push({ cat: cv, items: agrupado[cv] });
     }
-    // Categorías que no están en la lista predefinida
-    for (const [cat, items] of Object.entries(agrupado)) {
-      if (!orden.includes(cat)) grupos.push({ cat, items });
+    for (const [cv, items] of Object.entries(agrupado)) {
+      if (!ordenCats.includes(cv)) grupos.push({ cat: cv, items });
     }
   } else {
     grupos.push({ cat: "", items: filtrados });
@@ -558,7 +744,7 @@ export function InsumosClient({ insumos }: { insumos: Insumo[] }) {
 
   return (
     <div className="space-y-5">
-      <NuevoInsumoForm onError={setError} />
+      <NuevoInsumoForm cats={categorias} onError={setError} />
 
       {error && (
         <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-xl px-4 py-3">
@@ -567,7 +753,8 @@ export function InsumosClient({ insumos }: { insumos: Insumo[] }) {
         </p>
       )}
 
-      <AlertasStock insumos={insumos} />
+      <AlertasStock insumos={insumos} cats={categorias} />
+      <GestorCategorias categorias={categorias} />
       <ImportadorCSV insumos={insumos} />
 
       <div className="bg-white rounded-2xl border border-neutral-200 overflow-hidden">
@@ -581,7 +768,7 @@ export function InsumosClient({ insumos }: { insumos: Insumo[] }) {
               className="text-sm border border-neutral-200 rounded-xl px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-[#16233f]/20 bg-white"
             >
               <option value="">Todas las categorías</option>
-              {CATEGORIAS.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
+              {categorias.map(c => <option key={c.valor} value={c.valor}>{c.nombre}</option>)}
             </select>
             <input
               value={busqueda} onChange={e => setBusqueda(e.target.value)}
@@ -619,15 +806,17 @@ export function InsumosClient({ insumos }: { insumos: Insumo[] }) {
                     {cat && (
                       <tr className="bg-neutral-50/70">
                         <td colSpan={9} className="px-4 py-2">
-                          <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${catColor(cat)}`}>
-                            {catLabel(cat)}
+                          <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${catColor(cat, categorias)}`}>
+                            {catLabel(cat, categorias)}
                           </span>
-                          <span className="text-xs text-neutral-400 ml-2">{items.length} ítem{items.length !== 1 ? "s" : ""}</span>
+                          <span className="text-xs text-neutral-400 ml-2">
+                            {items.length} ítem{items.length !== 1 ? "s" : ""}
+                          </span>
                         </td>
                       </tr>
                     )}
                     {items.map(ins => (
-                      <InsumoRow key={ins.id} ins={ins} onError={setError} />
+                      <InsumoRow key={ins.id} ins={ins} cats={categorias} onError={setError} />
                     ))}
                   </Fragment>
                 ))}

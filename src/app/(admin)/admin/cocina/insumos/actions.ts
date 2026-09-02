@@ -11,6 +11,8 @@ function revalidateAll() {
   revalidatePath("/admin/cocina/compras");
 }
 
+// ── Insumos CRUD ───────────────────────────────────────────────────────────────
+
 export async function crearInsumo(formData: FormData): Promise<Result> {
   const nombre    = (formData.get("nombre") as string)?.trim();
   const unidad    = (formData.get("unidad") as string)?.trim() || "gr";
@@ -62,7 +64,6 @@ export async function actualizarInsumo(id: string, formData: FormData): Promise<
 export async function eliminarInsumo(id: string): Promise<Result> {
   const db = createAdminClient() as any;
 
-  // Verificar que no esté en uso en ninguna receta
   const { data: uso } = await db
     .from("recipe_ingredients")
     .select("id")
@@ -131,12 +132,84 @@ export async function actualizarStockControl(
   return { ok: true };
 }
 
+// ── Categorías CRUD ────────────────────────────────────────────────────────────
+
+export type Categoria = {
+  id: string;
+  nombre: string;
+  valor: string;
+  color: string;
+  orden: number;
+};
+
+function slugify(s: string): string {
+  return s.toLowerCase()
+    .normalize("NFD").replace(/\p{M}/gu, "")
+    .replace(/[^a-z0-9]+/g, "_")
+    .replace(/^_+|_+$/g, "")
+    .slice(0, 60);
+}
+
+export async function getCategorias(): Promise<Categoria[]> {
+  const db = createAdminClient() as any;
+  const { data } = await db
+    .from("categorias_insumos")
+    .select("id, nombre, valor, color, orden")
+    .order("orden")
+    .order("nombre");
+  return (data ?? []) as Categoria[];
+}
+
+export async function crearCategoria(nombre: string, color: string): Promise<Result> {
+  const nom = nombre.trim();
+  if (!nom) return { error: "El nombre es requerido" };
+  const valor = slugify(nom);
+  if (!valor) return { error: "Nombre inválido" };
+
+  const db = createAdminClient() as any;
+  const { error } = await db.from("categorias_insumos").insert({ nombre: nom, valor, color });
+  if (error) {
+    if (error.code === "23505") return { error: `Ya existe una categoría con ese nombre.` };
+    return { error: error.message };
+  }
+  revalidateAll();
+  return { ok: true };
+}
+
+export async function actualizarCategoria(id: string, nombre: string, color: string): Promise<Result> {
+  const nom = nombre.trim();
+  if (!nom) return { error: "El nombre es requerido" };
+
+  const db = createAdminClient() as any;
+  const { error } = await db.from("categorias_insumos").update({ nombre: nom, color }).eq("id", id);
+  if (error) return { error: error.message };
+  revalidateAll();
+  return { ok: true };
+}
+
+export async function eliminarCategoria(id: string): Promise<Result> {
+  const db = createAdminClient() as any;
+
+  // Verificar que no haya insumos usando esta categoría
+  const { data: cat } = await db.from("categorias_insumos").select("valor").eq("id", id).single();
+  if (!cat) return { error: "Categoría no encontrada" };
+
+  const { data: uso } = await db
+    .from("insumos")
+    .select("id")
+    .eq("categoria", cat.valor)
+    .limit(1);
+
+  if (uso && uso.length > 0)
+    return { error: "Esta categoría tiene insumos asignados. Reasignalos antes de eliminarla." };
+
+  const { error } = await db.from("categorias_insumos").delete().eq("id", id);
+  if (error) return { error: error.message };
+  revalidateAll();
+  return { ok: true };
+}
+
 // ── Importador CSV ─────────────────────────────────────────────────────────────
-// Formato esperado: dos columnas, con o sin header.
-// Separadores soportados: coma, punto y coma, tabulación.
-// Columnas: nombre | precio_unitario
-// Match por nombre case-insensitive. Solo actualiza insumos existentes.
-// Devuelve resumen: actualizados, no encontrados.
 
 export type ImportResult = {
   ok: true;
@@ -151,17 +224,15 @@ export async function importarPreciosCSV(csvText: string): Promise<ImportResult>
   const lines = csvText.trim().split(/\r?\n/).filter(Boolean);
   if (lines.length === 0) return { error: "No se encontraron filas." };
 
-  // Detectar separador
   const firstLine = lines[0];
   const sep = firstLine.includes(";") ? ";" : firstLine.includes("\t") ? "\t" : ",";
 
-  // Parsear filas: ignorar header si la segunda columna no es numérica
   const rows: { nombre: string; precio: number }[] = [];
   for (const line of lines) {
     const parts = line.split(sep).map(s => s.trim().replace(/^["']|["']$/g, ""));
     if (parts.length < 2) continue;
     const precio = parseFloat(parts[1].replace(",", ".").replace(/\./g, (m, i, s) => i === s.lastIndexOf(".") ? "." : ""));
-    if (isNaN(precio)) continue; // Skip header o filas no numéricas
+    if (isNaN(precio)) continue;
     if (!parts[0]) continue;
     rows.push({ nombre: parts[0], precio });
   }
@@ -171,7 +242,6 @@ export async function importarPreciosCSV(csvText: string): Promise<ImportResult>
 
   const db = createAdminClient() as any;
 
-  // Traer todos los insumos para matchear por nombre
   const { data: todos } = await db.from("insumos").select("id, nombre");
   const mapaInsumos: Record<string, string> = {};
   for (const ins of (todos ?? []) as { id: string; nombre: string }[]) {

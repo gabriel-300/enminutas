@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { createClient, createAdminClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
+import { getCategorias } from "./actions";
 import { InsumosClient, type Insumo } from "./insumos-client";
 
 export const metadata: Metadata = { title: "Insumos — Cocina En Minutas" };
@@ -14,21 +15,25 @@ export default async function InsumosPage() {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
-  const { data: raw } = await adminClient
-    .from("insumos")
-    .select("id, nombre, unidad, precio_unitario, proveedor, updated_at, stock_actual, stock_minimo, punto_pedido, stock_maximo, categoria")
-    .order("nombre");
+  const [rawInsumos, categorias] = await Promise.all([
+    adminClient
+      .from("insumos")
+      .select("id, nombre, unidad, precio_unitario, proveedor, updated_at, stock_actual, stock_minimo, punto_pedido, stock_maximo, categoria")
+      .order("nombre")
+      .then(({ data }: { data: any[] | null }) => data ?? []),
+    getCategorias(),
+  ]);
 
-  const insumos = ((raw ?? []) as any[]).map(i => ({
+  const insumos = (rawInsumos as any[]).map(i => ({
     ...i,
-    stock_actual:  Number(i.stock_actual  ?? 0),
-    stock_minimo:  Number(i.stock_minimo  ?? 0),
-    punto_pedido:  Number(i.punto_pedido  ?? 0),
-    stock_maximo:  Number(i.stock_maximo  ?? 0),
+    stock_actual: Number(i.stock_actual ?? 0),
+    stock_minimo: Number(i.stock_minimo ?? 0),
+    punto_pedido: Number(i.punto_pedido ?? 0),
+    stock_maximo: Number(i.stock_maximo ?? 0),
   })) as Insumo[];
 
   return (
-    <div className="p-4 md:p-8 max-w-4xl">
+    <div className="p-4 md:p-8 max-w-5xl">
       <div className="mb-6">
         <Link href="/admin/cocina" className="text-sm text-neutral-400 hover:text-neutral-700 mb-2 inline-block">
           ← Cocina
@@ -39,18 +44,7 @@ export default async function InsumosPage() {
         </p>
       </div>
 
-      <div className="mb-5 p-4 bg-neutral-50 rounded-2xl border border-neutral-200 text-xs text-neutral-500 space-y-1">
-        <p className="font-semibold text-neutral-600">Formato del CSV para importar precios:</p>
-        <p className="font-mono bg-white border border-neutral-200 rounded-lg px-3 py-2 text-neutral-700">
-          nombre,precio<br />
-          Harina 000,1850<br />
-          Huevo,320<br />
-          Mozzarella,8200
-        </p>
-        <p>El nombre debe coincidir exactamente con el catálogo (sin distinción de mayúsculas). Solo actualiza insumos existentes.</p>
-      </div>
-
-      <InsumosClient insumos={insumos} />
+      <InsumosClient insumos={insumos} categorias={categorias} />
     </div>
   );
 }
