@@ -21,10 +21,12 @@ export default async function CocinaPage() {
     .in("status", ["aprobado", "enviado_prod"]);
   const pendingIds = (rawPendingOrders ?? []).map((o: any) => o.id as string);
 
-  const [{ data: rawProducts }, { data: rawPendingLines }, { data: rawRecipes }] = await Promise.all([
+  const hoy = new Date().toISOString().slice(0, 10);
+
+  const [{ data: rawProducts }, { data: rawPendingLines }, { data: rawRecipes }, { data: rawLotes }] = await Promise.all([
     adminClient
       .from("products")
-      .select("id, name, sku, unit_label, bolsas_caja, stock_cajas, stock_minimo, category:categories!category_id (name)")
+      .select("id, name, sku, unit_label, bolsas_caja, stock_minimo, category:categories!category_id (name)")
       .eq("is_active", true)
       .order("name"),
 
@@ -36,9 +38,23 @@ export default async function CocinaPage() {
     adminClient
       .from("recipes")
       .select("product_id, yield_cajas, steps:recipe_steps (minutes)"),
+
+    // Stock real: suma de lotes activos no vencidos
+    adminClient
+      .from("lotes")
+      .select("producto_id, cantidad_actual")
+      .eq("activo", true)
+      .gt("cantidad_actual", 0)
+      .or(`fecha_vencimiento.is.null,fecha_vencimiento.gte.${hoy}`),
   ]);
 
   const products = (rawProducts ?? []) as any[];
+
+  // Stock disponible por producto (desde lotes, igual que Control de Stock)
+  const stockMap: Record<string, number> = {};
+  for (const l of (rawLotes ?? []) as any[]) {
+    stockMap[l.producto_id] = (stockMap[l.producto_id] ?? 0) + Number(l.cantidad_actual);
+  }
 
   // Demanda pendiente por producto
   const demandaMap: Record<string, number> = {};
@@ -56,7 +72,7 @@ export default async function CocinaPage() {
 
   const items = products.map((p: any) => {
     const receta = recetaMap[p.id] ?? null;
-    const stock  = p.stock_cajas ?? 0;
+    const stock  = stockMap[p.id] ?? 0;  // stock real desde lotes
     const minimo = p.stock_minimo ?? 0;
     const demanda = demandaMap[p.id] ?? 0;
     const necesita = Math.max(minimo - stock + demanda, 0);
