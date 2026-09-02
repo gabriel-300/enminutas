@@ -16,7 +16,7 @@ export default async function InsumosPage() {
 
   const { data: raw } = await adminClient
     .from("insumos")
-    .select("id, nombre, unidad, precio_unitario, proveedor, updated_at, stock_actual, stock_minimo, punto_pedido, stock_maximo")
+    .select("id, nombre, unidad, precio_unitario, proveedor, updated_at, stock_actual, stock_minimo, punto_pedido, stock_maximo, categoria")
     .order("nombre");
 
   const insumos = ((raw ?? []) as any[]).map(i => ({

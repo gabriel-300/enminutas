@@ -12,16 +12,17 @@ function revalidateAll() {
 }
 
 export async function crearInsumo(formData: FormData): Promise<Result> {
-  const nombre  = (formData.get("nombre") as string)?.trim();
-  const unidad  = (formData.get("unidad") as string)?.trim() || "gr";
-  const precio  = parseFloat((formData.get("precio_unitario") as string)?.replace(",", ".")) || 0;
-  const proveed = (formData.get("proveedor") as string)?.trim() || null;
-  const notas   = (formData.get("notas") as string)?.trim() || null;
+  const nombre    = (formData.get("nombre") as string)?.trim();
+  const unidad    = (formData.get("unidad") as string)?.trim() || "gr";
+  const precio    = parseFloat((formData.get("precio_unitario") as string)?.replace(",", ".")) || 0;
+  const proveed   = (formData.get("proveedor") as string)?.trim() || null;
+  const notas     = (formData.get("notas") as string)?.trim() || null;
+  const categoria = (formData.get("categoria") as string)?.trim() || "otros";
 
   if (!nombre) return { error: "El nombre es requerido" };
 
   const db = createAdminClient() as any;
-  const { error } = await db.from("insumos").insert({ nombre, unidad, precio_unitario: precio, proveedor: proveed, notas });
+  const { error } = await db.from("insumos").insert({ nombre, unidad, precio_unitario: precio, proveedor: proveed, notas, categoria });
   if (error) {
     if (error.code === "23505") return { error: `Ya existe un insumo llamado "${nombre}".` };
     return { error: error.message };
@@ -39,16 +40,17 @@ export async function actualizarPrecioInsumo(id: string, precio: number): Promis
 }
 
 export async function actualizarInsumo(id: string, formData: FormData): Promise<Result> {
-  const nombre  = (formData.get("nombre") as string)?.trim();
-  const unidad  = (formData.get("unidad") as string)?.trim() || "gr";
-  const precio  = parseFloat((formData.get("precio_unitario") as string)?.replace(",", ".")) || 0;
-  const proveed = (formData.get("proveedor") as string)?.trim() || null;
-  const notas   = (formData.get("notas") as string)?.trim() || null;
+  const nombre    = (formData.get("nombre") as string)?.trim();
+  const unidad    = (formData.get("unidad") as string)?.trim() || "gr";
+  const precio    = parseFloat((formData.get("precio_unitario") as string)?.replace(",", ".")) || 0;
+  const proveed   = (formData.get("proveedor") as string)?.trim() || null;
+  const notas     = (formData.get("notas") as string)?.trim() || null;
+  const categoria = (formData.get("categoria") as string)?.trim() || "otros";
 
   if (!nombre) return { error: "El nombre es requerido" };
 
   const db = createAdminClient() as any;
-  const { error } = await db.from("insumos").update({ nombre, unidad, precio_unitario: precio, proveedor: proveed, notas }).eq("id", id);
+  const { error } = await db.from("insumos").update({ nombre, unidad, precio_unitario: precio, proveedor: proveed, notas, categoria }).eq("id", id);
   if (error) {
     if (error.code === "23505") return { error: `Ya existe un insumo llamado "${nombre}".` };
     return { error: error.message };

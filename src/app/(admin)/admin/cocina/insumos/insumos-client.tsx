@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition, useRef } from "react";
+import { useState, useTransition, useRef, Fragment } from "react";
 import { Pencil, Trash2, Check, X, Upload, Plus, PackagePlus } from "lucide-react";
 import {
   crearInsumo, actualizarInsumo, eliminarInsumo, importarPreciosCSV,
@@ -16,9 +16,29 @@ export type Insumo = {
   stock_minimo: number;
   punto_pedido: number;
   stock_maximo: number;
+  categoria: string;
 };
 
 const UNIDADES = ["gr", "kg", "ml", "l", "u", "cc", "taza", "cdita", "cda"];
+
+const CATEGORIAS: { value: string; label: string; color: string }[] = [
+  { value: "verduras",      label: "Verduras",        color: "bg-green-100 text-green-700" },
+  { value: "frutas",        label: "Frutas",           color: "bg-orange-100 text-orange-700" },
+  { value: "carnes",        label: "Carnes",           color: "bg-red-100 text-red-700" },
+  { value: "lacteos",       label: "Lácteos",          color: "bg-sky-100 text-sky-700" },
+  { value: "panificados",   label: "Panificados",      color: "bg-amber-100 text-amber-700" },
+  { value: "condimentos",   label: "Condimentos",      color: "bg-purple-100 text-purple-700" },
+  { value: "aceites_grasas",label: "Aceites y grasas", color: "bg-yellow-100 text-yellow-700" },
+  { value: "bebidas",       label: "Bebidas",          color: "bg-cyan-100 text-cyan-700" },
+  { value: "otros",         label: "Otros",            color: "bg-neutral-100 text-neutral-500" },
+];
+
+function catLabel(value: string) {
+  return CATEGORIAS.find(c => c.value === value)?.label ?? value;
+}
+function catColor(value: string) {
+  return CATEGORIAS.find(c => c.value === value)?.color ?? "bg-neutral-100 text-neutral-500";
+}
 
 const fmtPrecio = (n: number) =>
   new Intl.NumberFormat("es-AR", { style: "currency", currency: "ARS", maximumFractionDigits: 4 }).format(n);
@@ -121,6 +141,7 @@ function InsumoRow({ ins, onError }: { ins: Insumo; onError: (e: string) => void
   const [unidad, setUnidad]     = useState(ins.unidad);
   const [precio, setPrecio]     = useState(String(ins.precio_unitario));
   const [proveed, setProveed]   = useState(ins.proveedor ?? "");
+  const [cat, setCat]           = useState(ins.categoria || "otros");
   const [sMin, setSMin]         = useState(String(ins.stock_minimo));
   const [sPed, setSPed]         = useState(String(ins.punto_pedido));
   const [sMax, setSMax]         = useState(String(ins.stock_maximo));
@@ -132,6 +153,7 @@ function InsumoRow({ ins, onError }: { ins: Insumo; onError: (e: string) => void
     const fd = new FormData();
     fd.set("nombre", nombre); fd.set("unidad", unidad);
     fd.set("precio_unitario", precio); fd.set("proveedor", proveed);
+    fd.set("categoria", cat);
     start(async () => {
       const res = await actualizarInsumo(ins.id, fd);
       if ("error" in res) { onError(res.error); resetState(); return; }
@@ -150,6 +172,7 @@ function InsumoRow({ ins, onError }: { ins: Insumo; onError: (e: string) => void
   function resetState() {
     setNombre(ins.nombre); setUnidad(ins.unidad);
     setPrecio(String(ins.precio_unitario)); setProveed(ins.proveedor ?? "");
+    setCat(ins.categoria || "otros");
     setSMin(String(ins.stock_minimo)); setSPed(String(ins.punto_pedido)); setSMax(String(ins.stock_maximo));
   }
 
@@ -186,6 +209,12 @@ function InsumoRow({ ins, onError }: { ins: Insumo; onError: (e: string) => void
           <td className="px-4 py-2">
             <input value={proveed} onChange={e => setProveed(e.target.value)}
               className={`${inputCls} w-full`} disabled={isPending} placeholder="Proveedor (opcional)" />
+          </td>
+          <td className="px-4 py-2">
+            <select value={cat} onChange={e => setCat(e.target.value)}
+              className={`${inputCls} w-36`} disabled={isPending}>
+              {CATEGORIAS.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
+            </select>
           </td>
           {/* Stock control */}
           <td className="px-4 py-2">
@@ -232,6 +261,11 @@ function InsumoRow({ ins, onError }: { ins: Insumo; onError: (e: string) => void
           {fmtPrecio(ins.precio_unitario)}
         </td>
         <td className="px-4 py-3 text-sm text-neutral-400">{ins.proveedor || "—"}</td>
+        <td className="px-4 py-3">
+          <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${catColor(ins.categoria)}`}>
+            {catLabel(ins.categoria)}
+          </span>
+        </td>
         {/* Stock actual con indicador */}
         <td className="px-4 py-3">
           <div className="flex items-center gap-1.5">
@@ -279,6 +313,7 @@ function NuevoInsumoForm({ onError }: { onError: (e: string) => void }) {
   const [unidad, setUnidad]   = useState("gr");
   const [precio, setPrecio]   = useState("");
   const [proveed, setProveed] = useState("");
+  const [cat, setCat]         = useState("otros");
   const [isPending, start]    = useTransition();
 
   function handleSubmit(e: React.FormEvent) {
@@ -286,10 +321,11 @@ function NuevoInsumoForm({ onError }: { onError: (e: string) => void }) {
     const fd = new FormData();
     fd.set("nombre", nombre); fd.set("unidad", unidad);
     fd.set("precio_unitario", precio); fd.set("proveedor", proveed);
+    fd.set("categoria", cat);
     start(async () => {
       const res = await crearInsumo(fd);
       if ("error" in res) { onError(res.error); return; }
-      setNombre(""); setPrecio(""); setProveed(""); setOpen(false);
+      setNombre(""); setPrecio(""); setProveed(""); setCat("otros"); setOpen(false);
     });
   }
 
@@ -329,6 +365,13 @@ function NuevoInsumoForm({ onError }: { onError: (e: string) => void }) {
         <input value={proveed} onChange={e => setProveed(e.target.value)}
           placeholder="Opcional" disabled={isPending}
           className="w-full px-3 py-2 text-sm border border-neutral-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#16233f]/20" />
+      </div>
+      <div>
+        <label className="block text-xs font-medium text-neutral-500 mb-1">Categoría</label>
+        <select value={cat} onChange={e => setCat(e.target.value)} disabled={isPending}
+          className="px-3 py-2 text-sm border border-neutral-200 rounded-xl focus:outline-none bg-white">
+          {CATEGORIAS.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
+        </select>
       </div>
       <div className="flex gap-2">
         <button type="submit" disabled={isPending || !nombre.trim()}
@@ -479,14 +522,39 @@ function AlertasStock({ insumos }: { insumos: Insumo[] }) {
 
 // ── Componente principal ───────────────────────────────────────────────────────
 export function InsumosClient({ insumos }: { insumos: Insumo[] }) {
-  const [error, setError]       = useState<string | null>(null);
-  const [busqueda, setBusqueda] = useState("");
+  const [error, setError]         = useState<string | null>(null);
+  const [busqueda, setBusqueda]   = useState("");
+  const [catFiltro, setCatFiltro] = useState("");
 
-  const filtrados = insumos.filter(i =>
-    !busqueda ||
-    i.nombre.toLowerCase().includes(busqueda.toLowerCase()) ||
-    (i.proveedor ?? "").toLowerCase().includes(busqueda.toLowerCase())
-  );
+  const filtrados = insumos.filter(i => {
+    if (catFiltro && i.categoria !== catFiltro) return false;
+    if (!busqueda) return true;
+    const q = busqueda.toLowerCase();
+    return i.nombre.toLowerCase().includes(q)
+      || (i.proveedor ?? "").toLowerCase().includes(q)
+      || catLabel(i.categoria).toLowerCase().includes(q);
+  });
+
+  // Agrupar por categoría (solo cuando no hay filtro de categoría activo)
+  const grupos: { cat: string; items: Insumo[] }[] = [];
+  if (!catFiltro && !busqueda) {
+    const orden = CATEGORIAS.map(c => c.value);
+    const agrupado: Record<string, Insumo[]> = {};
+    for (const ins of filtrados) {
+      const k = ins.categoria || "otros";
+      if (!agrupado[k]) agrupado[k] = [];
+      agrupado[k].push(ins);
+    }
+    for (const cat of orden) {
+      if (agrupado[cat]?.length) grupos.push({ cat, items: agrupado[cat] });
+    }
+    // Categorías que no están en la lista predefinida
+    for (const [cat, items] of Object.entries(agrupado)) {
+      if (!orden.includes(cat)) grupos.push({ cat, items });
+    }
+  } else {
+    grupos.push({ cat: "", items: filtrados });
+  }
 
   return (
     <div className="space-y-5">
@@ -503,15 +571,24 @@ export function InsumosClient({ insumos }: { insumos: Insumo[] }) {
       <ImportadorCSV insumos={insumos} />
 
       <div className="bg-white rounded-2xl border border-neutral-200 overflow-hidden">
-        <div className="px-5 py-3 border-b border-neutral-100 flex items-center justify-between gap-3">
+        <div className="px-5 py-3 border-b border-neutral-100 flex items-center justify-between gap-3 flex-wrap">
           <p className="text-sm font-semibold text-neutral-800">
             Catálogo <span className="font-normal text-neutral-400">({insumos.length})</span>
           </p>
-          <input
-            value={busqueda} onChange={e => setBusqueda(e.target.value)}
-            placeholder="Buscar…"
-            className="text-sm border border-neutral-200 rounded-xl px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-[#16233f]/20 w-48"
-          />
+          <div className="flex gap-2 flex-wrap">
+            <select
+              value={catFiltro} onChange={e => setCatFiltro(e.target.value)}
+              className="text-sm border border-neutral-200 rounded-xl px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-[#16233f]/20 bg-white"
+            >
+              <option value="">Todas las categorías</option>
+              {CATEGORIAS.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
+            </select>
+            <input
+              value={busqueda} onChange={e => setBusqueda(e.target.value)}
+              placeholder="Buscar…"
+              className="text-sm border border-neutral-200 rounded-xl px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-[#16233f]/20 w-40"
+            />
+          </div>
         </div>
 
         {filtrados.length === 0 ? (
@@ -529,6 +606,7 @@ export function InsumosClient({ insumos }: { insumos: Insumo[] }) {
                   <th className="px-4 py-3 text-xs font-semibold text-neutral-400 uppercase tracking-wide">Unidad</th>
                   <th className="px-4 py-3 text-xs font-semibold text-neutral-400 uppercase tracking-wide text-right">Precio / u.</th>
                   <th className="px-4 py-3 text-xs font-semibold text-neutral-400 uppercase tracking-wide">Proveedor</th>
+                  <th className="px-4 py-3 text-xs font-semibold text-neutral-400 uppercase tracking-wide">Categoría</th>
                   <th className="px-4 py-3 text-xs font-semibold text-neutral-400 uppercase tracking-wide">Stock actual</th>
                   <th className="px-4 py-3 text-xs font-semibold text-neutral-400 uppercase tracking-wide">Mínimo</th>
                   <th className="px-4 py-3 text-xs font-semibold text-neutral-400 uppercase tracking-wide">Pto. pedido</th>
@@ -536,8 +614,22 @@ export function InsumosClient({ insumos }: { insumos: Insumo[] }) {
                 </tr>
               </thead>
               <tbody className="divide-y divide-neutral-50">
-                {filtrados.map(ins => (
-                  <InsumoRow key={ins.id} ins={ins} onError={setError} />
+                {grupos.map(({ cat, items }) => (
+                  <Fragment key={cat || "all"}>
+                    {cat && (
+                      <tr className="bg-neutral-50/70">
+                        <td colSpan={9} className="px-4 py-2">
+                          <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${catColor(cat)}`}>
+                            {catLabel(cat)}
+                          </span>
+                          <span className="text-xs text-neutral-400 ml-2">{items.length} ítem{items.length !== 1 ? "s" : ""}</span>
+                        </td>
+                      </tr>
+                    )}
+                    {items.map(ins => (
+                      <InsumoRow key={ins.id} ins={ins} onError={setError} />
+                    ))}
+                  </Fragment>
                 ))}
               </tbody>
             </table>
