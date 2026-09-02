@@ -63,7 +63,7 @@ export async function getProductosConReceta(): Promise<ProductoConReceta[]> {
   const { data: products } = await db
     .from("products")
     .select("id, name, sku, bolsas_caja")
-    .eq("activo", true)
+    .eq("is_active", true)
     .order("name");
 
   if (!products?.length) return [];
