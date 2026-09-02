@@ -76,6 +76,59 @@ export async function eliminarInsumo(id: string): Promise<Result> {
   return { ok: true };
 }
 
+// ── Stock ──────────────────────────────────────────────────────────────────────
+
+export async function ingresarStock(
+  insumoId: string,
+  cantidad: number,
+  notas: string | null,
+): Promise<Result> {
+  if (cantidad <= 0) return { error: "La cantidad debe ser mayor a 0" };
+  const db = createAdminClient() as any;
+  const { data: cur } = await db.from("insumos").select("stock_actual").eq("id", insumoId).single();
+  const nuevo = Number(cur?.stock_actual ?? 0) + cantidad;
+  const { error } = await db.from("insumos").update({ stock_actual: nuevo }).eq("id", insumoId);
+  if (error) return { error: error.message };
+  await db.from("insumos_movimientos").insert({
+    insumo_id: insumoId, tipo: "ingreso", cantidad, motivo: "compra", notas: notas || null,
+  });
+  revalidateAll();
+  return { ok: true };
+}
+
+export async function ajustarStock(
+  insumoId: string,
+  stockNuevo: number,
+  notas: string | null,
+): Promise<Result> {
+  const db = createAdminClient() as any;
+  const { data: cur } = await db.from("insumos").select("stock_actual").eq("id", insumoId).single();
+  const delta = stockNuevo - Number(cur?.stock_actual ?? 0);
+  const { error } = await db.from("insumos").update({ stock_actual: stockNuevo }).eq("id", insumoId);
+  if (error) return { error: error.message };
+  await db.from("insumos_movimientos").insert({
+    insumo_id: insumoId, tipo: "ajuste", cantidad: delta,
+    motivo: "ajuste_manual", notas: notas || null,
+  });
+  revalidateAll();
+  return { ok: true };
+}
+
+export async function actualizarStockControl(
+  insumoId: string,
+  stockMinimo: number,
+  puntoPedido: number,
+  stockMaximo: number,
+): Promise<Result> {
+  const db = createAdminClient() as any;
+  const { error } = await db.from("insumos")
+    .update({ stock_minimo: stockMinimo, punto_pedido: puntoPedido, stock_maximo: stockMaximo })
+    .eq("id", insumoId);
+  if (error) return { error: error.message };
+  revalidateAll();
+  return { ok: true };
+}
+
 // ── Importador CSV ─────────────────────────────────────────────────────────────
 // Formato esperado: dos columnas, con o sin header.
 // Separadores soportados: coma, punto y coma, tabulación.

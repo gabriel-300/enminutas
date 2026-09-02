@@ -10,7 +10,7 @@ import {
   Users, UserCheck, GitBranch, BarChart2, TrendingUp, Target, Tag, Gift,
   Package, Layers, BookOpen, Calendar, ShoppingCart, Clock, Database,
   FileText, CreditCard, RotateCcw, CheckSquare, DollarSign,
-  Settings, HelpCircle, ChefHat,
+  Settings, HelpCircle, ChefHat, Factory,
   ChevronLeft, ChevronRight, ChevronDown,
 } from "lucide-react";
 
@@ -67,7 +67,8 @@ const SECTIONS: { label?: string; key?: string; items: NavEntry[] }[] = [
       { href: "/admin/stock",                label: "Stock",            icon: Package,      roles: ["admin", "produccion"] },
       { href: "/admin/lotes",                label: "Lotes",            icon: Layers,       roles: ["admin", "produccion"] },
       { href: "/admin/cocina/insumos",        label: "Insumos",          icon: Database,     roles: ["admin", "produccion"] },
-      { href: "/admin/cocina/recetas",       label: "Recetas",          icon: BookOpen,     roles: ["admin", "produccion"] },
+      { href: "/admin/cocina/recetas",        label: "Recetas",          icon: BookOpen,     roles: ["admin", "produccion"] },
+      { href: "/admin/cocina/produccion",    label: "Producción",       icon: Factory,      roles: ["admin", "produccion"] },
       { href: "/admin/cocina/planificador",  label: "Planificador",     icon: Calendar,     roles: ["admin", "produccion"] },
       { href: "/admin/cocina/compras",       label: "Lista de compras", icon: ShoppingCart, roles: ["admin", "produccion"] },
       { href: "/admin/cocina/historial",     label: "Historial prod.",  icon: Clock,        roles: ["admin", "produccion"] },
