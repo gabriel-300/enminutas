@@ -129,15 +129,30 @@ export async function registrarRecepcion(
   return { ok: true, id: rec.id };
 }
 
+export type RecepcionItem = {
+  id: string;
+  insumo_id: string;
+  insumo_nombre: string;
+  cantidad: number;
+  unidad: string;
+  precio_unitario: number;
+  iva_pct: number;
+  fecha_vencimiento: string | null;
+  subtotal_neto: number;
+  subtotal_civa: number;
+};
+
 export type RecepcionHistorial = {
   id: string;
   tipo: string;
   numero: string;
   proveedor: string;
   fecha: string;
+  notas: string | null;
   total: number | null;
+  otros_impuestos: number;
   created_at: string;
-  items_count: number;
+  items: RecepcionItem[];
 };
 
 export async function getHistorialRecepciones(limit = 30): Promise<RecepcionHistorial[]> {
@@ -145,7 +160,7 @@ export async function getHistorialRecepciones(limit = 30): Promise<RecepcionHist
 
   const { data } = await db
     .from("recepciones")
-    .select("id, tipo, numero, proveedor, fecha, total, created_at")
+    .select("id, tipo, numero, proveedor, fecha, notas, total, otros_impuestos, created_at")
     .order("fecha", { ascending: false })
     .order("created_at", { ascending: false })
     .limit(limit);
@@ -153,24 +168,43 @@ export async function getHistorialRecepciones(limit = 30): Promise<RecepcionHist
   if (!data?.length) return [];
 
   const ids = (data as any[]).map((r: any) => r.id);
-  const { data: counts } = await db
+  const { data: itemsRaw } = await db
     .from("recepciones_items")
-    .select("recepcion_id")
+    .select("id, recepcion_id, insumo_id, cantidad, unidad, precio_unitario, iva_pct, fecha_vencimiento, insumo:insumos!insumo_id(nombre)")
     .in("recepcion_id", ids);
 
-  const countMap: Record<string, number> = {};
-  for (const c of (counts ?? []) as any[]) {
-    countMap[c.recepcion_id] = (countMap[c.recepcion_id] ?? 0) + 1;
+  const itemsByRecepcion: Record<string, RecepcionItem[]> = {};
+  for (const it of (itemsRaw ?? []) as any[]) {
+    const cant   = Number(it.cantidad);
+    const precio = Number(it.precio_unitario);
+    const iva    = Number(it.iva_pct ?? 0);
+    const neto   = cant * precio;
+    const item: RecepcionItem = {
+      id:                it.id,
+      insumo_id:         it.insumo_id,
+      insumo_nombre:     it.insumo?.nombre ?? "—",
+      cantidad:          cant,
+      unidad:            it.unidad ?? "",
+      precio_unitario:   precio,
+      iva_pct:           iva,
+      fecha_vencimiento: it.fecha_vencimiento ?? null,
+      subtotal_neto:     neto,
+      subtotal_civa:     neto * (1 + iva / 100),
+    };
+    if (!itemsByRecepcion[it.recepcion_id]) itemsByRecepcion[it.recepcion_id] = [];
+    itemsByRecepcion[it.recepcion_id].push(item);
   }
 
   return (data as any[]).map(r => ({
-    id:          r.id,
-    tipo:        r.tipo,
-    numero:      r.numero,
-    proveedor:   r.proveedor,
-    fecha:       r.fecha,
-    total:       r.total !== null ? Number(r.total) : null,
-    created_at:  r.created_at,
-    items_count: countMap[r.id] ?? 0,
+    id:              r.id,
+    tipo:            r.tipo,
+    numero:          r.numero,
+    proveedor:       r.proveedor,
+    fecha:           r.fecha,
+    notas:           r.notas ?? null,
+    total:           r.total !== null ? Number(r.total) : null,
+    otros_impuestos: Number(r.otros_impuestos ?? 0),
+    created_at:      r.created_at,
+    items:           itemsByRecepcion[r.id] ?? [],
   }));
 }

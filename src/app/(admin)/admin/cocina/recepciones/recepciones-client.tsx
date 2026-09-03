@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { Plus, Trash2, FileText, ClipboardList } from "lucide-react";
+import { Plus, Trash2, FileText, ClipboardList, ChevronDown, ChevronRight } from "lucide-react";
 import { registrarRecepcion, type InsumoBasico, type RecepcionHistorial } from "./actions";
 
 const fmtPrecio = (n: number) =>
@@ -406,42 +406,7 @@ export function RecepcionesClient({ insumos, historial }: Props) {
 
       {/* Historial */}
       {historial.length > 0 && (
-        <div className="bg-white rounded-2xl border border-neutral-200 overflow-hidden">
-          <div className="px-5 py-4 border-b border-neutral-100">
-            <p className="text-sm font-semibold text-neutral-800">Historial de recepciones</p>
-          </div>
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-neutral-100 text-left">
-                <th className="px-5 py-3 text-xs font-medium text-neutral-400">Fecha</th>
-                <th className="px-5 py-3 text-xs font-medium text-neutral-400">Tipo / Número</th>
-                <th className="px-5 py-3 text-xs font-medium text-neutral-400">Proveedor</th>
-                <th className="px-5 py-3 text-xs font-medium text-neutral-400 text-center">Ítems</th>
-                <th className="px-5 py-3 text-xs font-medium text-neutral-400 text-right">Total</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-neutral-50">
-              {historial.map(h => (
-                <tr key={h.id} className="hover:bg-neutral-50">
-                  <td className="px-5 py-3 text-neutral-500 text-xs">{fmtFecha(h.fecha)}</td>
-                  <td className="px-5 py-3">
-                    <span className={`text-xs font-medium px-2 py-0.5 rounded-full mr-2 ${
-                      h.tipo === "factura" ? "bg-blue-100 text-blue-700" : "bg-neutral-100 text-neutral-600"
-                    }`}>
-                      {h.tipo === "factura" ? "Factura" : "Remito"}
-                    </span>
-                    <span className="font-mono text-sm text-neutral-800">{h.numero}</span>
-                  </td>
-                  <td className="px-5 py-3 font-medium text-neutral-800">{h.proveedor}</td>
-                  <td className="px-5 py-3 text-center text-neutral-500 text-xs">{h.items_count}</td>
-                  <td className="px-5 py-3 text-right tabular-nums font-semibold text-neutral-800">
-                    {h.total !== null ? fmtPrecio(h.total) : "—"}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+        <HistorialTable historial={historial} />
       )}
 
       {historial.length === 0 && !formOpen && (
@@ -450,6 +415,121 @@ export function RecepcionesClient({ insumos, historial }: Props) {
           <p className="text-xs text-neutral-300 mt-1">Usá el botón de arriba para cargar tu primera factura o remito.</p>
         </div>
       )}
+    </div>
+  );
+}
+
+function HistorialTable({ historial }: { historial: RecepcionHistorial[] }) {
+  const [expanded, setExpanded] = useState<string | null>(null);
+
+  const toggle = (id: string) => setExpanded(prev => prev === id ? null : id);
+
+  return (
+    <div className="bg-white rounded-2xl border border-neutral-200 overflow-hidden">
+      <div className="px-5 py-4 border-b border-neutral-100">
+        <p className="text-sm font-semibold text-neutral-800">Historial de recepciones</p>
+      </div>
+      <table className="w-full text-sm">
+        <thead>
+          <tr className="border-b border-neutral-100 text-left">
+            <th className="px-4 py-3 w-6"></th>
+            <th className="px-4 py-3 text-xs font-medium text-neutral-400">Fecha</th>
+            <th className="px-4 py-3 text-xs font-medium text-neutral-400">Tipo / Número</th>
+            <th className="px-4 py-3 text-xs font-medium text-neutral-400">Proveedor</th>
+            <th className="px-4 py-3 text-xs font-medium text-neutral-400 text-center">Ítems</th>
+            <th className="px-4 py-3 text-xs font-medium text-neutral-400 text-right">Total</th>
+          </tr>
+        </thead>
+        <tbody>
+          {historial.map(h => {
+            const isOpen = expanded === h.id;
+            return (
+              <>
+                <tr
+                  key={h.id}
+                  onClick={() => toggle(h.id)}
+                  className={`border-t border-neutral-50 cursor-pointer transition-colors ${isOpen ? "bg-neutral-50" : "hover:bg-neutral-50"}`}
+                >
+                  <td className="px-4 py-3 text-neutral-300">
+                    {isOpen
+                      ? <ChevronDown className="size-3.5" />
+                      : <ChevronRight className="size-3.5" />
+                    }
+                  </td>
+                  <td className="px-4 py-3 text-neutral-500 text-xs">{fmtFecha(h.fecha)}</td>
+                  <td className="px-4 py-3">
+                    <span className={`text-xs font-medium px-2 py-0.5 rounded-full mr-2 ${
+                      h.tipo === "factura" ? "bg-blue-100 text-blue-700" : "bg-neutral-100 text-neutral-600"
+                    }`}>
+                      {h.tipo === "factura" ? "Factura" : "Remito"}
+                    </span>
+                    <span className="font-mono text-sm text-neutral-800">{h.numero}</span>
+                  </td>
+                  <td className="px-4 py-3 font-medium text-neutral-800">{h.proveedor}</td>
+                  <td className="px-4 py-3 text-center text-neutral-500 text-xs">{h.items.length}</td>
+                  <td className="px-4 py-3 text-right tabular-nums font-semibold text-neutral-800">
+                    {h.total !== null ? fmtPrecio(h.total) : "—"}
+                  </td>
+                </tr>
+
+                {isOpen && (
+                  <tr key={`${h.id}-detail`} className="bg-neutral-50 border-t border-neutral-100">
+                    <td colSpan={6} className="px-6 pb-4 pt-2">
+                      <table className="w-full text-xs">
+                        <thead>
+                          <tr className="text-left text-neutral-400 border-b border-neutral-200">
+                            <th className="py-1.5 pr-4 font-medium">Insumo</th>
+                            <th className="py-1.5 pr-4 font-medium text-right">Cantidad</th>
+                            <th className="py-1.5 pr-4 font-medium">Un.</th>
+                            <th className="py-1.5 pr-4 font-medium text-right">Precio neto/u.</th>
+                            <th className="py-1.5 pr-4 font-medium text-right">IVA</th>
+                            <th className="py-1.5 pr-4 font-medium text-right">Subtotal c/IVA</th>
+                            <th className="py-1.5 font-medium">Vencimiento</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-neutral-100">
+                          {h.items.map(it => (
+                            <tr key={it.id} className="text-neutral-700">
+                              <td className="py-1.5 pr-4 font-medium">{it.insumo_nombre}</td>
+                              <td className="py-1.5 pr-4 text-right tabular-nums">{fmtNum(it.cantidad)}</td>
+                              <td className="py-1.5 pr-4 font-mono text-neutral-400">{it.unidad}</td>
+                              <td className="py-1.5 pr-4 text-right tabular-nums">{fmtPrecio(it.precio_unitario)}</td>
+                              <td className="py-1.5 pr-4 text-right tabular-nums text-neutral-400">
+                                {it.iva_pct > 0 ? `${it.iva_pct}%` : "—"}
+                              </td>
+                              <td className="py-1.5 pr-4 text-right tabular-nums font-semibold">{fmtPrecio(it.subtotal_civa)}</td>
+                              <td className="py-1.5 text-neutral-400">
+                                {it.fecha_vencimiento ? fmtFecha(it.fecha_vencimiento) : "—"}
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+
+                      {/* Pie del detalle */}
+                      <div className="mt-3 flex items-start justify-between gap-4">
+                        <div className="text-xs text-neutral-400">
+                          {h.notas && <p className="italic">Notas: {h.notas}</p>}
+                        </div>
+                        <div className="text-xs text-neutral-400 text-right space-y-0.5 tabular-nums">
+                          <div>Subtotal neto: <span className="text-neutral-700 font-medium">{fmtPrecio(h.items.reduce((s, i) => s + i.subtotal_neto, 0))}</span></div>
+                          <div>IVA total: <span className="text-neutral-700 font-medium">{fmtPrecio(h.items.reduce((s, i) => s + (i.subtotal_civa - i.subtotal_neto), 0))}</span></div>
+                          {h.otros_impuestos > 0 && (
+                            <div>Otros cargos: <span className="text-neutral-700 font-medium">{fmtPrecio(h.otros_impuestos)}</span></div>
+                          )}
+                          <div className="pt-1 border-t border-neutral-200 font-semibold text-neutral-800 text-sm">
+                            Total: {h.total !== null ? fmtPrecio(h.total) : "—"}
+                          </div>
+                        </div>
+                      </div>
+                    </td>
+                  </tr>
+                )}
+              </>
+            );
+          })}
+        </tbody>
+      </table>
     </div>
   );
 }
