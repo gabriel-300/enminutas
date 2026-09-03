@@ -15,7 +15,7 @@ export default async function CanalesPage() {
   const admin = createAdminClient();
   const { data: canales } = await (admin as any)
     .from("canales")
-    .select("id, slug, nombre, descuento_pct, margen_std, margen_premium, markup_pvp, activo, sort_order")
+    .select("id, slug, nombre, descuento_pct, margen_std, margen_premium, margen_venta_directa, markup_pvp, activo, sort_order")
     .order("sort_order");
 
   const pct = (n: number | null) => n != null ? `${Math.round(n * 100)}%` : "—";
@@ -44,6 +44,7 @@ export default async function CanalesPage() {
               <th className="px-4 py-3 font-medium text-neutral-500">Canal</th>
               <th className="px-4 py-3 font-medium text-neutral-500 text-right">Margen std</th>
               <th className="px-4 py-3 font-medium text-neutral-500 text-right">Margen prem.</th>
+              <th className="px-4 py-3 font-medium text-neutral-500 text-right">Venta directa</th>
               <th className="px-4 py-3 font-medium text-neutral-500 text-right">Markup PVP</th>
               <th className="px-4 py-3 font-medium text-neutral-500 text-center">Activo</th>
               <th className="px-4 py-3 w-28"></th>
@@ -61,6 +62,9 @@ export default async function CanalesPage() {
                 </td>
                 <td className="px-4 py-3 text-right tabular-nums font-medium text-neutral-700">
                   {pct(c.margen_premium)}
+                </td>
+                <td className="px-4 py-3 text-right tabular-nums font-medium text-neutral-700">
+                  {pct(c.margen_venta_directa)}
                 </td>
                 <td className="px-4 py-3 text-right tabular-nums text-neutral-500">
                   {pct(c.markup_pvp)}
@@ -80,7 +84,7 @@ export default async function CanalesPage() {
             ))}
             {(!canales || canales.length === 0) && (
               <tr>
-                <td colSpan={6} className="px-4 py-10 text-center text-neutral-400">
+                <td colSpan={7} className="px-4 py-10 text-center text-neutral-400">
                   No hay canales configurados.
                 </td>
               </tr>

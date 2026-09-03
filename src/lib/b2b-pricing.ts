@@ -23,9 +23,10 @@ export function calcularPrecio(p: {
   u_bolsa:            number;
   categoria:          string;           // 'Estándar' | 'Premium'
   divisiones_display: number | null;
-  margen_std:         number;           // ej: 0.40
-  margen_premium:     number;           // ej: 0.45
-  markup_pvp:         number;           // ej: 0.80
+  margen_std:            number;           // ej: 0.40
+  margen_premium:        number;           // ej: 0.45
+  margen_venta_directa?: number;           // ej: 0.35 — cuando categoria === 'Venta directa'
+  markup_pvp:            number;           // ej: 0.80
   iva_pct?:           number;           // default 0.21
   comision_pct?:      number;           // default 0.15
   flete_kg?:          number;           // siempre 0 en v5; contemplado para futuro
@@ -35,7 +36,11 @@ export function calcularPrecio(p: {
   const r2 = (n: number) => Math.round(n * 100) / 100;
   const r0 = (n: number) => Math.round(n);
 
-  const margen      = p.categoria === 'Premium' ? p.margen_premium : p.margen_std;
+  const margen      = p.categoria === 'Premium'
+    ? p.margen_premium
+    : p.categoria === 'Venta directa' && p.margen_venta_directa != null
+      ? p.margen_venta_directa
+      : p.margen_std;
   const iva         = p.iva_pct      ?? 0.21;
   const comision_pct = p.comision_pct ?? 0.15;
 

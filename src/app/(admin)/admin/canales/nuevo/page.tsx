@@ -35,7 +35,7 @@ export default async function NuevoCanalPage() {
         {/* Márgenes v5 */}
         <div>
           <p className="text-xs font-semibold text-neutral-500 uppercase tracking-wide mb-3">Márgenes de precio (fórmula v5)</p>
-          <div className="grid grid-cols-3 gap-3">
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
             <div>
               <label className="block text-xs font-medium text-neutral-500 mb-1">Margen std %</label>
               <input name="margen_std" type="number" defaultValue={40} min="0" max="99" step="1" required
@@ -44,6 +44,11 @@ export default async function NuevoCanalPage() {
             <div>
               <label className="block text-xs font-medium text-neutral-500 mb-1">Margen premium %</label>
               <input name="margen_premium" type="number" defaultValue={45} min="0" max="99" step="1" required
+                className="w-full px-3 py-2 text-sm border border-neutral-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-tierra-700/20" />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-neutral-500 mb-1">Venta directa %</label>
+              <input name="margen_venta_directa" type="number" defaultValue={35} min="0" max="99" step="1" required
                 className="w-full px-3 py-2 text-sm border border-neutral-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-tierra-700/20" />
             </div>
             <div>
