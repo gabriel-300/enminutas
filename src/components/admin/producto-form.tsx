@@ -162,6 +162,7 @@ export function ProductoForm({ categorias, lineas, defaultValues: dv = {}, actio
               className="w-full px-3 py-2 text-sm border border-neutral-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-tierra-700/20">
               <option value="Estándar">Estándar</option>
               <option value="Premium">Premium</option>
+              <option value="Venta directa">Venta directa</option>
             </select>
           </div>
         </div>
