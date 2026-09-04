@@ -23,16 +23,20 @@ export async function crearCategoria(formData: FormData) {
 }
 
 export async function actualizarCategoria(id: string, formData: FormData) {
-  const name = (formData.get("name") as string).trim();
+  const name = (formData.get("name") as string | null)?.trim();
   if (!name) throw new Error("El nombre es requerido");
+
+  const image_url   = (formData.get("image_url")   as string | null) ?? undefined;
+  const description = (formData.get("description") as string | null) ?? undefined;
 
   const supabase = createAdminClient();
   const { error } = await supabase
     .from("categories")
-    .update({ name })
+    .update({ name, ...(image_url !== undefined && { image_url }), ...(description !== undefined && { description }) })
     .eq("id", id);
   if (error) throw new Error(error.message);
   revalidatePath("/admin/categorias");
+  revalidatePath("/");
 }
 
 export async function eliminarCategoria(id: string) {

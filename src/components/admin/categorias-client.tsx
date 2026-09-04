@@ -1,23 +1,70 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState, useRef } from "react";
+import { createBrowserClient } from "@supabase/ssr";
 import { crearCategoria, actualizarCategoria, eliminarCategoria } from "@/app/(admin)/admin/categorias/actions";
 
-type Categoria = { id: string; name: string; product_count: number };
+type Categoria = {
+  id: string;
+  name: string;
+  description: string | null;
+  image_url: string | null;
+  product_count: number;
+};
 
-function CategoriaRow({ cat }: { cat: Categoria }) {
-  const [editing, setEditing] = useState(false);
-  const [value, setValue] = useState(cat.name);
-  const [isPending, startTransition] = useTransition();
+function createSupabase() {
+  return createBrowserClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+  );
+}
 
-  function handleSave() {
-    if (!value.trim() || value === cat.name) { setEditing(false); return; }
-    const fd = new FormData();
-    fd.set("name", value);
-    startTransition(async () => {
+function CategoriaCard({ cat }: { cat: Categoria }) {
+  const supabaseRef  = useRef(createSupabase());
+  const [name, setName]           = useState(cat.name);
+  const [desc, setDesc]           = useState(cat.description ?? "");
+  const [imgUrl, setImgUrl]       = useState(cat.image_url ?? "");
+  const [uploading, setUploading] = useState(false);
+  const [saving, setSaving]       = useState(false);
+  const [saved, setSaved]         = useState(false);
+  const [error, setError]         = useState("");
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  async function handleFile(file: File) {
+    if (!file.type.startsWith("image/")) { setError("Solo imágenes."); return; }
+    setUploading(true); setError("");
+    try {
+      const ext  = file.name.split(".").pop() ?? "jpg";
+      const path = `categorias/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
+      const { error: e } = await supabaseRef.current.storage
+        .from("sitio-web")
+        .upload(path, file, { upsert: true, contentType: file.type });
+      if (e) throw new Error(e.message);
+      const { data } = supabaseRef.current.storage.from("sitio-web").getPublicUrl(path);
+      setImgUrl(data.publicUrl);
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : "Error al subir");
+    } finally {
+      setUploading(false);
+    }
+  }
+
+  async function handleSave() {
+    if (!name.trim()) { setError("El nombre no puede estar vacío."); return; }
+    setSaving(true); setError("");
+    try {
+      const fd = new FormData();
+      fd.set("name", name.trim());
+      fd.set("description", desc);
+      fd.set("image_url", imgUrl);
       await actualizarCategoria(cat.id, fd);
-      setEditing(false);
-    });
+      setSaved(true);
+      setTimeout(() => setSaved(false), 2500);
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : "Error al guardar");
+    } finally {
+      setSaving(false);
+    }
   }
 
   function handleDelete() {
@@ -25,111 +72,133 @@ function CategoriaRow({ cat }: { cat: Categoria }) {
       alert(`No se puede eliminar: tiene ${cat.product_count} producto${cat.product_count !== 1 ? "s" : ""} asignado${cat.product_count !== 1 ? "s" : ""}.`);
       return;
     }
-    if (!confirm(`¿Eliminar la categoría "${cat.name}"?`)) return;
-    startTransition(() => eliminarCategoria(cat.id));
+    if (!confirm(`¿Eliminar "${cat.name}"?`)) return;
+    void eliminarCategoria(cat.id);
   }
 
   return (
-    <tr className="hover:bg-neutral-50 transition-colors">
-      <td className="px-4 py-3">
-        {editing ? (
-          <input
-            value={value}
-            onChange={(e) => setValue(e.target.value)}
-            onBlur={handleSave}
-            onKeyDown={(e) => {
-              if (e.key === "Enter") e.currentTarget.blur();
-              if (e.key === "Escape") { setValue(cat.name); setEditing(false); }
-            }}
-            autoFocus
-            className="px-2 py-1 text-sm border border-tierra-700 rounded-lg focus:outline-none w-full max-w-xs"
-            disabled={isPending}
-          />
+    <div className="bg-white rounded-2xl border border-neutral-200 overflow-hidden">
+      {/* Imagen */}
+      <div
+        className="relative aspect-video w-full flex items-center justify-center cursor-pointer group"
+        style={{ background: imgUrl ? undefined : "#EAEBF8" }}
+        onClick={() => inputRef.current?.click()}
+        onDragOver={e => e.preventDefault()}
+        onDrop={e => { e.preventDefault(); const f = e.dataTransfer.files[0]; if (f) handleFile(f); }}
+      >
+        {imgUrl ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={imgUrl} alt={name} className="w-full h-full object-cover" />
         ) : (
-          <span className="font-medium text-neutral-900">{cat.name}</span>
+          <div className="flex flex-col items-center gap-1 text-neutral-400">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+              <rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/>
+              <polyline points="21 15 16 10 5 21"/>
+            </svg>
+            <span className="text-xs">Subir foto</span>
+          </div>
         )}
-      </td>
-      <td className="px-4 py-3 text-neutral-400 text-sm">
-        {cat.product_count} producto{cat.product_count !== 1 ? "s" : ""}
-      </td>
-      <td className="px-4 py-3">
-        <div className="flex items-center gap-3">
-          {!editing && (
-            <button
-              onClick={() => setEditing(true)}
-              disabled={isPending}
-              className="text-xs text-tierra-700 hover:underline disabled:opacity-50"
-            >
-              Renombrar
-            </button>
-          )}
+        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+          <span className="text-white text-xs font-medium">{uploading ? "Subiendo..." : "Cambiar imagen"}</span>
+        </div>
+        <input ref={inputRef} type="file" accept="image/*" className="hidden" onChange={e => { const f = e.target.files?.[0]; if (f) handleFile(f); }} />
+      </div>
+
+      {/* Campos */}
+      <div className="p-4 flex flex-col gap-3">
+        <div>
+          <label className="block text-xs text-neutral-400 mb-1">Nombre</label>
+          <input
+            value={name}
+            onChange={e => setName(e.target.value)}
+            className="w-full text-sm px-3 py-2 border border-neutral-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-tierra-700/20"
+          />
+        </div>
+        <div>
+          <label className="block text-xs text-neutral-400 mb-1">Descripción (opcional)</label>
+          <textarea
+            value={desc}
+            onChange={e => setDesc(e.target.value)}
+            rows={2}
+            className="w-full text-sm px-3 py-2 border border-neutral-200 rounded-lg focus:outline-none resize-none"
+          />
+        </div>
+
+        {error && <p className="text-xs text-red-500">{error}</p>}
+
+        <div className="flex items-center justify-between gap-2 pt-1">
           <button
             onClick={handleDelete}
-            disabled={isPending || cat.product_count > 0}
-            className="text-xs text-danger hover:underline disabled:opacity-30"
+            disabled={cat.product_count > 0}
+            className="text-xs text-red-400 hover:text-red-600 disabled:opacity-30 disabled:cursor-not-allowed"
           >
             Eliminar
           </button>
+          <div className="flex items-center gap-2">
+            {saved && <span className="text-xs text-green-600">Guardado ✓</span>}
+            <button
+              onClick={handleSave}
+              disabled={saving || uploading}
+              className="text-xs font-semibold px-3 py-1.5 rounded-lg bg-tierra-700 text-white hover:bg-tierra-800 disabled:opacity-50 transition-colors"
+            >
+              {saving ? "Guardando..." : "Guardar"}
+            </button>
+          </div>
         </div>
-      </td>
-    </tr>
+
+        <p className="text-xs text-neutral-400">{cat.product_count} producto{cat.product_count !== 1 ? "s" : ""}</p>
+      </div>
+    </div>
   );
 }
 
 export function CategoriasClient({ categorias }: { categorias: Categoria[] }) {
-  const [isPending, startTransition] = useTransition();
+  const [creating, setCreating] = useState(false);
+  const [newName, setNewName]   = useState("");
 
-  function handleCreate(e: React.FormEvent<HTMLFormElement>) {
+  async function handleCreate(e: React.FormEvent) {
     e.preventDefault();
-    const fd = new FormData(e.currentTarget);
-    const form = e.currentTarget;
-    startTransition(async () => {
+    if (!newName.trim()) return;
+    setCreating(true);
+    try {
+      const fd = new FormData();
+      fd.set("name", newName.trim());
       await crearCategoria(fd);
-      form.reset();
-    });
+      setNewName("");
+    } finally {
+      setCreating(false);
+    }
   }
 
   return (
-    <div className="max-w-2xl space-y-6">
-      {/* Form nueva categoría */}
-      <form onSubmit={handleCreate} className="flex gap-3">
+    <div className="space-y-6">
+      {/* Nueva categoría */}
+      <form onSubmit={handleCreate} className="flex gap-3 max-w-sm">
         <input
-          name="name"
+          value={newName}
+          onChange={e => setNewName(e.target.value)}
           placeholder="Nueva categoría…"
           required
           className="flex-1 px-3 py-2 text-sm border border-neutral-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-tierra-700/20"
-          disabled={isPending}
+          disabled={creating}
         />
         <button
           type="submit"
-          disabled={isPending}
+          disabled={creating}
           className="px-4 py-2 rounded-xl bg-tierra-700 text-white text-sm font-medium hover:bg-tierra-800 disabled:opacity-50 transition-colors"
         >
           Agregar
         </button>
       </form>
 
-      <div className="bg-white rounded-2xl border border-neutral-200 overflow-hidden">
-        <table className="w-full text-sm">
-          <thead>
-            <tr className="border-b border-neutral-200 text-left">
-              <th className="px-4 py-3 font-medium text-neutral-500">Nombre</th>
-              <th className="px-4 py-3 font-medium text-neutral-500">Productos</th>
-              <th className="px-4 py-3 font-medium text-neutral-500">Acciones</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-neutral-100">
-            {categorias.length === 0 && (
-              <tr>
-                <td colSpan={3} className="px-4 py-10 text-center text-neutral-400">
-                  No hay categorías todavía.
-                </td>
-              </tr>
-            )}
-            {categorias.map((c) => <CategoriaRow key={c.id} cat={c} />)}
-          </tbody>
-        </table>
+      {/* Grid de cards */}
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+        {categorias.map(c => <CategoriaCard key={c.id} cat={c} />)}
       </div>
+
+      {categorias.length === 0 && (
+        <p className="text-sm text-neutral-400">No hay categorías todavía.</p>
+      )}
     </div>
   );
 }

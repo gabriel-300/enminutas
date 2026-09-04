@@ -79,7 +79,8 @@ const SECTIONS: { label?: string; key?: string; items: NavEntry[] }[] = [
     label: "SITIO WEB",
     key:   "sitio_web",
     items: [
-      { href: "/admin/contenido", label: "Contenido web", icon: Globe, roles: ["admin"] },
+      { href: "/admin/contenido",   label: "Contenido web", icon: Globe,   roles: ["admin"] },
+      { href: "/admin/categorias",  label: "Categorías",    icon: Layers,  roles: ["admin"] },
     ],
   },
   {

@@ -37,7 +37,7 @@ const PRODUCT_SELECT = `
   category_id, price_b2c, price_b2b, min_quantity_b2b,
   unit_label, weight_grams, freezer_required, is_active,
   cover_image_url, extra_images, cooking_methods,
-  category:categories!category_id (id, slug, name, description, sort_order)
+  category:categories!category_id (id, slug, name, description, image_url, sort_order)
 `;
 
 function mapProduct(p: any): Product {
@@ -54,7 +54,7 @@ function mapProduct(p: any): Product {
       slug:        p.category?.slug        ?? "",
       name:        p.category?.name        ?? "—",
       description: p.category?.description ?? null,
-      image_url:   null,
+      image_url:   p.category?.image_url ?? null,
       sort_order:  p.category?.sort_order  ?? 99,
     },
     price_b2c:        Number(p.price_b2c)        || 0,
@@ -74,15 +74,15 @@ export async function getCategories(): Promise<Category[]> {
   const supabase = await createClient();
   const { data } = await supabase
     .from("categories")
-    .select("id, slug, name, description, sort_order")
+    .select("id, slug, name, description, image_url, sort_order")
     .order("sort_order");
   return (data ?? []).map((c: any) => ({
     id:          c.id,
     slug:        c.slug,
     name:        c.name,
     description: c.description ?? null,
-    image_url:   null,
-    sort_order:  c.sort_order ?? 99,
+    image_url:   c.image_url   ?? null,
+    sort_order:  c.sort_order  ?? 99,
   }));
 }
 

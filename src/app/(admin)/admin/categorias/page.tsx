@@ -15,7 +15,7 @@ export default async function AdminCategoriasPage() {
     { data: categorias, error },
     { data: productCounts },
   ] = await Promise.all([
-    supabase.from("categories").select("id, name").order("name"),
+    supabase.from("categories").select("id, name, description, image_url").order("name"),
     supabase.from("products").select("category_id").not("category_id", "is", null),
   ]);
 
