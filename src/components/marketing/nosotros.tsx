@@ -1,44 +1,58 @@
+// Íconos de marca según manual de identidad visual
+const IconHorno = () => (
+  <svg width="22" height="22" viewBox="0 0 32 32" fill="none" aria-hidden>
+    <rect x="3" y="7" width="26" height="18" rx="3" stroke="#2C25B5" strokeWidth="2"/>
+    <rect x="7" y="11" width="18" height="10" rx="1.5" stroke="#2C25B5" strokeWidth="1.5"/>
+    <path d="M10 15h2M14 13v4M16 13v4" stroke="#2C25B5" strokeWidth="1.5" strokeLinecap="round"/>
+    <circle cx="24" cy="5" r="1.5" fill="#2C25B5"/>
+    <circle cx="28" cy="5" r="1.5" fill="#2C25B5"/>
+  </svg>
+);
+const IconTimer = () => (
+  <svg width="22" height="22" viewBox="0 0 32 32" fill="none" aria-hidden>
+    <circle cx="16" cy="18" r="10" stroke="#2C25B5" strokeWidth="2"/>
+    <path d="M16 12v6l3 3" stroke="#2C25B5" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+    <path d="M10 4c1.7-.8 3.8-1 6-1s4.3.2 6 1" stroke="#2C25B5" strokeWidth="2" strokeLinecap="round"/>
+    <path d="M25 8l1.5-1.5" stroke="#2C25B5" strokeWidth="2" strokeLinecap="round"/>
+  </svg>
+);
+const IconOlla = () => (
+  <svg width="22" height="22" viewBox="0 0 32 32" fill="none" aria-hidden>
+    <path d="M8 13h16v8a4 4 0 0 1-4 4h-8a4 4 0 0 1-4-4v-8z" stroke="#2C25B5" strokeWidth="2"/>
+    <path d="M8 13c0-2.2 1.8-4 4-4h8c2.2 0 4 1.8 4 4" stroke="#2C25B5" strokeWidth="2"/>
+    <circle cx="16" cy="6" r="2" fill="#2C25B5"/>
+    <path d="M5 15H3M29 15h-2" stroke="#2C25B5" strokeWidth="2" strokeLinecap="round"/>
+  </svg>
+);
+const IconCheck = () => (
+  <svg width="22" height="22" viewBox="0 0 32 32" fill="none" aria-hidden>
+    <path d="M28 16c0 6.627-5.373 12-12 12S4 22.627 4 16 9.373 4 16 4" stroke="#2C25B5" strokeWidth="2" strokeLinecap="round"/>
+    <path d="M22 4l2.5 2.5L19 12" stroke="#2C25B5" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+    <path d="M11 16l3 3 7-7" stroke="#2C25B5" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+    <path d="M27 7l1.5-2M29.5 10l2-1" stroke="#2C25B5" strokeWidth="1.5" strokeLinecap="round"/>
+  </svg>
+);
+
 const pillars = [
   {
     title: "Planta propia en Posadas",
     body: "Elaboramos en nuestra planta habilitada por SENASA en Misiones. Horno Rational y abatidor Irinox garantizan consistencia industrial en cada lote.",
-    icon: (
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#2C25B5" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-        <rect x="2" y="7" width="20" height="14" rx="1"/>
-        <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/>
-        <line x1="12" y1="3" x2="12" y2="7"/>
-      </svg>
-    ),
+    icon: <IconHorno />,
   },
   {
     title: "Materia prima del Litoral",
     body: "Pacú de Rosamonte, mandioca misionera y quesos regionales. Priorizamos proveedores locales para sostener la cadena de valor del NEA.",
-    icon: (
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#2C25B5" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-        <path d="M12 22V12"/>
-        <path d="M5 12C5 6.477 8.582 2 12 2s7 4.477 7 10H5z"/>
-      </svg>
-    ),
+    icon: <IconTimer />,
   },
   {
     title: "Cadena de frío sin cortes",
     body: "Abatimiento a −40 °C post-cocción. Distribución isotérmica con 18 meses de vida útil. Trazabilidad por lote desde planta hasta destino.",
-    icon: (
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#2C25B5" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-        <line x1="12" y1="2" x2="12" y2="22"/>
-        <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
-      </svg>
-    ),
+    icon: <IconOlla />,
   },
   {
     title: "Habilitación SENASA vigente",
     body: "Certificación para mercado interno y exportación. Documentación completa disponible para clientes export y operadores logísticos.",
-    icon: (
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#2C25B5" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
-        <polyline points="9 12 11 14 15 10"/>
-      </svg>
-    ),
+    icon: <IconCheck />,
   },
 ];
 

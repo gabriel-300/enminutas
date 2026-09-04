@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Fraunces, Inter, Fredoka } from "next/font/google";
+import { Fraunces, Inter, Montserrat } from "next/font/google";
 import "./globals.css";
 import { Providers } from "@/components/providers";
 
@@ -16,11 +16,12 @@ const inter = Inter({
   display: "swap",
 });
 
-const fredoka = Fredoka({
+// Montserrat: sustituto web de Gotham (tipografía de marca)
+const montserrat = Montserrat({
   subsets: ["latin"],
   variable: "--font-fredoka",
   display: "swap",
-  weight: ["300", "400", "500", "600", "700"],
+  weight: ["400", "500", "600", "700", "800", "900"],
 });
 
 export const metadata: Metadata = {
@@ -69,7 +70,7 @@ export default function RootLayout({
   return (
     <html
       lang="es-AR"
-      className={`${fraunces.variable} ${inter.variable} ${fredoka.variable}`}
+      className={`${fraunces.variable} ${inter.variable} ${montserrat.variable}`}
       suppressHydrationWarning
     >
       <body>
