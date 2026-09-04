@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 
 const productLinks = [
   { href: "/tienda?categoria=chipas",    label: "Chipas" },
@@ -60,13 +61,14 @@ export function Footer({
         <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-10 mb-12">
           {/* Brand */}
           <div className="lg:col-span-1">
-            <Link href="/" className="inline-flex items-center gap-2.5 mb-4">
-              <span className="size-8 rounded-lg text-white flex items-center justify-center font-bold text-sm" style={{ background: "#2C25B5", fontFamily: "var(--font-fredoka)" }}>
-                EM
-              </span>
-              <span className="font-semibold text-lg text-white" style={{ fontFamily: "var(--font-fredoka)" }}>
-                En Minutas
-              </span>
+            <Link href="/" className="inline-flex mb-4">
+              <Image
+                src="/logo.png"
+                alt="En Minutas"
+                width={100}
+                height={40}
+                className="h-10 w-auto"
+              />
             </Link>
             <p className="text-sm text-neutral-400 leading-relaxed mb-5">
               Finger Food Regional. Cocina ultracongelada elaborada en Posadas,

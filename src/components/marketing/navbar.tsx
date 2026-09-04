@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { useState } from "react";
 import { Menu, X } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -25,19 +26,15 @@ export function Navbar() {
         <div className="flex items-center justify-between h-16 gap-6">
 
           {/* Logo */}
-          <Link href="/" className="flex items-center gap-2.5 shrink-0">
-            <span
-              className="size-8 rounded-lg flex items-center justify-center font-bold text-sm tracking-tight text-white"
-              style={{ background: "#2C25B5", fontFamily: "var(--font-fredoka)" }}
-            >
-              EM
-            </span>
-            <span
-              className="text-lg font-semibold text-neutral-900 hidden sm:block"
-              style={{ fontFamily: "var(--font-fredoka)" }}
-            >
-              En Minutas
-            </span>
+          <Link href="/" className="flex items-center shrink-0">
+            <Image
+              src="/logo.png"
+              alt="En Minutas"
+              width={120}
+              height={48}
+              className="h-10 w-auto"
+              priority
+            />
           </Link>
 
           {/* Nav — desktop */}
