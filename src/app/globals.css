@@ -71,6 +71,16 @@
   --font-display: "Fraunces Variable", "Playfair Display", Georgia, serif;
   --font-sans:    "Inter Variable", "Geist", -apple-system, BlinkMacSystemFont, sans-serif;
   --font-mono:    "JetBrains Mono", ui-monospace, "Cascadia Code", monospace;
+  --font-fredoka: "Fredoka", "Nunito", system-ui, sans-serif;
+
+  /* ── Colores reales de marca — extraídos del isologo oficial */
+  /* Primario: #2C25B5 · Secundario: #C1D7E6 · Base: #FFFFFF    */
+  --color-brand:        #2C25B5;   /* primario — CTAs, header, acentos */
+  --color-brand-hover:  #241EA0;   /* derivado shade -10% */
+  --color-brand-active: #1D198C;   /* derivado shade -20% */
+  --color-brand-light:  #C1D7E6;   /* secundario oficial */
+  --color-brand-soft:   #EAEBF8;   /* tint 90% del primario */
+  --color-brand-mid:    #7B77D4;   /* tint 50% — detalles medios */
 
   /* ── Escala tipográfica fluid */
   --text-xs:   clamp(0.75rem,  0.7rem  + 0.2vw,  0.8125rem);

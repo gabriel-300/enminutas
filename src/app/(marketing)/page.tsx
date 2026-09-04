@@ -8,6 +8,7 @@ import { HowItWorks } from "@/components/marketing/how-it-works";
 import { B2BCta } from "@/components/marketing/b2b-cta";
 import { Nosotros } from "@/components/marketing/nosotros";
 import { Footer } from "@/components/marketing/footer";
+import { WhatsAppButton } from "@/components/marketing/whatsapp-button";
 import { getCategories } from "@/lib/data/products";
 
 export const metadata: Metadata = {
@@ -32,6 +33,7 @@ export default async function LandingPage() {
         <Nosotros />
       </main>
       <Footer />
+      <WhatsAppButton />
     </>
   );
 }

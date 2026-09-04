@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Fraunces, Inter } from "next/font/google";
+import { Fraunces, Inter, Fredoka } from "next/font/google";
 import "./globals.css";
 import { Providers } from "@/components/providers";
 
@@ -14,6 +14,13 @@ const inter = Inter({
   subsets: ["latin"],
   variable: "--font-sans",
   display: "swap",
+});
+
+const fredoka = Fredoka({
+  subsets: ["latin"],
+  variable: "--font-fredoka",
+  display: "swap",
+  weight: ["300", "400", "500", "600", "700"],
 });
 
 export const metadata: Metadata = {
@@ -62,7 +69,7 @@ export default function RootLayout({
   return (
     <html
       lang="es-AR"
-      className={`${fraunces.variable} ${inter.variable}`}
+      className={`${fraunces.variable} ${inter.variable} ${fredoka.variable}`}
       suppressHydrationWarning
     >
       <body>

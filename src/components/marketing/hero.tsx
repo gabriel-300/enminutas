@@ -1,113 +1,122 @@
-import Link from "next/link";
-import { ArrowRight, Snowflake, Clock, Leaf } from "lucide-react";
-import { Button } from "@/components/ui";
+const WA_NUMBER = "5493765017944";
+const WA_TEXT   = encodeURIComponent("Hola, quería pedir información sobre los productos de En Minutas 👋");
+const WA_HREF   = `https://wa.me/${WA_NUMBER}?text=${WA_TEXT}`;
 
-const stats = [
-  { value: "11+", label: "Variedades activas" },
-  { value: "4",   label: "Líneas de producto" },
-  { value: "−40°", label: "Abatimiento Irinox" },
-  { value: "18 m", label: "Vida útil congelado" },
+const STATS = [
+  { value: "−40 °C", label: "Abatimiento Irinox" },
+  { value: "18 m",   label: "Vida útil congelado" },
+  { value: "12 min", label: "Para calentar y servir" },
+  { value: "4",      label: "Líneas de producto" },
 ];
 
 export function Hero() {
   return (
-    <section className="relative overflow-hidden bg-crema-50 pt-16 pb-0">
-      {/* Fondo sutil */}
-      <div
-        aria-hidden
-        className="absolute inset-0 bg-[radial-gradient(ellipse_80%_60%_at_60%_-10%,rgba(201,169,97,0.12),transparent)]"
-      />
+    <section className="relative overflow-hidden bg-white pt-12 pb-0">
 
       <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <div className="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center pb-16 lg:pb-20">
+        <div className="grid lg:grid-cols-2 gap-10 lg:gap-16 items-center pb-16 lg:pb-20">
+
           {/* Copy */}
           <div>
-            <div className="inline-flex items-center gap-2 text-xs font-mono uppercase tracking-widest text-tierra-700 mb-6">
-              <span className="size-1.5 rounded-full bg-tierra-700 animate-pulse" />
-              Finger Food Regional · Posadas, Misiones AR
-            </div>
+            <p
+              className="text-xs font-semibold uppercase tracking-widest mb-5"
+              style={{ color: "#2C25B5", letterSpacing: "0.12em" }}
+            >
+              Finger food regional · Posadas, Misiones
+            </p>
 
-            <h1 className="font-display text-5xl lg:text-7xl font-semibold text-neutral-900 leading-[0.96] tracking-tight">
-              Cocina del{" "}
-              <span className="text-tierra-700">monte</span>,{" "}
-              lista en{" "}
-              <span className="text-dorado-500">minutos</span>.
+            <h1
+              className="text-5xl lg:text-6xl font-semibold text-neutral-900 leading-[1.05] tracking-tight"
+              style={{ fontFamily: "var(--font-fredoka)" }}
+            >
+              Bocaditos, chipas y empanadas{" "}
+              <span style={{ color: "#2C25B5" }}>de Misiones</span>,{" "}
+              listos en minutos.
             </h1>
 
             <p className="mt-6 text-lg text-neutral-600 max-w-md leading-relaxed">
-              <strong className="text-neutral-800">Bocaditos, chipas, pizzas y empanadas</strong>{" "}
-              elaborados con materia prima del Litoral, cocidos en horno
-              Rational y ultracongelados con tecnología Irinox.
+              Elaborados con materia prima del Litoral, cocidos en horno Rational
+              y ultracongelados con tecnología Irinox. Desde Posadas para todo el país.
             </p>
 
-            <div className="mt-8 flex flex-wrap gap-3">
-              <Button variant="gold" size="lg" asChild>
-                <Link href="/tienda">
-                  Ver catálogo
-                  <ArrowRight className="size-4" />
-                </Link>
-              </Button>
-              <Button variant="ghost" size="lg" asChild>
-                <Link href="/registro-mayorista">Soy mayorista</Link>
-              </Button>
+            {/* CTAs */}
+            <div className="mt-8 flex flex-col sm:flex-row gap-3">
+              <a
+                href={WA_HREF}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center justify-center gap-2.5 px-6 py-3.5 rounded-xl text-base font-semibold text-white transition-colors"
+                style={{ background: "#2C25B5" }}
+                onMouseEnter={e => (e.currentTarget.style.background = "#241EA0")}
+                onMouseLeave={e => (e.currentTarget.style.background = "#2C25B5")}
+              >
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+                  <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51a12.8 12.8 0 0 0-.57-.01c-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413z"/>
+                </svg>
+                Consultar por WhatsApp
+              </a>
+              <a
+                href="/tienda"
+                className="inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-xl text-base font-semibold text-neutral-700 border border-neutral-300 hover:border-neutral-400 hover:bg-neutral-50 transition-colors"
+              >
+                Ver catálogo
+              </a>
             </div>
 
-            {/* Chips de confianza */}
+            {/* Atributos reales */}
             <div className="mt-8 flex flex-wrap gap-2">
               {[
-                { icon: Snowflake, text: "Cadena de frío garantizada" },
-                { icon: Leaf,      text: "Materia prima regional" },
-                { icon: Clock,     text: "Listo en 12 minutos" },
-              ].map(({ icon: Icon, text }) => (
+                "Cadena de frío garantizada",
+                "Materia prima regional",
+                "SENASA habilitado",
+              ].map((tag) => (
                 <span
-                  key={text}
-                  className="inline-flex items-center gap-1.5 bg-white border border-neutral-200 text-neutral-600 text-xs px-3 py-1.5 rounded-full shadow-sm"
+                  key={tag}
+                  className="inline-flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg border font-medium"
+                  style={{ borderColor: "#C1D7E6", background: "#EAEBF8", color: "#2C25B5" }}
                 >
-                  <Icon className="size-3.5 text-tierra-700" />
-                  {text}
+                  {tag}
                 </span>
               ))}
             </div>
           </div>
 
-          {/* Imagen placeholder editorial */}
-          <div className="relative aspect-[4/5] lg:aspect-auto lg:h-[540px] rounded-2xl overflow-hidden bg-crema-200">
-            {/* Overlay de patrón */}
+          {/* Imagen — [PENDIENTE: falta foto real del producto hero] */}
+          <div
+            className="relative aspect-[4/5] lg:aspect-auto lg:h-[520px] rounded-2xl overflow-hidden flex flex-col items-center justify-center gap-3"
+            style={{ background: "#EAEBF8", border: "2px dashed #C1D7E6" }}
+          >
             <div
-              aria-hidden
-              className="absolute inset-0"
-              style={{
-                backgroundImage:
-                  "repeating-linear-gradient(135deg,transparent 0 22px,rgba(107,36,23,0.04) 22px 23px)",
-              }}
-            />
-            {/* Placeholder */}
-            <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 text-tierra-400">
-              <div className="size-12 rounded-xl bg-tierra-100 flex items-center justify-center">
-                <Snowflake className="size-6 text-tierra-600" />
-              </div>
-              <p className="font-mono text-xs uppercase tracking-widest text-tierra-500">
-                Foto producto hero
-              </p>
-              <p className="text-xs text-tierra-400">Bocaditos · línea principal</p>
+              className="size-14 rounded-2xl flex items-center justify-center"
+              style={{ background: "#C1D7E6" }}
+            >
+              {/* ícono olla — marca propia */}
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#2C25B5" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                <path d="M3 10h18v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-8z"/>
+                <path d="M8 10V7a4 4 0 0 1 8 0v3"/>
+                <path d="M7 6h10"/>
+                <line x1="9" y1="14" x2="9" y2="16"/>
+                <line x1="12" y1="14" x2="12" y2="17"/>
+                <line x1="15" y1="14" x2="15" y2="16"/>
+              </svg>
             </div>
-
-            {/* Badges flotantes */}
-            <span className="absolute top-4 left-4 inline-flex items-center gap-1.5 bg-white/90 backdrop-blur-sm text-neutral-800 text-xs font-medium px-3 py-1.5 rounded-full shadow-sm">
-              <span className="size-1.5 rounded-full bg-tierra-700 animate-pulse" />
-              Producción activa · Lote 23
-            </span>
-            <span className="absolute top-4 right-4 bg-selva-700 text-white text-xs font-semibold px-3 py-1.5 rounded-full tracking-wide uppercase">
-              For Export
-            </span>
+            <p className="text-xs font-semibold uppercase tracking-widest" style={{ color: "#2C25B5" }}>
+              [PENDIENTE — foto real del producto]
+            </p>
+            <p className="text-xs" style={{ color: "#7B77D4" }}>
+              Bocaditos · línea principal
+            </p>
           </div>
         </div>
 
         {/* Stats strip */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-px bg-neutral-200 rounded-2xl overflow-hidden -mb-px">
-          {stats.map(({ value, label }) => (
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-px rounded-2xl overflow-hidden -mb-px" style={{ background: "#C1D7E6" }}>
+          {STATS.map(({ value, label }) => (
             <div key={label} className="bg-white px-6 py-5">
-              <p className="font-display text-4xl font-semibold text-neutral-900 tracking-tight">
+              <p
+                className="text-3xl font-semibold tabular-nums"
+                style={{ fontFamily: "var(--font-fredoka)", color: "#2C25B5" }}
+              >
                 {value}
               </p>
               <p className="mt-1 text-sm text-neutral-500">{label}</p>
