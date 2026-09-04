@@ -135,12 +135,10 @@ export async function updateSession(request: NextRequest) {
       }
     }
 
-    // ── Redirect logged-in staff/B2B away from public pages ────────────
-    // Uses JWT role (fast). The login form server action already redirects
-    // correctly after login, so this block only handles edge cases.
-    // JWT role may be wrong for staff (shows customer_b2c due to auth hook),
-    // but that's acceptable here — it's a UX convenience, not a security gate.
-    if (user && !pathname.startsWith("/auth") && !pathname.startsWith("/login") && !pathname.startsWith("/admin") && !pathname.startsWith("/b2b") && !pathname.startsWith("/remito") && !pathname.startsWith("/api")) {
+    // ── Redirect logged-in users away from /login ──────────────────────
+    // Only redirect from /login — staff and B2B users should be able to
+    // browse the marketing site freely while logged in.
+    if (user && pathname.startsWith("/login")) {
       const jwtRole = user.app_metadata?.role as string | undefined;
 
       if (jwtRole === "customer_b2b") {
