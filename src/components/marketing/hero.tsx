@@ -1,3 +1,5 @@
+import Image from "next/image";
+
 const WA_NUMBER = "5493765017944";
 const WA_TEXT   = encodeURIComponent("Hola, quería pedir información sobre los productos de En Minutas 👋");
 const WA_HREF   = `https://wa.me/${WA_NUMBER}?text=${WA_TEXT}`;
@@ -9,10 +11,28 @@ const STATS = [
   { value: "4",      label: "Líneas de producto" },
 ];
 
-export function Hero() {
+type Props = {
+  titulo?: string;
+  descripcion?: string;
+  imagenUrl?: string | null;
+};
+
+const DEFAULT_TITULO      = "Bocaditos, chipas y empanadas de Misiones, listos en minutos.";
+const DEFAULT_DESCRIPCION = "Elaborados con materia prima del Litoral, cocidos en horno Rational y ultracongelados con tecnología Irinox. Desde Posadas para todo el país.";
+
+export function Hero({ titulo, descripcion, imagenUrl }: Props) {
+  const t = titulo      || DEFAULT_TITULO;
+  const d = descripcion || DEFAULT_DESCRIPCION;
+
+  // Resaltar "de Misiones" si aparece en el título
+  const accent = "de Misiones";
+  const accentIdx = t.indexOf(accent);
+  const titleParts = accentIdx >= 0
+    ? [t.slice(0, accentIdx), accent, t.slice(accentIdx + accent.length)]
+    : [t, null, null];
+
   return (
     <section className="relative overflow-hidden bg-white pt-12 pb-0">
-
       <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="grid lg:grid-cols-2 gap-10 lg:gap-16 items-center pb-16 lg:pb-20">
 
@@ -29,15 +49,16 @@ export function Hero() {
               className="text-5xl lg:text-6xl font-semibold text-neutral-900 leading-[1.05] tracking-tight"
               style={{ fontFamily: "var(--font-fredoka)" }}
             >
-              Bocaditos, chipas y empanadas{" "}
-              <span style={{ color: "#2C25B5" }}>de Misiones</span>,{" "}
-              listos en minutos.
+              {titleParts[1] ? (
+                <>
+                  {titleParts[0]}
+                  <span style={{ color: "#2C25B5" }}>{titleParts[1]}</span>
+                  {titleParts[2]}
+                </>
+              ) : t}
             </h1>
 
-            <p className="mt-6 text-lg text-neutral-600 max-w-md leading-relaxed">
-              Elaborados con materia prima del Litoral, cocidos en horno Rational
-              y ultracongelados con tecnología Irinox. Desde Posadas para todo el país.
-            </p>
+            <p className="mt-6 text-lg text-neutral-600 max-w-md leading-relaxed">{d}</p>
 
             {/* CTAs */}
             <div className="mt-8 flex flex-col sm:flex-row gap-3">
@@ -60,13 +81,9 @@ export function Hero() {
               </a>
             </div>
 
-            {/* Atributos reales */}
+            {/* Atributos */}
             <div className="mt-8 flex flex-wrap gap-2">
-              {[
-                "Cadena de frío garantizada",
-                "Materia prima regional",
-                "SENASA habilitado",
-              ].map((tag) => (
+              {["Cadena de frío garantizada", "Materia prima regional", "SENASA habilitado"].map((tag) => (
                 <span
                   key={tag}
                   className="inline-flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg border font-medium"
@@ -78,31 +95,27 @@ export function Hero() {
             </div>
           </div>
 
-          {/* Imagen — [PENDIENTE: falta foto real del producto hero] */}
+          {/* Imagen */}
           <div
             className="relative aspect-[4/5] lg:aspect-auto lg:h-[520px] rounded-2xl overflow-hidden flex flex-col items-center justify-center gap-3"
-            style={{ background: "#EAEBF8", border: "2px dashed #C1D7E6" }}
+            style={imagenUrl ? {} : { background: "#EAEBF8", border: "2px dashed #C1D7E6" }}
           >
-            <div
-              className="size-14 rounded-2xl flex items-center justify-center"
-              style={{ background: "#C1D7E6" }}
-            >
-              {/* ícono olla — marca propia */}
-              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#2C25B5" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-                <path d="M3 10h18v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-8z"/>
-                <path d="M8 10V7a4 4 0 0 1 8 0v3"/>
-                <path d="M7 6h10"/>
-                <line x1="9" y1="14" x2="9" y2="16"/>
-                <line x1="12" y1="14" x2="12" y2="17"/>
-                <line x1="15" y1="14" x2="15" y2="16"/>
-              </svg>
-            </div>
-            <p className="text-xs font-semibold uppercase tracking-widest" style={{ color: "#2C25B5" }}>
-              [PENDIENTE — foto real del producto]
-            </p>
-            <p className="text-xs" style={{ color: "#7B77D4" }}>
-              Bocaditos · línea principal
-            </p>
+            {imagenUrl ? (
+              <Image src={imagenUrl} alt="Productos En Minutas" fill className="object-cover" unoptimized />
+            ) : (
+              <>
+                <div className="size-14 rounded-2xl flex items-center justify-center" style={{ background: "#C1D7E6" }}>
+                  <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#2C25B5" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                    <rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/>
+                    <polyline points="21 15 16 10 5 21"/>
+                  </svg>
+                </div>
+                <p className="text-xs font-semibold uppercase tracking-widest" style={{ color: "#2C25B5" }}>
+                  [PENDIENTE — foto real del producto]
+                </p>
+                <p className="text-xs" style={{ color: "#7B77D4" }}>Subila desde Admin → Contenido web</p>
+              </>
+            )}
           </div>
         </div>
 
@@ -110,10 +123,7 @@ export function Hero() {
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-px rounded-2xl overflow-hidden -mb-px" style={{ background: "#C1D7E6" }}>
           {STATS.map(({ value, label }) => (
             <div key={label} className="bg-white px-6 py-5">
-              <p
-                className="text-3xl font-semibold tabular-nums"
-                style={{ fontFamily: "var(--font-fredoka)", color: "#2C25B5" }}
-              >
+              <p className="text-3xl font-semibold tabular-nums" style={{ fontFamily: "var(--font-fredoka)", color: "#2C25B5" }}>
                 {value}
               </p>
               <p className="mt-1 text-sm text-neutral-500">{label}</p>

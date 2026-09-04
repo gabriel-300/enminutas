@@ -1,8 +1,7 @@
+import Image from "next/image";
 import Link from "next/link";
 
 const WA_NUMBER = "5493765017944";
-const WA_TEXT   = encodeURIComponent("Hola, quería consultar sobre la Chipa Long Gourmet de En Minutas 🧀");
-const WA_HREF   = `https://wa.me/${WA_NUMBER}?text=${WA_TEXT}`;
 
 const specs = [
   ["Formato",  "Caja × 30 u"],
@@ -11,24 +10,41 @@ const specs = [
   ["Tiempo",   "12 min a 180°C"],
 ] as const;
 
-export function FeaturedProduct() {
+type Props = {
+  nombre?: string;
+  descripcion?: string;
+  imagenUrl?: string | null;
+};
+
+export function FeaturedProduct({ nombre, descripcion, imagenUrl }: Props) {
+  const n = nombre      || "Chipa Long Gourmet";
+  const d = descripcion || "115 g por unidad. Tres quesos: sardo, tybo y provolone. Formato diseñado para cafeterías, estaciones de servicio y catering de alto volumen.";
+  const waText = encodeURIComponent(`Hola, quería consultar sobre ${n} de En Minutas 🧀`);
+  const waHref = `https://wa.me/${WA_NUMBER}?text=${waText}`;
+
   return (
     <section className="py-20" style={{ background: "#EAEBF8" }}>
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="grid lg:grid-cols-2 gap-12 items-center">
 
-          {/* Imagen placeholder */}
+          {/* Imagen */}
           <div
             className="relative aspect-[5/4] rounded-2xl overflow-hidden order-2 lg:order-1 flex flex-col items-center justify-center gap-3"
-            style={{ background: "#C1D7E6", border: "2px dashed #7B77D4" }}
+            style={imagenUrl ? {} : { background: "#C1D7E6", border: "2px dashed #7B77D4" }}
           >
-            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#2C25B5" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-              <circle cx="12" cy="8" r="6"/>
-              <path d="M6 20c0-3.314 2.686-6 6-6s6 2.686 6 6"/>
-            </svg>
-            <p className="text-xs font-semibold uppercase tracking-widest" style={{ color: "#2C25B5" }}>
-              [PENDIENTE — foto Chipa Long Gourmet]
-            </p>
+            {imagenUrl ? (
+              <Image src={imagenUrl} alt={n} fill className="object-cover" unoptimized />
+            ) : (
+              <>
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#2C25B5" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                  <rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/>
+                  <polyline points="21 15 16 10 5 21"/>
+                </svg>
+                <p className="text-xs font-semibold uppercase tracking-widest" style={{ color: "#2C25B5" }}>
+                  [PENDIENTE — foto {n}]
+                </p>
+              </>
+            )}
             <span
               className="absolute top-4 left-4 inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-full text-white"
               style={{ background: "#2C25B5" }}
@@ -42,24 +58,13 @@ export function FeaturedProduct() {
 
           {/* Copy */}
           <div className="order-1 lg:order-2">
-            <p
-              className="text-xs font-semibold uppercase tracking-widest mb-4"
-              style={{ color: "#2C25B5", letterSpacing: "0.12em" }}
-            >
+            <p className="text-xs font-semibold uppercase tracking-widest mb-4" style={{ color: "#2C25B5", letterSpacing: "0.12em" }}>
               Producto destacado · Chipas
             </p>
-            <h2
-              className="text-4xl lg:text-5xl font-semibold text-neutral-900 leading-tight"
-              style={{ fontFamily: "var(--font-fredoka)" }}
-            >
-              Chipa Long{" "}
-              <span style={{ color: "#2C25B5" }}>Gourmet</span>
+            <h2 className="text-4xl lg:text-5xl font-semibold text-neutral-900 leading-tight" style={{ fontFamily: "var(--font-fredoka)" }}>
+              {n}
             </h2>
-            <p className="mt-4 text-lg text-neutral-600 leading-relaxed">
-              115 g por unidad. Tres quesos: sardo, tybo y provolone. Formato
-              diseñado para cafeterías, estaciones de servicio y catering de
-              alto volumen.
-            </p>
+            <p className="mt-4 text-lg text-neutral-600 leading-relaxed">{d}</p>
 
             <div className="mt-6 grid grid-cols-2 gap-3">
               {specs.map(([k, v]) => (
@@ -72,7 +77,7 @@ export function FeaturedProduct() {
 
             <div className="mt-8 flex flex-wrap gap-3">
               <a
-                href={WA_HREF}
+                href={waHref}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="inline-flex items-center gap-2 px-5 py-3 rounded-xl text-sm font-semibold text-white bg-brand hover:bg-brand-hover transition-colors"

@@ -42,7 +42,17 @@ const pillars = [
   },
 ];
 
-export function Nosotros() {
+type Props = {
+  titulo?: string;
+  parrafo1?: string;
+  parrafo2?: string;
+};
+
+export function Nosotros({ titulo, parrafo1, parrafo2 }: Props) {
+  const t  = titulo   || "Cocina industrial con alma regional.";
+  const p1 = parrafo1 || "En Minutas nació en Posadas para poner en valor la despensa del Litoral. Tomamos las recetas de siempre —chipa, empanada de río, bocadito de pacú— y les dimos proceso, cadena de frío y escala para llegar a cualquier mesa del país.";
+  const p2 = parrafo2 || "Trabajamos con gastronomía, retail y exportación. El producto es el mismo: elaborado en planta, abatido a −40 °C, listo en doce minutos.";
+
   return (
     <section className="py-20 bg-white" id="nosotros">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
@@ -50,43 +60,21 @@ export function Nosotros() {
 
           {/* Copy */}
           <div>
-            <p
-              className="text-xs font-semibold uppercase tracking-widest mb-4"
-              style={{ color: "#2C25B5", letterSpacing: "0.12em" }}
-            >
+            <p className="text-xs font-semibold uppercase tracking-widest mb-4" style={{ color: "#2C25B5", letterSpacing: "0.12em" }}>
               Quiénes somos
             </p>
-            <h2
-              className="text-3xl lg:text-4xl font-semibold text-neutral-900 leading-tight"
-              style={{ fontFamily: "var(--font-fredoka)" }}
-            >
-              Cocina industrial con{" "}
-              <span style={{ color: "#2C25B5" }}>alma regional</span>.
+            <h2 className="text-3xl lg:text-4xl font-semibold text-neutral-900 leading-tight" style={{ fontFamily: "var(--font-fredoka)" }}>
+              {t}
             </h2>
-            <p className="mt-5 text-lg text-neutral-600 leading-relaxed">
-              En Minutas nació en Posadas para poner en valor la despensa del Litoral.
-              Tomamos las recetas de siempre —chipa, empanada de río, bocadito de pacú—
-              y les dimos proceso, cadena de frío y escala para llegar a cualquier mesa
-              del país.
-            </p>
-            <p className="mt-4 text-base text-neutral-500 leading-relaxed">
-              Trabajamos con gastronomía, retail y exportación. El producto es el mismo:
-              elaborado en planta, abatido a −40 °C, listo en doce minutos.
-            </p>
+            <p className="mt-5 text-lg text-neutral-600 leading-relaxed">{p1}</p>
+            <p className="mt-4 text-base text-neutral-500 leading-relaxed">{p2}</p>
           </div>
 
           {/* Pilares */}
           <div className="grid sm:grid-cols-2 gap-4">
             {pillars.map(({ icon, title, body }) => (
-              <div
-                key={title}
-                className="rounded-2xl p-5 flex flex-col gap-3 border"
-                style={{ background: "#EAEBF8", borderColor: "#C1D7E6" }}
-              >
-                <div
-                  className="size-9 rounded-xl flex items-center justify-center"
-                  style={{ background: "#C1D7E6" }}
-                >
+              <div key={title} className="rounded-2xl p-5 flex flex-col gap-3 border" style={{ background: "#EAEBF8", borderColor: "#C1D7E6" }}>
+                <div className="size-9 rounded-xl flex items-center justify-center" style={{ background: "#C1D7E6" }}>
                   {icon}
                 </div>
                 <div>

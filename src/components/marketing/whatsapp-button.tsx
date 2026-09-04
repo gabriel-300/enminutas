@@ -1,13 +1,14 @@
 "use client";
 
-const WA_NUMBER = "5493765017944";
-const WA_TEXT   = encodeURIComponent("Hola, quería consultar sobre los productos de En Minutas 👋");
-const WA_HREF   = `https://wa.me/${WA_NUMBER}?text=${WA_TEXT}`;
+type Props = { whatsapp?: string };
 
-export function WhatsAppButton() {
+export function WhatsAppButton({ whatsapp = "5493765017944" }: Props) {
+  const text = encodeURIComponent("Hola, quería consultar sobre los productos de En Minutas 👋");
+  const href = `https://wa.me/${whatsapp}?text=${text}`;
+
   return (
     <a
-      href={WA_HREF}
+      href={href}
       target="_blank"
       rel="noopener noreferrer"
       aria-label="Consultar por WhatsApp"

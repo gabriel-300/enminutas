@@ -10,7 +10,7 @@ import {
   Users, UserCheck, GitBranch, BarChart2, TrendingUp, Target, Tag, Gift,
   Package, Layers, BookOpen, Calendar, ShoppingCart, Clock, Database,
   FileText, CreditCard, RotateCcw, CheckSquare, DollarSign,
-  Settings, HelpCircle, ChefHat, Factory,
+  Settings, HelpCircle, ChefHat, Factory, Globe,
   ChevronLeft, ChevronRight, ChevronDown,
 } from "lucide-react";
 
@@ -73,6 +73,13 @@ const SECTIONS: { label?: string; key?: string; items: NavEntry[] }[] = [
       { href: "/admin/cocina/recepciones",    label: "Recepciones",      icon: FileText,     roles: ["admin", "produccion"] },
       { href: "/admin/cocina/compras",       label: "Lista de compras", icon: ShoppingCart, roles: ["admin", "produccion"] },
       { href: "/admin/cocina/historial",     label: "Historial prod.",  icon: Clock,        roles: ["admin", "produccion"] },
+    ],
+  },
+  {
+    label: "SITIO WEB",
+    key:   "sitio_web",
+    items: [
+      { href: "/admin/contenido", label: "Contenido web", icon: Globe, roles: ["admin"] },
     ],
   },
   {
