@@ -71,8 +71,9 @@ export function Footer({
               />
             </Link>
             <p className="text-sm text-neutral-400 leading-relaxed mb-5">
-              Finger Food Regional. Cocina ultracongelada elaborada en Posadas,
-              Misiones — Argentina. Proceso industrial, sabor de monte.
+              Ultracongelados a base de mandioca elaborados en planta propia.
+              Horno Rational, abatidor Irinox, 18 meses de vida útil.
+              Posadas, Misiones — Argentina.
             </p>
             <div className="flex flex-wrap gap-2">
               {["FOR EXPORT", "SENASA al día", "Rational · Irinox"].map((tag) => (

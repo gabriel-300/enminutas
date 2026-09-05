@@ -84,13 +84,16 @@ export function B2BCta() {
                 ))}
               </div>
 
-              {/* Zona testimonio — sin inventar */}
               <div
                 className="rounded-xl p-5 border"
                 style={{ borderColor: "rgba(193,215,230,0.2)", background: "rgba(255,255,255,0.05)" }}
               >
-                <p className="text-sm text-white/40 italic">
-                  [PENDIENTE — testimonio real de cliente mayorista]
+                <p className="text-xs font-semibold uppercase tracking-widest text-white/40 mb-2" style={{ letterSpacing: "0.1em" }}>
+                  Zonas de entrega
+                </p>
+                <p className="text-sm text-white/70 leading-relaxed">
+                  Posadas y Gran Posadas. Interior del país por transporte
+                  isotérmico. Consultar por destino y frecuencia.
                 </p>
               </div>
             </div>
