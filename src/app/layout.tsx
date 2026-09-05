@@ -26,22 +26,23 @@ const montserrat = Montserrat({
 
 export const metadata: Metadata = {
   title: {
-    default: "En Minutas — Cocina ultracongelada de Misiones",
+    default: "En Minutas — Ultracongelados a base de mandioca",
     template: "%s · En Minutas",
   },
   description:
-    "Bocaditos, chipas, pizzas y empanadas elaborados con materia prima del Litoral, cocidos en horno Rational y ultracongelados. Desde Posadas, Misiones.",
+    "Bastones, noisettes y bocaditos a base de mandioca, chipas, empanadas y pizzas ultracongeladas. Elaborados en planta propia en Posadas, Misiones. Envíos a todo el país.",
   keywords: [
+    "mandioca precocida",
+    "bastones de mandioca",
+    "noisette de mandioca",
+    "ultracongelado",
     "chipa",
     "empanadas",
     "bocaditos",
-    "finger food",
-    "ultracongelado",
+    "gastronomía",
     "Posadas",
     "Misiones",
     "Argentina",
-    "pacu",
-    "masa madre",
   ],
   openGraph: {
     type: "website",

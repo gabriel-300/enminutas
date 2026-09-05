@@ -25,7 +25,7 @@ export function CategoryGrid({ categories }: Props) {
             className="text-3xl lg:text-4xl font-semibold text-neutral-900"
             style={{ fontFamily: "var(--font-fredoka)" }}
           >
-            Cuatro líneas, una sola{" "}
+            De la mandioca a la masa madre, una sola{" "}
             <span style={{ color: "#2C25B5" }}>mesa</span>.
           </h2>
         </div>

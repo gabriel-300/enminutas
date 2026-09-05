@@ -17,15 +17,15 @@ type Props = {
   imagenUrl?: string | null;
 };
 
-const DEFAULT_TITULO      = "Bocaditos, chipas y empanadas de Misiones, listos en minutos.";
-const DEFAULT_DESCRIPCION = "Elaborados con materia prima del Litoral, cocidos en horno Rational y ultracongelados con tecnología Irinox. Desde Posadas para todo el país.";
+const DEFAULT_TITULO      = "Bastones, noisettes y bocaditos a base de mandioca —y mucho más— listos en minutos.";
+const DEFAULT_DESCRIPCION = "Elaborados en planta propia, cocidos en horno Rational y ultracongelados con tecnología Irinox para una cadena de frío sin cortes. Envíos a todo el país.";
 
 export function Hero({ titulo, descripcion, imagenUrl }: Props) {
   const t = titulo      || DEFAULT_TITULO;
   const d = descripcion || DEFAULT_DESCRIPCION;
 
-  // Resaltar "de Misiones" si aparece en el título
-  const accent = "de Misiones";
+  // Resaltar "mandioca" si aparece en el título
+  const accent = "mandioca";
   const accentIdx = t.indexOf(accent);
   const titleParts = accentIdx >= 0
     ? [t.slice(0, accentIdx), accent, t.slice(accentIdx + accent.length)]
@@ -92,7 +92,7 @@ export function Hero({ titulo, descripcion, imagenUrl }: Props) {
               className="text-xs font-semibold uppercase tracking-widest mb-5"
               style={{ color: "#2C25B5", letterSpacing: "0.12em" }}
             >
-              Finger food regional · Posadas, Misiones
+              Fábrica de ultracongelados · Gastronomía, retail y exportación
             </p>
 
             <h1
@@ -133,7 +133,7 @@ export function Hero({ titulo, descripcion, imagenUrl }: Props) {
 
             {/* Atributos */}
             <div className="mt-8 flex flex-wrap gap-2">
-              {["Cadena de frío garantizada", "Materia prima regional", "SENASA habilitado"].map((tag) => (
+              {["Cadena de frío garantizada", "SENASA habilitado", "Envíos a todo el país"].map((tag) => (
                 <span
                   key={tag}
                   className="inline-flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg border font-medium"

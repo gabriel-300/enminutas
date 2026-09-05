@@ -36,12 +36,12 @@ const IconCheck = () => (
 const pillars = [
   {
     title: "Planta propia en Posadas",
-    body: "Elaboramos en nuestra planta habilitada por SENASA en Misiones. Horno Rational y abatidor Irinox garantizan consistencia industrial en cada lote.",
+    body: "Elaboramos en nuestra planta habilitada por SENASA. Horno Rational y abatidor Irinox garantizan consistencia industrial en cada lote.",
     icon: <IconHorno />,
   },
   {
-    title: "Materia prima del Litoral",
-    body: "Pacú de Rosamonte, mandioca misionera y quesos regionales. Priorizamos proveedores locales para sostener la cadena de valor del NEA.",
+    title: "La mandioca como base",
+    body: "Mandioca, pacú y quesos, elegidos por calidad y trazabilidad. Sostenemos relaciones directas con productores para asegurar consistencia todo el año.",
     icon: <IconTimer />,
   },
   {
@@ -63,9 +63,9 @@ type Props = {
 };
 
 export function Nosotros({ titulo, parrafo1, parrafo2 }: Props) {
-  const t  = titulo   || "Cocina industrial con alma regional.";
-  const p1 = parrafo1 || "En Minutas nació en Posadas para poner en valor la despensa del Litoral. Tomamos las recetas de siempre —chipa, empanada de río, bocadito de pacú— y les dimos proceso, cadena de frío y escala para llegar a cualquier mesa del país.";
-  const p2 = parrafo2 || "Trabajamos con gastronomía, retail y exportación. El producto es el mismo: elaborado en planta, abatido a −40 °C, listo en doce minutos.";
+  const t  = titulo   || "Cocina industrial, con la mandioca como eje.";
+  const p1 = parrafo1 || "En Minutas nació en Posadas, Misiones, elaborando bastones y bocaditos a base de mandioca. Hoy sumamos chipas, empanadas y pizzas ultracongeladas, siempre con el mismo proceso: cocción en horno Rational, abatimiento a −40 °C y cadena de frío hasta cualquier mesa del país.";
+  const p2 = parrafo2 || "Trabajamos con gastronomía, retail y exportación. El producto es el mismo: elaborado en planta propia, abatido a −40 °C, listo en doce minutos.";
 
   return (
     <section className="py-20 bg-white" id="nosotros">
