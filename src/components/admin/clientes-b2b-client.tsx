@@ -394,13 +394,21 @@ function ClienteRow({ cliente, zonas, vendedores, canales, esAdmin }: {
       </tr>
 
       {editOpen && (
-        <tr className="bg-neutral-50 border-b border-neutral-200">
-          <td colSpan={7} className="px-4 py-4">
-            <EditForm cliente={cliente} zonas={zonas} canales={canales} vendedores={vendedores}
-              esAdmin={esAdmin} isPending={isPending} editError={editError} onSubmit={handleEdit} />
-            {esAdmin && <PasswordPanel clienteId={cliente.id} />}
-          </td>
-        </tr>
+        <>
+          <tr className="bg-neutral-50">
+            <td colSpan={7} className="px-4 pt-4 pb-2">
+              <EditForm cliente={cliente} zonas={zonas} canales={canales} vendedores={vendedores}
+                esAdmin={esAdmin} isPending={isPending} editError={editError} onSubmit={handleEdit} />
+            </td>
+          </tr>
+          {esAdmin && (
+            <tr className="bg-neutral-50 border-b border-neutral-200">
+              <td colSpan={7} className="px-4 pb-4 pt-0">
+                <PasswordPanel clienteId={cliente.id} />
+              </td>
+            </tr>
+          )}
+        </>
       )}
     </>
   );
