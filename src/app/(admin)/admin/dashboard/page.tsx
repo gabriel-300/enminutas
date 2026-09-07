@@ -4,8 +4,20 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import { ahoraAR } from "@/lib/fecha";
 
-export const metadata: Metadata = { title: "Dashboard — Admin En Minutas" };
 export const revalidate = 0;
+
+// Manifest dinámico: el preventista instala esta página como app propia
+// ("EM Preventista"), en vez de heredar el manifest global de repartidor.
+export async function generateMetadata(): Promise<Metadata> {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  const role = (user?.app_metadata?.role as string | undefined) ?? null;
+
+  if (role === "vendedor") {
+    return { title: "Dashboard — Admin En Minutas", manifest: "/preventista-manifest.json" };
+  }
+  return { title: "Dashboard — Admin En Minutas" };
+}
 
 function DI({ d, d2 }: { d: string; d2?: string }) {
   return (
