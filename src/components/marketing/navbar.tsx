@@ -28,7 +28,7 @@ export function Navbar() {
               alt="En Minutas"
               width={120}
               height={48}
-              className="h-10 w-auto"
+              className="h-12 w-auto"
               priority
             />
           </Link>
