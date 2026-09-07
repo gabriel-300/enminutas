@@ -1,3 +1,5 @@
+import { BrandPattern } from "./brand-pattern";
+
 // Íconos de marca según manual de identidad visual
 const IconHorno = () => (
   <svg width="22" height="22" viewBox="0 0 32 32" fill="none" aria-hidden>
@@ -58,8 +60,9 @@ export function Nosotros({ titulo, parrafo1, parrafo2, pilares }: Props) {
     : DEFAULT_PILARES;
 
   return (
-    <section className="py-20 bg-white" id="nosotros">
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+    <section className="relative overflow-hidden py-20 bg-white" id="nosotros">
+      <BrandPattern />
+      <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="grid lg:grid-cols-2 gap-16 items-center">
 
           {/* Copy */}

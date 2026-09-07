@@ -1,5 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
+import { BrandPattern } from "./brand-pattern";
 
 type Props = {
   nombre?: string;
@@ -25,8 +26,9 @@ export function FeaturedProduct({
   const waHref = `https://wa.me/${wa}?text=${waText}`;
 
   return (
-    <section className="py-20" style={{ background: "#EAEBF8" }}>
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+    <section className="relative overflow-hidden py-20" style={{ background: "#EAEBF8" }}>
+      <BrandPattern />
+      <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="grid lg:grid-cols-2 gap-12 items-center">
 
           {/* Imagen */}
