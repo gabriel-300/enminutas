@@ -57,7 +57,7 @@ export function Hero({ titulo, descripcion, imagenUrl, eyebrow, badges, stats }:
             </p>
 
             <h1
-              className="text-5xl lg:text-6xl font-semibold text-neutral-900 leading-[1.05] tracking-tight"
+              className="text-3xl sm:text-5xl lg:text-6xl font-semibold text-neutral-900 leading-[1.05] tracking-tight"
               style={{ fontFamily: "var(--font-fredoka)" }}
             >
               {titleParts[1] ? (
@@ -131,11 +131,12 @@ export function Hero({ titulo, descripcion, imagenUrl, eyebrow, badges, stats }:
         {/* Stats strip */}
         {sts.length > 0 && (
           <div
-            className={`grid gap-px rounded-2xl overflow-hidden -mb-px`}
-            style={{
-              gridTemplateColumns: `repeat(${sts.length}, minmax(0, 1fr))`,
-              background: "#C1D7E6",
-            }}
+            className={`grid gap-px rounded-2xl overflow-hidden -mb-px ${
+              sts.length === 1 ? "grid-cols-1" :
+              sts.length === 2 ? "grid-cols-1 sm:grid-cols-2" :
+                                 "grid-cols-1 sm:grid-cols-3"
+            }`}
+            style={{ background: "#C1D7E6" }}
           >
             {sts.map(({ value, label }) => (
               <div key={label} className="bg-white px-6 py-5">

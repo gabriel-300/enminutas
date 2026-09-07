@@ -62,7 +62,7 @@ export function FeaturedProduct({
             <p className="text-xs font-semibold uppercase tracking-widest mb-4" style={{ color: "#2C25B5", letterSpacing: "0.12em" }}>
               {bg} · A base de mandioca
             </p>
-            <h2 className="text-4xl lg:text-5xl font-semibold text-neutral-900 leading-tight" style={{ fontFamily: "var(--font-fredoka)" }}>
+            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-semibold text-neutral-900 leading-tight" style={{ fontFamily: "var(--font-fredoka)" }}>
               {n}
             </h2>
             <p className="mt-4 text-lg text-neutral-600 leading-relaxed">{d}</p>

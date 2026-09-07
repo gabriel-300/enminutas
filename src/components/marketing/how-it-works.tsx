@@ -43,7 +43,7 @@ export function HowItWorks({ titulo, pasos, whatsapp = "5493765017944" }: Props)
       id="como-funciona"
       style={{ background: "#2C25B5" }}
     >
-      <div className="mx-auto max-w-4xl px-8 lg:px-16">
+      <div className="mx-auto max-w-4xl px-4 sm:px-8 lg:px-16">
         <div className="text-center mb-12">
           <p className="text-xs font-semibold uppercase tracking-widest text-white/50 mb-3" style={{ letterSpacing: "0.12em" }}>
             Cómo funciona
