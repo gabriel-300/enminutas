@@ -131,7 +131,7 @@ export function Footer({
 
         {/* Bottom bar */}
         <div className="pt-6 border-t border-white/10 flex flex-col sm:flex-row justify-between items-center gap-3 text-xs text-neutral-500">
-          <p>© 2026 En Minutas · Posadas, Misiones · Argentina</p>
+          <p>© 2026 En Minutas · <a href="https://ideia.com.ar" target="_blank" rel="noopener noreferrer" className="hover:text-neutral-300 transition-colors">ideia.com.ar</a></p>
           <p>Coop. de Trabajo Il Pane Nostro Ltda. · CUIT 30-71858060-5</p>
         </div>
       </div>
