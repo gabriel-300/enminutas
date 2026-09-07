@@ -88,7 +88,8 @@ export function HowItWorks({ titulo, pasos, whatsapp = "5493765017944" }: Props)
             href={waHref}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center justify-center size-14 rounded-xl text-white border-2 border-white/30 hover:bg-white/10 transition-colors"
+            className="inline-flex items-center justify-center size-14 rounded-xl text-white transition-colors hover:opacity-90"
+            style={{ background: "#25D366" }}
             aria-label="Consultar por WhatsApp"
           >
             <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
