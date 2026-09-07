@@ -36,7 +36,7 @@ const IconCheck = () => (
 const pillars = [
   {
     title: "Planta propia en Posadas",
-    body: "Elaboramos en nuestra planta habilitada por SENASA. Horno Rational y abatidor Irinox garantizan consistencia industrial en cada lote.",
+    body: "Elaboramos en nuestra planta propia. Horno Rational y abatidor Irinox garantizan consistencia industrial en cada lote.",
     icon: <IconHorno />,
   },
   {
@@ -46,12 +46,12 @@ const pillars = [
   },
   {
     title: "Cadena de frío sin cortes",
-    body: "Abatimiento a −40 °C post-cocción. Distribución isotérmica con 18 meses de vida útil. Trazabilidad por lote desde planta hasta destino.",
+    body: "Abatimiento a −40 °C post-cocción. Distribución isotérmica hasta cualquier mesa del país.",
     icon: <IconOlla />,
   },
   {
-    title: "Habilitación SENASA vigente",
-    body: "Certificación para mercado interno y exportación. Documentación completa disponible para clientes export y operadores logísticos.",
+    title: "Pensado para tu cocina",
+    body: "Porciones consistentes y cero merma: aprovechás el 100% de cada unidad, con el mismo rendimiento en cada pedido.",
     icon: <IconCheck />,
   },
 ];
@@ -65,7 +65,7 @@ type Props = {
 export function Nosotros({ titulo, parrafo1, parrafo2 }: Props) {
   const t  = titulo   || "Cocina industrial, con la mandioca como eje.";
   const p1 = parrafo1 || "En Minutas nació en Posadas, Misiones, elaborando bastones y bocaditos a base de mandioca. Hoy sumamos chipas, empanadas y pizzas ultracongeladas, siempre con el mismo proceso: cocción en horno Rational, abatimiento a −40 °C y cadena de frío hasta cualquier mesa del país.";
-  const p2 = parrafo2 || "Trabajamos con gastronomía, retail y exportación. El producto es el mismo: elaborado en planta propia, abatido a −40 °C, listo en doce minutos.";
+  const p2 = parrafo2 || "Trabajamos con gastronomía y retail. El producto es el mismo: elaborado en planta propia, abatido a −40 °C, listo en doce minutos.";
 
   return (
     <section className="py-20 bg-white" id="nosotros">
