@@ -21,54 +21,60 @@ type Props = {
 };
 
 export function ChannelSelector({
-  whatsapp    = "5493765017944",
-  kicker      = "¿Cómo pedís?",
-  titulo      = "Tres formas de llegar a vos.",
-  canal1Titulo     = "Pedido por WhatsApp",
-  canal1Subtitulo  = "La forma más rápida",
-  canal1Desc       = "Escribinos, te asesoramos sobre productos y coordinamos entrega y pago. Atención personalizada.",
-  canal1Cta        = "Escribir ahora",
-  canal2Titulo     = "Ver catálogo",
-  canal2Subtitulo  = "Todos los productos",
-  canal2Desc       = "Explorá chipas, bocaditos, pizzas y empanadas con precios y presentaciones disponibles.",
-  canal2Cta        = "Ver productos",
-  canal3Titulo     = "Mayoristas B2B",
-  canal3Subtitulo  = "Gastronomía · Retail",
-  canal3Desc       = "Precios especiales, factura, cuenta corriente y logística a medida. Para restaurantes y retail.",
-  canal3Cta        = "Consultar condiciones",
+  whatsapp,
+  kicker, titulo,
+  canal1Titulo, canal1Subtitulo, canal1Desc, canal1Cta,
+  canal2Titulo, canal2Subtitulo, canal2Desc, canal2Cta,
+  canal3Titulo, canal3Subtitulo, canal3Desc, canal3Cta,
 }: Props) {
+  const wa  = whatsapp       || "5493765017944";
+  const k   = kicker         || "¿Cómo pedís?";
+  const t   = titulo         || "Tres formas de llegar a vos.";
+  const c1t = canal1Titulo   || "Pedido por WhatsApp";
+  const c1s = canal1Subtitulo || "La forma más rápida";
+  const c1d = canal1Desc     || "Escribinos, te asesoramos sobre productos y coordinamos entrega y pago. Atención personalizada.";
+  const c1c = canal1Cta      || "Escribir ahora";
+  const c2t = canal2Titulo   || "Ver catálogo";
+  const c2s = canal2Subtitulo || "Todos los productos";
+  const c2d = canal2Desc     || "Explorá chipas, bocaditos, pizzas y empanadas con precios y presentaciones disponibles.";
+  const c2c = canal2Cta      || "Ver productos";
+  const c3t = canal3Titulo   || "Mayoristas B2B";
+  const c3s = canal3Subtitulo || "Gastronomía · Retail";
+  const c3d = canal3Desc     || "Precios especiales, factura, cuenta corriente y logística a medida. Para restaurantes y retail.";
+  const c3c = canal3Cta      || "Consultar condiciones";
+
   const waMinorista  = encodeURIComponent("Hola, quería hacer un pedido de productos En Minutas 🛒");
   const waMayorista  = encodeURIComponent("Hola, quería consultar sobre condiciones mayoristas de En Minutas 🏪");
 
   const channels = [
     {
       id: "whatsapp",
-      title: canal1Titulo,
-      subtitle: canal1Subtitulo,
-      description: canal1Desc,
-      href: `https://wa.me/${whatsapp}?text=${waMinorista}`,
+      title: c1t,
+      subtitle: c1s,
+      description: c1d,
+      href: `https://wa.me/${wa}?text=${waMinorista}`,
       external: true,
-      cta: canal1Cta,
+      cta: c1c,
       featured: true,
     },
     {
       id: "catalogo",
-      title: canal2Titulo,
-      subtitle: canal2Subtitulo,
-      description: canal2Desc,
+      title: c2t,
+      subtitle: c2s,
+      description: c2d,
       href: "/tienda",
       external: false,
-      cta: canal2Cta,
+      cta: c2c,
       featured: false,
     },
     {
       id: "mayorista",
-      title: canal3Titulo,
-      subtitle: canal3Subtitulo,
-      description: canal3Desc,
-      href: `https://wa.me/${whatsapp}?text=${waMayorista}`,
+      title: c3t,
+      subtitle: c3s,
+      description: c3d,
+      href: `https://wa.me/${wa}?text=${waMayorista}`,
       external: true,
-      cta: canal3Cta,
+      cta: c3c,
       featured: false,
     },
   ];
@@ -81,13 +87,13 @@ export function ChannelSelector({
             className="text-xs font-semibold uppercase tracking-widest mb-3"
             style={{ color: "#2C25B5", letterSpacing: "0.12em" }}
           >
-            {kicker}
+            {k}
           </p>
           <h2
             className="text-3xl lg:text-4xl font-semibold text-neutral-900"
             style={{ fontFamily: "var(--font-fredoka)" }}
           >
-            {titulo}
+            {t}
           </h2>
         </div>
 

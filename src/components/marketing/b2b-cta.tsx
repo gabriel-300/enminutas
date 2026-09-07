@@ -17,13 +17,14 @@ type Props = {
   ctaText?:   string;
 };
 
-export function B2BCta({ kicker, titulo, parrafo, perks, whatsapp = "5493765017944", ctaText }: Props) {
-  const k    = kicker  || "Para gastronomía y retail";
-  const t    = titulo  || "¿Comprás en volumen?\nHablemos.";
-  const p    = parrafo || "Trabajamos con restaurantes, cafeterías y comercios de todo el país. Condiciones a medida de tu negocio.";
+export function B2BCta({ kicker, titulo, parrafo, perks, whatsapp, ctaText }: Props) {
+  const k    = kicker   || "Para gastronomía y retail";
+  const t    = titulo   || "¿Comprás en volumen?\nHablemos.";
+  const p    = parrafo  || "Trabajamos con restaurantes, cafeterías y comercios de todo el país. Condiciones a medida de tu negocio.";
   const ps   = (perks && perks.length > 0) ? perks : DEFAULT_PERKS;
-  const cta  = ctaText || "Consultar condiciones";
-  const waHref = `https://wa.me/${whatsapp}?text=${WA_TEXT}`;
+  const cta  = ctaText  || "Consultar condiciones";
+  const wa   = whatsapp || "5493765017944";
+  const waHref = `https://wa.me/${wa}?text=${WA_TEXT}`;
 
   return (
     <section className="py-20 bg-white" id="mayoristas">

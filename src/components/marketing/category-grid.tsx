@@ -14,11 +14,10 @@ type Props = {
   titulo?: string;
 };
 
-export function CategoryGrid({
-  categories,
-  kicker = "Líneas de producto",
-  titulo = "De la mandioca a la masa madre, una sola mesa.",
-}: Props) {
+export function CategoryGrid({ categories, kicker, titulo }: Props) {
+  const k = kicker || "Líneas de producto";
+  const t = titulo || "De la mandioca a la masa madre, una sola mesa.";
+
   return (
     <section className="bg-white py-20" id="productos">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
@@ -27,13 +26,13 @@ export function CategoryGrid({
             className="text-xs font-semibold uppercase tracking-widest mb-3"
             style={{ color: "#2C25B5", letterSpacing: "0.12em" }}
           >
-            {kicker}
+            {k}
           </p>
           <h2
             className="text-3xl lg:text-4xl font-semibold text-neutral-900"
             style={{ fontFamily: "var(--font-fredoka)" }}
           >
-            {titulo}
+            {t}
           </h2>
         </div>
 
