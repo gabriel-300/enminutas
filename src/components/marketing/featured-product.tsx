@@ -1,19 +1,29 @@
 import Image from "next/image";
 import Link from "next/link";
 
-const WA_NUMBER = "5493765017944";
-
 type Props = {
   nombre?: string;
   descripcion?: string;
   imagenUrl?: string | null;
+  whatsapp?: string;
+  badge?: string;
+  lineaHref?: string;
+  lineaCta?: string;
 };
 
-export function FeaturedProduct({ nombre, descripcion, imagenUrl }: Props) {
+export function FeaturedProduct({
+  nombre,
+  descripcion,
+  imagenUrl,
+  whatsapp  = "5493765017944",
+  badge     = "Producto insignia",
+  lineaHref = "/tienda?categoria=rebozados",
+  lineaCta  = "Ver toda la línea de mandioca",
+}: Props) {
   const n = nombre      || "Noisette de Mandioca";
   const d = descripcion || "Noisette de mandioca rebozada y precocida, crocante por fuera y tierna por dentro. Cero merma: aprovechás el 100% de cada porción, lista en 12 minutos directo del freezer al horno o a la freidora.";
   const waText = encodeURIComponent(`Hola, quería consultar sobre ${n} de En Minutas 🛒`);
-  const waHref = `https://wa.me/${WA_NUMBER}?text=${waText}`;
+  const waHref = `https://wa.me/${whatsapp}?text=${waText}`;
 
   return (
     <section className="py-20" style={{ background: "#EAEBF8" }}>
@@ -42,14 +52,14 @@ export function FeaturedProduct({ nombre, descripcion, imagenUrl }: Props) {
               className="absolute top-4 left-4 inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-full text-white"
               style={{ background: "#2C25B5" }}
             >
-              Producto insignia
+              {badge}
             </span>
           </div>
 
           {/* Copy */}
           <div className="order-1 lg:order-2">
             <p className="text-xs font-semibold uppercase tracking-widest mb-4" style={{ color: "#2C25B5", letterSpacing: "0.12em" }}>
-              Producto insignia · A base de mandioca
+              {badge} · A base de mandioca
             </p>
             <h2 className="text-4xl lg:text-5xl font-semibold text-neutral-900 leading-tight" style={{ fontFamily: "var(--font-fredoka)" }}>
               {n}
@@ -69,10 +79,10 @@ export function FeaturedProduct({ nombre, descripcion, imagenUrl }: Props) {
                 </svg>
               </a>
               <Link
-                href="/tienda?categoria=rebozados"
+                href={lineaHref}
                 className="inline-flex items-center gap-2 px-5 py-3 rounded-xl text-sm font-semibold text-neutral-700 border border-neutral-300 hover:border-neutral-400 hover:bg-neutral-50 transition-colors"
               >
-                Ver toda la línea de mandioca
+                {lineaCta}
               </Link>
             </div>
           </div>

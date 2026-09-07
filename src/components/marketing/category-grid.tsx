@@ -8,9 +8,17 @@ const PALETTE = [
   { bg: "#E8F0EA", accent: "#1D4A29" },
 ];
 
-type Props = { categories: Category[] };
+type Props = {
+  categories: Category[];
+  kicker?: string;
+  titulo?: string;
+};
 
-export function CategoryGrid({ categories }: Props) {
+export function CategoryGrid({
+  categories,
+  kicker = "Líneas de producto",
+  titulo = "De la mandioca a la masa madre, una sola mesa.",
+}: Props) {
   return (
     <section className="bg-white py-20" id="productos">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
@@ -19,14 +27,13 @@ export function CategoryGrid({ categories }: Props) {
             className="text-xs font-semibold uppercase tracking-widest mb-3"
             style={{ color: "#2C25B5", letterSpacing: "0.12em" }}
           >
-            Líneas de producto
+            {kicker}
           </p>
           <h2
             className="text-3xl lg:text-4xl font-semibold text-neutral-900"
             style={{ fontFamily: "var(--font-fredoka)" }}
           >
-            De la mandioca a la masa madre, una sola{" "}
-            <span style={{ color: "#2C25B5" }}>mesa</span>.
+            {titulo}
           </h2>
         </div>
 

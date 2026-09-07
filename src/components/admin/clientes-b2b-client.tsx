@@ -140,18 +140,26 @@ function PasswordPanel({ clienteId }: { clienteId: string }) {
   function handleSend() {
     setErr(null); setMsg(null);
     start(async () => {
-      const res = await enviarResetPassword(clienteId);
-      if (res.error) setErr(res.error);
-      else { setMsg("Link de recuperación enviado al email del cliente."); setMode("sent"); }
+      try {
+        const res = await enviarResetPassword(clienteId);
+        if (res.error) setErr(res.error);
+        else { setMsg("Link de recuperación enviado al email del cliente."); setMode("sent"); }
+      } catch (e: any) {
+        setErr(e?.message ?? "Error inesperado");
+      }
     });
   }
 
   function handleSet() {
     setErr(null); setMsg(null);
     start(async () => {
-      const res = await setPasswordCliente(clienteId, pwd);
-      if (res.error) setErr(res.error);
-      else { setMsg("Contraseña actualizada."); setPwd(""); setMode("idle"); }
+      try {
+        const res = await setPasswordCliente(clienteId, pwd);
+        if (res.error) setErr(res.error);
+        else { setMsg("Contraseña actualizada."); setPwd(""); setMode("idle"); }
+      } catch (e: any) {
+        setErr(e?.message ?? "Error inesperado");
+      }
     });
   }
 
@@ -160,11 +168,11 @@ function PasswordPanel({ clienteId }: { clienteId: string }) {
       <p className="text-xs font-medium text-neutral-500">Contraseña de acceso</p>
       {mode === "idle" && (
         <div className="flex flex-wrap gap-2">
-          <button onClick={() => { setMode("set"); setMsg(null); setErr(null); }} disabled={isPending}
+          <button type="button" onClick={() => { setMode("set"); setMsg(null); setErr(null); }} disabled={isPending}
             className="px-3 py-1.5 text-xs font-medium rounded-lg bg-tierra-700 text-white hover:bg-tierra-800 disabled:opacity-50">
             Establecer contraseña
           </button>
-          <button onClick={handleSend} disabled={isPending}
+          <button type="button" onClick={handleSend} disabled={isPending}
             className="px-3 py-1.5 text-xs font-medium rounded-lg border border-neutral-300 text-neutral-600 hover:bg-neutral-100 disabled:opacity-50">
             {isPending ? "Enviando…" : "Enviar link de recuperación"}
           </button>
@@ -178,11 +186,11 @@ function PasswordPanel({ clienteId }: { clienteId: string }) {
             className="flex-1 px-3 py-1.5 text-sm border border-neutral-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-tierra-700/20"
             disabled={isPending}
           />
-          <button onClick={handleSet} disabled={isPending || pwd.length < 8}
+          <button type="button" onClick={handleSet} disabled={isPending || pwd.length < 8}
             className="px-3 py-1.5 text-xs font-medium rounded-lg bg-tierra-700 text-white hover:bg-tierra-800 disabled:opacity-50">
             {isPending ? "Guardando…" : "Guardar"}
           </button>
-          <button onClick={() => { setMode("idle"); setPwd(""); setErr(null); }} disabled={isPending}
+          <button type="button" onClick={() => { setMode("idle"); setPwd(""); setErr(null); }} disabled={isPending}
             className="px-3 py-1.5 text-xs font-medium rounded-lg border border-neutral-200 text-neutral-500 hover:bg-neutral-100">
             Cancelar
           </button>

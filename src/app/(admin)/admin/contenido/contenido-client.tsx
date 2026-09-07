@@ -15,7 +15,9 @@ type Campo = {
 
 const SECCION_LABEL: Record<string, string> = {
   hero:               "Hero — Portada",
+  canales:            "Canales de venta (las 3 tarjetas)",
   nosotros:           "Quiénes somos",
+  categorias:         "Sección categorías",
   producto_destacado: "Producto destacado",
   contacto:           "Contacto y redes",
   b2b:                "Sección mayoristas (B2B)",
@@ -213,7 +215,7 @@ export function ContenidoClient({ contenido }: { contenido: Campo[] }) {
     return acc;
   }, {});
 
-  const ordenSecciones = ["hero", "nosotros", "producto_destacado", "contacto"];
+  const ordenSecciones = ["hero", "canales", "categorias", "producto_destacado", "nosotros", "como_funciona", "b2b", "contacto", "footer"];
   const secciones = [
     ...ordenSecciones.filter(s => porSeccion[s]),
     ...Object.keys(porSeccion).filter(s => !ordenSecciones.includes(s)),

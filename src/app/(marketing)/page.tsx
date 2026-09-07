@@ -86,22 +86,49 @@ export default async function LandingPage() {
           badges={heroBadges}
           stats={heroStats}
         />
-        <ChannelSelector />
-        <CategoryGrid categories={categories} />
+        <ChannelSelector
+          whatsapp={cms.contacto_whatsapp}
+          kicker={cms.canales_kicker}
+          titulo={cms.canales_titulo}
+          canal1Titulo={cms.canal_1_titulo}
+          canal1Subtitulo={cms.canal_1_subtitulo}
+          canal1Desc={cms.canal_1_desc}
+          canal1Cta={cms.canal_1_cta}
+          canal2Titulo={cms.canal_2_titulo}
+          canal2Subtitulo={cms.canal_2_subtitulo}
+          canal2Desc={cms.canal_2_desc}
+          canal2Cta={cms.canal_2_cta}
+          canal3Titulo={cms.canal_3_titulo}
+          canal3Subtitulo={cms.canal_3_subtitulo}
+          canal3Desc={cms.canal_3_desc}
+          canal3Cta={cms.canal_3_cta}
+        />
+        <CategoryGrid
+          categories={categories}
+          kicker={cms.categorias_kicker}
+          titulo={cms.categorias_titulo}
+        />
         <FeaturedProduct
           nombre={cms.featured_nombre}
           descripcion={cms.featured_descripcion}
           imagenUrl={cms.featured_imagen_url || null}
+          whatsapp={cms.contacto_whatsapp}
+          badge={cms.featured_badge}
+          lineaHref={cms.featured_linea_href}
+          lineaCta={cms.featured_linea_cta}
         />
         <HowItWorks
           titulo={cms.como_titulo}
           pasos={comoPasos}
+          whatsapp={cms.contacto_whatsapp}
         />
         <B2BCta
           kicker={cms.b2b_kicker}
           titulo={cms.b2b_titulo}
           parrafo={cms.b2b_parrafo}
           perks={b2bPerks}
+          whatsapp={cms.contacto_whatsapp}
+          ctaText={cms.b2b_cta_text}
         />
         <Nosotros
           titulo={cms.nosotros_titulo}
