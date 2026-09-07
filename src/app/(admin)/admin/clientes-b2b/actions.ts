@@ -173,6 +173,31 @@ export async function rechazarCliente(profileId: string) {
   revalidatePath("/admin/clientes-b2b");
 }
 
+export async function enviarResetPassword(profileId: string): Promise<{ error?: string }> {
+  await requireAdmin();
+  const supabase = createAdminClient();
+  const { data: authUser } = await supabase.auth.admin.getUserById(profileId);
+  const email = authUser?.user?.email;
+  if (!email) return { error: "No se encontró el email del cliente" };
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
+  const { error } = await supabase.auth.admin.generateLink({
+    type: "recovery",
+    email,
+    options: { redirectTo: `${appUrl}/auth/callback?next=/auth/set-password` },
+  });
+  if (error) return { error: error.message };
+  return {};
+}
+
+export async function setPasswordCliente(profileId: string, password: string): Promise<{ error?: string }> {
+  await requireAdmin();
+  if (!password || password.length < 8) return { error: "La contraseña debe tener al menos 8 caracteres" };
+  const supabase = createAdminClient();
+  const { error } = await supabase.auth.admin.updateUserById(profileId, { password });
+  if (error) return { error: error.message };
+  return {};
+}
+
 export async function cambiarEstadoCliente(profileId: string, status: "pendiente" | "activo" | "inactivo") {
   await requireAdmin();
   const supabase = createAdminClient();
