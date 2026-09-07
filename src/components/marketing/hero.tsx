@@ -30,7 +30,8 @@ export function Hero({ titulo, descripcion, imagenUrl, eyebrow, badges, stats }:
   const d      = descripcion || DEFAULT_DESCRIPCION;
   const ew     = eyebrow     || DEFAULT_EYEBROW;
   const bdgs   = (badges && badges.length > 0) ? badges : DEFAULT_BADGES;
-  const sts    = (stats  && stats.length  > 0) ? stats  : DEFAULT_STATS;
+  // page.tsx ya resuelve defaults vs CMS — usar directamente lo que llega
+  const sts    = stats ?? DEFAULT_STATS;
 
   const accent = "mandioca";
   const accentIdx = t.indexOf(accent);

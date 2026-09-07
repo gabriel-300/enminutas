@@ -33,10 +33,14 @@ export default async function LandingPage() {
     cms.hero_badge_3 || "Envíos a todo el país",
   ];
 
-  // Si existe al menos una clave de stat en el CMS, modo controlado por CMS:
-  //   - stat presente y con valor → mostrar
-  //   - stat ausente (eliminada) o vacía → ocultar
-  // Si no existe ninguna clave → mostrar los 3 defaults del código.
+  const STAT_DEFAULTS = [
+    { value: "18 m",   label: "Vida útil congelado" },
+    { value: "12 min", label: "Para calentar y servir" },
+    { value: "5",      label: "Líneas de producto" },
+  ];
+  // Solo entra en modo CMS si al menos una clave de stat existe en la tabla.
+  // Si no hay ninguna → usar defaults (sitio recién configurado).
+  // Si hay al menos una → solo mostrar las que tienen valor (las borradas/vacías se ocultan).
   const hasAnyStat = cms.hero_stat_1_valor !== undefined
     || cms.hero_stat_2_valor !== undefined
     || cms.hero_stat_3_valor !== undefined;
@@ -47,7 +51,7 @@ export default async function LandingPage() {
         { v: cms.hero_stat_2_valor, l: cms.hero_stat_2_label, dl: "Para calentar y servir" },
         { v: cms.hero_stat_3_valor, l: cms.hero_stat_3_label, dl: "Líneas de producto" },
       ].flatMap(({ v, l, dl }) => (!v ? [] : [{ value: v, label: l || dl }]))
-    : [];
+    : STAT_DEFAULTS;
 
   const b2bPerks = [
     cms.b2b_perk_1 || "Precios mayoristas desde la primera compra",
