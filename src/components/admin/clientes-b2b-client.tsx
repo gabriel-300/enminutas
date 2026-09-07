@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState, useTransition, useRef } from "react";
 import Link from "next/link";
 import {
   aprobarCliente,
@@ -54,10 +54,21 @@ function EditForm({
 }: {
   cliente: Cliente; zonas: Zona[]; canales: Canal[]; vendedores: Vendedor[];
   esAdmin: boolean; isPending: boolean; editError: string | null;
-  onSubmit: (e: React.SyntheticEvent<HTMLFormElement>) => void;
+  onSubmit: (fd: FormData) => void;
 }) {
+  const ref = useRef<HTMLDivElement>(null);
+
+  function handleSubmit() {
+    if (!ref.current) return;
+    const fd = new FormData();
+    ref.current.querySelectorAll<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>("input, select, textarea").forEach(el => {
+      if (el.name) fd.set(el.name, el.value);
+    });
+    onSubmit(fd);
+  }
+
   return (
-    <form onSubmit={onSubmit} className="space-y-3">
+    <div ref={ref} className="space-y-3">
       <input type="hidden" name="id" value={cliente.id} />
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
         <div>
@@ -118,13 +129,13 @@ function EditForm({
         </div>
       )}
       <div className="flex items-center gap-3">
-        <button type="submit" disabled={isPending}
+        <button type="button" onClick={handleSubmit} disabled={isPending}
           className="px-4 py-2 rounded-xl bg-tierra-700 text-white text-sm font-medium hover:bg-tierra-800 disabled:opacity-50">
           {isPending ? "Guardando…" : "Guardar"}
         </button>
         {editError && <p className="text-xs text-danger">{editError}</p>}
       </div>
-    </form>
+    </div>
   );
 }
 
@@ -212,10 +223,8 @@ function ClienteMobileCard({ cliente, zonas, vendedores, canales, esAdmin }: {
   const [editError, setEditError]    = useState<string | null>(null);
   const status = cliente.b2b_status;
 
-  function handleEdit(e: React.SyntheticEvent<HTMLFormElement>) {
-    e.preventDefault();
+  function handleEdit(fd: FormData) {
     setEditError(null);
-    const fd = new FormData(e.currentTarget);
     startTransition(async () => {
       try {
         await editarClienteB2B(fd);
@@ -320,10 +329,8 @@ function ClienteRow({ cliente, zonas, vendedores, canales, esAdmin }: {
   const [editError, setEditError]    = useState<string | null>(null);
   const status = cliente.b2b_status;
 
-  function handleEdit(e: React.SyntheticEvent<HTMLFormElement>) {
-    e.preventDefault();
+  function handleEdit(fd: FormData) {
     setEditError(null);
-    const fd = new FormData(e.currentTarget);
     startTransition(async () => {
       try {
         await editarClienteB2B(fd);

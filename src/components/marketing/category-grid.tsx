@@ -1,5 +1,6 @@
 import Link from "next/link";
 import type { Category } from "@/lib/data/products";
+import { BrandPattern } from "./brand-pattern";
 
 const PALETTE = [
   { bg: "#EAEBF8", accent: "#2C25B5" },
@@ -19,8 +20,9 @@ export function CategoryGrid({ categories, kicker, titulo }: Props) {
   const t = titulo || "De la mandioca a la masa madre, una sola mesa.";
 
   return (
-    <section className="bg-white py-20" id="productos">
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+    <section className="relative overflow-hidden bg-white py-20" id="productos">
+      <BrandPattern />
+      <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="mb-10">
           <p
             className="text-xs font-semibold uppercase tracking-widest mb-3"
