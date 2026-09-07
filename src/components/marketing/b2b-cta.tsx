@@ -1,8 +1,8 @@
-const WA_NUMBER  = "5493765017944";
-const WA_TEXT    = encodeURIComponent("Hola, quería consultar sobre condiciones mayoristas de En Minutas 🏪");
-const WA_HREF    = `https://wa.me/${WA_NUMBER}?text=${WA_TEXT}`;
+const WA_NUMBER = "5493765017944";
+const WA_TEXT   = encodeURIComponent("Hola, quería consultar sobre condiciones mayoristas de En Minutas 🏪");
+const WA_HREF   = `https://wa.me/${WA_NUMBER}?text=${WA_TEXT}`;
 
-const perks = [
+const DEFAULT_PERKS = [
   "Precios mayoristas desde la primera compra",
   "Factura A o B según condición IVA",
   "Cuenta corriente disponible",
@@ -10,34 +10,44 @@ const perks = [
   "Cero merma en cada pedido",
 ];
 
-export function B2BCta() {
+type Props = {
+  kicker?:  string;
+  titulo?:  string;
+  parrafo?: string;
+  perks?:   string[];
+};
+
+export function B2BCta({ kicker, titulo, parrafo, perks }: Props) {
+  const k = kicker  || "Para gastronomía y retail";
+  const t = titulo  || "¿Comprás en volumen?\nHablemos.";
+  const p = parrafo || "Trabajamos con restaurantes, cafeterías y comercios de todo el país. Condiciones a medida de tu negocio.";
+  const ps = (perks && perks.length > 0) ? perks : DEFAULT_PERKS;
+
   return (
     <section className="py-20 bg-white" id="mayoristas">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="rounded-2xl overflow-hidden" style={{ background: "#2C25B5" }}>
           <div className="p-10 lg:p-14 max-w-2xl">
             <p className="text-xs font-semibold uppercase tracking-widest text-white/50 mb-4" style={{ letterSpacing: "0.12em" }}>
-              Para gastronomía y retail
+              {k}
             </p>
             <h2
-              className="text-3xl lg:text-4xl font-semibold text-white leading-tight"
+              className="text-3xl lg:text-4xl font-semibold text-white leading-tight whitespace-pre-line"
               style={{ fontFamily: "var(--font-fredoka)" }}
             >
-              ¿Comprás en volumen?<br />
-              Hablemos.
+              {t}
             </h2>
             <p className="mt-4 text-white/70 text-base leading-relaxed max-w-md">
-              Trabajamos con restaurantes, cafeterías y comercios de todo el país.
-              Condiciones a medida de tu negocio.
+              {p}
             </p>
 
             <ul className="mt-6 flex flex-col gap-2.5">
-              {perks.map((p) => (
-                <li key={p} className="flex items-start gap-2.5 text-sm text-white/80">
+              {ps.filter(Boolean).map((perk) => (
+                <li key={perk} className="flex items-start gap-2.5 text-sm text-white/80">
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#C1D7E6" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="mt-0.5 shrink-0" aria-hidden>
                     <polyline points="20 6 9 17 4 12"/>
                   </svg>
-                  {p}
+                  {perk}
                 </li>
               ))}
             </ul>

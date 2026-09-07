@@ -33,39 +33,29 @@ const IconCheck = () => (
   </svg>
 );
 
-const pillars = [
-  {
-    title: "Planta propia en Posadas",
-    body: "Elaboramos en nuestra planta propia. Horno Rational y abatidor Irinox garantizan consistencia industrial en cada lote.",
-    icon: <IconHorno />,
-  },
-  {
-    title: "La mandioca como base",
-    body: "Mandioca, pacú y quesos, elegidos por calidad y trazabilidad. Sostenemos relaciones directas con productores para asegurar consistencia todo el año.",
-    icon: <IconTimer />,
-  },
-  {
-    title: "Cadena de frío sin cortes",
-    body: "Abatimiento a −40 °C post-cocción. Distribución isotérmica hasta cualquier mesa del país.",
-    icon: <IconOlla />,
-  },
-  {
-    title: "Pensado para tu cocina",
-    body: "Porciones consistentes y cero merma: aprovechás el 100% de cada unidad, con el mismo rendimiento en cada pedido.",
-    icon: <IconCheck />,
-  },
+const DEFAULT_PILARES = [
+  { title: "Planta propia en Posadas",  body: "Elaboramos en nuestra planta propia. Horno Rational y abatidor Irinox garantizan consistencia industrial en cada lote.",                                                                       icon: <IconHorno /> },
+  { title: "La mandioca como base",     body: "Mandioca, pacú y quesos, elegidos por calidad y trazabilidad. Sostenemos relaciones directas con productores para asegurar consistencia todo el año.",                                        icon: <IconTimer /> },
+  { title: "Cadena de frío sin cortes", body: "Abatimiento a −40 °C post-cocción. Distribución isotérmica hasta cualquier mesa del país.",                                                                                                  icon: <IconOlla  /> },
+  { title: "Pensado para tu cocina",    body: "Porciones consistentes y cero merma: aprovechás el 100% de cada unidad, con el mismo rendimiento en cada pedido.",                                                                           icon: <IconCheck /> },
 ];
+
+const PILAR_ICONS = [<IconHorno key="h"/>, <IconTimer key="t"/>, <IconOlla key="o"/>, <IconCheck key="c"/>];
 
 type Props = {
   titulo?: string;
   parrafo1?: string;
   parrafo2?: string;
+  pilares?: Array<{ titulo: string; body: string }>;
 };
 
-export function Nosotros({ titulo, parrafo1, parrafo2 }: Props) {
+export function Nosotros({ titulo, parrafo1, parrafo2, pilares }: Props) {
   const t  = titulo   || "Cocina industrial, con la mandioca como eje.";
   const p1 = parrafo1 || "En Minutas nació en Posadas, Misiones, elaborando bastones y bocaditos a base de mandioca. Hoy sumamos chipas, empanadas y pizzas ultracongeladas, siempre con el mismo proceso: cocción en horno Rational, abatimiento a −40 °C y cadena de frío hasta cualquier mesa del país.";
   const p2 = parrafo2 || "Trabajamos con gastronomía y retail. El producto es el mismo: elaborado en planta propia, abatido a −40 °C, listo en doce minutos.";
+  const ps = (pilares && pilares.length > 0)
+    ? pilares.map((pl, i) => ({ title: pl.titulo, body: pl.body, icon: PILAR_ICONS[i] ?? PILAR_ICONS[0] }))
+    : DEFAULT_PILARES;
 
   return (
     <section className="py-20 bg-white" id="nosotros">
@@ -86,7 +76,7 @@ export function Nosotros({ titulo, parrafo1, parrafo2 }: Props) {
 
           {/* Pilares */}
           <div className="grid sm:grid-cols-2 gap-4">
-            {pillars.map(({ icon, title, body }) => (
+            {ps.map(({ icon, title, body }) => (
               <div key={title} className="rounded-2xl p-5 flex flex-col gap-3 border" style={{ background: "#EAEBF8", borderColor: "#C1D7E6" }}>
                 <div className="size-9 rounded-xl flex items-center justify-center" style={{ background: "#C1D7E6" }}>
                   {icon}

@@ -4,26 +4,34 @@ const WA_NUMBER = "5493765017944";
 const WA_TEXT   = encodeURIComponent("Hola, quería pedir información sobre los productos de En Minutas 👋");
 const WA_HREF   = `https://wa.me/${WA_NUMBER}?text=${WA_TEXT}`;
 
-const STATS = [
+const DEFAULT_STATS = [
   { value: "18 m",   label: "Vida útil congelado" },
   { value: "12 min", label: "Para calentar y servir" },
   { value: "5",      label: "Líneas de producto" },
 ];
 
+const DEFAULT_BADGES = ["Cadena de frío garantizada", "Cero merma", "Envíos a todo el país"];
+
 type Props = {
   titulo?: string;
   descripcion?: string;
   imagenUrl?: string | null;
+  eyebrow?: string;
+  badges?: string[];
+  stats?: Array<{ value: string; label: string }>;
 };
 
 const DEFAULT_TITULO      = "Ultracongelados listos en minutos, para cualquier mesa del país.";
 const DEFAULT_DESCRIPCION = "Nuestra línea insignia es a base de mandioca —bastones, noisettes y bocaditos—, con cero merma y porciones consistentes para gastronomía. También chipas, empanadas y pizzas ultracongeladas, con envíos a todo el país.";
+const DEFAULT_EYEBROW     = "Alimentos ultracongelados para todos los días";
 
-export function Hero({ titulo, descripcion, imagenUrl }: Props) {
-  const t = titulo      || DEFAULT_TITULO;
-  const d = descripcion || DEFAULT_DESCRIPCION;
+export function Hero({ titulo, descripcion, imagenUrl, eyebrow, badges, stats }: Props) {
+  const t      = titulo      || DEFAULT_TITULO;
+  const d      = descripcion || DEFAULT_DESCRIPCION;
+  const ew     = eyebrow     || DEFAULT_EYEBROW;
+  const bdgs   = (badges && badges.length > 0) ? badges : DEFAULT_BADGES;
+  const sts    = (stats  && stats.length  > 0) ? stats  : DEFAULT_STATS;
 
-  // Resaltar "mandioca" si aparece en el título
   const accent = "mandioca";
   const accentIdx = t.indexOf(accent);
   const titleParts = accentIdx >= 0
@@ -33,43 +41,36 @@ export function Hero({ titulo, descripcion, imagenUrl }: Props) {
   return (
     <section className="relative overflow-hidden bg-white pt-12 pb-0">
 
-      {/* Patrón de íconos de marca — fondo decorativo */}
       <div aria-hidden className="absolute inset-0 pointer-events-none select-none" style={{ opacity: 0.11 }}>
         <svg width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
           <defs>
             <pattern id="em-icons" x="0" y="0" width="180" height="120" patternUnits="userSpaceOnUse">
-              {/* Horno */}
               <g transform="translate(5,5)" stroke="#2C25B5" strokeWidth="1.5" fill="none" strokeLinecap="round" strokeLinejoin="round">
                 <rect x="2" y="5" width="26" height="18" rx="2.5"/>
                 <rect x="6" y="9" width="14" height="10" rx="1"/>
                 <line x1="8" y1="13" x2="10" y2="13"/><line x1="12" y1="11" x2="12" y2="15"/><line x1="14" y1="11" x2="14" y2="15"/>
                 <circle cx="22" cy="3" r="1.2" fill="#2C25B5" stroke="none"/><circle cx="26" cy="3" r="1.2" fill="#2C25B5" stroke="none"/>
               </g>
-              {/* Timer */}
               <g transform="translate(65,5)" stroke="#2C25B5" strokeWidth="1.5" fill="none" strokeLinecap="round" strokeLinejoin="round">
                 <circle cx="15" cy="17" r="10"/>
                 <path d="M15 11v6l3.5 3.5"/>
                 <path d="M9 3c1.7-.8 3.8-1 6-1s4.3.2 6 1"/>
                 <line x1="24" y1="7" x2="25.5" y2="5.5"/>
               </g>
-              {/* Reloj lista */}
               <g transform="translate(125,5)" stroke="#2C25B5" strokeWidth="1.5" fill="none" strokeLinecap="round" strokeLinejoin="round">
                 <circle cx="12" cy="14" r="10"/>
                 <line x1="12" y1="8" x2="12" y2="14"/><line x1="12" y1="14" x2="16" y2="14"/>
                 <line x1="22" y1="10" x2="26" y2="10"/><line x1="22" y1="14" x2="26" y2="14"/><line x1="22" y1="18" x2="26" y2="18"/>
               </g>
-              {/* Guante corazón */}
               <g transform="translate(5,65)" stroke="#2C25B5" strokeWidth="1.5" fill="none" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M15 25s-11-6-11-13a6 6 0 0 1 11-4 6 6 0 0 1 11 4c0 7-11 13-11 13z"/>
               </g>
-              {/* Olla */}
               <g transform="translate(65,65)" stroke="#2C25B5" strokeWidth="1.5" fill="none" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M7 12h16v8a4 4 0 0 1-4 4H11a4 4 0 0 1-4-4v-8z"/>
                 <path d="M7 12c0-2.2 1.8-4 4-4h8c2.2 0 4 1.8 4 4"/>
                 <circle cx="15" cy="5" r="1.8" fill="#2C25B5" stroke="none"/>
                 <line x1="4" y1="14" x2="2" y2="14"/><line x1="26" y1="14" x2="28" y2="14"/>
               </g>
-              {/* Reloj check */}
               <g transform="translate(125,65)" stroke="#2C25B5" strokeWidth="1.5" fill="none" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M26 14c0 6.6-5.4 12-12 12S2 20.6 2 14 7.4 2 14 2"/>
                 <path d="M20 2l2.5 2.5L17 10"/>
@@ -91,7 +92,7 @@ export function Hero({ titulo, descripcion, imagenUrl }: Props) {
               className="text-xs font-semibold uppercase tracking-widest mb-5"
               style={{ color: "#2C25B5", letterSpacing: "0.12em" }}
             >
-              Alimentos ultracongelados para todos los días
+              {ew}
             </p>
 
             <h1
@@ -109,7 +110,6 @@ export function Hero({ titulo, descripcion, imagenUrl }: Props) {
 
             <p className="mt-6 text-lg text-neutral-600 max-w-md leading-relaxed">{d}</p>
 
-            {/* CTAs */}
             <div className="mt-8 flex flex-col sm:flex-row gap-3">
               <a
                 href={WA_HREF}
@@ -130,9 +130,8 @@ export function Hero({ titulo, descripcion, imagenUrl }: Props) {
               </a>
             </div>
 
-            {/* Atributos */}
             <div className="mt-8 flex flex-wrap gap-2">
-              {["Cadena de frío garantizada", "Cero merma", "Envíos a todo el país"].map((tag) => (
+              {bdgs.filter(Boolean).map((tag) => (
                 <span
                   key={tag}
                   className="inline-flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg border font-medium"
@@ -170,7 +169,7 @@ export function Hero({ titulo, descripcion, imagenUrl }: Props) {
 
         {/* Stats strip */}
         <div className="grid grid-cols-3 gap-px rounded-2xl overflow-hidden -mb-px" style={{ background: "#C1D7E6" }}>
-          {STATS.map(({ value, label }) => (
+          {sts.map(({ value, label }) => (
             <div key={label} className="bg-white px-6 py-5">
               <p className="text-3xl font-semibold tabular-nums" style={{ fontFamily: "var(--font-fredoka)", color: "#2C25B5" }}>
                 {value}

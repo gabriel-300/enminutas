@@ -38,15 +38,17 @@ const MAP_ICON = (
 );
 
 type FooterProps = {
-  whatsapp?: string;
-  email?: string;
-  instagram?: string;
+  whatsapp?:    string;
+  email?:       string;
+  instagram?:   string;
+  descripcion?: string;
 };
 
 export function Footer({
-  whatsapp  = "5493765017944",
-  email     = "hola@enminutas.com.ar",
-  instagram = "enminutas",
+  whatsapp    = "5493765017944",
+  email       = "hola@enminutas.com.ar",
+  instagram   = "enminutas",
+  descripcion = "Ultracongelados a base de mandioca elaborados en planta propia. Horno Rational, abatidor Irinox, 18 meses de vida útil. Posadas, Misiones — Argentina.",
 }: FooterProps) {
   const contactLinks = [
     { icon: WA_ICON,   label: `+54 376 ${whatsapp.slice(-7, -4)} ${whatsapp.slice(-4)}`, href: `https://wa.me/${whatsapp}` },
@@ -71,12 +73,10 @@ export function Footer({
               />
             </Link>
             <p className="text-sm text-neutral-400 leading-relaxed mb-5">
-              Ultracongelados a base de mandioca elaborados en planta propia.
-              Horno Rational, abatidor Irinox, 18 meses de vida útil.
-              Posadas, Misiones — Argentina.
+              {descripcion}
             </p>
             <div className="flex flex-wrap gap-2">
-              {["FOR EXPORT", "SENASA al día", "Rational · Irinox"].map((tag) => (
+              {["Rational · Irinox", "18 m vida útil", "Cadena de frío"].map((tag) => (
                 <span key={tag} className="text-xs text-neutral-300 px-2.5 py-1 rounded-full" style={{ background: "rgba(255,255,255,0.08)" }}>
                   {tag}
                 </span>

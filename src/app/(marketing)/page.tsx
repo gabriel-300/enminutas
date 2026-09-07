@@ -27,6 +27,39 @@ async function getContenido() {
 export default async function LandingPage() {
   const [categories, cms] = await Promise.all([getCategories(true), getContenido()]);
 
+  const heroBadges = [
+    cms.hero_badge_1 || "Cadena de frío garantizada",
+    cms.hero_badge_2 || "Cero merma",
+    cms.hero_badge_3 || "Envíos a todo el país",
+  ];
+
+  const heroStats = [
+    { value: cms.hero_stat_1_valor || "18 m",   label: cms.hero_stat_1_label || "Vida útil congelado" },
+    { value: cms.hero_stat_2_valor || "12 min",  label: cms.hero_stat_2_label || "Para calentar y servir" },
+    { value: cms.hero_stat_3_valor || "5",       label: cms.hero_stat_3_label || "Líneas de producto" },
+  ];
+
+  const b2bPerks = [
+    cms.b2b_perk_1 || "Precios mayoristas desde la primera compra",
+    cms.b2b_perk_2 || "Factura A o B según condición IVA",
+    cms.b2b_perk_3 || "Cuenta corriente disponible",
+    cms.b2b_perk_4 || "Logística a medida (Posadas y envío al interior)",
+    cms.b2b_perk_5 || "Cero merma en cada pedido",
+  ].filter(Boolean);
+
+  const comoPasos = [
+    { titulo: cms.como_paso_1_titulo || "Consultás por WhatsApp",     desc: cms.como_paso_1_desc || "Escribinos, te contamos qué productos tenemos disponibles y coordinamos la entrega según tu zona." },
+    { titulo: cms.como_paso_2_titulo || "Coordinamos pago y entrega", desc: cms.como_paso_2_desc || "Acordamos forma de pago y te organizamos la entrega. Posadas y alrededores, o envío al interior del país." },
+    { titulo: cms.como_paso_3_titulo || "Recibís con cadena de frío", desc: cms.como_paso_3_desc || "Producto ultracongelado a −40 °C. Listo para calentar en 12 minutos. Hasta 18 meses de vida útil congelado." },
+  ];
+
+  const nosotrosPilares = [
+    { titulo: cms.nosotros_pilar_1_titulo || "Planta propia en Posadas",  body: cms.nosotros_pilar_1_body || "Elaboramos en nuestra planta propia. Horno Rational y abatidor Irinox garantizan consistencia industrial en cada lote." },
+    { titulo: cms.nosotros_pilar_2_titulo || "La mandioca como base",      body: cms.nosotros_pilar_2_body || "Mandioca, pacú y quesos, elegidos por calidad y trazabilidad. Sostenemos relaciones directas con productores para asegurar consistencia todo el año." },
+    { titulo: cms.nosotros_pilar_3_titulo || "Cadena de frío sin cortes",  body: cms.nosotros_pilar_3_body || "Abatimiento a −40 °C post-cocción. Distribución isotérmica hasta cualquier mesa del país." },
+    { titulo: cms.nosotros_pilar_4_titulo || "Pensado para tu cocina",      body: cms.nosotros_pilar_4_body || "Porciones consistentes y cero merma: aprovechás el 100% de cada unidad, con el mismo rendimiento en cada pedido." },
+  ];
+
   return (
     <>
       <Navbar />
@@ -35,6 +68,9 @@ export default async function LandingPage() {
           titulo={cms.hero_titulo}
           descripcion={cms.hero_descripcion}
           imagenUrl={cms.hero_imagen_url || null}
+          eyebrow={cms.hero_eyebrow}
+          badges={heroBadges}
+          stats={heroStats}
         />
         <ChannelSelector />
         <CategoryGrid categories={categories} />
@@ -43,18 +79,28 @@ export default async function LandingPage() {
           descripcion={cms.featured_descripcion}
           imagenUrl={cms.featured_imagen_url || null}
         />
-        <HowItWorks />
-        <B2BCta />
+        <HowItWorks
+          titulo={cms.como_titulo}
+          pasos={comoPasos}
+        />
+        <B2BCta
+          kicker={cms.b2b_kicker}
+          titulo={cms.b2b_titulo}
+          parrafo={cms.b2b_parrafo}
+          perks={b2bPerks}
+        />
         <Nosotros
           titulo={cms.nosotros_titulo}
           parrafo1={cms.nosotros_parrafo1}
           parrafo2={cms.nosotros_parrafo2}
+          pilares={nosotrosPilares}
         />
       </main>
       <Footer
         whatsapp={cms.contacto_whatsapp}
         email={cms.contacto_email}
         instagram={cms.contacto_instagram}
+        descripcion={cms.footer_descripcion}
       />
       <WhatsAppButton whatsapp={cms.contacto_whatsapp} />
     </>

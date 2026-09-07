@@ -18,6 +18,9 @@ const SECCION_LABEL: Record<string, string> = {
   nosotros:           "Quiénes somos",
   producto_destacado: "Producto destacado",
   contacto:           "Contacto y redes",
+  b2b:                "Sección mayoristas (B2B)",
+  como_funciona:      "Cómo funciona",
+  footer:             "Footer — pie de página",
 };
 
 function createSupabase() {
