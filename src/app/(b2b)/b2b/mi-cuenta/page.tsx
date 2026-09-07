@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { createClient, createAdminClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
+import { CambiarPasswordForm } from "./cambiar-password-form";
 
 export const metadata: Metadata = { title: "Mi cuenta — Portal B2B En Minutas" };
 export const revalidate = 0;
@@ -97,7 +98,10 @@ export default async function MiCuentaPage() {
         </section>
       )}
 
-      <p className="text-xs text-neutral-400 text-center">
+      {/* Cambiar contraseña */}
+      <CambiarPasswordForm />
+
+      <p className="text-xs text-neutral-400 text-center mt-4">
         Para modificar tus datos contactá a tu agente comercial.
       </p>
     </div>
