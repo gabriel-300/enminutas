@@ -168,16 +168,24 @@ export function Hero({ titulo, descripcion, imagenUrl, eyebrow, badges, stats }:
         </div>
 
         {/* Stats strip */}
-        <div className="grid grid-cols-3 gap-px rounded-2xl overflow-hidden -mb-px" style={{ background: "#C1D7E6" }}>
-          {sts.map(({ value, label }) => (
-            <div key={label} className="bg-white px-6 py-5">
-              <p className="text-3xl font-semibold tabular-nums" style={{ fontFamily: "var(--font-fredoka)", color: "#2C25B5" }}>
-                {value}
-              </p>
-              <p className="mt-1 text-sm text-neutral-500">{label}</p>
-            </div>
-          ))}
-        </div>
+        {sts.length > 0 && (
+          <div
+            className={`grid gap-px rounded-2xl overflow-hidden -mb-px`}
+            style={{
+              gridTemplateColumns: `repeat(${sts.length}, minmax(0, 1fr))`,
+              background: "#C1D7E6",
+            }}
+          >
+            {sts.map(({ value, label }) => (
+              <div key={label} className="bg-white px-6 py-5">
+                <p className="text-3xl font-semibold tabular-nums" style={{ fontFamily: "var(--font-fredoka)", color: "#2C25B5" }}>
+                  {value}
+                </p>
+                <p className="mt-1 text-sm text-neutral-500">{label}</p>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
     </section>
   );

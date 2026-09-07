@@ -33,11 +33,21 @@ export default async function LandingPage() {
     cms.hero_badge_3 || "Envíos a todo el país",
   ];
 
-  const heroStats = [
-    { value: cms.hero_stat_1_valor || "18 m",   label: cms.hero_stat_1_label || "Vida útil congelado" },
-    { value: cms.hero_stat_2_valor || "12 min",  label: cms.hero_stat_2_label || "Para calentar y servir" },
-    { value: cms.hero_stat_3_valor || "5",       label: cms.hero_stat_3_label || "Líneas de producto" },
-  ];
+  // Si existe al menos una clave de stat en el CMS, modo controlado por CMS:
+  //   - stat presente y con valor → mostrar
+  //   - stat ausente (eliminada) o vacía → ocultar
+  // Si no existe ninguna clave → mostrar los 3 defaults del código.
+  const hasAnyStat = cms.hero_stat_1_valor !== undefined
+    || cms.hero_stat_2_valor !== undefined
+    || cms.hero_stat_3_valor !== undefined;
+
+  const heroStats: Array<{ value: string; label: string }> = hasAnyStat
+    ? [
+        { v: cms.hero_stat_1_valor, l: cms.hero_stat_1_label, dl: "Vida útil congelado" },
+        { v: cms.hero_stat_2_valor, l: cms.hero_stat_2_label, dl: "Para calentar y servir" },
+        { v: cms.hero_stat_3_valor, l: cms.hero_stat_3_label, dl: "Líneas de producto" },
+      ].flatMap(({ v, l, dl }) => (!v ? [] : [{ value: v, label: l || dl }]))
+    : [];
 
   const b2bPerks = [
     cms.b2b_perk_1 || "Precios mayoristas desde la primera compra",
