@@ -20,8 +20,8 @@ export default async function TiendaPage({
 
   // Fetch en paralelo
   const [categories, products] = await Promise.all([
-    getCategories(),
-    getProducts(),
+    getCategories(true),
+    getProducts(undefined, true),
   ]);
 
   return (

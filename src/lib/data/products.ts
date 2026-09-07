@@ -1,12 +1,13 @@
 import { createClient } from "@/lib/supabase/server";
 
 export interface Category {
-  id:          string;
-  slug:        string;
-  name:        string;
-  description: string | null;
-  image_url:   string | null;
-  sort_order:  number;
+  id:                string;
+  slug:              string;
+  name:              string;
+  description:       string | null;
+  image_url:         string | null;
+  sort_order:        number;
+  visible_en_tienda: boolean;
 }
 
 export interface Product {
@@ -37,7 +38,7 @@ const PRODUCT_SELECT = `
   category_id, price_b2c, price_b2b, min_quantity_b2b,
   unit_label, weight_grams, freezer_required, is_active,
   cover_image_url, extra_images, cooking_methods,
-  category:categories!category_id (id, slug, name, description, image_url, sort_order)
+  category:categories!category_id (id, slug, name, description, image_url, sort_order, visible_en_tienda)
 `;
 
 function mapProduct(p: any): Product {
@@ -50,12 +51,13 @@ function mapProduct(p: any): Product {
     description:       p.description       ?? null,
     category_id:       p.category_id,
     category: {
-      id:          p.category?.id          ?? p.category_id,
-      slug:        p.category?.slug        ?? "",
-      name:        p.category?.name        ?? "—",
-      description: p.category?.description ?? null,
-      image_url:   p.category?.image_url ?? null,
-      sort_order:  p.category?.sort_order  ?? 99,
+      id:                p.category?.id                ?? p.category_id,
+      slug:              p.category?.slug              ?? "",
+      name:              p.category?.name              ?? "—",
+      description:       p.category?.description       ?? null,
+      image_url:         p.category?.image_url         ?? null,
+      sort_order:        p.category?.sort_order        ?? 99,
+      visible_en_tienda: p.category?.visible_en_tienda ?? true,
     },
     price_b2c:        Number(p.price_b2c)        || 0,
     price_b2b:        Number(p.price_b2b)        || 0,
@@ -70,29 +72,42 @@ function mapProduct(p: any): Product {
   };
 }
 
-export async function getCategories(): Promise<Category[]> {
+export async function getCategories(publicOnly = false): Promise<Category[]> {
   const supabase = await createClient();
-  const { data } = await supabase
+  let query = supabase
     .from("categories")
-    .select("id, slug, name, description, image_url, sort_order")
+    .select("id, slug, name, description, image_url, sort_order, visible_en_tienda")
     .order("sort_order");
+  if (publicOnly) query = query.eq("visible_en_tienda", true);
+  const { data } = await query;
   return (data ?? []).map((c: any) => ({
-    id:          c.id,
-    slug:        c.slug,
-    name:        c.name,
-    description: c.description ?? null,
-    image_url:   c.image_url   ?? null,
-    sort_order:  c.sort_order  ?? 99,
+    id:                c.id,
+    slug:              c.slug,
+    name:              c.name,
+    description:       c.description       ?? null,
+    image_url:         c.image_url         ?? null,
+    sort_order:        c.sort_order        ?? 99,
+    visible_en_tienda: c.visible_en_tienda ?? true,
   }));
 }
 
-export async function getProducts(categorySlug?: string): Promise<Product[]> {
+export async function getProducts(categorySlug?: string, publicOnly = false): Promise<Product[]> {
   const supabase = await createClient();
   let query = supabase
     .from("products")
     .select(PRODUCT_SELECT)
     .eq("is_active", true)
     .order("name");
+
+  if (publicOnly) {
+    const { data: visibleCats } = await supabase
+      .from("categories")
+      .select("id")
+      .eq("visible_en_tienda", true);
+    const ids = (visibleCats ?? []).map((c: any) => c.id);
+    if (ids.length === 0) return [];
+    query = query.in("category_id", ids);
+  }
 
   if (categorySlug && categorySlug !== "todos") {
     const { data: cat } = await supabase

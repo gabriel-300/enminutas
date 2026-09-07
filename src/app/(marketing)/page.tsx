@@ -25,7 +25,7 @@ async function getContenido() {
 }
 
 export default async function LandingPage() {
-  const [categories, cms] = await Promise.all([getCategories(), getContenido()]);
+  const [categories, cms] = await Promise.all([getCategories(true), getContenido()]);
 
   return (
     <>

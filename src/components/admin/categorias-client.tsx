@@ -2,7 +2,7 @@
 
 import { useState, useRef } from "react";
 import { createBrowserClient } from "@supabase/ssr";
-import { crearCategoria, actualizarCategoria, eliminarCategoria } from "@/app/(admin)/admin/categorias/actions";
+import { crearCategoria, actualizarCategoria, eliminarCategoria, toggleVisibilidadTienda } from "@/app/(admin)/admin/categorias/actions";
 
 type Categoria = {
   id: string;
@@ -10,6 +10,7 @@ type Categoria = {
   description: string | null;
   image_url: string | null;
   product_count: number;
+  visible_en_tienda: boolean;
 };
 
 function createSupabase() {
@@ -25,6 +26,7 @@ function CategoriaCard({ cat }: { cat: Categoria }) {
   const [desc, setDesc]           = useState(cat.description ?? "");
   const [imgUrl, setImgUrl]       = useState(cat.image_url ?? "");
   const [uploading, setUploading] = useState(false);
+  const [visible, setVisible]     = useState(cat.visible_en_tienda);
   const [saving, setSaving]       = useState(false);
   const [saved, setSaved]         = useState(false);
   const [error, setError]         = useState("");
@@ -122,6 +124,28 @@ function CategoriaCard({ cat }: { cat: Categoria }) {
             rows={2}
             className="w-full text-sm px-3 py-2 border border-neutral-200 rounded-lg focus:outline-none resize-none"
           />
+        </div>
+
+        {/* Toggle visibilidad en tienda */}
+        <div className="flex items-center justify-between py-2 border-t border-neutral-100">
+          <div>
+            <p className="text-xs font-medium text-neutral-700">Visible en tienda</p>
+            <p className="text-xs text-neutral-400">Se muestra en el catálogo público</p>
+          </div>
+          <button
+            type="button"
+            role="switch"
+            aria-checked={visible}
+            onClick={async () => {
+              const next = !visible;
+              setVisible(next);
+              try { await toggleVisibilidadTienda(cat.id, next); }
+              catch { setVisible(!next); }
+            }}
+            className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${visible ? "bg-tierra-700" : "bg-neutral-300"}`}
+          >
+            <span className={`inline-block size-3.5 rounded-full bg-white shadow transition-transform ${visible ? "translate-x-4" : "translate-x-0.5"}`} />
+          </button>
         </div>
 
         {error && <p className="text-xs text-red-500">{error}</p>}

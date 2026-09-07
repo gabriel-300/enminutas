@@ -39,6 +39,18 @@ export async function actualizarCategoria(id: string, formData: FormData) {
   revalidatePath("/");
 }
 
+export async function toggleVisibilidadTienda(id: string, visible: boolean) {
+  const supabase = createAdminClient();
+  const { error } = await supabase
+    .from("categories")
+    .update({ visible_en_tienda: visible } as any)
+    .eq("id", id);
+  if (error) throw new Error(error.message);
+  revalidatePath("/admin/categorias");
+  revalidatePath("/tienda");
+  revalidatePath("/");
+}
+
 export async function eliminarCategoria(id: string) {
   const supabase = createAdminClient();
   const { error } = await supabase.from("categories").delete().eq("id", id);
