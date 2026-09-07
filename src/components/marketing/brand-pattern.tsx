@@ -1,6 +1,6 @@
 export function BrandPattern() {
   return (
-    <div aria-hidden className="absolute inset-0 pointer-events-none select-none" style={{ opacity: 0.11 }}>
+    <div aria-hidden className="absolute inset-0 pointer-events-none select-none" style={{ opacity: 0.06 }}>
       <svg width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
         <defs>
           <pattern id="em-icons" x="0" y="0" width="180" height="120" patternUnits="userSpaceOnUse">
