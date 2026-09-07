@@ -6,6 +6,8 @@ const DEFAULT_PERKS = [
   "Cero merma en cada pedido",
 ];
 
+import { BrandPattern } from "./brand-pattern";
+
 const WA_TEXT = encodeURIComponent("Hola, quería consultar sobre condiciones mayoristas de En Minutas 🏪");
 
 type Props = {
@@ -27,8 +29,9 @@ export function B2BCta({ kicker, titulo, parrafo, perks, whatsapp, ctaText }: Pr
   const waHref = `https://wa.me/${wa}?text=${WA_TEXT}`;
 
   return (
-    <section className="py-20 bg-white" id="mayoristas">
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+    <section className="relative overflow-hidden py-20 bg-white" id="mayoristas">
+      <BrandPattern />
+      <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="rounded-2xl overflow-hidden" style={{ background: "#2C25B5" }}>
           <div className="p-10 lg:p-14 max-w-2xl">
             <p className="text-xs font-semibold uppercase tracking-widest text-white/50 mb-4" style={{ letterSpacing: "0.12em" }}>
