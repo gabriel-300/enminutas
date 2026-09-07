@@ -33,7 +33,7 @@ export default async function AdminCategoriasPage() {
     if (cid) countMap[cid] = (countMap[cid] ?? 0) + 1;
   }
 
-  const lista = (categorias ?? []).map((c) => ({
+  const lista = ((categorias ?? []) as any[]).map((c) => ({
     ...c,
     product_count: countMap[c.id] ?? 0,
   }));
