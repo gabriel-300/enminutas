@@ -30,7 +30,7 @@ const channels = [
   {
     id: "mayorista",
     title: "Mayoristas B2B",
-    subtitle: "Gastronomía · Retail · Export",
+    subtitle: "Gastronomía · Retail",
     description:
       "Precios especiales, factura, cuenta corriente y logística a medida. Para restaurantes y retail.",
     href: `https://wa.me/${WA_NUMBER}?text=${WA_MAYORISTA}`,
