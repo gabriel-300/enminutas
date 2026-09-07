@@ -59,14 +59,21 @@ export async function revocarAccesoStaff(userId: string) {
   revalidatePath("/admin/staff");
 }
 
-export async function invitarStaff(formData: FormData) {
-  await requireAdmin();
+export async function invitarStaff(
+  formData: FormData
+): Promise<{ ok: true } | { ok: false; error: string }> {
+  try {
+    await requireAdmin();
+  } catch {
+    return { ok: false, error: "No autorizado" };
+  }
+
   const email = (formData.get("email") as string).trim().toLowerCase();
   const rol   = formData.get("rol") as string;
   const name  = (formData.get("name") as string | null)?.trim() ?? "";
 
-  if (!email) throw new Error("El email es requerido");
-  if (!isValidRole(rol)) throw new Error("Rol inválido");
+  if (!email) return { ok: false, error: "El email es requerido" };
+  if (!isValidRole(rol)) return { ok: false, error: "Rol inválido" };
 
   const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
   const redirectTo = `${appUrl}/auth/callback?next=/auth/set-password`;
@@ -76,15 +83,21 @@ export async function invitarStaff(formData: FormData) {
     data:       { full_name: name || email },
     redirectTo,
   });
-  if (error) throw new Error(error.message);
+  if (error) {
+    const msg = error.message.includes("already been registered")
+      ? `El email ${email} ya tiene una cuenta registrada. Usá "Con contraseña" para agregarle un rol directamente.`
+      : error.message;
+    return { ok: false, error: msg };
+  }
 
   const { error: updateError } = await supabase.auth.admin.updateUserById(
     data.user.id,
     { app_metadata: { role: rol } }
   );
-  if (updateError) throw new Error(updateError.message);
+  if (updateError) return { ok: false, error: updateError.message };
 
   revalidatePath("/admin/staff");
+  return { ok: true };
 }
 
 export async function resetearPasswordAdmin(userId: string, newPassword: string) {
@@ -112,17 +125,24 @@ export async function enviarEmailRecuperacion(email: string) {
   if (error) throw new Error(error.message);
 }
 
-export async function crearUsuarioConPassword(formData: FormData) {
-  await requireAdmin();
+export async function crearUsuarioConPassword(
+  formData: FormData
+): Promise<{ ok: true } | { ok: false; error: string }> {
+  try {
+    await requireAdmin();
+  } catch {
+    return { ok: false, error: "No autorizado" };
+  }
+
   const email    = (formData.get("email") as string).trim().toLowerCase();
   const password = formData.get("password") as string;
   const rol      = formData.get("rol") as string;
   const name     = (formData.get("name") as string | null)?.trim() ?? "";
 
-  if (!email)            throw new Error("El email es requerido");
-  if (!password)         throw new Error("La contraseña es requerida");
-  if (password.length < 8) throw new Error("La contraseña debe tener al menos 8 caracteres");
-  if (!isValidRole(rol)) throw new Error("Rol inválido");
+  if (!email)               return { ok: false, error: "El email es requerido" };
+  if (!password)            return { ok: false, error: "La contraseña es requerida" };
+  if (password.length < 8)  return { ok: false, error: "La contraseña debe tener al menos 8 caracteres" };
+  if (!isValidRole(rol))    return { ok: false, error: "Rol inválido" };
 
   const supabase = createAdminClient();
   const { data, error } = await supabase.auth.admin.createUser({
@@ -132,13 +152,18 @@ export async function crearUsuarioConPassword(formData: FormData) {
     user_metadata: { full_name: name || email },
     app_metadata:  { role: rol },
   });
-  if (error) throw new Error(error.message);
+  if (error) {
+    const msg = error.message.includes("already been registered") || error.message.includes("already exists")
+      ? `El email ${email} ya tiene una cuenta. Si es un cliente B2B, podés asignarle rol directamente desde Supabase Auth.`
+      : error.message;
+    return { ok: false, error: msg };
+  }
 
-  // Crear perfil en la tabla profiles si no existe
   await (supabase as any).from("profiles").upsert({
     id:        data.user.id,
     full_name: name || email,
   });
 
   revalidatePath("/admin/staff");
+  return { ok: true };
 }

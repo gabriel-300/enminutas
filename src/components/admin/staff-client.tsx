@@ -382,16 +382,20 @@ function InviteForm() {
     const form = e.currentTarget;
     setError(null); setSuccess(null);
     startTransition(async () => {
-      try {
-        if (mode === "invite") {
-          await invitarStaff(fd);
-          setSuccess("Invitación enviada. El usuario recibirá un email para activar su cuenta.");
-        } else {
-          await crearUsuarioConPassword(fd);
-          setSuccess("Usuario creado. Ya puede ingresar con su email y contraseña.");
-        }
+      const result = mode === "invite"
+        ? await invitarStaff(fd)
+        : await crearUsuarioConPassword(fd);
+
+      if (!result.ok) {
+        setError(result.error);
+      } else {
+        setSuccess(
+          mode === "invite"
+            ? "Invitación enviada. El usuario recibirá un email para activar su cuenta."
+            : "Usuario creado. Ya puede ingresar con su email y contraseña."
+        );
         form.reset();
-      } catch (err: any) { setError(err.message ?? "Error al crear usuario"); }
+      }
     });
   }
 
