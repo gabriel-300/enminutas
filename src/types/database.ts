@@ -218,6 +218,7 @@ export type Database = {
           name: string
           slug: string
           sort_order: number | null
+          visible_en_tienda: boolean | null
         }
         Insert: {
           created_at?: string
@@ -228,6 +229,7 @@ export type Database = {
           name: string
           slug: string
           sort_order?: number | null
+          visible_en_tienda?: boolean | null
         }
         Update: {
           created_at?: string
@@ -238,6 +240,7 @@ export type Database = {
           name?: string
           slug?: string
           sort_order?: number | null
+          visible_en_tienda?: boolean | null
         }
         Relationships: []
       }
