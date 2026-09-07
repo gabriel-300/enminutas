@@ -140,11 +140,14 @@ async function requireAdmin() {
 export async function aprobarCliente(profileId: string) {
   await requireAdmin();
   const supabase = createAdminClient();
-  const { error } = await supabase
-    .from("profiles")
-    .update({ b2b_status: "activo" })
-    .eq("id", profileId);
-  if (error) throw new Error(error.message);
+
+  // Actualizar perfil y app_metadata en paralelo
+  const [profileResult, authResult] = await Promise.all([
+    supabase.from("profiles").update({ b2b_status: "activo" }).eq("id", profileId),
+    supabase.auth.admin.updateUserById(profileId, { app_metadata: { role: "customer_b2b" } }),
+  ]);
+  if (profileResult.error) throw new Error(profileResult.error.message);
+  if (authResult.error)    throw new Error(authResult.error.message);
 
   // Notificar al cliente — fire and forget
   const { data: authUser } = await supabase.auth.admin.getUserById(profileId);

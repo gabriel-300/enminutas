@@ -1,9 +1,23 @@
 import type { Metadata } from "next";
-import Link from "next/link";
+import { createClient } from "@/lib/supabase/server";
+import { redirect } from "next/navigation";
 
 export const metadata: Metadata = { title: "Cuenta en revisión — En Minutas" };
 
-export default function PendientePage() {
+export default async function PendientePage() {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) redirect("/login");
+
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("b2b_status")
+    .eq("id", user.id)
+    .single();
+
+  const status = (profile as any)?.b2b_status;
+  if (status === "activo") redirect("/b2b/catalogo");
+
   return (
     <div className="w-full max-w-sm text-center">
       <div className="size-12 rounded-full bg-tierra-700 text-white flex items-center justify-center mx-auto mb-6 font-display font-bold text-lg">
@@ -18,14 +32,16 @@ export default function PendientePage() {
         </div>
 
         <h1 className="font-display text-xl font-semibold text-neutral-900 mb-2">
-          Cuenta en revisión
+          {status === "inactivo" ? "Cuenta desactivada" : "Cuenta en revisión"}
         </h1>
         <p className="text-sm text-neutral-500 leading-relaxed">
-          Recibimos tu solicitud. El equipo de En Minutas la revisará y te notificará por email cuando tu cuenta esté activa.
+          {status === "inactivo"
+            ? "Tu cuenta B2B fue desactivada. Contactate con nosotros para más información."
+            : "Recibimos tu solicitud. El equipo de En Minutas la revisará y te notificará por email cuando tu cuenta esté activa."}
         </p>
 
         <p className="text-xs text-neutral-400 mt-4">
-          Tiempo estimado: 1 día hábil
+          {status !== "inactivo" && "Tiempo estimado: 1 día hábil"}
         </p>
       </div>
 
