@@ -19,36 +19,7 @@ type ORModel = {
 };
 
 export async function getFreeLLMModels(): Promise<string[]> {
-  const now = Date.now();
-  if (_cached && now - _cached.ts < 5 * 60 * 1000) return _cached.ids;
-
-  try {
-    const resp = await fetch("https://openrouter.ai/api/v1/models", {
-      headers: { Authorization: `Bearer ${process.env.OPENROUTER_API_KEY ?? ""}` },
-      cache: "no-store",
-    });
-    if (!resp.ok) return FALLBACKS;
-
-    const { data } = (await resp.json()) as { data: ORModel[] };
-
-    const candidates = (data ?? [])
-      .filter(
-        (m) =>
-          Number(m.pricing.prompt) === 0 &&
-          Number(m.pricing.completion) === 0 &&
-          m.supported_parameters?.includes("tools"),
-      )
-      .sort((a, b) => (b.context_length ?? 0) - (a.context_length ?? 0))
-      .slice(0, 5)
-      .map((m) => m.id);
-
-    // Asegurar que los fallbacks conocidos estén incluidos al final
-    const ids = [...new Set([...candidates, ...FALLBACKS])];
-    _cached = { ids, ts: now };
-    return ids;
-  } catch {
-    return FALLBACKS;
-  }
+  return FALLBACKS;
 }
 
 export type ORMessage =

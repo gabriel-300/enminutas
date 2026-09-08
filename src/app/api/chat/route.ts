@@ -301,7 +301,7 @@ export async function POST(req: Request) {
       resp = await orChat(models[modelIdx], msgs, TOOLS);
     } catch (err) {
       const detail = err instanceof Error ? err.message : String(err);
-      const retriable = detail.includes("429") || detail.includes("503") || detail.includes("502") || detail.includes("overloaded");
+      const retriable = detail.includes("429") || detail.includes("403") || detail.includes("503") || detail.includes("502") || detail.includes("overloaded");
       if (retriable && modelIdx < models.length - 1) {
         modelIdx++;
         i--;
