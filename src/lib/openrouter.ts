@@ -4,11 +4,11 @@ let _cached: { ids: string[]; ts: number } | null = null;
 
 // Modelos gratuitos confiables con soporte de tools, en orden de preferencia
 const FALLBACKS = [
-  "meta-llama/llama-3.3-70b-instruct:free",
-  "qwen/qwen3-8b:free",
-  "mistralai/mistral-small-3.1-24b-instruct:free",
-  "google/gemma-2-9b-it:free",
-  "meta-llama/llama-3.1-8b-instruct:free",
+  "google/gemma-4-31b-it:free",
+  "nvidia/nemotron-3.5-lightning:free",
+  "nvidia/nemotron-3-super-120b-a12b:free",
+  "google/gemma-4-26b-a4b-it:free",
+  "openrouter/free",
 ];
 
 type ORModel = {
