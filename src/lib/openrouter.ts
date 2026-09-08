@@ -4,9 +4,11 @@ let _cached: { ids: string[]; ts: number } | null = null;
 
 // Modelos gratuitos confiables con soporte de tools, en orden de preferencia
 const FALLBACKS = [
+  "meta-llama/llama-3.3-70b-instruct:free",
+  "qwen/qwen3-8b:free",
+  "mistralai/mistral-small-3.1-24b-instruct:free",
+  "google/gemma-2-9b-it:free",
   "meta-llama/llama-3.1-8b-instruct:free",
-  "google/gemma-3-12b-it:free",
-  "mistralai/mistral-7b-instruct:free",
 ];
 
 type ORModel = {

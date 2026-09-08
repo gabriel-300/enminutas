@@ -301,13 +301,14 @@ export async function POST(req: Request) {
       resp = await orChat(models[modelIdx], msgs, TOOLS);
     } catch (err) {
       const detail = err instanceof Error ? err.message : String(err);
-      if (detail.includes("429") && modelIdx < models.length - 1) {
+      const retriable = detail.includes("429") || detail.includes("503") || detail.includes("502") || detail.includes("overloaded");
+      if (retriable && modelIdx < models.length - 1) {
         modelIdx++;
-        i--; // reintentar misma iteración con el siguiente modelo
+        i--;
         continue;
       }
       console.error("OpenRouter error:", detail);
-      return Response.json({ error: `Error al conectar con el asistente: ${detail}` }, { status: 502 });
+      return Response.json({ error: "El asistente no está disponible en este momento. Intentá de nuevo en unos segundos." }, { status: 502 });
     }
 
     const msg = resp.choices[0]?.message;
