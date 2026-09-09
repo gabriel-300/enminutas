@@ -28,10 +28,10 @@ export default async function PlanificadorPage({
     .in("status", ["aprobado", "enviado_prod"]);
   const pendingIds = (rawPendingOrders ?? []).map((o: any) => o.id as string);
 
-  const [{ data: rawProducts }, { data: rawPendingLines }, { data: rawRecipes }] = await Promise.all([
+  const [{ data: rawProducts }, { data: rawPendingLines }, { data: rawRecipes }, { data: rawLotes }] = await Promise.all([
     adminClient
       .from("products")
-      .select("id, name, sku, bolsas_caja, stock_cajas, stock_minimo, category:categories!category_id (name)")
+      .select("id, name, sku, bolsas_caja, stock_minimo, category:categories!category_id (name)")
       .eq("is_active", true),
 
     adminClient
@@ -42,7 +42,20 @@ export default async function PlanificadorPage({
     adminClient
       .from("recipes")
       .select("product_id, yield_cajas, steps:recipe_steps (minutes)"),
+
+    // Stock real desde lotes activos
+    adminClient
+      .from("lotes")
+      .select("producto_id, cantidad_actual")
+      .eq("activo", true),
   ]);
+
+  // Stock real por producto (suma de lotes activos)
+  const stockMap: Record<string, number> = {};
+  for (const lote of (rawLotes ?? []) as any[]) {
+    if (!lote.producto_id) continue;
+    stockMap[lote.producto_id] = (stockMap[lote.producto_id] ?? 0) + Number(lote.cantidad_actual);
+  }
 
   // Demanda pendiente por producto
   const demandaMap: Record<string, number> = {};
@@ -59,13 +72,13 @@ export default async function PlanificadorPage({
   }
 
   const items = ((rawProducts ?? []) as any[]).map((p) => {
-    const stock   = p.stock_cajas ?? 0;
+    const stock   = stockMap[p.id] ?? 0;
     const minimo  = p.stock_minimo ?? 0;
     const demanda = demandaMap[p.id] ?? 0;
     const receta  = recetaMap[p.id] ?? null;
 
-    // Cajas a producir = lo que falta para el mínimo + lo comprometido en pedidos que exceda el stock
-    const cajasNecesarias = Math.max(minimo - stock, 0) + Math.max(demanda - stock, 0);
+    // Producir para cubrir demanda Y mantener el stock mínimo
+    const cajasNecesarias = Math.max(demanda + minimo - stock, 0);
 
     const minutos = receta && receta.yieldCajas > 0 && cajasNecesarias > 0
       ? Math.ceil((receta.minPorLote * cajasNecesarias) / receta.yieldCajas)
@@ -82,17 +95,14 @@ export default async function PlanificadorPage({
       cajasNecesarias,
       minutos,
       tieneReceta:      !!receta,
-      urgente:          minimo > 0 && stock < minimo,
+      urgente:          demanda > 0 && stock < demanda,
     };
   })
-  // Solo los que necesitan producción
-  .filter((i) => i.cajasNecesarias > 0 || (i.minimo > 0 && i.stock < i.minimo))
-  // Orden: con pedidos comprometidos primero, luego por % de stock vs mínimo
+  .filter((i) => i.cajasNecesarias > 0)
   .sort((a, b) => {
-    if (b.demanda !== a.demanda) return b.demanda - a.demanda;
-    const pctA = a.minimo > 0 ? a.stock / a.minimo : 1;
-    const pctB = b.minimo > 0 ? b.stock / b.minimo : 1;
-    return pctA - pctB;
+    // Urgentes primero (demanda > stock), luego por cajas necesarias descendente
+    if (a.urgente !== b.urgente) return a.urgente ? -1 : 1;
+    return b.cajasNecesarias - a.cajasNecesarias;
   });
 
   return (
