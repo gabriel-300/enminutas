@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { registrarPago, registrarPagoPedidos, eliminarPago } from "../pagos-actions";
+import { fmtFechaSolo } from "@/lib/fecha";
 
 export type Pago = {
   id: string;
@@ -35,9 +36,6 @@ type Imputacion = "pedido" | "factura" | "cuenta";
 
 const fmt = (n: number) =>
   new Intl.NumberFormat("es-AR", { style: "currency", currency: "ARS", maximumFractionDigits: 0 }).format(n);
-
-const fmtFecha = (s: string) =>
-  new Date(s + "T12:00:00").toLocaleDateString("es-AR", { day: "2-digit", month: "2-digit", year: "2-digit" });
 
 const hoy = () => new Date().toISOString().slice(0, 10);
 
@@ -142,6 +140,7 @@ export function PagosClient({ clienteId, pagos, totalFacturado, ordenes }: Props
           metodo,
           referencia: referencia.trim() || null,
           notas:      notasFinal?.trim() || null,
+          sinFactura,
           items,
         });
         if ("error" in res) { setError(res.error); return; }
@@ -257,7 +256,7 @@ export function PagosClient({ clienteId, pagos, totalFacturado, ordenes }: Props
                         disabled={isPending}
                         className="rounded border-neutral-300 text-tierra-700 focus:ring-tierra-700/20 shrink-0" />
                       <span className="text-sm text-neutral-700 flex-1 min-w-0 truncate">
-                        {o.order_number} · {fmtFecha(o.created_at)}
+                        {o.order_number} · {fmtFechaSolo(o.created_at)}
                       </span>
                       <span className="text-sm font-medium text-neutral-900 tabular-nums shrink-0">
                         {fmt(sinFactura ? o.total / IVA_DIV : o.total)}
@@ -396,7 +395,7 @@ export function PagosClient({ clienteId, pagos, totalFacturado, ordenes }: Props
                   <span className="text-xs px-2 py-0.5 rounded-full bg-neutral-100 text-neutral-500 capitalize">
                     {METODOS.find(m => m.value === p.metodo)?.label ?? p.metodo}
                   </span>
-                  <span className="text-xs text-neutral-400">{fmtFecha(p.fecha)}</span>
+                  <span className="text-xs text-neutral-400">{fmtFechaSolo(p.fecha)}</span>
                   {p.referencia && (
                     <span className="text-xs text-neutral-400 font-mono">{p.referencia}</span>
                   )}

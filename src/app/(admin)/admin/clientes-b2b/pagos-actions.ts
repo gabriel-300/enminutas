@@ -61,9 +61,10 @@ export async function registrarPagoPedidos(payload: {
   metodo:     string;
   referencia: string | null;
   notas:      string | null;
+  sinFactura: boolean;
   items:      PagoPedidoItem[];
 }): Promise<{ error: string } | { ok: true; pagoIds: string[] }> {
-  const { clienteId, fecha, metodo, referencia, notas, items } = payload;
+  const { clienteId, fecha, metodo, referencia, notas, sinFactura, items } = payload;
 
   if (!clienteId) return { error: "Cliente requerido" };
   if (!fecha) return { error: "La fecha es requerida" };
@@ -80,14 +81,15 @@ export async function registrarPagoPedidos(payload: {
 
   for (const item of items) {
     const { data: pago, error } = await db.from("pagos").insert({
-      cliente_id: clienteId,
-      monto:      item.monto,
+      cliente_id:  clienteId,
+      monto:       item.monto,
       fecha,
       metodo,
       referencia,
       notas,
-      order_id:   item.orderId,
-      created_by: user.id,
+      order_id:    item.orderId,
+      sin_factura: sinFactura,
+      created_by:  user.id,
     }).select("id").single();
 
     if (error) return { error: error.message };

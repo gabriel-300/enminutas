@@ -100,19 +100,42 @@ export default async function PreventistaPage() {
 
   const clienteIds = Object.keys(clienteVendedorMap);
   let ventasMap: Record<string, number> = {};
+  // Base para el cálculo de comisión: igual a ventasMap, salvo en pedidos
+  // cobrados "sin factura" (neto, s/IVA), donde se usa lo efectivamente
+  // cobrado en vez del total con IVA — la comisión de esos pedidos se reduce
+  // en proporción a lo cobrado. "Ventas del mes" (meta, ranking) no se toca.
+  let comisionBaseMap: Record<string, number> = {};
 
   if (clienteIds.length > 0) {
     const { data: rawOrders } = await adminClient
       .from("orders")
-      .select("customer_id, total")
+      .select("id, customer_id, total")
       .in("customer_id", clienteIds)
       .in("status", ACTIVE_STATUSES)
       .gte("created_at", desdeMs)
       .lte("created_at", hastaMs);
 
+    const orderIds = (rawOrders ?? []).map((o: any) => o.id);
+
+    const netoSinFacturaMap: Record<string, number> = {};
+    if (orderIds.length > 0) {
+      const { data: pagosSinFactura } = await adminClient
+        .from("pagos")
+        .select("order_id, monto")
+        .in("order_id", orderIds)
+        .eq("sin_factura", true);
+      for (const p of (pagosSinFactura ?? []) as any[]) {
+        if (!p.order_id) continue;
+        netoSinFacturaMap[p.order_id] = (netoSinFacturaMap[p.order_id] ?? 0) + Number(p.monto);
+      }
+    }
+
     for (const o of (rawOrders ?? []) as any[]) {
       const vid = clienteVendedorMap[o.customer_id];
-      if (vid) ventasMap[vid] = (ventasMap[vid] ?? 0) + Number(o.total);
+      if (!vid) continue;
+      const total = Number(o.total);
+      ventasMap[vid]      = (ventasMap[vid] ?? 0) + total;
+      comisionBaseMap[vid] = (comisionBaseMap[vid] ?? 0) + (netoSinFacturaMap[o.id] ?? total);
     }
   }
 
@@ -196,8 +219,9 @@ export default async function PreventistaPage() {
 
   // Ventas del mes del propio vendedor (para su card de comisión)
   const ventasPropias = esVendedor ? (ventasMap[user.id] ?? 0) : 0;
-  const comisionPropiaAmt = (comisionPropiaConfig != null && ventasPropias > 0)
-    ? Math.round(ventasPropias * comisionPropiaConfig / divisorPrecio)
+  const comisionBasePropia = esVendedor ? (comisionBaseMap[user.id] ?? 0) : 0;
+  const comisionPropiaAmt = (comisionPropiaConfig != null && comisionBasePropia > 0)
+    ? Math.round(comisionBasePropia * comisionPropiaConfig / divisorPrecio)
     : null;
 
   const fmtARS = (n: number) =>
