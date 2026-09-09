@@ -79,7 +79,7 @@ export default async function ClienteB2BDetailPage({
       .order("name"),
     (adminClient as any)
       .from("pagos")
-      .select("id, monto, fecha, metodo, referencia, notas, order_id, factura_numero, created_at, order:orders!order_id(order_number, total)")
+      .select("id, monto, fecha, metodo, referencia, notas, order_id, factura_numero, sin_factura, created_at, order:orders!order_id(order_number, total)")
       .eq("cliente_id", id)
       .order("fecha", { ascending: false }),
   ]);
@@ -101,9 +101,19 @@ export default async function ClienteB2BDetailPage({
     created_at:   o.created_at,
   })) as OrdenResumen[];
 
+  // Pedidos cobrados "sin factura" (neto, s/IVA): el descuento del IVA se
+  // perdona, no queda como saldo pendiente — "Facturado" cuenta lo
+  // efectivamente cobrado en esos pedidos, no el total con IVA original.
+  const netoSinFacturaMap: Record<string, number> = {};
+  for (const p of pagos as any[]) {
+    if (p.sin_factura && p.order_id) {
+      netoSinFacturaMap[p.order_id] = (netoSinFacturaMap[p.order_id] ?? 0) + Number(p.monto);
+    }
+  }
+
   const totalFacturado = orders
     .filter((o) => o.status !== "cancelled")
-    .reduce((s: number, o: any) => s + Number(o.total), 0);
+    .reduce((s: number, o: any) => s + (netoSinFacturaMap[o.id] ?? Number(o.total)), 0);
 
   const totalPagado        = pagos.reduce((s, p) => s + Number(p.monto), 0);
   const saldoPendiente     = totalFacturado - totalPagado;

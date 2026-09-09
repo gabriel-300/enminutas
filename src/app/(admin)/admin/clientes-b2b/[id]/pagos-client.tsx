@@ -361,19 +361,17 @@ export function PagosClient({ clienteId, pagos, totalFacturado, ordenes }: Props
         </form>
       )}
 
-      {/* Banner post-guardado con link(s) al recibo */}
+      {/* Banner post-guardado con link al recibo (uno solo, combinado si fueron varios pedidos) */}
       {pagosGuardados && pagosGuardados.length > 0 && (
         <div className="px-5 py-3 bg-emerald-50 border-b border-emerald-100 flex items-center justify-between gap-3 flex-wrap">
           <p className="text-sm text-emerald-700 font-medium">
             ✓ {pagosGuardados.length > 1 ? `${pagosGuardados.length} pagos registrados correctamente` : "Pago registrado correctamente"}
           </p>
-          <div className="flex items-center gap-3 flex-wrap">
-            {pagosGuardados.map((id, i) => (
-              <a key={id} href={`/admin/clientes-b2b/recibo/${id}`} target="_blank"
-                className="px-3 py-1.5 text-sm font-medium rounded-lg border border-emerald-600 text-emerald-700 hover:bg-emerald-100 transition-colors">
-                {pagosGuardados.length > 1 ? `Recibo ${i + 1}` : "Imprimir recibo"}
-              </a>
-            ))}
+          <div className="flex items-center gap-3">
+            <a href={`/admin/clientes-b2b/recibo/${pagosGuardados[0]}`} target="_blank"
+              className="px-3 py-1.5 text-sm font-medium rounded-lg border border-emerald-600 text-emerald-700 hover:bg-emerald-100 transition-colors">
+              Imprimir recibo
+            </a>
             <button type="button" onClick={() => setPagosGuardados(null)}
               className="text-xs text-emerald-400 hover:text-emerald-700">
               ✕

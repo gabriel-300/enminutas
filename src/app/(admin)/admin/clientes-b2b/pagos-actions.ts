@@ -78,6 +78,8 @@ export async function registrarPagoPedidos(payload: {
 
   const db = createAdminClient() as any;
   const pagoIds: string[] = [];
+  // Varios pedidos en la misma tanda comparten grupo_id → un solo recibo combinado.
+  const grupoId = items.length > 1 ? crypto.randomUUID() : null;
 
   for (const item of items) {
     const { data: pago, error } = await db.from("pagos").insert({
@@ -89,6 +91,7 @@ export async function registrarPagoPedidos(payload: {
       notas,
       order_id:    item.orderId,
       sin_factura: sinFactura,
+      grupo_id:    grupoId,
       created_by:  user.id,
     }).select("id").single();
 

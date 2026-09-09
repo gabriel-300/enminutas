@@ -35,7 +35,7 @@ export default async function ReciboPagoPage({
     .from("pagos")
     .select(`
       id, monto, fecha, metodo, referencia, notas,
-      order_id, factura_numero, created_at,
+      order_id, factura_numero, grupo_id, created_at,
       cliente:profiles!cliente_id (
         id, full_name, document_number, phone
       ),
@@ -46,12 +46,29 @@ export default async function ReciboPagoPage({
 
   if (!pago) notFound();
 
+  // Si el pago forma parte de una tanda (varios pedidos imputados juntos),
+  // el recibo combina todos los pagos del grupo en un solo documento.
+  const { data: pagosGrupoRaw } = pago.grupo_id
+    ? await adminClient
+        .from("pagos")
+        .select(`
+          id, monto, fecha, metodo, referencia, notas,
+          order_id, factura_numero, created_at,
+          order:orders!order_id ( order_number, total )
+        `)
+        .eq("grupo_id", pago.grupo_id)
+        .order("created_at", { ascending: true })
+    : { data: [pago] };
+
+  const pagosGrupo = (pagosGrupoRaw ?? [pago]) as any[];
+  const montoTotalGrupo = pagosGrupo.reduce((s, p) => s + Number(p.monto), 0);
+
   const authData = pago.cliente?.id
     ? await adminClient.auth.admin.getUserById(pago.cliente.id)
     : null;
   const email = authData?.data?.user?.email ?? null;
 
-  const nroRecibo = pagoId.slice(0, 8).toUpperCase();
+  const nroRecibo = (pago.grupo_id ?? pagoId).slice(0, 8).toUpperCase();
 
   return (
     <>
@@ -118,35 +135,37 @@ export default async function ReciboPagoPage({
             <span>Método</span>
             <span style={{ textAlign: "right" }}>Importe</span>
           </div>
-          <div style={{ padding: "16px 20px", display: "grid", gridTemplateColumns: "1fr auto auto", gap: "16px", alignItems: "center", borderTop: "1px solid #e5e5e3" }}>
-            <div>
-              <div style={{ fontSize: "14px", fontWeight: "600", color: "#1a1a18" }}>
-                {pago.order?.order_number
-                  ? `Pago — Pedido ${pago.order.order_number}`
-                  : pago.factura_numero
-                    ? `Pago — Factura ${pago.factura_numero}`
-                    : "Pago a cuenta"}
-              </div>
-              {pago.referencia && (
-                <div style={{ fontSize: "12px", color: "#888", marginTop: "3px", fontFamily: "monospace" }}>
-                  Ref: {pago.referencia}
+          {pagosGrupo.map((p, i) => (
+            <div key={p.id} style={{ padding: "16px 20px", display: "grid", gridTemplateColumns: "1fr auto auto", gap: "16px", alignItems: "center", borderTop: i === 0 ? "1px solid #e5e5e3" : "1px solid #f0f0ee" }}>
+              <div>
+                <div style={{ fontSize: "14px", fontWeight: "600", color: "#1a1a18" }}>
+                  {p.order?.order_number
+                    ? `Pago — Pedido ${p.order.order_number}`
+                    : p.factura_numero
+                      ? `Pago — Factura ${p.factura_numero}`
+                      : "Pago a cuenta"}
                 </div>
-              )}
-              {pago.notas && (
-                <div style={{ fontSize: "12px", color: "#888", marginTop: "2px" }}>{pago.notas}</div>
-              )}
+                {p.referencia && (
+                  <div style={{ fontSize: "12px", color: "#888", marginTop: "3px", fontFamily: "monospace" }}>
+                    Ref: {p.referencia}
+                  </div>
+                )}
+                {p.notas && (
+                  <div style={{ fontSize: "12px", color: "#888", marginTop: "2px" }}>{p.notas}</div>
+                )}
+              </div>
+              <div style={{ fontSize: "13px", color: "#555", whiteSpace: "nowrap" }}>
+                {METODOS[p.metodo] ?? p.metodo}
+              </div>
+              <div style={{ fontSize: "15px", fontWeight: "700", color: "#1a1a18", fontVariantNumeric: "tabular-nums", textAlign: "right", whiteSpace: "nowrap" }}>
+                {fmt(Number(p.monto))}
+              </div>
             </div>
-            <div style={{ fontSize: "13px", color: "#555", whiteSpace: "nowrap" }}>
-              {METODOS[pago.metodo] ?? pago.metodo}
-            </div>
-            <div style={{ fontSize: "15px", fontWeight: "700", color: "#1a1a18", fontVariantNumeric: "tabular-nums", textAlign: "right", whiteSpace: "nowrap" }}>
-              {fmt(Number(pago.monto))}
-            </div>
-          </div>
+          ))}
           <div style={{ background: "#1a1a18", padding: "14px 20px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
             <span style={{ fontSize: "12px", fontWeight: "600", letterSpacing: "0.06em", textTransform: "uppercase", color: "#aaa" }}>Total recibido</span>
             <span style={{ fontSize: "22px", fontWeight: "700", color: "#fff", fontVariantNumeric: "tabular-nums" }}>
-              {fmt(Number(pago.monto))}
+              {fmt(montoTotalGrupo)}
             </span>
           </div>
         </div>
