@@ -16,16 +16,24 @@ export default async function NuevaMuestraPage() {
 
   const db = createAdminClient() as any;
 
+  // profiles.role no es confiable (desincronizado en producción) — "customer"
+  // tampoco es un valor válido del enum, así que este filtro no devolvía
+  // ningún cliente nunca. Se identifica clientes reales via app_metadata,
+  // igual que el resto de la app.
+  const { data: { users: allUsers } } = await db.auth.admin.listUsers({ perPage: 1000 });
+  const clienteIds = (allUsers ?? [])
+    .filter((u: any) => ["customer_b2b", "customer_b2c"].includes(u.app_metadata?.role))
+    .map((u: any) => u.id as string);
+
   const [{ data: rawProductos }, { data: rawClientes }] = await Promise.all([
     db.from("products")
       .select("id, name, sku, codigo, presentacion")
       .eq("is_active", true)
       .eq("es_muestra", true)
       .order("name"),
-    db.from("profiles")
-      .select("id, full_name, phone")
-      .eq("role", "customer")
-      .order("full_name"),
+    clienteIds.length > 0
+      ? db.from("profiles").select("id, full_name, phone").in("id", clienteIds).order("full_name")
+      : Promise.resolve({ data: [] }),
   ]);
 
   const productos = (rawProductos ?? []) as {

@@ -96,7 +96,7 @@ export async function GET(request: NextRequest) {
     : { data: [] };
   const pagoComisionMap: Record<string, any> = {};
   for (const p of (rawPagosComision ?? []) as any[]) {
-    pagoComisionMap[`${p.vendedor_id}_${p.mes}`] = p;
+    pagoComisionMap[`${p.vendedor_id}_${p.mes}_${p.cliente_id}`] = p;
   }
 
   // ── Repartir cada pedido: preventista asignado (tope: pool del cliente) ─
@@ -143,8 +143,8 @@ export async function GET(request: NextRequest) {
     if (comercializadoraId) sumar(comercializadoraId, comisionResto);
   }
 
-  function comisionDe(vid: string, mesKey: string, live: number) {
-    const pago = pagoComisionMap[`${vid}_${mesKey}`];
+  function comisionDeCliente(vid: string, mesKey: string, clienteId: string, live: number) {
+    const pago = pagoComisionMap[`${vid}_${mesKey}_${clienteId}`];
     return { monto: pago ? Number(pago.monto) : Math.round(live), pagada: !!pago, fechaPago: pago?.fecha_pago ?? "" };
   }
 
@@ -158,14 +158,14 @@ export async function GET(request: NextRequest) {
     for (const vid of vendedorIds) {
       const clientes = clienteMesMap[`${vid}_${mesParam}`] ?? {};
       const nombre = vendedorNombre[vid] ?? vid;
-      const clienteEntries = Object.values(clientes) as ClienteMesAgg[];
+      const clienteEntries = Object.entries(clientes) as [string, ClienteMesAgg][];
       if (clienteEntries.length === 0) continue;
 
-      const { pagada, fechaPago } = comisionDe(vid, mesParam, 0);
-      for (const c of clienteEntries) {
+      for (const [clienteId, c] of clienteEntries) {
+        const { monto, pagada, fechaPago } = comisionDeCliente(vid, mesParam, clienteId, c.comision);
         rows.push(csvRow([
           nombre, c.nombre,
-          c.ventas.toFixed(2), c.comision.toFixed(2),
+          c.ventas.toFixed(2), monto.toFixed(2),
           pagada ? "Pagada" : "Pendiente", fechaPago,
         ]));
       }
@@ -180,8 +180,12 @@ export async function GET(request: NextRequest) {
       const montos: number[] = [];
       for (let i = 0; i < 12; i++) {
         const mesKey = `${anio}-${String(i + 1).padStart(2, "0")}`;
-        const agg = aggMap[vid]?.[mesKey] ?? { ventas: 0, comision: 0 };
-        montos.push(comisionDe(vid, mesKey, agg.comision).monto);
+        const clientes = clienteMesMap[`${vid}_${mesKey}`] ?? {};
+        const montoMes = Object.entries(clientes).reduce(
+          (s, [clienteId, c]) => s + comisionDeCliente(vid, mesKey, clienteId, (c as ClienteMesAgg).comision).monto,
+          0,
+        );
+        montos.push(montoMes);
       }
       const total = montos.reduce((s, m) => s + m, 0);
       rows.push(csvRow([nombre, ...montos.map((m) => m.toFixed(2)), total.toFixed(2)]));
