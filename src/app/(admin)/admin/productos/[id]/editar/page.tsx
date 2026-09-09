@@ -23,7 +23,7 @@ export default async function EditarProductoPage({ params }: { params: Promise<{
         category_id, cover_image_url, extra_images,
         codigo, presentacion, linea_id, categoria,
         costo, bolsas_caja, u_bolsa, kg_caja,
-        pkg_unitario, pkg_bulto, divisiones_display, min_quantity_b2b
+        pkg_unitario, pkg_bulto, divisiones_display, min_quantity_b2b, stock_minimo
       `)
       .eq("id", id)
       .single(),
@@ -82,6 +82,7 @@ export default async function EditarProductoPage({ params }: { params: Promise<{
           pkg_bulto:          p.pkg_bulto,
           divisiones_display: p.divisiones_display,
           min_quantity_b2b:   p.min_quantity_b2b,
+          stock_minimo:       p.stock_minimo,
         }}
         action={handleUpdate}
         submitLabel="Guardar cambios"

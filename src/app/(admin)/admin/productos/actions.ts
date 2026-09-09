@@ -68,6 +68,7 @@ function parseB2vPayload(formData: FormData): Record<string, any> {
     pkg_bulto:          num("pkg_bulto"),
     divisiones_display: num("divisiones_display"),
     min_quantity_b2b:   num("min_quantity_b2b") ?? 1,
+    stock_minimo:       num("stock_minimo") ?? 0,
   };
 }
 

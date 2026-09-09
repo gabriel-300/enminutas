@@ -32,6 +32,7 @@ type ProductoValues = {
   pkg_bulto?:          number | null;
   divisiones_display?: number | null;
   min_quantity_b2b?:   number | null;
+  stock_minimo?:       number | null;
 };
 
 type Props = {
@@ -203,6 +204,10 @@ export function ProductoForm({ categorias, lineas, defaultValues: dv = {}, actio
           </div>
           <div>
             <Field label="Mínimo de compra (cajas)" name="min_quantity_b2b" type="number" defaultValue={dv.min_quantity_b2b ?? ""} placeholder="1" min="1" />
+          </div>
+          <div>
+            <Field label="Stock mínimo (cajas)" name="stock_minimo" type="number" defaultValue={dv.stock_minimo ?? ""} placeholder="0" min="0" />
+            <p className="text-xs text-neutral-400 mt-1">Colchón de seguridad para el planificador de producción</p>
           </div>
         </div>
       </section>
