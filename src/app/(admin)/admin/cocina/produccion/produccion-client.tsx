@@ -219,8 +219,7 @@ export function ProduccionClient({ productos, historial }: Props) {
 
           {lotes > 0 && lotes !== Math.floor(lotes) && (
             <p className="text-sm text-sky-700 bg-sky-50 border border-sky-200 rounded-xl px-4 py-3">
-              ℹ Producción con fracción de lote ({lotes} lotes → {fmt(cajas)} cajas).
-              La fracción restante se contabiliza en el próximo lote.
+              ℹ Producción parcial ({lotes} lotes → {fmt(cajas)} cajas). Se registra exactamente lo producido. La próxima producción se ingresa por separado con su propia cantidad.
             </p>
           )}
 
@@ -242,7 +241,7 @@ export function ProduccionClient({ productos, historial }: Props) {
             </div>
           )}
 
-          <button type="submit" disabled={isPending || !productoId || lotes < 1}
+          <button type="submit" disabled={isPending || !productoId || lotes <= 0}
             className="px-6 py-2.5 bg-[#16233f] text-white text-sm font-medium rounded-xl hover:bg-[#253760] disabled:opacity-40 transition-colors">
             {isPending ? "Registrando…" : "Confirmar producción"}
           </button>
