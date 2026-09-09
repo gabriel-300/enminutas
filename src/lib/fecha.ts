@@ -8,7 +8,12 @@ export function fmtFecha(
 }
 
 export function fmtFechaSolo(date: string | Date): string {
-  return new Date(date).toLocaleDateString("es-AR", {
+  // Strings YYYY-MM-DD se parsean como medianoche UTC → en AR (-3) muestran el día anterior.
+  // Forzar mediodía evita el desfase para cualquier zona entre UTC-12 y UTC+11.
+  const d = typeof date === "string" && /^\d{4}-\d{2}-\d{2}$/.test(date)
+    ? new Date(date + "T12:00:00")
+    : new Date(date);
+  return d.toLocaleDateString("es-AR", {
     timeZone: TZ, day: "2-digit", month: "2-digit", year: "2-digit",
   });
 }

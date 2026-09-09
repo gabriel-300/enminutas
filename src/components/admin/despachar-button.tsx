@@ -11,7 +11,8 @@ type Linea = {
   unitPrice: number;
 };
 
-const hoy = () => new Date().toISOString().slice(0, 10);
+// en-CA devuelve YYYY-MM-DD; usar TZ Argentina para no adelantar día después de las 21hs
+const hoy = () => new Date().toLocaleDateString("en-CA", { timeZone: "America/Argentina/Buenos_Aires" });
 
 export function DespacharButton({ orderId, lines }: { orderId: string; lines: Linea[] }) {
   const [open,      setOpen]      = useState(false);

@@ -65,7 +65,7 @@ function OrderCard({
             <span>🚐 {order.despacho_info.patente}</span>
           )}
           {order.despacho_info.fecha_entrega && (
-            <span>📅 {new Date(order.despacho_info.fecha_entrega + "T00:00:00").toLocaleDateString("es-AR", { day: "2-digit", month: "2-digit" })}
+            <span>📅 {new Date(order.despacho_info.fecha_entrega + "T12:00:00").toLocaleDateString("es-AR", { day: "2-digit", month: "2-digit", timeZone: "America/Argentina/Buenos_Aires" })}
               {order.despacho_info.hora_entrega ? ` ${order.despacho_info.hora_entrega}` : ""}
             </span>
           )}
