@@ -3,6 +3,8 @@
 import { createClient, createAdminClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 import { emailPagoConfirmado, emailPedidoModificadoDespacho } from "@/lib/email";
+import { calcularPrecio } from "@/lib/b2b-pricing";
+import { getParametros } from "@/lib/parametros";
 
 async function logOrderEvent(
   db: ReturnType<typeof createAdminClient>,
@@ -669,6 +671,145 @@ export async function editarCantidadesPedido(
 
   await logOrderEvent(db, orderId, order.status, "Cantidades editadas manualmente", user.id);
 
+  revalidatePath(`/admin/pedidos/${orderId}`);
+  revalidatePath("/admin/pedidos");
+  return { ok: true };
+}
+
+export async function eliminarLineaPedido(
+  orderId: string,
+  lineId: string,
+): Promise<{ error: string } | { ok: true }> {
+  const supabase = await createClient();
+  const db       = createAdminClient() as any;
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user || user.app_metadata?.role !== "admin") return { error: "No autorizado" };
+
+  const { data: order } = await db
+    .from("orders")
+    .select("status, discount, shipping_fee")
+    .eq("id", orderId)
+    .single();
+  if (!order) return { error: "Pedido no encontrado" };
+  if (!ESTADOS_EDITABLES.includes(order.status))
+    return { error: `Solo se pueden editar pedidos en estado: ${ESTADOS_EDITABLES.join(", ")}` };
+
+  const { count } = await db
+    .from("order_lines")
+    .select("id", { count: "exact", head: true })
+    .eq("order_id", orderId);
+  if ((count ?? 0) <= 1) return { error: "El pedido debe tener al menos un producto" };
+
+  const { error: delError } = await db
+    .from("order_lines")
+    .delete()
+    .eq("id", lineId)
+    .eq("order_id", orderId);
+  if (delError) return { error: delError.message };
+
+  const { data: updatedLines } = await db
+    .from("order_lines")
+    .select("line_total")
+    .eq("order_id", orderId);
+  const subtotal = (updatedLines ?? []).reduce((s: number, l: any) => s + Number(l.line_total), 0);
+  const total    = subtotal - Number(order.discount ?? 0) + Number(order.shipping_fee ?? 0);
+
+  const { error: errOrder } = await db
+    .from("orders")
+    .update({ subtotal, total })
+    .eq("id", orderId);
+  if (errOrder) return { error: errOrder.message };
+
+  await logOrderEvent(db, orderId, order.status, "Línea eliminada del pedido", user.id);
+  revalidatePath(`/admin/pedidos/${orderId}`);
+  revalidatePath("/admin/pedidos");
+  return { ok: true };
+}
+
+export async function agregarLineaPedido(
+  orderId: string,
+  productId: string,
+  quantity: number,
+): Promise<{ error: string } | { ok: true }> {
+  const supabase = await createClient();
+  const db       = createAdminClient() as any;
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user || user.app_metadata?.role !== "admin") return { error: "No autorizado" };
+
+  if (quantity <= 0) return { error: "La cantidad debe ser mayor a 0" };
+
+  const { data: order } = await db
+    .from("orders")
+    .select("status, discount, shipping_fee, customer_id")
+    .eq("id", orderId)
+    .single();
+  if (!order) return { error: "Pedido no encontrado" };
+  if (!ESTADOS_EDITABLES.includes(order.status))
+    return { error: `Solo se pueden editar pedidos en estado: ${ESTADOS_EDITABLES.join(", ")}` };
+
+  const [productRes, profileRes, params] = await Promise.all([
+    db.from("products")
+      .select("id, name, sku, costo, bolsas_caja, pkg_unitario, pkg_bulto, u_bolsa, categoria, divisiones_display")
+      .eq("id", productId)
+      .single(),
+    db.from("profiles")
+      .select("canal:canales!canal_id (margen_std, margen_premium, markup_pvp)")
+      .eq("id", order.customer_id)
+      .single(),
+    getParametros(),
+  ]);
+
+  const prod      = productRes.data;
+  const canalData = profileRes.data?.canal;
+
+  if (!prod)      return { error: "Producto no encontrado" };
+  if (!prod.costo) return { error: "El producto no tiene costo configurado" };
+  if (!canalData) return { error: "El cliente no tiene canal asignado" };
+
+  const precio = calcularPrecio({
+    costo:              Number(prod.costo),
+    bolsas_caja:        Number(prod.bolsas_caja),
+    pkg_unitario:       Number(prod.pkg_unitario ?? 0),
+    pkg_bulto:          Number(prod.pkg_bulto    ?? 0),
+    u_bolsa:            Number(prod.u_bolsa),
+    categoria:          prod.categoria,
+    divisiones_display: prod.divisiones_display ?? null,
+    margen_std:         Number(canalData.margen_std),
+    margen_premium:     Number(canalData.margen_premium),
+    markup_pvp:         Number(canalData.markup_pvp),
+    iva_pct:            params.iva_pct,
+    comision_pct:       params.comision_pct,
+  });
+
+  const unitPrice = precio.final_civa;
+  const lineTotal = Math.round(unitPrice * quantity * 100) / 100;
+
+  const { error: insError } = await db
+    .from("order_lines")
+    .insert({
+      order_id:         orderId,
+      product_id:       productId,
+      quantity,
+      unit_price:       unitPrice,
+      line_total:       lineTotal,
+      product_snapshot: { name: prod.name, sku: prod.sku ?? null },
+    });
+  if (insError) return { error: insError.message };
+
+  const { data: updatedLines } = await db
+    .from("order_lines")
+    .select("line_total")
+    .eq("order_id", orderId);
+  const subtotal = (updatedLines ?? []).reduce((s: number, l: any) => s + Number(l.line_total), 0);
+  const total    = subtotal - Number(order.discount ?? 0) + Number(order.shipping_fee ?? 0);
+
+  const { error: errOrder } = await db
+    .from("orders")
+    .update({ subtotal, total })
+    .eq("id", orderId);
+  if (errOrder) return { error: errOrder.message };
+
+  await logOrderEvent(db, orderId, order.status, `Línea agregada: ${prod.name} (×${quantity})`, user.id);
   revalidatePath(`/admin/pedidos/${orderId}`);
   revalidatePath("/admin/pedidos");
   return { ok: true };

@@ -33,7 +33,7 @@ export default async function AdminPedidoDetailPage({
       payment_method, payment_declared_at, payment_confirmed_at,
       shipping_method, shipping_snapshot, delivered_snapshot, notes, notes_visible_cliente, created_at,
       guest_email, guest_phone,
-      customer:profiles!customer_id (full_name, phone, vendedor_id),
+      customer:profiles!customer_id (full_name, phone, canal, canal_id, vendedor_id),
       lines:order_lines (
         id, quantity, unit_price, line_total,
         product_snapshot
@@ -82,9 +82,31 @@ export default async function AdminPedidoDetailPage({
     b2b_despacho:     "Despacho B2B",
   };
 
-  const customerName = o.customer?.full_name ?? "Invitado";
+  const customerName  = o.customer?.full_name ?? "Invitado";
   const customerPhone = o.customer?.phone ?? o.guest_phone;
   const customerEmail = o.guest_email;
+  const customerCanal = o.customer?.canal ?? "dist";
+
+  // Productos activos para el form de edición (solo cuando el pedido es editable)
+  const ESTADOS_EDITABLES = ["aprobado", "enviado_prod"];
+  let productosDisponibles: { id: string; name: string; sku: string | null; costo: number | null; bolsas_caja: number; u_bolsa: number; pkg_unitario: number; pkg_bulto: number; categoria: string | null; divisiones_display: any }[] = [];
+  if (esAdmin && ESTADOS_EDITABLES.includes(o.status)) {
+    const { data: prods } = await (adminClient as any)
+      .from("products")
+      .select("id, name, sku, costo, bolsas_caja, u_bolsa, pkg_unitario, pkg_bulto, categoria, divisiones_display")
+      .eq("is_active", true)
+      .order("name");
+    productosDisponibles = (prods ?? []).map((p: any) => ({
+      id: p.id, name: p.name, sku: p.sku,
+      costo: p.costo ? Number(p.costo) : null,
+      bolsas_caja: Number(p.bolsas_caja ?? 1),
+      u_bolsa: Number(p.u_bolsa ?? 1),
+      pkg_unitario: Number(p.pkg_unitario ?? 0),
+      pkg_bulto: Number(p.pkg_bulto ?? 0),
+      categoria: p.categoria ?? null,
+      divisiones_display: p.divisiones_display ?? null,
+    }));
+  }
 
   return (
     <div className="p-4 md:p-8 max-w-4xl">
@@ -194,6 +216,7 @@ export default async function AdminPedidoDetailPage({
             <EditarCantidadesForm
               orderId={o.id}
               status={o.status}
+              canal={customerCanal}
               lines={(o.lines ?? []).map((l: any) => ({
                 id:               l.id,
                 quantity:         l.quantity,
@@ -201,6 +224,7 @@ export default async function AdminPedidoDetailPage({
                 line_total:       Number(l.line_total),
                 product_snapshot: l.product_snapshot,
               }))}
+              productos={productosDisponibles}
             />
           )}
         </div>
