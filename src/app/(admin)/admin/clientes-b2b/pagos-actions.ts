@@ -53,6 +53,58 @@ export async function registrarPago(formData: FormData): Promise<Result> {
   return { ok: true, pagoId: pago.id };
 }
 
+export type PagoPedidoItem = { orderId: string; monto: number; marcarLiquidado: boolean };
+
+export async function registrarPagoPedidos(payload: {
+  clienteId:  string;
+  fecha:      string;
+  metodo:     string;
+  referencia: string | null;
+  notas:      string | null;
+  items:      PagoPedidoItem[];
+}): Promise<{ error: string } | { ok: true; pagoIds: string[] }> {
+  const { clienteId, fecha, metodo, referencia, notas, items } = payload;
+
+  if (!clienteId) return { error: "Cliente requerido" };
+  if (!fecha) return { error: "La fecha es requerida" };
+  if (!items.length) return { error: "Seleccioná al menos un pedido" };
+  if (items.some((it) => isNaN(it.monto) || it.monto <= 0))
+    return { error: "El monto de cada pedido debe ser mayor a cero" };
+
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { error: "No autenticado" };
+
+  const db = createAdminClient() as any;
+  const pagoIds: string[] = [];
+
+  for (const item of items) {
+    const { data: pago, error } = await db.from("pagos").insert({
+      cliente_id: clienteId,
+      monto:      item.monto,
+      fecha,
+      metodo,
+      referencia,
+      notas,
+      order_id:   item.orderId,
+      created_by: user.id,
+    }).select("id").single();
+
+    if (error) return { error: error.message };
+    pagoIds.push(pago.id);
+
+    if (item.marcarLiquidado) {
+      await db.from("orders")
+        .update({ status: "liquidado", payment_confirmed_at: new Date().toISOString() })
+        .eq("id", item.orderId);
+      revalidatePath(`/admin/pedidos/${item.orderId}`);
+    }
+  }
+
+  revalidatePath(`/admin/clientes-b2b/${clienteId}`);
+  return { ok: true, pagoIds };
+}
+
 export async function eliminarPago(pagoId: string, clienteId: string): Promise<{ error: string } | { ok: true }> {
   const db = createAdminClient() as any;
   const { error } = await db.from("pagos").delete().eq("id", pagoId);

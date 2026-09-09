@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { registrarPago, eliminarPago } from "../pagos-actions";
+import { registrarPago, registrarPagoPedidos, eliminarPago } from "../pagos-actions";
 
 export type Pago = {
   id: string;
@@ -41,6 +41,8 @@ const fmtFecha = (s: string) =>
 
 const hoy = () => new Date().toISOString().slice(0, 10);
 
+const IVA_DIV = 1.21; // mismo criterio que el resto de la app: sin IVA ≈ total / 1.21
+
 type Props = {
   clienteId:      string;
   pagos:          Pago[];
@@ -56,11 +58,12 @@ export function PagosClient({ clienteId, pagos, totalFacturado, ordenes }: Props
   const [referencia,  setReferencia]  = useState("");
   const [notas,       setNotas]       = useState("");
   const [imputacion,      setImputacion]     = useState<Imputacion>("pedido");
-  const [orderId,         setOrderId]        = useState("");
+  const [orderIds,        setOrderIds]       = useState<string[]>([]);
+  const [sinFactura,      setSinFactura]     = useState(false);
   const [facturaNum,      setFacturaNum]     = useState("");
   const [marcarLiquidado, setMarcarLiquidado] = useState(false);
   const [error,           setError]          = useState<string | null>(null);
-  const [pagoGuardado,    setPagoGuardado]   = useState<string | null>(null); // pagoId tras guardar
+  const [pagosGuardados,  setPagosGuardados] = useState<string[] | null>(null); // pagoIds tras guardar
   const [isPending,       start]             = useTransition();
 
   const totalPagado = pagos.reduce((s, p) => s + Number(p.monto), 0);
@@ -72,17 +75,81 @@ export function PagosClient({ clienteId, pagos, totalFacturado, ordenes }: Props
   function reset() {
     setMonto(""); setFecha(hoy()); setMetodo("transferencia");
     setReferencia(""); setNotas(""); setImputacion("pedido");
-    setOrderId(""); setFacturaNum(""); setMarcarLiquidado(false);
-    setError(null); setPagoGuardado(null); setMostrarForm(false);
+    setOrderIds([]); setSinFactura(false); setFacturaNum(""); setMarcarLiquidado(false);
+    setError(null); setPagosGuardados(null); setMostrarForm(false);
+  }
+
+  // Recalcula el monto sugerido = suma de los pedidos tildados (neto s/IVA si "sin factura")
+  function recalcularMonto(ids: string[], sf: boolean) {
+    const seleccionadas = ordenesActivas.filter(o => ids.includes(o.id));
+    if (seleccionadas.length === 0) { setMonto(""); return; }
+    const suma = seleccionadas.reduce((s, o) => s + (sf ? o.total / IVA_DIV : o.total), 0);
+    setMonto(String(Math.round(suma)));
+  }
+
+  function toggleOrden(id: string) {
+    const next = orderIds.includes(id) ? orderIds.filter(x => x !== id) : [...orderIds, id];
+    setOrderIds(next);
+    recalcularMonto(next, sinFactura);
+  }
+
+  function toggleSinFactura(checked: boolean) {
+    setSinFactura(checked);
+    recalcularMonto(orderIds, checked);
+    if (checked) setMarcarLiquidado(true);
+  }
+
+  // Reparte el monto ingresado entre los pedidos seleccionados, proporcional a su total
+  function distribuirMonto(montoTotal: number, ids: string[]): { orderId: string; monto: number }[] {
+    const seleccionadas = ordenesActivas.filter(o => ids.includes(o.id));
+    const totalBase = seleccionadas.reduce((s, o) => s + o.total, 0);
+    if (totalBase <= 0) return seleccionadas.map(o => ({ orderId: o.id, monto: 0 }));
+    let acumulado = 0;
+    return seleccionadas.map((o, i) => {
+      if (i === seleccionadas.length - 1) {
+        return { orderId: o.id, monto: Math.round((montoTotal - acumulado) * 100) / 100 };
+      }
+      const m = Math.round(montoTotal * (o.total / totalBase) * 100) / 100;
+      acumulado += m;
+      return { orderId: o.id, monto: m };
+    });
   }
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
-    if (imputacion === "pedido" && !orderId)
-      return setError("Seleccioná un pedido o cambiá el tipo de imputación.");
+    if (imputacion === "pedido" && orderIds.length === 0)
+      return setError("Seleccioná al menos un pedido o cambiá el tipo de imputación.");
     if (imputacion === "factura" && !facturaNum.trim())
       return setError("Ingresá el número de factura.");
+
+    const montoNum = parseFloat(monto.replace(",", "."));
+    if (isNaN(montoNum) || montoNum <= 0) return setError("El monto debe ser mayor a cero");
+
+    const notasFinal = sinFactura && imputacion === "pedido"
+      ? `${notas ? notas + " · " : ""}Sin factura — cobrado neto s/IVA`
+      : notas;
+
+    if (imputacion === "pedido") {
+      const items = distribuirMonto(montoNum, orderIds).map(it => ({
+        ...it,
+        marcarLiquidado,
+      }));
+      start(async () => {
+        const res = await registrarPagoPedidos({
+          clienteId: clienteId,
+          fecha,
+          metodo,
+          referencia: referencia.trim() || null,
+          notas:      notasFinal?.trim() || null,
+          items,
+        });
+        if ("error" in res) { setError(res.error); return; }
+        setPagosGuardados(res.pagoIds);
+        setMostrarForm(false);
+      });
+      return;
+    }
 
     const fd = new FormData();
     fd.set("cliente_id",     clienteId);
@@ -91,14 +158,14 @@ export function PagosClient({ clienteId, pagos, totalFacturado, ordenes }: Props
     fd.set("metodo",         metodo);
     fd.set("referencia",     referencia);
     fd.set("notas",          notas);
-    fd.set("order_id",        imputacion === "pedido"  ? orderId    : "");
+    fd.set("order_id",        "");
     fd.set("factura_numero",  imputacion === "factura" ? facturaNum : "");
-    fd.set("marcar_liquidado", marcarLiquidado ? "1" : "0");
+    fd.set("marcar_liquidado", "0");
 
     start(async () => {
       const res = await registrarPago(fd);
       if ("error" in res) { setError(res.error); return; }
-      setPagoGuardado(res.pagoId);
+      setPagosGuardados([res.pagoId]);
       setMostrarForm(false);
     });
   }
@@ -174,31 +241,57 @@ export function PagosClient({ clienteId, pagos, totalFacturado, ordenes }: Props
             </div>
           </div>
 
-          {/* Selector de pedido */}
+          {/* Selector de pedidos (múltiple) */}
           {imputacion === "pedido" && (
             <div className="space-y-2">
-              <label className="block text-xs font-medium text-neutral-500 mb-1">Pedido *</label>
+              <label className="block text-xs font-medium text-neutral-500 mb-1">Pedidos * (podés tildar varios)</label>
               {ordenesActivas.length === 0 ? (
                 <p className="text-sm text-neutral-400">Este cliente no tiene pedidos activos.</p>
               ) : (
-                <select value={orderId} onChange={e => { setOrderId(e.target.value); setMarcarLiquidado(false); }}
-                  className={inputCls} disabled={isPending}>
-                  <option value="">— Seleccionar pedido —</option>
+                <div className="border border-neutral-200 rounded-xl divide-y divide-neutral-100 max-h-48 overflow-y-auto bg-white">
                   {ordenesActivas.map(o => (
-                    <option key={o.id} value={o.id}>
-                      {o.order_number} · {fmt(o.total)} · {fmtFecha(o.created_at)}
-                    </option>
+                    <label key={o.id}
+                      className="flex items-center gap-2.5 px-3 py-2 cursor-pointer select-none hover:bg-neutral-50">
+                      <input type="checkbox" checked={orderIds.includes(o.id)}
+                        onChange={() => toggleOrden(o.id)}
+                        disabled={isPending}
+                        className="rounded border-neutral-300 text-tierra-700 focus:ring-tierra-700/20 shrink-0" />
+                      <span className="text-sm text-neutral-700 flex-1 min-w-0 truncate">
+                        {o.order_number} · {fmtFecha(o.created_at)}
+                      </span>
+                      <span className="text-sm font-medium text-neutral-900 tabular-nums shrink-0">
+                        {fmt(sinFactura ? o.total / IVA_DIV : o.total)}
+                      </span>
+                    </label>
                   ))}
-                </select>
+                </div>
               )}
-              {orderId && (
-                <label className="flex items-center gap-2 cursor-pointer select-none">
-                  <input type="checkbox" checked={marcarLiquidado}
-                    onChange={e => setMarcarLiquidado(e.target.checked)}
-                    disabled={isPending}
-                    className="rounded border-neutral-300 text-tierra-700 focus:ring-tierra-700/20" />
-                  <span className="text-sm text-neutral-700">Marcar pedido como <strong>liquidado</strong></span>
-                </label>
+              {orderIds.length > 0 && (
+                <div className="space-y-1.5 pt-1">
+                  <label className="flex items-center gap-2 cursor-pointer select-none">
+                    <input type="checkbox" checked={sinFactura}
+                      onChange={e => toggleSinFactura(e.target.checked)}
+                      disabled={isPending}
+                      className="rounded border-neutral-300 text-tierra-700 focus:ring-tierra-700/20" />
+                    <span className="text-sm text-neutral-700">
+                      Sin factura — cobrar <strong>neto (s/IVA)</strong>
+                    </span>
+                  </label>
+                  {sinFactura && (
+                    <p className="text-xs text-neutral-400 pl-6">
+                      El monto se recalcula sin el 21% de IVA — la diferencia queda como descuento, no como saldo pendiente.
+                    </p>
+                  )}
+                  <label className="flex items-center gap-2 cursor-pointer select-none">
+                    <input type="checkbox" checked={marcarLiquidado}
+                      onChange={e => setMarcarLiquidado(e.target.checked)}
+                      disabled={isPending}
+                      className="rounded border-neutral-300 text-tierra-700 focus:ring-tierra-700/20" />
+                    <span className="text-sm text-neutral-700">
+                      Marcar {orderIds.length > 1 ? "los pedidos seleccionados" : "el pedido"} como <strong>liquidado</strong>
+                    </span>
+                  </label>
+                </div>
               )}
             </div>
           )}
@@ -269,16 +362,20 @@ export function PagosClient({ clienteId, pagos, totalFacturado, ordenes }: Props
         </form>
       )}
 
-      {/* Banner post-guardado con link al recibo */}
-      {pagoGuardado && (
+      {/* Banner post-guardado con link(s) al recibo */}
+      {pagosGuardados && pagosGuardados.length > 0 && (
         <div className="px-5 py-3 bg-emerald-50 border-b border-emerald-100 flex items-center justify-between gap-3 flex-wrap">
-          <p className="text-sm text-emerald-700 font-medium">✓ Pago registrado correctamente</p>
-          <div className="flex items-center gap-3">
-            <a href={`/admin/clientes-b2b/recibo/${pagoGuardado}`} target="_blank"
-              className="px-3 py-1.5 text-sm font-medium rounded-lg border border-emerald-600 text-emerald-700 hover:bg-emerald-100 transition-colors">
-              Imprimir recibo
-            </a>
-            <button type="button" onClick={() => setPagoGuardado(null)}
+          <p className="text-sm text-emerald-700 font-medium">
+            ✓ {pagosGuardados.length > 1 ? `${pagosGuardados.length} pagos registrados correctamente` : "Pago registrado correctamente"}
+          </p>
+          <div className="flex items-center gap-3 flex-wrap">
+            {pagosGuardados.map((id, i) => (
+              <a key={id} href={`/admin/clientes-b2b/recibo/${id}`} target="_blank"
+                className="px-3 py-1.5 text-sm font-medium rounded-lg border border-emerald-600 text-emerald-700 hover:bg-emerald-100 transition-colors">
+                {pagosGuardados.length > 1 ? `Recibo ${i + 1}` : "Imprimir recibo"}
+              </a>
+            ))}
+            <button type="button" onClick={() => setPagosGuardados(null)}
               className="text-xs text-emerald-400 hover:text-emerald-700">
               ✕
             </button>
