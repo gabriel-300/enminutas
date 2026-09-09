@@ -6,6 +6,7 @@ import { OrderStatusBadge } from "@/components/ui/badge";
 import { OrderStatusSelect } from "@/components/admin/order-status-select";
 import { AprobarPedidoButton } from "@/components/admin/aprobar-pedido-button";
 import { NotasPedidoForm } from "@/components/admin/notas-pedido-form";
+import { EditarCantidadesForm } from "@/components/admin/editar-cantidades-form";
 import { fmtFechaHora, fmtFecha } from "@/lib/fecha";
 
 export const metadata: Metadata = { title: "Detalle de pedido — Admin En Minutas" };
@@ -187,8 +188,21 @@ export default async function AdminPedidoDetailPage({
 
       {/* Líneas del pedido */}
       <div className="bg-white rounded-2xl border border-neutral-200 overflow-hidden mb-4">
-        <div className="px-5 py-4 border-b border-neutral-100">
+        <div className="px-5 py-4 border-b border-neutral-100 flex items-center justify-between gap-3">
           <p className="text-sm font-medium text-neutral-700">Productos</p>
+          {esAdmin && (
+            <EditarCantidadesForm
+              orderId={o.id}
+              status={o.status}
+              lines={(o.lines ?? []).map((l: any) => ({
+                id:               l.id,
+                quantity:         l.quantity,
+                unit_price:       Number(l.unit_price),
+                line_total:       Number(l.line_total),
+                product_snapshot: l.product_snapshot,
+              }))}
+            />
+          )}
         </div>
 
         {/* Mobile: cards */}
