@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useTransition, useRef, Fragment } from "react";
-import { Pencil, Trash2, Check, X, Upload, Plus, PackagePlus, Tag, ChevronDown } from "lucide-react";
+import { Pencil, Trash2, Check, X, Upload, Plus, PackagePlus, Tag, ChevronDown, SlidersHorizontal } from "lucide-react";
 import {
   crearInsumo, actualizarInsumo, eliminarInsumo, importarPreciosCSV,
   ingresarStock, ajustarStock, actualizarStockControl,
@@ -315,10 +315,80 @@ function IngresoStockForm({ ins, onClose, onError }: {
   );
 }
 
+// ── Mini-form ajuste de stock ─────────────────────────────────────────────────
+function AjusteStockForm({ ins, onClose, onError }: {
+  ins: Insumo; onClose: () => void; onError: (e: string) => void;
+}) {
+  const [stockReal, setStockReal] = useState(String(ins.stock_actual));
+  const [notas, setNotas]         = useState("");
+  const [isPending, start]        = useTransition();
+
+  function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    const nuevo = parseFloat(stockReal.replace(",", "."));
+    if (isNaN(nuevo) || nuevo < 0) { onError("Ingresá un valor válido (0 o mayor)"); return; }
+    start(async () => {
+      const res = await ajustarStock(ins.id, nuevo, notas.trim() || null);
+      if ("error" in res) { onError(res.error); return; }
+      onClose();
+    });
+  }
+
+  const inputCls = "px-2 py-1.5 text-sm border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#16233f]/20 disabled:opacity-50";
+  const delta = parseFloat(stockReal.replace(",", ".")) - ins.stock_actual;
+  const deltaOk = !isNaN(delta);
+
+  return (
+    <tr className="bg-amber-50/60">
+      <td colSpan={9} className="px-4 py-3">
+        <form onSubmit={handleSubmit} className="flex items-end gap-3 flex-wrap">
+          <div>
+            <p className="text-xs font-semibold text-amber-700 mb-1.5">
+              Ajuste de stock — {ins.nombre}
+            </p>
+            <div className="flex gap-2 items-end flex-wrap">
+              <div>
+                <label className="block text-xs text-neutral-500 mb-0.5">Stock real ({ins.unidad})</label>
+                <input
+                  value={stockReal} onChange={e => setStockReal(e.target.value)}
+                  inputMode="decimal" autoFocus required
+                  className={`${inputCls} w-28 text-right`} disabled={isPending}
+                />
+              </div>
+              {deltaOk && (
+                <span className={`text-xs font-mono px-2 py-1 rounded-md ${delta < 0 ? "bg-red-100 text-red-700" : delta > 0 ? "bg-emerald-100 text-emerald-700" : "bg-neutral-100 text-neutral-500"}`}>
+                  {delta > 0 ? "+" : ""}{delta.toFixed(2)} {ins.unidad}
+                </span>
+              )}
+              <div className="flex-1 min-w-[160px]">
+                <label className="block text-xs text-neutral-500 mb-0.5">Motivo (opcional)</label>
+                <input
+                  value={notas} onChange={e => setNotas(e.target.value)}
+                  placeholder="Ej: Recuento físico"
+                  className={`${inputCls} w-full`} disabled={isPending}
+                />
+              </div>
+              <button type="submit" disabled={isPending}
+                className="px-4 py-1.5 bg-amber-600 text-white text-sm font-medium rounded-lg disabled:opacity-50 hover:bg-amber-700 transition-colors">
+                {isPending ? "Guardando…" : "Confirmar ajuste"}
+              </button>
+              <button type="button" onClick={onClose}
+                className="px-3 py-1.5 border border-neutral-200 text-sm text-neutral-500 rounded-lg hover:bg-neutral-50">
+                Cancelar
+              </button>
+            </div>
+          </div>
+        </form>
+      </td>
+    </tr>
+  );
+}
+
 // ── Fila de insumo ─────────────────────────────────────────────────────────────
 function InsumoRow({ ins, cats, onError }: { ins: Insumo; cats: Categoria[]; onError: (e: string) => void }) {
   const [editing, setEditing]   = useState(false);
   const [ingreso, setIngreso]   = useState(false);
+  const [ajuste,  setAjuste]    = useState(false);
   const [nombre, setNombre]     = useState(ins.nombre);
   const [unidad, setUnidad]     = useState(ins.unidad);
   const [precio, setPrecio]     = useState(String(ins.precio_unitario));
@@ -480,12 +550,17 @@ function InsumoRow({ ins, cats, onError }: { ins: Insumo; cats: Categoria[]; onE
         </td>
         <td className="px-3 py-2.5">
           <div className="flex gap-1 justify-end">
-            <button onClick={() => { setIngreso(v => !v); setEditing(false); }} disabled={isPending}
+            <button onClick={() => { setIngreso(v => !v); setAjuste(false); setEditing(false); }} disabled={isPending}
               title="Registrar ingreso de stock"
               className="p-1.5 rounded-lg text-neutral-300 hover:text-emerald-600 hover:bg-emerald-50 transition-colors">
               <PackagePlus className="size-4" />
             </button>
-            <button onClick={() => { setEditing(true); setIngreso(false); }} disabled={isPending}
+            <button onClick={() => { setAjuste(v => !v); setIngreso(false); setEditing(false); }} disabled={isPending}
+              title="Ajustar stock (corrección manual)"
+              className="p-1.5 rounded-lg text-neutral-300 hover:text-amber-600 hover:bg-amber-50 transition-colors">
+              <SlidersHorizontal className="size-4" />
+            </button>
+            <button onClick={() => { setEditing(true); setIngreso(false); setAjuste(false); }} disabled={isPending}
               className="p-1.5 rounded-lg text-neutral-300 hover:text-neutral-600 hover:bg-neutral-100 transition-colors">
               <Pencil className="size-4" />
             </button>
@@ -498,6 +573,9 @@ function InsumoRow({ ins, cats, onError }: { ins: Insumo; cats: Categoria[]; onE
       </tr>
       {ingreso && (
         <IngresoStockForm ins={ins} onClose={() => setIngreso(false)} onError={onError} />
+      )}
+      {ajuste && (
+        <AjusteStockForm ins={ins} onClose={() => setAjuste(false)} onError={onError} />
       )}
     </>
   );
