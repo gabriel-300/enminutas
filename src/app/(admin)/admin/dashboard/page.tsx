@@ -78,10 +78,11 @@ export default async function DashboardPage() {
     const db         = adminClient as any;
 
     // Clientes asignados
+    // profiles.role no es confiable (desincronizado en producción) — b2b_status
+    // sí lo es, se setea únicamente en el alta como cliente B2B.
     const { data: clientesMios } = await db
       .from("profiles")
       .select("id, full_name, zona:delivery_zones!zona_id (name)")
-      .eq("role", "customer_b2b")
       .eq("b2b_status", "activo")
       .eq("vendedor_id", user.id);
 

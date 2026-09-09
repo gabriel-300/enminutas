@@ -140,10 +140,11 @@ export default async function PreventistaPage() {
   }
 
   // ── Clientes activos ─────────────────────────────────────────────────────
+  // profiles.role no es confiable (desincronizado en producción) — b2b_status
+  // sí lo es, se setea únicamente en el alta como cliente B2B.
   let clientesQuery = adminClient
     .from("profiles")
     .select("id, full_name, canal, phone, vendedor_id, zona:delivery_zones!zona_id (name)")
-    .eq("role", "customer_b2b")
     .eq("b2b_status", "activo")
     .order("full_name");
 

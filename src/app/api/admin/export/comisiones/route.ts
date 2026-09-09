@@ -55,7 +55,7 @@ export async function GET(request: NextRequest) {
   const { data: perfilesClientes } = await db
     .from("profiles")
     .select("id, full_name, vendedor_id, comision_pct_override")
-    .eq("role", "customer_b2b");
+    .not("b2b_status", "is", null);
   const clienteVendedorMap: Record<string, string | null> = {};
   const clientePoolPctMap:  Record<string, number>        = {};
   const clienteNombreMap:   Record<string, string>        = {};
@@ -73,6 +73,7 @@ export async function GET(request: NextRequest) {
   const { data: rawOrders } = clienteIds.length > 0
     ? await db.from("orders")
         .select("id, customer_id, total, created_at")
+        .eq("channel", "b2b_mayorista")
         .in("customer_id", clienteIds)
         .in("status", ACTIVE_STATUSES)
         .gte("created_at", yearStart)

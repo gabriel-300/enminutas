@@ -71,10 +71,13 @@ export default async function ComisionesPage({
     .sort((a: any, b: any) => (a.esComercializadora === b.esComercializadora ? a.nombre.localeCompare(b.nombre) : a.esComercializadora ? -1 : 1));
 
   // ── Clientes B2B: vendedor asignado + % de comisión que tienen en su precio ─
+  // profiles.role no es confiable para distinguir B2B de B2C (desincronizado
+  // en producción, igual que pasa con el role de staff) — b2b_status sí lo es,
+  // se setea únicamente en el alta como cliente B2B.
   const { data: perfilesClientes } = await db
     .from("profiles")
     .select("id, full_name, vendedor_id, comision_pct_override")
-    .eq("role", "customer_b2b");
+    .not("b2b_status", "is", null);
   const clienteVendedorMap: Record<string, string | null> = {};
   const clientePoolPctMap:  Record<string, number>        = {};
   const clienteNombreMap:   Record<string, string>        = {};
@@ -92,6 +95,7 @@ export default async function ComisionesPage({
   const { data: rawOrders } = clienteIds.length > 0
     ? await db.from("orders")
         .select("id, customer_id, total, created_at")
+        .eq("channel", "b2b_mayorista")
         .in("customer_id", clienteIds)
         .in("status", ACTIVE_STATUSES)
         .gte("created_at", yearStart)
