@@ -16,7 +16,7 @@ export default async function CatalogoB2BPage() {
   const { data: profileRaw } = await (supabase as any)
     .from("profiles")
     .select(`
-      full_name, b2b_status, zona_id, comision_pct_override,
+      full_name, b2b_status, zona_id, canal_id, comision_pct_override,
       canal:canales!canal_id (nombre, slug, margen_std, margen_premium, markup_pvp),
       zona:delivery_zones!zona_id (name, km, precio_km)
     `)
@@ -35,13 +35,31 @@ export default async function CatalogoB2BPage() {
 
   const params = await getParametros();
 
-  // Líneas actualmente disponibles
-  const { data: lineasDisp } = await (supabase as any)
-    .from("disponibilidad_lineas")
-    .select("linea_id")
-    .eq("disponible", true);
+  // Líneas actualmente disponibles + su restricción de canal
+  const [{ data: lineasDisp }, { data: lineasProd }] = await Promise.all([
+    (supabase as any)
+      .from("disponibilidad_lineas")
+      .select("linea_id")
+      .eq("disponible", true),
+    (supabase as any)
+      .from("lineas_producto")
+      .select("id, canal_exclusivo_id"),
+  ]);
 
-  const lineasIds: number[] = (lineasDisp ?? []).map((l: any) => l.linea_id);
+  const exclusividadMap: Record<number, string | null> = {};
+  for (const lp of (lineasProd ?? []) as any[]) {
+    exclusividadMap[lp.id] = lp.canal_exclusivo_id ?? null;
+  }
+
+  const canalId: string | null = profile.canal_id ?? null;
+
+  const lineasIds: number[] = (lineasDisp ?? [])
+    .map((l: any) => l.linea_id as number)
+    .filter((id: number) => {
+      const excl = exclusividadMap[id];
+      // Sin restricción → visible para todos; con restricción → solo para ese canal
+      return excl === null || excl === canalId;
+    });
 
   const { data: rawProducts } = await (supabase as any)
     .from("products")
