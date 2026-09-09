@@ -39,39 +39,48 @@ export default async function ComisionesPage({
 
   const db = createAdminClient() as any;
   const { iva_pct, comision_pct } = await getParametros();
-  const divisorPrecio = 1 + iva_pct + comision_pct;
 
-  // ── Vendedores ──────────────────────────────────────────────────────────
+  // ── Vendedores (preventistas + la comercializadora) ────────────────────
   const { data: listUsersData } = await db.auth.admin.listUsers({ perPage: 1000 });
   const allUsers = (listUsersData?.users ?? []) as any[];
   const vendedoresUsers = allUsers.filter((u: any) => u.app_metadata?.role === "vendedor");
   const vendedorIds = vendedoresUsers.map((u: any) => u.id as string);
 
+  // Sin % configurado explícitamente = sin comisión (no se asume el default
+  // global), igual que en /admin/preventista ("Aún no tenés comisión asignada").
   const { data: perfilesVendedores } = vendedorIds.length > 0
-    ? await db.from("profiles").select("id, comision_preventista_pct").in("id", vendedorIds)
+    ? await db.from("profiles").select("id, comision_preventista_pct, es_comercializadora").in("id", vendedorIds)
     : { data: [] };
-  const pctMap: Record<string, number> = {};
+  const pctMap:            Record<string, number>  = {};
+  const pctConfiguradoMap: Record<string, boolean> = {};
+  let comercializadoraId: string | null = null;
   for (const p of (perfilesVendedores ?? []) as any[]) {
-    pctMap[p.id] = p.comision_preventista_pct != null ? Number(p.comision_preventista_pct) : comision_pct;
+    pctConfiguradoMap[p.id] = p.comision_preventista_pct != null;
+    pctMap[p.id] = p.comision_preventista_pct != null ? Number(p.comision_preventista_pct) : 0;
+    if (p.es_comercializadora) comercializadoraId = p.id;
   }
 
   const vendedores = vendedoresUsers
     .map((u: any) => ({
-      id:     u.id as string,
-      nombre: (u.user_metadata?.full_name as string | undefined) ?? (u.email as string | undefined) ?? (u.id as string),
-      pct:    pctMap[u.id] ?? comision_pct,
+      id:             u.id as string,
+      nombre:         (u.user_metadata?.full_name as string | undefined) ?? (u.email as string | undefined) ?? (u.id as string),
+      pct:            pctMap[u.id] ?? 0,
+      pctConfigurado: pctConfiguradoMap[u.id] ?? false,
+      esComercializadora: u.id === comercializadoraId,
     }))
-    .sort((a: any, b: any) => a.nombre.localeCompare(b.nombre));
+    .sort((a: any, b: any) => (a.esComercializadora === b.esComercializadora ? a.nombre.localeCompare(b.nombre) : a.esComercializadora ? -1 : 1));
 
-  // ── Clientes asignados a cada vendedor ─────────────────────────────────
-  const { data: perfilesClientes } = vendedorIds.length > 0
-    ? await db.from("profiles").select("id, full_name, vendedor_id").in("vendedor_id", vendedorIds)
-    : { data: [] };
-  const clienteVendedorMap: Record<string, string> = {};
-  const clienteNombreMap:   Record<string, string> = {};
+  // ── Clientes B2B: vendedor asignado + % de comisión que tienen en su precio ─
+  const { data: perfilesClientes } = await db
+    .from("profiles")
+    .select("id, full_name, vendedor_id, comision_pct_override")
+    .eq("role", "customer_b2b");
+  const clienteVendedorMap: Record<string, string | null> = {};
+  const clientePoolPctMap:  Record<string, number>        = {};
+  const clienteNombreMap:   Record<string, string>        = {};
   for (const c of (perfilesClientes ?? []) as any[]) {
-    if (!c.vendedor_id) continue;
-    clienteVendedorMap[c.id] = c.vendedor_id;
+    clienteVendedorMap[c.id] = c.vendedor_id ?? null;
+    clientePoolPctMap[c.id]  = c.comision_pct_override != null ? Number(c.comision_pct_override) : comision_pct;
     clienteNombreMap[c.id]   = c.full_name ?? "—";
   }
   const clienteIds = Object.keys(clienteVendedorMap);
@@ -115,37 +124,62 @@ export default async function ComisionesPage({
     pagoComisionMap[`${p.vendedor_id}_${p.mes}`] = p;
   }
 
-  // ── Agregación por vendedor × mes, y por cliente (solo mes seleccionado) ─
-  type MesAgg = { ventas: number; base: number };
+  // ── Repartir cada pedido entre el preventista asignado y la comercializadora ─
+  // Pool de comisión del cliente = lo que realmente tiene cargado en su precio
+  // (comision_pct_override, o el % global si no tiene override — así los
+  // clientes con override 0 dan comisión $0 para todos, sin reglas aparte).
+  // El preventista asignado se queda con su % (tope: el pool del cliente);
+  // la comercializadora se queda con el resto del pool.
+  type MesAgg = { ventas: number; comision: number };
   const aggMap: Record<string, Record<string, MesAgg>> = {};
-  type ClienteAgg = { id: string; nombre: string; total: number; base: number };
+  type ClienteAgg = { id: string; nombre: string; total: number; comision: number };
   const clientesPorVendedor: Record<string, Record<string, ClienteAgg>> = {};
 
+  function sumar(vid: string, mesKey: string, ventas: number, comisionMonto: number, clienteId: string, clienteTotal: number) {
+    aggMap[vid] ??= {};
+    aggMap[vid][mesKey] ??= { ventas: 0, comision: 0 };
+    aggMap[vid][mesKey].ventas    += ventas;
+    aggMap[vid][mesKey].comision  += comisionMonto;
+
+    if (mesKey === mesSel) {
+      clientesPorVendedor[vid] ??= {};
+      clientesPorVendedor[vid][clienteId] ??= {
+        id: clienteId, nombre: clienteNombreMap[clienteId] ?? "—", total: 0, comision: 0,
+      };
+      clientesPorVendedor[vid][clienteId].total    += clienteTotal;
+      clientesPorVendedor[vid][clienteId].comision += comisionMonto;
+    }
+  }
+
   for (const o of orders) {
-    const vid = clienteVendedorMap[o.customer_id];
-    if (!vid) continue;
+    const customerId = o.customer_id;
     const d = new Date(o.created_at);
     const mesKey = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
     const total = Number(o.total);
     const base  = netoSinFacturaMap[o.id] ?? total;
 
-    aggMap[vid] ??= {};
-    aggMap[vid][mesKey] ??= { ventas: 0, base: 0 };
-    aggMap[vid][mesKey].ventas += total;
-    aggMap[vid][mesKey].base   += base;
+    const poolPct       = clientePoolPctMap[customerId] ?? comision_pct;
+    const divisorCliente = 1 + iva_pct + poolPct;
+    const comisionTotalOrden = poolPct > 0 ? (base * poolPct) / divisorCliente : 0;
 
-    if (mesKey === mesSel) {
-      clientesPorVendedor[vid] ??= {};
-      clientesPorVendedor[vid][o.customer_id] ??= {
-        id: o.customer_id, nombre: clienteNombreMap[o.customer_id] ?? "—", total: 0, base: 0,
-      };
-      clientesPorVendedor[vid][o.customer_id].total += total;
-      clientesPorVendedor[vid][o.customer_id].base  += base;
+    const assignedVid = clienteVendedorMap[customerId];
+    const assignedEsOtroQueLaComercializadora = assignedVid && assignedVid !== comercializadoraId;
+    const assignedPct = assignedEsOtroQueLaComercializadora ? (pctMap[assignedVid!] ?? 0) : 0;
+    const preventistaPctEfectivo = Math.min(assignedPct, poolPct);
+
+    const comisionPreventista = poolPct > 0 ? (base * preventistaPctEfectivo) / divisorCliente : 0;
+    const comisionResto       = comisionTotalOrden - comisionPreventista;
+
+    if (assignedEsOtroQueLaComercializadora) {
+      sumar(assignedVid!, mesKey, total, comisionPreventista, customerId, total);
+    }
+    if (comercializadoraId) {
+      sumar(comercializadoraId, mesKey, total, comisionResto, customerId, total);
     }
   }
 
   type MesRow = {
-    mes: string; ventas: number; base: number; comision: number; comisionLive: number;
+    mes: string; ventas: number; comision: number; comisionLive: number;
     pagada: boolean; fechaPago: string | null; pctUsado: number;
   };
 
@@ -153,13 +187,12 @@ export default async function ComisionesPage({
   const filas = vendedores.map((v) => {
     const meses: MesRow[] = Array.from({ length: 12 }, (_, i) => {
       const mesKey = `${selYear}-${String(i + 1).padStart(2, "0")}`;
-      const agg  = aggMap[v.id]?.[mesKey] ?? { ventas: 0, base: 0 };
+      const agg  = aggMap[v.id]?.[mesKey] ?? { ventas: 0, comision: 0 };
       const pago = pagoComisionMap[`${v.id}_${mesKey}`];
-      const comisionLive = Math.round((agg.base * v.pct) / divisorPrecio);
+      const comisionLive = Math.round(agg.comision);
       return {
         mes:        mesKey,
         ventas:     agg.ventas,
-        base:       agg.base,
         comision:   pago ? Number(pago.monto) : comisionLive,
         comisionLive,
         pagada:     !!pago,
@@ -169,7 +202,9 @@ export default async function ComisionesPage({
     });
 
     const mesSelData = meses.find((m) => m.mes === mesSel)!;
-    const clientesMes = Object.values(clientesPorVendedor[v.id] ?? {}).sort((a, b) => b.total - a.total);
+    const clientesMes = Object.values(clientesPorVendedor[v.id] ?? {})
+      .filter((c) => c.comision > 0 || c.total > 0)
+      .sort((a, b) => b.comision - a.comision);
     const totalAnual  = meses.reduce((s, m) => s + m.comision, 0);
     const pagadoAnual = meses.filter((m) => m.pagada).reduce((s, m) => s + m.comision, 0);
 
@@ -189,7 +224,9 @@ export default async function ComisionesPage({
       <div className="flex items-start justify-between flex-wrap gap-3">
         <div>
           <h1 className="text-xl md:text-2xl font-semibold font-display text-neutral-900">Comisiones</h1>
-          <p className="text-sm text-neutral-500 mt-1">Comisión de preventistas por cliente, mes y año — lo que hay que pagarles.</p>
+          <p className="text-sm text-neutral-500 mt-1">
+            Comisión de preventistas y comercializadora, por cliente, mes y año — lo que hay que pagarles.
+          </p>
         </div>
         <div className="flex items-center gap-2">
           <a
@@ -206,6 +243,13 @@ export default async function ComisionesPage({
           </a>
         </div>
       </div>
+
+      {!comercializadoraId && (
+        <div className="px-4 py-3 rounded-xl bg-amber-50 border border-amber-200 text-xs text-amber-700">
+          No hay ningún vendedor marcado como "comercializadora" — el resto de la comisión de cada cliente
+          (lo que no se lleva el preventista asignado) no se le está atribuyendo a nadie.
+        </div>
+      )}
 
       {/* Selector de mes */}
       <MesSelector mes={mesSel} />
@@ -236,16 +280,27 @@ export default async function ComisionesPage({
           <p className="text-sm text-neutral-400 text-center py-8">No hay preventistas cargados.</p>
         )}
         {filas.map((f) => (
-          <div key={f.id} className="bg-white rounded-2xl border border-neutral-200 overflow-hidden">
+          <div key={f.id} className={`bg-white rounded-2xl border overflow-hidden ${f.esComercializadora ? "border-tierra-300" : "border-neutral-200"}`}>
             <div className="px-5 py-4 flex items-center justify-between gap-4 flex-wrap">
               <div className="min-w-0">
-                <p className="text-sm font-semibold text-neutral-800">{f.nombre}</p>
+                <p className="text-sm font-semibold text-neutral-800 flex items-center gap-2">
+                  {f.nombre}
+                  {f.esComercializadora && (
+                    <span className="text-[10px] font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded bg-tierra-50 text-tierra-700">
+                      Comercializadora
+                    </span>
+                  )}
+                </p>
                 <p className="text-xs text-neutral-400 mt-0.5">
                   Ventas {mesLabel}: {fmt(f.mesSelData.ventas)}
-                  {f.mesSelData.base !== f.mesSelData.ventas && (
-                    <span className="text-amber-600"> · base comisión {fmt(f.mesSelData.base)} (desc. sin factura)</span>
+                  {" · "}
+                  {f.esComercializadora ? (
+                    <span>resto de la comisión de cada cliente (según % configurado en cada uno)</span>
+                  ) : f.pctConfigurado || f.mesSelData.pagada ? (
+                    `${Math.round(f.mesSelData.pctUsado * 100)}% comisión`
+                  ) : (
+                    <span className="text-neutral-300">sin comisión asignada</span>
                   )}
-                  {" · "}{Math.round(f.mesSelData.pctUsado * 100)}% comisión
                 </p>
               </div>
               <div className="flex items-center gap-4">
@@ -254,8 +309,8 @@ export default async function ComisionesPage({
                   vendedorId={f.id}
                   mes={mesSel}
                   comisionCalculada={f.mesSelData.comisionLive}
-                  pct={f.pct}
-                  ventasBase={f.mesSelData.base}
+                  pct={f.esComercializadora ? comision_pct : f.pct}
+                  ventasBase={f.mesSelData.ventas}
                   pagada={f.mesSelData.pagada}
                   fechaPago={f.mesSelData.fechaPago}
                   notas={null}
@@ -273,8 +328,7 @@ export default async function ComisionesPage({
                     <li key={c.id} className="px-5 py-2 flex items-center justify-between gap-2">
                       <span className="text-xs text-neutral-600 truncate">{c.nombre}</span>
                       <span className="text-xs tabular-nums text-neutral-500 shrink-0">
-                        {fmt(c.total)}
-                        {c.base !== c.total && <span className="text-amber-600"> (base {fmt(c.base)})</span>}
+                        {fmt(c.total)} venta · <span className="font-medium text-neutral-700">{fmt(c.comision)} comisión</span>
                       </span>
                     </li>
                   ))}
@@ -305,7 +359,9 @@ export default async function ComisionesPage({
               <tbody>
                 {filas.map((f) => (
                   <tr key={f.id} className="border-b border-neutral-50">
-                    <td className="px-4 py-2.5 text-neutral-700 font-medium sticky left-0 bg-white whitespace-nowrap">{f.nombre}</td>
+                    <td className="px-4 py-2.5 text-neutral-700 font-medium sticky left-0 bg-white whitespace-nowrap">
+                      {f.nombre}{f.esComercializadora && " ★"}
+                    </td>
                     {f.meses.map((m) => (
                       <td key={m.mes} className="text-right px-3 py-2.5 tabular-nums whitespace-nowrap">
                         {m.comision > 0 ? (
@@ -323,7 +379,7 @@ export default async function ComisionesPage({
               </tbody>
             </table>
           </div>
-          <p className="px-5 py-2.5 text-[11px] text-neutral-400 border-t border-neutral-50">✓ = comisión marcada como pagada</p>
+          <p className="px-5 py-2.5 text-[11px] text-neutral-400 border-t border-neutral-50">✓ = comisión marcada como pagada · ★ = comercializadora</p>
         </div>
       )}
     </div>
