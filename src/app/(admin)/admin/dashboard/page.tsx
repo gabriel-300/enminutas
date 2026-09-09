@@ -1267,10 +1267,13 @@ export default async function DashboardPage() {
           {/* Preventistas del mes */}
           {preventistasRanking.length > 0 && (
             <div className="bg-white rounded-2xl border border-neutral-200 overflow-hidden">
-              <div className="px-5 py-3.5 border-b border-neutral-100">
+              <div className="px-5 py-3.5 border-b border-neutral-100 flex items-center justify-between">
                 <p className="text-xs font-semibold text-neutral-400 uppercase tracking-wider">
                   Preventistas · <span className="normal-case capitalize">{mesNombre}</span>
                 </p>
+                <Link href="/admin/comisiones" className="text-xs text-tierra-700 hover:underline">
+                  Ver comisiones →
+                </Link>
               </div>
               <ul className="divide-y divide-neutral-50">
                 {preventistasRanking.map((v, i) => (
