@@ -42,6 +42,7 @@ export default async function RemitoPage({
     .from("orders")
     .select(`
       id, order_number, status, channel, total, subtotal, shipping_fee, discount,
+      cargo_adicional_concepto, cargo_adicional_monto,
       payment_method, payment_confirmed_at, created_at, notes, notes_visible_cliente,
       customer_id, guest_email, guest_phone,
       firma_data, firma_fecha, firma_aclaracion, despacho_info, delivered_snapshot,
@@ -75,8 +76,10 @@ export default async function RemitoPage({
     cuenta_corriente: "Cuenta corriente",
   };
 
-  const flete       = Number(o.shipping_fee ?? 0);
-  const descuento   = Number(o.discount ?? 0);
+  const flete           = Number(o.shipping_fee ?? 0);
+  const descuento       = Number(o.discount ?? 0);
+  const cargoAdicional  = Number(o.cargo_adicional_monto ?? 0);
+  const cargoConcepto   = (o.cargo_adicional_concepto as string | null) ?? "Cargo adicional";
 
   // Si hubo entrega parcial, el remito muestra lo efectivamente entregado
   // (no lo pedido originalmente) y recalcula los totales sobre esas cantidades.
@@ -102,7 +105,7 @@ export default async function RemitoPage({
   const subtotal = snapshot?.lineas
     ? displayLines.reduce((s, l) => s + l.line_total, 0)
     : Number(o.subtotal ?? 0);
-  const total = snapshot?.lineas ? subtotal + flete - descuento : Number(o.total ?? 0);
+  const total = snapshot?.lineas ? subtotal + flete - descuento + cargoAdicional : Number(o.total ?? 0);
 
   const fecha = fmtFechaSolo(o.created_at);
 
@@ -287,6 +290,12 @@ export default async function RemitoPage({
               <div style={{ display: "flex", justifyContent: "space-between", padding: "4px 0", color: "#166534" }}>
                 <span>Descuento</span>
                 <span style={{ fontFamily: "monospace" }}>− {fmt(descuento)}</span>
+              </div>
+            )}
+            {cargoAdicional > 0 && (
+              <div style={{ display: "flex", justifyContent: "space-between", padding: "4px 0", color: "#555" }}>
+                <span>{cargoConcepto}</span>
+                <span style={{ fontFamily: "monospace" }}>{fmt(cargoAdicional)}</span>
               </div>
             )}
             <div style={{ display: "flex", justifyContent: "space-between", padding: "8px 0 4px", borderTop: "2px solid #111", marginTop: 4, fontWeight: 700, fontSize: 15, color: "#111" }}>

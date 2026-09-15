@@ -85,6 +85,8 @@ export function NuevoPedidoClient({
   const [direccionId,   setDireccionId]   = useState<string>("");
   const [cart,          setCart]          = useState<Record<string, number>>(itemsInit);
   const [notes,         setNotes]         = useState("");
+  const [cargoConcepto, setCargoConcepto] = useState("");
+  const [cargoMonto,    setCargoMonto]    = useState("");
   const [paymentMethod, setPaymentMethod] = useState("transferencia");
   const [initialStatus, setInitialStatus] = useState(esAdmin ? "aprobado" : "pending_payment");
   const [filterLinea,   setFilterLinea]   = useState("todas");
@@ -163,6 +165,8 @@ export function NuevoPedidoClient({
   const montoDescuento = Math.round(subtotal * descuentoPct / 100 * 100) / 100;
   const totalConDesc   = subtotal - montoDescuento;
   const totalFinal     = tierAplicado ? totalConDesc : subtotal;
+  const cargoMontoNum  = Math.max(0, parseFloat(cargoMonto.replace(",", ".")) || 0);
+  const totalConCargo  = totalFinal + cargoMontoNum;
 
   function handleSubmit() {
     if (!cliente) { setError("Seleccioná un cliente."); return; }
@@ -177,6 +181,8 @@ export function NuevoPedidoClient({
         clientId: cliente.id, canal: cliente.canal_nombre,
         zonaId: direccion?.zona_id ?? null, items, notes, paymentMethod,
         initialStatus, discountPct: descuentoPct, discountAmount: montoDescuento,
+        cargoAdicionalConcepto: cargoMontoNum > 0 ? (cargoConcepto.trim() || null) : null,
+        cargoAdicionalMonto: cargoMontoNum,
         shippingAddress: direccion
           ? { calle: direccion.calle, numero: direccion.numero ?? null, piso: direccion.piso ?? null, ciudad: direccion.ciudad }
           : null,
@@ -457,7 +463,40 @@ export function NuevoPedidoClient({
                     <span className="tabular-nums">{fmt(costo_viaje)}</span>
                   </div>
                 )}
+                {cargoMontoNum > 0 && (
+                  <div className="flex justify-between text-xs text-neutral-500">
+                    <span>+ {cargoConcepto.trim() || "Cargo adicional"}</span>
+                    <span className="tabular-nums">{fmt(cargoMontoNum)}</span>
+                  </div>
+                )}
+                {cargoMontoNum > 0 && (
+                  <div className="flex justify-between font-semibold text-neutral-900 pt-1 border-t border-neutral-100">
+                    <span>Total a cobrar</span>
+                    <span className="tabular-nums">{fmt(totalConCargo)}</span>
+                  </div>
+                )}
                 <p className="text-xs text-neutral-400">{totalQty} caja{totalQty !== 1 ? "s" : ""}</p>
+              </div>
+            </div>
+          )}
+
+          {/* Cargo adicional manual — opcional (flete, IIBB, etc.) */}
+          {cartItems.length > 0 && (
+            <div className="px-5 py-3 border-t border-neutral-100 space-y-1.5">
+              <label className="block text-xs font-medium text-neutral-500">
+                Cargo adicional (opcional)
+              </label>
+              <div className="flex gap-2">
+                <input
+                  type="text" placeholder="Concepto: flete, IIBB…" value={cargoConcepto}
+                  onChange={(e) => setCargoConcepto(e.target.value)}
+                  className="flex-1 min-w-0 px-3 py-1.5 text-sm border border-neutral-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-tierra-700/20"
+                />
+                <input
+                  type="text" inputMode="decimal" placeholder="Monto" value={cargoMonto}
+                  onChange={(e) => setCargoMonto(e.target.value)}
+                  className="w-24 shrink-0 px-3 py-1.5 text-sm border border-neutral-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-tierra-700/20"
+                />
               </div>
             </div>
           )}
@@ -508,7 +547,7 @@ export function NuevoPedidoClient({
           {isPending
             ? "Creando pedido…"
             : cartItems.length > 0
-            ? `Crear pedido · ${fmt(totalFinal)}`
+            ? `Crear pedido · ${fmt(totalConCargo)}`
             : "Crear pedido"}
         </button>
 

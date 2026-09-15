@@ -30,6 +30,7 @@ export default async function AdminPedidoDetailPage({
     .from("orders")
     .select(`
       id, order_number, status, channel, total, subtotal, shipping_fee, discount,
+      cargo_adicional_concepto, cargo_adicional_monto,
       payment_method, payment_declared_at, payment_confirmed_at,
       shipping_method, shipping_snapshot, delivered_snapshot, notes, notes_visible_cliente, created_at,
       guest_email, guest_phone,
@@ -332,6 +333,12 @@ export default async function AdminPedidoDetailPage({
                 <div className="flex justify-between text-neutral-600">
                   <span>Envío</span>
                   <span>{fmt(Number(o.shipping_fee))}</span>
+                </div>
+              )}
+              {Number(o.cargo_adicional_monto) > 0 && (
+                <div className="flex justify-between text-neutral-600">
+                  <span>{o.cargo_adicional_concepto || "Cargo adicional"}</span>
+                  <span>{fmt(Number(o.cargo_adicional_monto))}</span>
                 </div>
               )}
               <div className="flex justify-between text-neutral-600">
