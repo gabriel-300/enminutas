@@ -29,6 +29,7 @@ type CrearPedidoPayload = {
   discountAmount?: number;
   cargoAdicionalConcepto?: string | null;
   cargoAdicionalMonto?:    number;
+  shippingFee?:            number;
   shippingAddress?: { calle: string | null; numero: string | null; piso: string | null; ciudad: string | null } | null;
 };
 
@@ -36,6 +37,8 @@ export async function crearPedidoAdmin(payload: CrearPedidoPayload): Promise<{ o
   const { clientId, canal, zonaId, items, notes, paymentMethod, initialStatus, shippingAddress } = payload;
   const cargoAdicionalMonto = Math.max(0, Number(payload.cargoAdicionalMonto ?? 0));
   if (isNaN(cargoAdicionalMonto)) return { error: "Monto de cargo adicional inválido" };
+  const shippingFee = Math.max(0, Number(payload.shippingFee ?? 0));
+  if (isNaN(shippingFee)) return { error: "Monto de flete inválido" };
 
   if (!clientId)         return { error: "Seleccioná un cliente" };
   if (items.length === 0) return { error: "Agregá al menos un producto" };
@@ -128,7 +131,7 @@ export async function crearPedidoAdmin(payload: CrearPedidoPayload): Promise<{ o
 
   const validDiscount  = calcVolumeDiscount(volumeDiscounts, totalQty, subtotalBruto);
   const descuento      = Math.max(0, Math.min(subtotalBruto, validDiscount?.amount ?? 0));
-  const total          = subtotalBruto - descuento + cargoAdicionalMonto;
+  const total          = subtotalBruto - descuento + cargoAdicionalMonto + shippingFee;
 
   const shippingSnapshot = (shippingAddress?.calle || shippingAddress?.ciudad)
     ? {
@@ -144,7 +147,7 @@ export async function crearPedidoAdmin(payload: CrearPedidoPayload): Promise<{ o
     customer_id:             clientId,
     status:                  safeStatus,
     subtotal:                r(subtotalBruto),
-    shipping_fee:            0,
+    shipping_fee:            r(shippingFee),
     discount:                r(descuento),
     total:                   r(total),
     cargo_adicional_concepto: cargoAdicionalMonto > 0 ? (payload.cargoAdicionalConcepto?.trim() || null) : null,

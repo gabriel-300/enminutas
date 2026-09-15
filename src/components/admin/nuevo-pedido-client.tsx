@@ -87,6 +87,8 @@ export function NuevoPedidoClient({
   const [notes,         setNotes]         = useState("");
   const [cargoConcepto, setCargoConcepto] = useState("");
   const [cargoMonto,    setCargoMonto]    = useState("");
+  const [incluirFlete,  setIncluirFlete]  = useState(false);
+  const [fleteMonto,    setFleteMonto]    = useState("");
   const [paymentMethod, setPaymentMethod] = useState("transferencia");
   const [initialStatus, setInitialStatus] = useState(esAdmin ? "aprobado" : "pending_payment");
   const [filterLinea,   setFilterLinea]   = useState("todas");
@@ -102,6 +104,11 @@ export function NuevoPedidoClient({
     ?? null;
 
   const costo_viaje = direccion ? Math.round(direccion.km * 2 * direccion.precio_km) : 0;
+
+  function toggleIncluirFlete(checked: boolean) {
+    setIncluirFlete(checked);
+    if (checked && !fleteMonto) setFleteMonto(String(costo_viaje));
+  }
 
   function handleClienteChange(id: string) {
     setClienteId(id);
@@ -166,7 +173,8 @@ export function NuevoPedidoClient({
   const totalConDesc   = subtotal - montoDescuento;
   const totalFinal     = tierAplicado ? totalConDesc : subtotal;
   const cargoMontoNum  = Math.max(0, parseFloat(cargoMonto.replace(",", ".")) || 0);
-  const totalConCargo  = totalFinal + cargoMontoNum;
+  const fleteMontoNum  = incluirFlete ? Math.max(0, parseFloat(fleteMonto.replace(",", ".")) || 0) : 0;
+  const totalConCargo  = totalFinal + cargoMontoNum + fleteMontoNum;
 
   function handleSubmit() {
     if (!cliente) { setError("Seleccioná un cliente."); return; }
@@ -183,6 +191,7 @@ export function NuevoPedidoClient({
         initialStatus, discountPct: descuentoPct, discountAmount: montoDescuento,
         cargoAdicionalConcepto: cargoMontoNum > 0 ? (cargoConcepto.trim() || null) : null,
         cargoAdicionalMonto: cargoMontoNum,
+        shippingFee: fleteMontoNum,
         shippingAddress: direccion
           ? { calle: direccion.calle, numero: direccion.numero ?? null, piso: direccion.piso ?? null, ciudad: direccion.ciudad }
           : null,
@@ -235,12 +244,30 @@ export function NuevoPedidoClient({
               )}
               <div className="flex items-center gap-2 text-xs text-neutral-500 flex-wrap">
                 <span className="px-2 py-0.5 bg-info-bg text-info rounded-full font-medium">{cliente.canal_nombre}</span>
-                {costo_viaje > 0 && (
+                {costo_viaje > 0 && !incluirFlete && (
                   <span className="px-2 py-0.5 bg-neutral-100 rounded-full">
                     Flete viaje: {fmt(costo_viaje)} (cobrado aparte)
                   </span>
                 )}
               </div>
+              {costo_viaje > 0 && (
+                <div className="flex items-center gap-2 flex-wrap">
+                  <label className="flex items-center gap-1.5 text-xs text-neutral-600 cursor-pointer select-none">
+                    <input type="checkbox" checked={incluirFlete}
+                      onChange={(e) => toggleIncluirFlete(e.target.checked)}
+                      className="rounded border-neutral-300 text-tierra-700 focus:ring-tierra-700/20" />
+                    Incluir flete en el total del pedido
+                  </label>
+                  {incluirFlete && (
+                    <input
+                      type="text" inputMode="decimal" value={fleteMonto}
+                      onChange={(e) => setFleteMonto(e.target.value)}
+                      placeholder={String(costo_viaje)}
+                      className="w-28 px-2 py-1 text-xs text-right border border-neutral-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-tierra-700/20"
+                    />
+                  )}
+                </div>
+              )}
             </div>
           )}
         </div>
@@ -459,8 +486,8 @@ export function NuevoPedidoClient({
                 </div>
                 {costo_viaje > 0 && (
                   <div className="flex justify-between text-xs text-neutral-400">
-                    <span>+ Flete viaje ({direccion?.zona_name})</span>
-                    <span className="tabular-nums">{fmt(costo_viaje)}</span>
+                    <span>{incluirFlete ? "+ Flete viaje" : "Flete viaje"} ({direccion?.zona_name}){!incluirFlete && " — aparte"}</span>
+                    <span className="tabular-nums">{fmt(incluirFlete ? fleteMontoNum : costo_viaje)}</span>
                   </div>
                 )}
                 {cargoMontoNum > 0 && (
@@ -469,7 +496,7 @@ export function NuevoPedidoClient({
                     <span className="tabular-nums">{fmt(cargoMontoNum)}</span>
                   </div>
                 )}
-                {cargoMontoNum > 0 && (
+                {(cargoMontoNum > 0 || fleteMontoNum > 0) && (
                   <div className="flex justify-between font-semibold text-neutral-900 pt-1 border-t border-neutral-100">
                     <span>Total a cobrar</span>
                     <span className="tabular-nums">{fmt(totalConCargo)}</span>
