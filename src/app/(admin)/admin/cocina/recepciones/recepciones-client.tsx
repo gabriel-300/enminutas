@@ -3,7 +3,7 @@
 import { useState, useTransition, useRef } from "react";
 import { createBrowserClient } from "@supabase/ssr";
 import { Plus, Trash2, FileText, ClipboardList, ChevronDown, ChevronRight, Camera } from "lucide-react";
-import { registrarRecepcion, leerRemitoRecepcion, type InsumoBasico, type RecepcionHistorial } from "./actions";
+import { registrarRecepcion, leerRemitoRecepcion, type InsumoBasico, type RecepcionHistorial, type CandidatoInsumo } from "./actions";
 
 const fmtPrecio = (n: number) =>
   new Intl.NumberFormat("es-AR", { style: "currency", currency: "ARS", maximumFractionDigits: 2 }).format(n);
@@ -31,7 +31,8 @@ type ItemRow = {
   cantidad:          string;
   iva_pct:           number;
   fecha_vencimiento: string;
-  ocrHint:           string | null; // texto tal cual lo leyó la IA, cuando no matcheó un insumo
+  ocrHint:           string | null;         // texto tal cual lo leyó la IA, cuando no matcheó un insumo
+  candidatos:        CandidatoInsumo[];      // sugerencias de insumo cuando no hubo match único claro
 };
 
 let rowKey = 0;
@@ -45,7 +46,22 @@ const newRow = (): ItemRow => ({
   iva_pct:           21,
   fecha_vencimiento: "",
   ocrHint:           null,
+  candidatos:        [],
 });
+
+// Alarma de precio anómalo respecto al precio actual del insumo:
+// - "fuerte" cuando el nuevo precio queda ~7x o más grande/chico que el
+//   anterior -- el patrón típico de un dígito de más o de menos al cargar.
+// - "suave" para cualquier otra variación >= 25% -- puede ser inflación
+//   real, solo para que se vea, no necesariamente un error.
+function variacionPrecio(precioNuevo: number, precioAnterior: number): { nivel: "fuerte" | "suave"; pct: number } | null {
+  if (!precioAnterior || !precioNuevo || precioNuevo === precioAnterior) return null;
+  const ratio = precioNuevo / precioAnterior;
+  const pct   = (ratio - 1) * 100;
+  if (ratio >= 7 || ratio <= 1 / 7) return { nivel: "fuerte", pct };
+  if (Math.abs(pct) >= 25) return { nivel: "suave", pct };
+  return null;
+}
 
 type Props = {
   insumos:   InsumoBasico[];
@@ -59,6 +75,7 @@ export function RecepcionesClient({ insumos, historial }: Props) {
   const [tipo,      setTipo]      = useState<"factura" | "remito">("factura");
   const [numero,    setNumero]    = useState("");
   const [proveedor, setProveedor] = useState("");
+  const [cuit,      setCuit]      = useState("");
   const [fecha,     setFecha]     = useState(hoy());
   const [notas,     setNotas]     = useState("");
   const [otrosImp,  setOtrosImp]  = useState("");
@@ -95,6 +112,7 @@ export function RecepcionesClient({ insumos, historial }: Props) {
         stock_actual:    ins?.stock_actual ?? 0,
         precio_unitario: ins ? String(ins.precio_unitario) : "",
         ocrHint:         null,
+        candidatos:      [],
       }
     ));
   }
@@ -150,6 +168,7 @@ export function RecepcionesClient({ insumos, historial }: Props) {
       if (lineas.length === 0) { setError("No se encontraron líneas en la foto"); return; }
 
       if (res.cabecera?.proveedor && !proveedor) setProveedor(res.cabecera.proveedor);
+      if (res.cabecera?.cuit && !cuit)           setCuit(res.cabecera.cuit);
       if (res.cabecera?.numero && !numero)       setNumero(res.cabecera.numero);
       if (res.cabecera?.fecha && /^\d{4}-\d{2}-\d{2}$/.test(res.cabecera.fecha)) setFecha(res.cabecera.fecha);
 
@@ -165,6 +184,7 @@ export function RecepcionesClient({ insumos, historial }: Props) {
           iva_pct:           21,
           fecha_vencimiento: "",
           ocrHint:           ins ? null : l.producto,
+          candidatos:        ins ? [] : l.candidatos,
         };
       }));
       setOcrWarnings(res.advertencias ?? []);
@@ -200,7 +220,7 @@ export function RecepcionesClient({ insumos, historial }: Props) {
   const totalFinal = totales.neto + totales.iva + otrosNum;
 
   function resetForm() {
-    setTipo("factura"); setNumero(""); setProveedor("");
+    setTipo("factura"); setNumero(""); setProveedor(""); setCuit("");
     setFecha(hoy()); setNotas(""); setOtrosImp(""); setRows([newRow()]);
     setError(null); setOcrWarnings([]); setImagenUrl(null);
   }
@@ -225,7 +245,7 @@ export function RecepcionesClient({ insumos, historial }: Props) {
 
     start(async () => {
       const res = await registrarRecepcion(
-        tipo, numero, proveedor, fecha, notas || null, otrosNum, items, imagenUrl,
+        tipo, numero, proveedor, fecha, notas || null, otrosNum, items, imagenUrl, cuit || null,
       );
       if ("error" in res) { setError(res.error); return; }
       setOk(`${tipo === "factura" ? "Factura" : "Remito"} ${numero} registrado. Stock y precios actualizados.`);
@@ -345,6 +365,13 @@ export function RecepcionesClient({ insumos, historial }: Props) {
                 <input type="date" value={fecha} onChange={e => setFecha(e.target.value)}
                   className={inputCls} disabled={isPending} />
               </div>
+              <div>
+                <label className="block text-xs font-medium text-neutral-500 mb-1">
+                  CUIT <span className="font-normal text-neutral-400">(opcional)</span>
+                </label>
+                <input value={cuit} onChange={e => setCuit(e.target.value)}
+                  placeholder="XX-XXXXXXXX-X" className={inputCls} disabled={isPending} />
+              </div>
             </div>
 
             {/* Tabla ítems */}
@@ -371,6 +398,8 @@ export function RecepcionesClient({ insumos, historial }: Props) {
                       const ivaAmt    = neto * (row.iva_pct / 100);
                       const subTotal  = neto + ivaAmt;
                       const stockPost = row.insumo_id ? row.stock_actual + cant : null;
+                      const precioAnterior = row.insumo_id ? insumoMap[row.insumo_id]?.precio_unitario ?? null : null;
+                      const alarma = precioAnterior != null ? variacionPrecio(precio, precioAnterior) : null;
 
                       return (
                         <tr key={row.key} className="hover:bg-neutral-50/50">
@@ -393,9 +422,24 @@ export function RecepcionesClient({ insumos, historial }: Props) {
                               </p>
                             )}
                             {row.ocrHint && !row.insumo_id && (
-                              <p className="text-xs text-amber-600 mt-0.5 px-1">
-                                El remito decía: "{row.ocrHint}" — elegí el insumo
-                              </p>
+                              <div className="mt-0.5 px-1">
+                                <p className="text-xs text-amber-600">
+                                  El remito decía: "{row.ocrHint}"{row.candidatos.length === 0 && " — elegí el insumo"}
+                                </p>
+                                {row.candidatos.length > 0 && (
+                                  <div className="flex flex-wrap gap-1 mt-1">
+                                    {row.candidatos.map(c => (
+                                      <button
+                                        key={c.id} type="button"
+                                        onClick={() => handleInsumoChange(row.key, c.id)}
+                                        className="px-2 py-0.5 text-xs rounded-full border border-amber-300 bg-amber-50 text-amber-700 hover:bg-amber-100 transition-colors"
+                                      >
+                                        {c.nombre}
+                                      </button>
+                                    ))}
+                                  </div>
+                                )}
+                              </div>
                             )}
                           </td>
                           <td className="px-3 py-2">
@@ -419,6 +463,12 @@ export function RecepcionesClient({ insumos, historial }: Props) {
                                 className={`${inputSmCls} w-full text-right`} disabled={isPending}
                               />
                             </div>
+                            {alarma && (
+                              <p className={`text-xs mt-0.5 px-1 font-medium ${alarma.nivel === "fuerte" ? "text-red-600" : "text-amber-600"}`}>
+                                {alarma.nivel === "fuerte" ? "⚠ ¿Precio mal cargado?" : "⚠"} Antes {fmtPrecio(precioAnterior!)}
+                                {" "}({alarma.pct > 0 ? "+" : ""}{alarma.pct.toFixed(0)}%)
+                              </p>
+                            )}
                           </td>
                           <td className="px-3 py-2">
                             <select
@@ -644,6 +694,7 @@ function HistorialTable({ historial }: { historial: RecepcionHistorial[] }) {
                       {/* Pie del detalle */}
                       <div className="mt-3 flex items-start justify-between gap-4">
                         <div className="text-xs text-neutral-400 space-y-1">
+                          {h.proveedor_cuit && <p>CUIT: <span className="font-mono text-neutral-600">{h.proveedor_cuit}</span></p>}
                           {h.notas && <p className="italic">Notas: {h.notas}</p>}
                           {h.imagen_url && (
                             <a href={h.imagen_url} target="_blank" rel="noreferrer"
