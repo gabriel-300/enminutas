@@ -2,6 +2,7 @@
 
 import { createAdminClient, createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
+import { leerComprobanteConGroq, validarComprobante } from "@/lib/groq";
 
 type Result = { error: string } | { ok: true; id: string };
 
@@ -45,6 +46,78 @@ export type ItemInput = {
   fecha_vencimiento: string | null;
 };
 
+// Sin acentos, en minúsculas, espacios colapsados -- para comparar "HARINA 000"
+// contra "Harina 000 x25kg" sin que un tilde o un espacio de más rompa el match.
+function normalizarNombre(s: string): string {
+  return s
+    .normalize("NFD").replace(/[̀-ͯ]/g, "")
+    .toLowerCase()
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+export type LineaRemitoLeida = {
+  producto:      string;
+  cantidad:      number;
+  precio:        number;
+  insumoIdMatch: string | null;
+};
+
+export type ComprobanteLeidoResult = {
+  error?:        string;
+  cabecera?:     { proveedor: string | null; fecha: string | null; numero: string | null };
+  lineas?:       LineaRemitoLeida[];
+  advertencias?: string[];
+};
+
+// Lee una foto de factura/remito con IA (Groq) y devuelve las líneas con el
+// insumo del catálogo matcheado cuando hay uno solo claro -- nunca adivina
+// entre varios candidatos, esas líneas quedan sin matchear para elegir a
+// mano. Los modelos de visión de Groq son "preview" (ver lib/groq.ts) -- las
+// advertencias de consistencia viajan igual, para revisar antes de guardar.
+export async function leerRemitoRecepcion(imageBase64: string, mimeType: string): Promise<ComprobanteLeidoResult> {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { error: "No autenticado" };
+  const role = user.app_metadata?.role as string | undefined;
+  if (!["admin", "produccion"].includes(role ?? "")) return { error: "No autorizado" };
+
+  let comprobante;
+  try {
+    comprobante = await leerComprobanteConGroq(imageBase64, mimeType);
+  } catch (e) {
+    return { error: (e as Error).message };
+  }
+  if (comprobante.items.length === 0) return { error: "No se pudo leer ninguna línea en la foto" };
+
+  const db = createAdminClient() as any;
+  const { data: insumosRaw, error: insumosError } = await db.from("insumos").select("id, nombre");
+  if (insumosError) return { error: insumosError.message };
+
+  const catalogo = (insumosRaw ?? []).map((i: any) => ({ id: i.id as string, nombreNorm: normalizarNombre(i.nombre) }));
+
+  const lineas: LineaRemitoLeida[] = comprobante.items.map((l) => {
+    const nombreNorm = normalizarNombre(l.descripcion);
+    const exactos = catalogo.filter((p: any) => p.nombreNorm === nombreNorm);
+    let match = exactos.length === 1 ? exactos[0] : null;
+    if (!match) {
+      const parciales = catalogo.filter((p: any) => p.nombreNorm.includes(nombreNorm) || nombreNorm.includes(p.nombreNorm));
+      match = parciales.length === 1 ? parciales[0] : null;
+    }
+    return { producto: l.descripcion, cantidad: l.cantidad, precio: l.precio_unitario, insumoIdMatch: match?.id ?? null };
+  });
+
+  return {
+    cabecera: {
+      proveedor: comprobante.proveedor,
+      fecha:     comprobante.fecha,
+      numero:    comprobante.numero_comprobante,
+    },
+    lineas,
+    advertencias: validarComprobante(comprobante),
+  };
+}
+
 export async function registrarRecepcion(
   tipo:             string,
   numero:           string,
@@ -53,6 +126,7 @@ export async function registrarRecepcion(
   notas:            string | null,
   otros_impuestos:  number,
   items:            ItemInput[],
+  imagenUrl:        string | null = null,
 ): Promise<Result> {
   const supabase = await createClient();
   const db       = createAdminClient() as any;
@@ -81,6 +155,7 @@ export async function registrarRecepcion(
       notas,
       total,
       otros_impuestos: otros_impuestos || 0,
+      imagen_url:      imagenUrl,
       created_by:      user.id,
     })
     .select("id")
@@ -151,6 +226,7 @@ export type RecepcionHistorial = {
   notas: string | null;
   total: number | null;
   otros_impuestos: number;
+  imagen_url: string | null;
   created_at: string;
   items: RecepcionItem[];
 };
@@ -160,7 +236,7 @@ export async function getHistorialRecepciones(limit = 30): Promise<RecepcionHist
 
   const { data } = await db
     .from("recepciones")
-    .select("id, tipo, numero, proveedor, fecha, notas, total, otros_impuestos, created_at")
+    .select("id, tipo, numero, proveedor, fecha, notas, total, otros_impuestos, imagen_url, created_at")
     .order("fecha", { ascending: false })
     .order("created_at", { ascending: false })
     .limit(limit);
@@ -204,6 +280,7 @@ export async function getHistorialRecepciones(limit = 30): Promise<RecepcionHist
     notas:           r.notas ?? null,
     total:           r.total !== null ? Number(r.total) : null,
     otros_impuestos: Number(r.otros_impuestos ?? 0),
+    imagen_url:      r.imagen_url ?? null,
     created_at:      r.created_at,
     items:           itemsByRecepcion[r.id] ?? [],
   }));

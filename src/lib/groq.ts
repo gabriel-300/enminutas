@@ -1,0 +1,270 @@
+// Lectura de facturas/remitos argentinos por foto usando la API de Groq,
+// con JSON mode nativo (response_format: json_schema) para forzar la forma
+// de salida en vez de parsear texto libre después.
+//
+// Portado desde el proyecto kioscos-ideia (mismo enfoque probado en
+// producción ahí) para la recepción de mercadería de En Minutas.
+//
+// Groq marca sus modelos de visión como "preview"/experimental -- esto
+// alimenta datos contables reales (montos, CUIT), así que NO se confía
+// ciegamente en el resultado: validarComprobante() devuelve advertencias de
+// consistencia que hay que revisar antes de dar por buena una lectura, y
+// loguearComprobanteInconsistente() deja rastro server-side de los casos con
+// advertencias o parseo fallido.
+const MODELO_VISION = "qwen/qwen3.6-27b";
+const GROQ_URL = "https://api.groq.com/openai/v1/chat/completions";
+
+// Códigos de error transitorios de Groq (sobrecarga temporal, rate limit) --
+// vale la pena reintentar antes de rendirse.
+const HTTP_REINTENTABLE = new Set([429, 500, 502, 503, 504]);
+
+export type ItemComprobante = {
+  descripcion:     string;
+  cantidad:        number;
+  precio_unitario: number;
+};
+
+export type ComprobanteLeido = {
+  proveedor:          string | null;
+  cuit:               string | null;
+  fecha:              string | null; // YYYY-MM-DD si se pudo interpretar, sino como está escrita
+  numero_comprobante: string | null;
+  items:              ItemComprobante[];
+  subtotal:           number | null;
+  iva:                number | null;
+  total:              number | null;
+  motor:              "qwen3.6-27b";
+};
+
+const JSON_SCHEMA = {
+  type: "object",
+  properties: {
+    proveedor:          { type: ["string", "null"] },
+    cuit:               { type: ["string", "null"] },
+    fecha:              { type: ["string", "null"] },
+    numero_comprobante: { type: ["string", "null"] },
+    items: {
+      type: "array",
+      items: {
+        type: "object",
+        properties: {
+          descripcion:     { type: "string" },
+          cantidad:        { type: "number" },
+          precio_unitario: { type: "number" },
+        },
+        required: ["descripcion", "cantidad", "precio_unitario"],
+      },
+    },
+    subtotal: { type: ["number", "null"] },
+    iva:      { type: ["number", "null"] },
+    total:    { type: ["number", "null"] },
+  },
+  required: ["proveedor", "cuit", "fecha", "numero_comprobante", "items", "subtotal", "iva", "total"],
+} as const;
+
+const SYSTEM_PROMPT =
+  "Sos un asistente que lee facturas y remitos argentinos de insumos/mercadería a partir de una foto y extrae sus datos estructurados con precisión.";
+
+const USER_PROMPT = `Extraé de esta factura o remito:
+- "proveedor": razón social o nombre del emisor
+- "cuit": CUIT del emisor, formato XX-XXXXXXXX-X si se puede leer, sino null
+- "fecha": fecha de emisión en formato YYYY-MM-DD si se puede interpretar, sino tal cual está escrita, sino null
+- "numero_comprobante": número de factura/remito (ej. "0001-00012345")
+- "items": todas las líneas de productos/insumos, con "descripcion" (texto tal cual figura), "cantidad" y "precio_unitario" (precio UNITARIO neto de esa línea, no el subtotal de la línea ni el total del comprobante)
+- "subtotal": subtotal antes de impuestos, si figura
+- "iva": monto de IVA, si figura
+- "total": total del comprobante
+
+Si no podés leer con claridad algún dato de cabecera, usá null. Los items siempre van con tu mejor estimación, pero no inventes líneas que no existen en la foto.`;
+
+class ErrorGroq extends Error {
+  status?: number;
+  constructor(message: string, status?: number) {
+    super(message);
+    this.status = status;
+  }
+}
+
+async function pedirLectura(model: string, imageBase64: string, mimeType: string, maxTokens: number): Promise<string> {
+  const apiKey = process.env.GROQ_API_KEY;
+  if (!apiKey) throw new Error("GROQ_API_KEY no está configurada");
+
+  const res = await fetch(GROQ_URL, {
+    method: "POST",
+    headers: {
+      "Content-Type":  "application/json",
+      "Authorization": `Bearer ${apiKey}`,
+    },
+    body: JSON.stringify({
+      model,
+      messages: [
+        { role: "system", content: SYSTEM_PROMPT },
+        {
+          role: "user",
+          content: [
+            { type: "text", text: USER_PROMPT },
+            { type: "image_url", image_url: { url: `data:${mimeType};base64,${imageBase64}` } },
+          ],
+        },
+      ],
+      temperature: 0.1,
+      max_tokens: maxTokens,
+      // Sin esto, qwen3.6-27b antepone un bloque <think>...</think> de
+      // razonamiento libre antes del JSON -- en el tier gratuito (límite de
+      // tokens/minuto) eso puede hacer que el pedido rebote antes de mandar
+      // un solo token de la imagen. Con el modo thinking apagado no hay
+      // bloque que proteger.
+      reasoning_effort: "none",
+      response_format: {
+        type: "json_schema",
+        json_schema: { name: "comprobante_argentino", schema: JSON_SCHEMA },
+      },
+    }),
+  });
+
+  if (!res.ok) {
+    const detalle = await res.text().catch(() => "");
+    throw new ErrorGroq(`Groq (${model}) respondió ${res.status}: ${detalle.slice(0, 300)}`, res.status);
+  }
+
+  const data = await res.json();
+  const raw: string | undefined = data?.choices?.[0]?.message?.content;
+  if (!raw) throw new ErrorGroq(`Groq (${model}) no devolvió ningún texto legible`);
+
+  return raw;
+}
+
+// Reintenta el mismo modelo con backoff simple solo ante errores transitorios
+// (rate limit / sobrecarga).
+async function pedirLecturaConReintento(
+  model: string, imageBase64: string, mimeType: string, maxTokens: number, intentos = 2
+): Promise<string> {
+  let ultimoError: unknown;
+  for (let i = 0; i < intentos; i++) {
+    try {
+      return await pedirLectura(model, imageBase64, mimeType, maxTokens);
+    } catch (e) {
+      ultimoError = e;
+      const status = e instanceof ErrorGroq ? e.status : undefined;
+      const reintentable = status != null && HTTP_REINTENTABLE.has(status);
+      if (!reintentable || i === intentos - 1) throw e;
+      await new Promise((r) => setTimeout(r, 1000 * (i + 1)));
+    }
+  }
+  throw ultimoError;
+}
+
+// El modo "thinking" de qwen3.6-27b puede anteponer un bloque de
+// razonamiento antes del JSON -- se descarta si aparece, mismo criterio
+// defensivo que usa openrouter.ts con las marcas de código ```json.
+function limpiarRespuesta(raw: string): string {
+  const sinThink = raw.replace(/<think>[\s\S]*?<\/think>/gi, "").trim();
+  const sinMarkdown = sinThink.replace(/```json\s*/gi, "").replace(/```\s*/g, "").trim();
+  return sinMarkdown || sinThink || raw;
+}
+
+export async function leerComprobanteConGroq(imageBase64: string, mimeType: string): Promise<ComprobanteLeido> {
+  try {
+    // 2048: de sobra para el JSON de un remito real (una línea por producto
+    // ronda 20-25 tokens), dejando margen bajo el límite de tokens/minuto
+    // del tier gratuito para la imagen + el prompt.
+    const raw = await pedirLecturaConReintento(MODELO_VISION, imageBase64, mimeType, 2048);
+    return { ...normalizarComprobante(parsearJson(limpiarRespuesta(raw), "qwen3.6-27b")), motor: "qwen3.6-27b" };
+  } catch (error) {
+    loguearComprobanteInconsistente({ etapa: "lectura_fallo", detalle: (error as Error).message });
+    throw new Error(`No se pudo leer la foto -- cargá el comprobante a mano. (${(error as Error).message})`);
+  }
+}
+
+function parsearJson(raw: string, motor: string): unknown {
+  try {
+    return JSON.parse(raw);
+  } catch {
+    loguearComprobanteInconsistente({ etapa: `parseo_json_${motor}`, detalle: raw.slice(0, 500) });
+    throw new Error("No se pudo interpretar lo que leyó la foto");
+  }
+}
+
+function normalizarComprobante(raw: unknown): Omit<ComprobanteLeido, "motor"> {
+  const r = (raw ?? {}) as Record<string, unknown>;
+
+  const items: ItemComprobante[] = Array.isArray(r.items)
+    ? (r.items as unknown[])
+        .filter((i): i is Record<string, unknown> => !!i && typeof i === "object")
+        .filter((i) =>
+          typeof i.descripcion === "string" &&
+          typeof i.cantidad === "number" &&
+          typeof i.precio_unitario === "number"
+        )
+        .map((i) => ({
+          descripcion:     i.descripcion as string,
+          cantidad:        i.cantidad as number,
+          precio_unitario: i.precio_unitario as number,
+        }))
+    : [];
+
+  return {
+    proveedor:          typeof r.proveedor === "string" ? r.proveedor : null,
+    cuit:               typeof r.cuit === "string" ? r.cuit : null,
+    fecha:              typeof r.fecha === "string" ? r.fecha : null,
+    numero_comprobante: typeof r.numero_comprobante === "string" ? r.numero_comprobante : null,
+    items,
+    subtotal: typeof r.subtotal === "number" ? r.subtotal : null,
+    iva:      typeof r.iva === "number" ? r.iva : null,
+    total:    typeof r.total === "number" ? r.total : null,
+  };
+}
+
+// Validaciones de consistencia -- no bloquean el resultado, pero marcan
+// advertencias para decidir si conviene revisar a mano antes de guardar.
+export function validarComprobante(datos: ComprobanteLeido): string[] {
+  const advertencias: string[] = [];
+
+  if (datos.items.length === 0) {
+    advertencias.push("No se leyó ninguna línea de producto");
+  }
+
+  if (!datos.cuit) {
+    advertencias.push("No se pudo leer el CUIT");
+  } else if (!/^\d{2}-?\d{8}-?\d{1}$/.test(datos.cuit.replace(/\s/g, ""))) {
+    advertencias.push(`El CUIT leído no tiene un formato válido: "${datos.cuit}"`);
+  }
+
+  if (!datos.total) {
+    advertencias.push("No se pudo leer el total del comprobante");
+  }
+
+  const sumaItems = datos.items.reduce((s, i) => s + i.cantidad * i.precio_unitario, 0);
+  if (datos.items.length > 0 && datos.subtotal != null) {
+    const tolerancia = Math.max(1, datos.subtotal * 0.02);
+    if (Math.abs(sumaItems - datos.subtotal) > tolerancia) {
+      advertencias.push(
+        `La suma de los ítems (${sumaItems.toFixed(2)}) no coincide con el subtotal leído (${datos.subtotal.toFixed(2)})`
+      );
+    }
+  }
+
+  if (datos.subtotal != null && datos.iva != null && datos.total != null) {
+    const totalCalculado = datos.subtotal + datos.iva;
+    const tolerancia     = Math.max(1, datos.total * 0.02);
+    if (Math.abs(totalCalculado - datos.total) > tolerancia) {
+      advertencias.push(
+        `Subtotal + IVA (${totalCalculado.toFixed(2)}) no coincide con el total leído (${datos.total.toFixed(2)})`
+      );
+    }
+  }
+
+  return advertencias;
+}
+
+// Deja rastro en los logs (visible en Vercel) de una lectura que falló o
+// quedó con advertencias -- sirve para juntar una muestra real y medir la
+// tasa de error antes de confiar en el pipeline sin revisión humana.
+export function loguearComprobanteInconsistente(info: { etapa: string; detalle: string; advertencias?: string[] }) {
+  console.error("[groq-comprobante] lectura inconsistente", {
+    etapa:        info.etapa,
+    advertencias: info.advertencias ?? [],
+    detalle:      info.detalle,
+    timestamp:    new Date().toISOString(),
+  });
+}

@@ -1,8 +1,9 @@
 "use client";
 
-import { useState, useTransition } from "react";
-import { Plus, Trash2, FileText, ClipboardList, ChevronDown, ChevronRight } from "lucide-react";
-import { registrarRecepcion, type InsumoBasico, type RecepcionHistorial } from "./actions";
+import { useState, useTransition, useRef } from "react";
+import { createBrowserClient } from "@supabase/ssr";
+import { Plus, Trash2, FileText, ClipboardList, ChevronDown, ChevronRight, Camera } from "lucide-react";
+import { registrarRecepcion, leerRemitoRecepcion, type InsumoBasico, type RecepcionHistorial } from "./actions";
 
 const fmtPrecio = (n: number) =>
   new Intl.NumberFormat("es-AR", { style: "currency", currency: "ARS", maximumFractionDigits: 2 }).format(n);
@@ -30,6 +31,7 @@ type ItemRow = {
   cantidad:          string;
   iva_pct:           number;
   fecha_vencimiento: string;
+  ocrHint:           string | null; // texto tal cual lo leyó la IA, cuando no matcheó un insumo
 };
 
 let rowKey = 0;
@@ -42,6 +44,7 @@ const newRow = (): ItemRow => ({
   cantidad:          "",
   iva_pct:           21,
   fecha_vencimiento: "",
+  ocrHint:           null,
 });
 
 type Props = {
@@ -67,6 +70,19 @@ export function RecepcionesClient({ insumos, historial }: Props) {
   const [ok,        setOk]       = useState<string | null>(null);
   const [isPending, start]       = useTransition();
 
+  // Lectura de remito/factura con IA
+  const [leyendoIA,    setLeyendoIA]    = useState(false);
+  const [ocrWarnings,  setOcrWarnings]  = useState<string[]>([]);
+  const [imagenUrl,    setImagenUrl]    = useState<string | null>(null);
+  const [subiendoImg,  setSubiendoImg]  = useState(false);
+  const supabaseRef = useRef<ReturnType<typeof createBrowserClient> | null>(null);
+  if (!supabaseRef.current) {
+    supabaseRef.current = createBrowserClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    );
+  }
+
   const insumoMap = Object.fromEntries(insumos.map(i => [i.id, i]));
 
   function handleInsumoChange(key: string, insumoId: string) {
@@ -78,8 +94,85 @@ export function RecepcionesClient({ insumos, historial }: Props) {
         unidad:          ins?.unidad ?? "",
         stock_actual:    ins?.stock_actual ?? 0,
         precio_unitario: ins ? String(ins.precio_unitario) : "",
+        ocrHint:         null,
       }
     ));
+  }
+
+  // Achica la foto antes de mandarla a leer -- una foto de celular sin
+  // achicar es demasiado pesada para mandar como base64.
+  async function resizeImageToBase64(file: File, maxDim = 1600, quality = 0.7): Promise<{ base64: string; mimeType: string }> {
+    const bitmap = await createImageBitmap(file);
+    const scale  = Math.min(1, maxDim / Math.max(bitmap.width, bitmap.height));
+    const w = Math.round(bitmap.width * scale);
+    const h = Math.round(bitmap.height * scale);
+    const canvas = document.createElement("canvas");
+    canvas.width = w; canvas.height = h;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) throw new Error("No se pudo procesar la imagen");
+    ctx.drawImage(bitmap, 0, 0, w, h);
+    const dataUrl = canvas.toDataURL("image/jpeg", quality);
+    return { base64: dataUrl.split(",")[1], mimeType: "image/jpeg" };
+  }
+
+  async function subirEvidencia(file: File) {
+    setSubiendoImg(true);
+    try {
+      const path = `${Date.now()}-${Math.random().toString(36).slice(2)}.jpg`;
+      const { error: upErr } = await supabaseRef.current!.storage.from("recepciones").upload(path, file, {
+        contentType: file.type || "image/jpeg",
+      });
+      if (upErr) return;
+      const { data } = supabaseRef.current!.storage.from("recepciones").getPublicUrl(path);
+      setImagenUrl(data.publicUrl);
+    } finally {
+      setSubiendoImg(false);
+    }
+  }
+
+  // Lee la foto de la factura/remito con IA y precarga cabecera + ítems.
+  // La misma foto queda como evidencia adjunta (imagen_url).
+  async function handleLeerConIA(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+
+    setError(null); setOcrWarnings([]);
+    setLeyendoIA(true);
+    subirEvidencia(file);
+
+    try {
+      const { base64, mimeType } = await resizeImageToBase64(file);
+      const res = await leerRemitoRecepcion(base64, mimeType);
+      if (res.error) { setError(res.error); return; }
+
+      const lineas = res.lineas ?? [];
+      if (lineas.length === 0) { setError("No se encontraron líneas en la foto"); return; }
+
+      if (res.cabecera?.proveedor && !proveedor) setProveedor(res.cabecera.proveedor);
+      if (res.cabecera?.numero && !numero)       setNumero(res.cabecera.numero);
+      if (res.cabecera?.fecha && /^\d{4}-\d{2}-\d{2}$/.test(res.cabecera.fecha)) setFecha(res.cabecera.fecha);
+
+      setRows(lineas.map((l) => {
+        const ins = l.insumoIdMatch ? insumoMap[l.insumoIdMatch] : null;
+        return {
+          key:               String(rowKey++),
+          insumo_id:         l.insumoIdMatch ?? "",
+          unidad:            ins?.unidad ?? "",
+          stock_actual:      ins?.stock_actual ?? 0,
+          precio_unitario:   String(l.precio),
+          cantidad:          String(l.cantidad),
+          iva_pct:           21,
+          fecha_vencimiento: "",
+          ocrHint:           ins ? null : l.producto,
+        };
+      }));
+      setOcrWarnings(res.advertencias ?? []);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "No se pudo leer la foto");
+    } finally {
+      setLeyendoIA(false);
+    }
   }
 
   function updateRow<K extends keyof ItemRow>(key: string, field: K, value: ItemRow[K]) {
@@ -109,7 +202,7 @@ export function RecepcionesClient({ insumos, historial }: Props) {
   function resetForm() {
     setTipo("factura"); setNumero(""); setProveedor("");
     setFecha(hoy()); setNotas(""); setOtrosImp(""); setRows([newRow()]);
-    setError(null);
+    setError(null); setOcrWarnings([]); setImagenUrl(null);
   }
 
   function handleSubmit(e: React.FormEvent) {
@@ -132,7 +225,7 @@ export function RecepcionesClient({ insumos, historial }: Props) {
 
     start(async () => {
       const res = await registrarRecepcion(
-        tipo, numero, proveedor, fecha, notas || null, otrosNum, items,
+        tipo, numero, proveedor, fecha, notas || null, otrosNum, items, imagenUrl,
       );
       if ("error" in res) { setError(res.error); return; }
       setOk(`${tipo === "factura" ? "Factura" : "Remito"} ${numero} registrado. Stock y precios actualizados.`);
@@ -180,6 +273,37 @@ export function RecepcionesClient({ insumos, historial }: Props) {
           </div>
 
           <form onSubmit={handleSubmit} className="px-5 py-4 space-y-5">
+
+            {/* Leer remito/factura con IA -- precarga cabecera e ítems a partir de una foto */}
+            <div className="bg-crema-50 border border-tierra-700/20 rounded-xl px-4 py-3 flex items-start gap-3 flex-wrap">
+              <label className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-colors shrink-0 ${
+                leyendoIA ? "bg-neutral-200 text-neutral-500 cursor-wait" : "bg-[#16233f] text-white hover:bg-[#253760] cursor-pointer"
+              }`}>
+                {leyendoIA ? (
+                  <>
+                    <span className="size-3.5 border-2 border-white/40 border-t-white rounded-full animate-spin" />
+                    Leyendo…
+                  </>
+                ) : (
+                  <><Camera className="size-4" /> Leer remito/factura con foto (IA)</>
+                )}
+                <input type="file" accept="image/*" className="hidden" disabled={leyendoIA} onChange={handleLeerConIA} />
+              </label>
+              <p className="text-xs text-neutral-500 flex-1 min-w-[200px]">
+                Sacá una foto del remito o la mercadería y precarga los insumos, cantidades y precios abajo — revisá antes de guardar.
+                Para remitos escritos a mano o sin insumos en el catálogo, cargá manual.
+                {subiendoImg && " (subiendo foto…)"}
+              </p>
+            </div>
+
+            {ocrWarnings.length > 0 && (
+              <div className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 space-y-1">
+                <p className="font-medium">La lectura automática es experimental — revisá antes de guardar:</p>
+                <ul className="list-disc list-inside space-y-0.5">
+                  {ocrWarnings.map((w, i) => <li key={i}>{w}</li>)}
+                </ul>
+              </div>
+            )}
 
             {/* Cabecera */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
@@ -266,6 +390,11 @@ export function RecepcionesClient({ insumos, historial }: Props) {
                                 Stock: {fmtNum(row.stock_actual)} →{" "}
                                 <span className="text-emerald-600 font-medium">{fmtNum(stockPost)}</span>{" "}
                                 {row.unidad}
+                              </p>
+                            )}
+                            {row.ocrHint && !row.insumo_id && (
+                              <p className="text-xs text-amber-600 mt-0.5 px-1">
+                                El remito decía: "{row.ocrHint}" — elegí el insumo
                               </p>
                             )}
                           </td>
@@ -396,6 +525,12 @@ export function RecepcionesClient({ insumos, historial }: Props) {
               <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-xl px-4 py-3">{error}</p>
             )}
 
+            {imagenUrl && (
+              <a href={imagenUrl} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1.5 text-xs text-tierra-700 hover:underline">
+                <Camera className="size-3.5" /> Ver foto adjunta
+              </a>
+            )}
+
             <button type="submit" disabled={isPending}
               className="px-6 py-2.5 bg-[#16233f] text-white text-sm font-medium rounded-xl hover:bg-[#253760] disabled:opacity-40 transition-colors">
               {isPending ? "Registrando…" : "Confirmar recepción"}
@@ -508,8 +643,14 @@ function HistorialTable({ historial }: { historial: RecepcionHistorial[] }) {
 
                       {/* Pie del detalle */}
                       <div className="mt-3 flex items-start justify-between gap-4">
-                        <div className="text-xs text-neutral-400">
+                        <div className="text-xs text-neutral-400 space-y-1">
                           {h.notas && <p className="italic">Notas: {h.notas}</p>}
+                          {h.imagen_url && (
+                            <a href={h.imagen_url} target="_blank" rel="noreferrer"
+                              className="inline-flex items-center gap-1 text-tierra-700 hover:underline">
+                              <Camera className="size-3" /> Ver foto adjunta
+                            </a>
+                          )}
                         </div>
                         <div className="text-xs text-neutral-400 text-right space-y-0.5 tabular-nums">
                           <div>Subtotal neto: <span className="text-neutral-700 font-medium">{fmtPrecio(h.items.reduce((s, i) => s + i.subtotal_neto, 0))}</span></div>
