@@ -21,8 +21,23 @@
 const MODELO_VISION = "qwen/qwen3.8-27b";
 const GROQ_URL = "https://api.groq.com/openai/v1/chat/completions";
 
-// Códigos de error transitorios de Groq (sobrecarga temporal, rate limit) --
-// vale la pena reintentar antes de rendirse.
+// Si Groq falla (modelo caído, 503 por sobrecarga, etc.) se prueba en orden
+// con modelos gratuitos de visión de OpenRouter (ya configurado en el
+// proyecto para el chat, ver lib/openrouter.ts) antes de rendirse. Estos no
+// tienen JSON mode forzado en todos los proveedores, así que se le pide el
+// JSON por prompt y se limpia igual que con Groq (limpiarRespuesta). Lista
+// de modelos gratis con soporte de imagen: GET openrouter.ai/api/v1/models
+// y filtrar por architecture.input_modalities incluyendo "image" y
+// pricing.prompt === "0".
+const MODELOS_FALLBACK_OPENROUTER = [
+  "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free",
+  "google/gemma-4-31b-it:free",
+  "google/gemma-4-26b-a4b-it:free",
+];
+const OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions";
+
+// Códigos de error transitorios (sobrecarga temporal, rate limit) -- vale la
+// pena reintentar antes de pasar al siguiente modelo/proveedor.
 const HTTP_REINTENTABLE = new Set([429, 500, 502, 503, 504]);
 
 export type ItemComprobante = {
@@ -40,7 +55,7 @@ export type ComprobanteLeido = {
   subtotal:           number | null;
   iva:                number | null;
   total:              number | null;
-  motor:              "qwen3.6-27b";
+  motor:              string; // ej. "groq:qwen/qwen3.8-27b" u "openrouter:google/gemma-4-31b-it:free"
 };
 
 const JSON_SCHEMA = {
@@ -84,7 +99,14 @@ const USER_PROMPT = `Extraé de esta factura o remito:
 
 Si no podés leer con claridad algún dato de cabecera, usá null. Los items siempre van con tu mejor estimación, pero no inventes líneas que no existen en la foto.`;
 
-class ErrorGroq extends Error {
+// Para los fallbacks de OpenRouter, que no todos soportan json_schema
+// forzado -- se lo pedimos explícito por prompt además del schema (por si
+// alguno sí lo respeta) y se limpia la respuesta igual que con Groq.
+const USER_PROMPT_JSON_ONLY = `${USER_PROMPT}
+
+Respondé ÚNICAMENTE con el JSON pedido, sin texto adicional antes ni después, sin bloques de código markdown.`;
+
+class ErrorLecturaVision extends Error {
   status?: number;
   constructor(message: string, status?: number) {
     super(message);
@@ -92,7 +114,7 @@ class ErrorGroq extends Error {
   }
 }
 
-async function pedirLectura(model: string, imageBase64: string, mimeType: string, maxTokens: number): Promise<string> {
+async function pedirLecturaGroq(model: string, imageBase64: string, mimeType: string, maxTokens: number): Promise<string> {
   const apiKey = process.env.GROQ_API_KEY;
   if (!apiKey) throw new Error("GROQ_API_KEY no está configurada");
 
@@ -116,11 +138,11 @@ async function pedirLectura(model: string, imageBase64: string, mimeType: string
       ],
       temperature: 0.1,
       max_tokens: maxTokens,
-      // Sin esto, qwen3.6-27b antepone un bloque <think>...</think> de
-      // razonamiento libre antes del JSON -- en el tier gratuito (límite de
-      // tokens/minuto) eso puede hacer que el pedido rebote antes de mandar
-      // un solo token de la imagen. Con el modo thinking apagado no hay
-      // bloque que proteger.
+      // Sin esto, los modelos qwen de Groq anteponen un bloque
+      // <think>...</think> de razonamiento libre antes del JSON -- en el
+      // tier gratuito (límite de tokens/minuto) eso puede hacer que el
+      // pedido rebote antes de mandar un solo token de la imagen. Con el
+      // modo thinking apagado no hay bloque que proteger.
       reasoning_effort: "none",
       response_format: {
         type: "json_schema",
@@ -131,28 +153,74 @@ async function pedirLectura(model: string, imageBase64: string, mimeType: string
 
   if (!res.ok) {
     const detalle = await res.text().catch(() => "");
-    throw new ErrorGroq(`Groq (${model}) respondió ${res.status}: ${detalle.slice(0, 300)}`, res.status);
+    throw new ErrorLecturaVision(`Groq (${model}) respondió ${res.status}: ${detalle.slice(0, 300)}`, res.status);
   }
 
   const data = await res.json();
   const raw: string | undefined = data?.choices?.[0]?.message?.content;
-  if (!raw) throw new ErrorGroq(`Groq (${model}) no devolvió ningún texto legible`);
+  if (!raw) throw new ErrorLecturaVision(`Groq (${model}) no devolvió ningún texto legible`);
 
   return raw;
 }
 
-// Reintenta el mismo modelo con backoff simple solo ante errores transitorios
-// (rate limit / sobrecarga).
-async function pedirLecturaConReintento(
-  model: string, imageBase64: string, mimeType: string, maxTokens: number, intentos = 2
-): Promise<string> {
+// Fallback cuando Groq no responde -- mismo prompt, pero sin json_schema
+// forzado (no todos los proveedores detrás de OpenRouter lo soportan), así
+// que se lo pedimos por texto y se limpia la respuesta con limpiarRespuesta.
+async function pedirLecturaOpenRouter(model: string, imageBase64: string, mimeType: string, maxTokens: number): Promise<string> {
+  const apiKey = process.env.OPENROUTER_API_KEY;
+  if (!apiKey) throw new Error("OPENROUTER_API_KEY no está configurada");
+
+  const res = await fetch(OPENROUTER_URL, {
+    method: "POST",
+    headers: {
+      "Content-Type":  "application/json",
+      "Authorization": `Bearer ${apiKey}`,
+      "HTTP-Referer":  "https://enminutas.com.ar",
+      "X-Title":       "En Minutas Admin",
+    },
+    body: JSON.stringify({
+      model,
+      messages: [
+        { role: "system", content: SYSTEM_PROMPT },
+        {
+          role: "user",
+          content: [
+            { type: "text", text: USER_PROMPT_JSON_ONLY },
+            { type: "image_url", image_url: { url: `data:${mimeType};base64,${imageBase64}` } },
+          ],
+        },
+      ],
+      temperature: 0.1,
+      max_tokens: maxTokens,
+    }),
+  });
+
+  if (!res.ok) {
+    const detalle = await res.text().catch(() => "");
+    throw new ErrorLecturaVision(`OpenRouter (${model}) respondió ${res.status}: ${detalle.slice(0, 300)}`, res.status);
+  }
+
+  const data = await res.json();
+  if (data?.error) {
+    throw new ErrorLecturaVision(`OpenRouter (${model}): ${data.error.message ?? "error desconocido"}`, data.error.code);
+  }
+  const raw: string | undefined = data?.choices?.[0]?.message?.content;
+  if (!raw) throw new ErrorLecturaVision(`OpenRouter (${model}) no devolvió ningún texto legible`);
+
+  return raw;
+}
+
+// Reintenta la misma llamada con backoff simple solo ante errores
+// transitorios (rate limit / sobrecarga) -- si no es transitorio, corta al
+// toque para poder pasar al siguiente modelo/proveedor sin perder tiempo.
+async function conReintento<T>(fn: () => Promise<T>, intentos = 2): Promise<T> {
   let ultimoError: unknown;
   for (let i = 0; i < intentos; i++) {
     try {
-      return await pedirLectura(model, imageBase64, mimeType, maxTokens);
+      return await fn();
     } catch (e) {
       ultimoError = e;
-      const status = e instanceof ErrorGroq ? e.status : undefined;
+      const status = e instanceof ErrorLecturaVision ? e.status : undefined;
       const reintentable = status != null && HTTP_REINTENTABLE.has(status);
       if (!reintentable || i === intentos - 1) throw e;
       await new Promise((r) => setTimeout(r, 1000 * (i + 1)));
@@ -161,26 +229,48 @@ async function pedirLecturaConReintento(
   throw ultimoError;
 }
 
-// El modo "thinking" de qwen3.6-27b puede anteponer un bloque de
-// razonamiento antes del JSON -- se descarta si aparece, mismo criterio
-// defensivo que usa openrouter.ts con las marcas de código ```json.
+// El modo "thinking" de algunos modelos (los qwen de Groq, algunos de los
+// fallbacks de OpenRouter) puede anteponer un bloque de razonamiento antes
+// del JSON, o envolver todo en un bloque de código -- se descarta si
+// aparece, mismo criterio defensivo que usa openrouter.ts con las marcas de
+// código ```json.
 function limpiarRespuesta(raw: string): string {
   const sinThink = raw.replace(/<think>[\s\S]*?<\/think>/gi, "").trim();
   const sinMarkdown = sinThink.replace(/```json\s*/gi, "").replace(/```\s*/g, "").trim();
   return sinMarkdown || sinThink || raw;
 }
 
+// 2048: de sobra para el JSON de un remito real (una línea por producto
+// ronda 20-25 tokens), dejando margen bajo el límite de tokens/minuto del
+// tier gratuito para la imagen + el prompt.
+const MAX_TOKENS_LECTURA = 2048;
+
 export async function leerComprobanteConGroq(imageBase64: string, mimeType: string): Promise<ComprobanteLeido> {
+  const errores: string[] = [];
+
   try {
-    // 2048: de sobra para el JSON de un remito real (una línea por producto
-    // ronda 20-25 tokens), dejando margen bajo el límite de tokens/minuto
-    // del tier gratuito para la imagen + el prompt.
-    const raw = await pedirLecturaConReintento(MODELO_VISION, imageBase64, mimeType, 2048);
-    return { ...normalizarComprobante(parsearJson(limpiarRespuesta(raw), "qwen3.6-27b")), motor: "qwen3.6-27b" };
+    const raw = await conReintento(() => pedirLecturaGroq(MODELO_VISION, imageBase64, mimeType, MAX_TOKENS_LECTURA));
+    return { ...normalizarComprobante(parsearJson(limpiarRespuesta(raw), `groq-${MODELO_VISION}`)), motor: `groq:${MODELO_VISION}` };
   } catch (error) {
-    loguearComprobanteInconsistente({ etapa: "lectura_fallo", detalle: (error as Error).message });
-    throw new Error(`No se pudo leer la foto -- cargá el comprobante a mano. (${(error as Error).message})`);
+    const msg = (error as Error).message;
+    errores.push(`Groq: ${msg}`);
+    loguearComprobanteInconsistente({ etapa: "groq_fallo", detalle: msg });
   }
+
+  // Groq no respondió -- probar en orden los modelos gratuitos de visión de
+  // OpenRouter antes de rendirse del todo.
+  for (const modelo of MODELOS_FALLBACK_OPENROUTER) {
+    try {
+      const raw = await conReintento(() => pedirLecturaOpenRouter(modelo, imageBase64, mimeType, MAX_TOKENS_LECTURA), 1);
+      return { ...normalizarComprobante(parsearJson(limpiarRespuesta(raw), `openrouter-${modelo}`)), motor: `openrouter:${modelo}` };
+    } catch (error) {
+      const msg = (error as Error).message;
+      errores.push(`OpenRouter ${modelo}: ${msg}`);
+      loguearComprobanteInconsistente({ etapa: `openrouter_fallo_${modelo}`, detalle: msg });
+    }
+  }
+
+  throw new Error(`No se pudo leer la foto con ningún modelo disponible -- cargá el comprobante a mano. (${errores.join(" · ")})`);
 }
 
 function parsearJson(raw: string, motor: string): unknown {
