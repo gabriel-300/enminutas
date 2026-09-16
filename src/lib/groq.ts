@@ -11,7 +11,14 @@
 // consistencia que hay que revisar antes de dar por buena una lectura, y
 // loguearComprobanteInconsistente() deja rastro server-side de los casos con
 // advertencias o parseo fallido.
-const MODELO_VISION = "qwen/qwen3.6-27b";
+//
+// qwen/qwen3.6-27b (el modelo original portado de kioscos-ideia) dejó de
+// existir en la cuenta ("model_not_found", confirmado en producción
+// 2026-09-16) -- Groq lo renombró/movió a qwen/qwen3.8-27b, que sí acepta
+// imágenes (confirmado con una request de prueba real). Si esto vuelve a
+// romperse, revisar GET /openai/v1/models con la API key para ver qué
+// modelos de visión quedan activos.
+const MODELO_VISION = "qwen/qwen3.8-27b";
 const GROQ_URL = "https://api.groq.com/openai/v1/chat/completions";
 
 // Códigos de error transitorios de Groq (sobrecarga temporal, rate limit) --
