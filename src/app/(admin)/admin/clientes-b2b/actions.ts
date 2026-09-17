@@ -269,14 +269,21 @@ export async function eliminarClienteB2B(clientId: string) {
   await requireAdmin();
   const supabase = createAdminClient();
 
-  const { count: pedidosActivos } = await (supabase as any)
+  // orders.customer_id no tiene ON DELETE CASCADE (a propósito — no queremos
+  // que borrar un cliente borre en cascada su historial de pedidos). Por eso
+  // hay que frenar acá con un mensaje claro: si tiene CUALQUIER pedido, activo
+  // o viejo, el borrado va a fallar en la base igual, pero con un error crudo
+  // de Postgres en vez de esto.
+  const { count: totalPedidos } = await (supabase as any)
     .from("orders")
     .select("*", { count: "exact", head: true })
-    .eq("customer_id", clientId)
-    .in("status", ["pending_payment", "aprobado", "enviado_prod", "despachado", "en_distribucion"]);
+    .eq("customer_id", clientId);
 
-  if ((pedidosActivos ?? 0) > 0)
-    throw new Error(`No se puede eliminar: el cliente tiene ${pedidosActivos} pedido${pedidosActivos !== 1 ? "s" : ""} activo${pedidosActivos !== 1 ? "s" : ""}`);
+  if ((totalPedidos ?? 0) > 0)
+    throw new Error(
+      `No se puede eliminar: el cliente tiene ${totalPedidos} pedido${totalPedidos !== 1 ? "s" : ""} en su historial (activos o no). ` +
+      `Borrarlo rompería esos registros. Usá "Desactivar" en vez de eliminar.`
+    );
 
   // Borrar auth user primero — el cascade elimina el profile via trigger
   const { error } = await supabase.auth.admin.deleteUser(clientId);

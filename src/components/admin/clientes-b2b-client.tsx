@@ -221,6 +221,7 @@ function ClienteMobileCard({ cliente, zonas, vendedores, canales, esAdmin }: {
   const [editOpen, setEditOpen]      = useState(false);
   const [isPending, startTransition] = useTransition();
   const [editError, setEditError]    = useState<string | null>(null);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
   const status = cliente.b2b_status;
 
   function handleEdit(fd: FormData) {
@@ -237,7 +238,14 @@ function ClienteMobileCard({ cliente, zonas, vendedores, canales, esAdmin }: {
 
   function handleEliminar() {
     if (!confirm(`¿Eliminar al cliente ${cliente.full_name ?? cliente.email}?`)) return;
-    startTransition(() => eliminarClienteB2B(cliente.id));
+    setDeleteError(null);
+    startTransition(async () => {
+      try {
+        await eliminarClienteB2B(cliente.id);
+      } catch (err: any) {
+        setDeleteError(err.message ?? "Error al eliminar");
+      }
+    });
   }
 
   const phoneClean = cliente.phone?.replace(/\s/g, "") ?? "";
@@ -307,6 +315,8 @@ function ClienteMobileCard({ cliente, zonas, vendedores, canales, esAdmin }: {
         )}
       </div>
 
+      {deleteError && <p className="text-xs text-danger mt-2">{deleteError}</p>}
+
       {/* Edit form */}
       {editOpen && (
         <div className="mt-3 pt-3 border-t border-neutral-100">
@@ -327,6 +337,7 @@ function ClienteRow({ cliente, zonas, vendedores, canales, esAdmin }: {
   const [editOpen, setEditOpen]      = useState(false);
   const [isPending, startTransition] = useTransition();
   const [editError, setEditError]    = useState<string | null>(null);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
   const status = cliente.b2b_status;
 
   function handleEdit(fd: FormData) {
@@ -343,7 +354,14 @@ function ClienteRow({ cliente, zonas, vendedores, canales, esAdmin }: {
 
   function handleEliminar() {
     if (!confirm(`¿Eliminar al cliente ${cliente.full_name ?? cliente.email}? Esta acción no se puede deshacer.`)) return;
-    startTransition(() => eliminarClienteB2B(cliente.id));
+    setDeleteError(null);
+    startTransition(async () => {
+      try {
+        await eliminarClienteB2B(cliente.id);
+      } catch (err: any) {
+        setDeleteError(err.message ?? "Error al eliminar");
+      }
+    });
   }
 
   return (
@@ -399,6 +417,12 @@ function ClienteRow({ cliente, zonas, vendedores, canales, esAdmin }: {
           </div>
         </td>
       </tr>
+
+      {deleteError && (
+        <tr className="bg-danger-bg/30">
+          <td colSpan={7} className="px-4 py-2 text-xs text-danger">{deleteError}</td>
+        </tr>
+      )}
 
       {editOpen && (
         <>
