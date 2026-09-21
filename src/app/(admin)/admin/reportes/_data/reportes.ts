@@ -3,8 +3,11 @@ import { VENTAS_STATUSES } from "@/lib/order-status";
 
 export async function loadReportes(mes: string | undefined) {
   const now = new Date();
+  // ?mes= viene de la URL: si no es YYYY-MM válido, se usa el mes actual (antes daba error 500).
   const mesParam =
-    mes ?? `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+    mes && /^\d{4}-(0[1-9]|1[0-2])$/.test(mes)
+      ? mes
+      : `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
   const [yearStr, monthStr] = mesParam.split("-");
   const year  = parseInt(yearStr, 10);
   const month = parseInt(monthStr, 10);
