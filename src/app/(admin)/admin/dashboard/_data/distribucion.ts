@@ -1,5 +1,5 @@
 import { createAdminClient } from "@/lib/supabase/server";
-import type { OrderStatus } from "../_lib/helpers";
+import type { OrderStatus } from "@/lib/order-status";
 import { ahoraAR } from "@/lib/fecha";
 
 export async function loadDistribucionDashboard(user: { id: string }) {

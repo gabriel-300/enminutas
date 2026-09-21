@@ -1,6 +1,7 @@
 import { createAdminClient } from "@/lib/supabase/server";
 import { ahoraAR } from "@/lib/fecha";
-import { ACTIVE_STATUSES, pctChange } from "../_lib/helpers";
+import { pctChange } from "../_lib/helpers";
+import { VENTAS_STATUSES } from "@/lib/order-status";
 
 export async function loadAdminDashboard() {
   const adminClient = createAdminClient();
@@ -17,7 +18,6 @@ export async function loadAdminDashboard() {
 
   const [
     { count: pendingOrders },
-    { count: inProd },
     { data: revenueData },
     { data: prevRevenueData },
     { data: monthlyOrdersRaw },
@@ -33,23 +33,20 @@ export async function loadAdminDashboard() {
     db.from("orders").select("*", { count: "exact", head: true })
       .eq("channel", "b2b_mayorista").eq("status", "pending_payment"),
 
-    db.from("orders").select("*", { count: "exact", head: true })
-      .eq("channel", "b2b_mayorista").in("status", ["aprobado", "enviado_prod"]),
-
     // Facturación este mes
     db.from("orders").select("total")
-      .eq("channel", "b2b_mayorista").in("status", ACTIVE_STATUSES)
+      .eq("channel", "b2b_mayorista").in("status", VENTAS_STATUSES)
       .gte("created_at", monthStart),
 
     // Facturación mes anterior
     db.from("orders").select("total")
-      .eq("channel", "b2b_mayorista").in("status", ACTIVE_STATUSES)
+      .eq("channel", "b2b_mayorista").in("status", VENTAS_STATUSES)
       .gte("created_at", prevMonthStart).lt("created_at", monthStart),
 
     // Pedidos activos últimos 6 meses (para evolución + top productos)
     db.from("orders")
       .select("id, total, created_at, lines:order_lines(line_total, product_snapshot)")
-      .eq("channel", "b2b_mayorista").in("status", ACTIVE_STATUSES)
+      .eq("channel", "b2b_mayorista").in("status", VENTAS_STATUSES)
       .gte("created_at", sixMonthsAgo)
       .order("created_at", { ascending: false }),
 
@@ -98,7 +95,7 @@ export async function loadAdminDashboard() {
     db.from("orders")
       .select("total, customer:profiles!customer_id(id, full_name, vendedor_id)")
       .eq("channel", "b2b_mayorista")
-      .in("status", ACTIVE_STATUSES)
+      .in("status", VENTAS_STATUSES)
       .gte("created_at", monthStart),
   ]);
 

@@ -1,5 +1,5 @@
+import { fmtK } from "@/lib/format";
 import Link from "next/link";
-import { fmtK } from "../_lib/helpers";
 import { loadAdminDashboard } from "../_data/admin";
 
 export async function AdminDashboard() {

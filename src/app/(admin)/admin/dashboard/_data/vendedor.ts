@@ -1,6 +1,6 @@
 import { createAdminClient } from "@/lib/supabase/server";
 import { ahoraAR } from "@/lib/fecha";
-import { ACTIVE_STATUSES } from "../_lib/helpers";
+import { VENTAS_STATUSES } from "@/lib/order-status";
 
 export async function loadVendedorDashboard(user: { id: string }) {
   const adminClient = createAdminClient();
@@ -35,7 +35,7 @@ export async function loadVendedorDashboard(user: { id: string }) {
     misIds.length > 0
       ? db.from("orders").select("total")
           .in("customer_id", misIds).eq("channel", "b2b_mayorista")
-          .in("status", ACTIVE_STATUSES).gte("created_at", monthStart)
+          .in("status", VENTAS_STATUSES).gte("created_at", monthStart)
       : Promise.resolve({ data: [] }),
 
     misIds.length > 0

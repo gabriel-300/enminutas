@@ -1,5 +1,5 @@
+import { fmtK } from "@/lib/format";
 import Link from "next/link";
-import { fmtK } from "../_lib/helpers";
 import { IC } from "../_components/icons";
 import { loadVendedorDashboard } from "../_data/vendedor";
 
