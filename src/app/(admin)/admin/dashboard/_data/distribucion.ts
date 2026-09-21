@@ -1,9 +1,10 @@
 import { createAdminClient } from "@/lib/supabase/server";
+import type { OrderStatus } from "../_lib/helpers";
 import { ahoraAR } from "@/lib/fecha";
 
 export async function loadDistribucionDashboard(user: { id: string }) {
   const adminClient = createAdminClient();
-  const db  = adminClient as any;
+  const db  = adminClient;
   const now = ahoraAR();
 
   // Zona asignada
@@ -21,7 +22,7 @@ export async function loadDistribucionDashboard(user: { id: string }) {
 
   const sixMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 5, 1);
 
-  const buildQ = (status: string) => {
+  const buildQ = (status: OrderStatus) => {
     let q = db.from("orders")
       .select("id, order_number, entregado_at, despachado_at, customer:profiles!customer_id(full_name, zona:delivery_zones!zona_id(name)), lines:order_lines(quantity, product_snapshot)")
       .eq("channel", "b2b_mayorista").eq("status", status);

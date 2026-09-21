@@ -1,6 +1,9 @@
 import { fmt } from "@/lib/format";
+import type { Database } from "@/types/database";
 
-export const ACTIVE_STATUSES = ["aprobado", "enviado_prod", "despachado", "en_distribucion", "entrega_parcial", "delivered", "liquidado"];
+export type OrderStatus = Database["public"]["Enums"]["order_status"];
+
+export const ACTIVE_STATUSES: OrderStatus[] = ["aprobado", "enviado_prod", "despachado", "en_distribucion", "entrega_parcial", "delivered", "liquidado"];
 
 export const fmtK = (n: number) => {
   if (n >= 1_000_000) return `$${(n / 1_000_000).toFixed(1)}M`;

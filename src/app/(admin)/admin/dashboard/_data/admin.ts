@@ -9,7 +9,7 @@ export async function loadAdminDashboard() {
   const prevMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1).toISOString();
   const sixMonthsAgo  = new Date(now.getFullYear(), now.getMonth() - 5, 1).toISOString();
 
-  const db = adminClient as any;
+  const db = adminClient;
 
   const cutoff3d  = new Date(Date.now() - 3  * 24 * 60 * 60 * 1000).toISOString();
   const cutoff5d  = new Date(Date.now() - 5  * 24 * 60 * 60 * 1000).toISOString();

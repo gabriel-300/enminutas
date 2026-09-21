@@ -3,7 +3,7 @@ import { ahoraAR } from "@/lib/fecha";
 
 export async function loadProduccionDashboard() {
   const adminClient = createAdminClient();
-  const db  = adminClient as any;
+  const db  = adminClient;
   const now = ahoraAR();
 
   const [
@@ -22,10 +22,10 @@ export async function loadProduccionDashboard() {
       .not("stock_minimo", "is", null),
   ]);
 
-  const cola       = (ordersRaw ?? []).filter((o: any) => o.status === "aprobado");
-  const preparando = (ordersRaw ?? []).filter((o: any) => o.status === "enviado_prod");
+  const cola       = (ordersRaw ?? []).filter((o) => o.status === "aprobado");
+  const preparando = (ordersRaw ?? []).filter((o) => o.status === "enviado_prod");
   const stockCritico = (stockRaw ?? []).filter(
-    (p: any) => Number(p.stock_cajas ?? 0) <= Number(p.stock_minimo ?? 0)
+    (p) => Number(p.stock_cajas ?? 0) <= Number(p.stock_minimo ?? 0)
   );
 
 

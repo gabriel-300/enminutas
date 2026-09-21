@@ -8,7 +8,7 @@ export async function loadVendedorDashboard(user: { id: string }) {
   const mes        = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
   const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
   const mesNombre  = now.toLocaleDateString("es-AR", { month: "long" });
-  const db         = adminClient as any;
+  const db         = adminClient;
 
   // Clientes asignados
   // profiles.role no es confiable (desincronizado en producción) — b2b_status
@@ -91,5 +91,5 @@ export async function loadVendedorDashboard(user: { id: string }) {
   const totalPend   = (pedidosPendientes ?? 0) + (pedidosEnProd ?? 0);
   const totalInact  = sinPedidos.length + inactivos30.length + inactivos15.length;
 
-  return { now, mes, mesNombre, misIds, pedidosPendientes, pedidosEnProd, ultimosContactos, sinPedidos, inactivos30, inactivos15, activosCnt, ventasMes, objetivo, pctMeta, totalPend, totalInact };
+  return { now, mesNombre, misIds, pedidosPendientes, pedidosEnProd, ultimosContactos, sinPedidos, inactivos30, inactivos15, activosCnt, ventasMes, objetivo, pctMeta, totalPend, totalInact };
 }

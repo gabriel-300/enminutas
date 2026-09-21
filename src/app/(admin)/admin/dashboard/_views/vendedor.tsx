@@ -4,7 +4,7 @@ import { IC } from "../_components/icons";
 import { loadVendedorDashboard } from "../_data/vendedor";
 
 export async function VendedorDashboard({ user }: { user: { id: string } }) {
-  const { now, mes, mesNombre, misIds, pedidosPendientes, pedidosEnProd, ultimosContactos, sinPedidos, inactivos30, inactivos15, activosCnt, ventasMes, objetivo, pctMeta, totalPend, totalInact } = await loadVendedorDashboard(user);
+  const { now, mesNombre, misIds, pedidosPendientes, pedidosEnProd, ultimosContactos, sinPedidos, inactivos30, inactivos15, activosCnt, ventasMes, objetivo, pctMeta, totalPend, totalInact } = await loadVendedorDashboard(user);
 
   return (
     <div className="p-4 md:p-8 max-w-5xl">
