@@ -1,3 +1,4 @@
+import { VENTAS_STATUSES } from "@/lib/order-status";
 import type { Metadata } from "next";
 import { createClient, createAdminClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
@@ -11,7 +12,6 @@ export const metadata: Metadata = {
 };
 export const revalidate = 0;
 
-const ACTIVE_STATUSES = ["aprobado", "enviado_prod", "despachado", "delivered", "liquidado"];
 
 function diasDesde(dateStr: string | null): number | null {
   if (!dateStr) return null;
@@ -111,7 +111,7 @@ export default async function PreventistaPage() {
       .from("orders")
       .select("id, customer_id, total")
       .in("customer_id", clienteIds)
-      .in("status", ACTIVE_STATUSES)
+      .in("status", VENTAS_STATUSES)
       .gte("created_at", desdeMs)
       .lte("created_at", hastaMs);
 

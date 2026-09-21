@@ -1,8 +1,8 @@
+import { VENTAS_STATUSES } from "@/lib/order-status";
 import { NextRequest, NextResponse } from "next/server";
 import { createClient, createAdminClient } from "@/lib/supabase/server";
 import { getParametros } from "@/lib/parametros";
 
-const ACTIVE_STATUSES = ["aprobado", "enviado_prod", "despachado", "delivered", "liquidado"];
 
 const csvRow = (vals: (string | number)[]) =>
   vals.map((v) => `"${String(v).replace(/"/g, '""')}"`).join(";");
@@ -75,7 +75,7 @@ export async function GET(request: NextRequest) {
         .select("id, customer_id, total, created_at")
         .eq("channel", "b2b_mayorista")
         .in("customer_id", clienteIds)
-        .in("status", ACTIVE_STATUSES)
+        .in("status", VENTAS_STATUSES)
         .gte("created_at", yearStart)
         .lte("created_at", yearEnd)
     : { data: [] };

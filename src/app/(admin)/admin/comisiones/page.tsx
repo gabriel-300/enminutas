@@ -1,3 +1,4 @@
+import { VENTAS_STATUSES } from "@/lib/order-status";
 import { fmt } from "@/lib/format";
 import type { Metadata } from "next";
 import { createClient, createAdminClient } from "@/lib/supabase/server";
@@ -9,7 +10,6 @@ import { ComisionAcciones } from "./comision-acciones";
 export const metadata: Metadata = { title: "Comisiones — Admin En Minutas" };
 export const revalidate = 0;
 
-const ACTIVE_STATUSES = ["aprobado", "enviado_prod", "despachado", "delivered", "liquidado"];
 
 const MESES_LABEL = ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"];
 
@@ -96,7 +96,7 @@ export default async function ComisionesPage({
         .select("id, customer_id, total, created_at")
         .eq("channel", "b2b_mayorista")
         .in("customer_id", clienteIds)
-        .in("status", ACTIVE_STATUSES)
+        .in("status", VENTAS_STATUSES)
         .gte("created_at", yearStart)
         .lte("created_at", yearEnd)
     : { data: [] };
