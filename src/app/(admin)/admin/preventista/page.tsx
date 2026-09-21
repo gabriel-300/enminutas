@@ -1,5 +1,7 @@
 import { listAllUsers } from "@/lib/supabase/users";
 import { VENTAS_STATUSES } from "@/lib/order-status";
+import { cargarComisionesAnio } from "@/lib/comisiones-data";
+import { mesAR } from "@/lib/fecha";
 import type { Metadata } from "next";
 import { createClient, createAdminClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
@@ -35,16 +37,6 @@ export default async function PreventistaPage() {
   const mes = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
   const desdeMs = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
   const hastaMs = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59).toISOString();
-
-  // ── Parámetros globales para cálculo de comisión ────────────────────────
-  const { data: rawParams } = await adminClient
-    .from("parametros_globales")
-    .select("clave, valor");
-  const paramVal = (key: string, def: number) =>
-    ((rawParams ?? []) as any[]).find((p: any) => p.clave === key)?.valor ?? def;
-  const ivaPct      = paramVal("iva_pct",      0.21);
-  const comisionPct = paramVal("comision_pct", 0.15);
-  const divisorPrecio = 1 + ivaPct + comisionPct;
 
   // ── Metas de venta ───────────────────────────────────────────────────────
   // Lista de vendedores del sistema
@@ -101,11 +93,6 @@ export default async function PreventistaPage() {
 
   const clienteIds = Object.keys(clienteVendedorMap);
   let ventasMap: Record<string, number> = {};
-  // Base para el cálculo de comisión: igual a ventasMap, salvo en pedidos
-  // cobrados "sin factura" (neto, s/IVA), donde se usa lo efectivamente
-  // cobrado en vez del total con IVA — la comisión de esos pedidos se reduce
-  // en proporción a lo cobrado. "Ventas del mes" (meta, ranking) no se toca.
-  let comisionBaseMap: Record<string, number> = {};
 
   if (clienteIds.length > 0) {
     const { data: rawOrders } = await adminClient
@@ -116,27 +103,10 @@ export default async function PreventistaPage() {
       .gte("created_at", desdeMs)
       .lte("created_at", hastaMs);
 
-    const orderIds = (rawOrders ?? []).map((o: any) => o.id);
-
-    const netoSinFacturaMap: Record<string, number> = {};
-    if (orderIds.length > 0) {
-      const { data: pagosSinFactura } = await adminClient
-        .from("pagos")
-        .select("order_id, monto")
-        .in("order_id", orderIds)
-        .eq("sin_factura", true);
-      for (const p of (pagosSinFactura ?? []) as any[]) {
-        if (!p.order_id) continue;
-        netoSinFacturaMap[p.order_id] = (netoSinFacturaMap[p.order_id] ?? 0) + Number(p.monto);
-      }
-    }
-
     for (const o of (rawOrders ?? []) as any[]) {
       const vid = clienteVendedorMap[o.customer_id];
       if (!vid) continue;
-      const total = Number(o.total);
-      ventasMap[vid]      = (ventasMap[vid] ?? 0) + total;
-      comisionBaseMap[vid] = (comisionBaseMap[vid] ?? 0) + (netoSinFacturaMap[o.id] ?? total);
+      ventasMap[vid] = (ventasMap[vid] ?? 0) + Number(o.total);
     }
   }
 
@@ -221,10 +191,16 @@ export default async function PreventistaPage() {
 
   // Ventas del mes del propio vendedor (para su card de comisión)
   const ventasPropias = esVendedor ? (ventasMap[user.id] ?? 0) : 0;
-  const comisionBasePropia = esVendedor ? (comisionBaseMap[user.id] ?? 0) : 0;
-  const comisionPropiaAmt = (comisionPropiaConfig != null && comisionBasePropia > 0)
-    ? Math.round(comisionBasePropia * comisionPropiaConfig / divisorPrecio)
-    : null;
+  // Comisión del mes: mismo cálculo que /admin/comisiones (pedidos entregados en el mes, con el
+  // tope del pool de cada cliente). "Ventas del mes" de arriba sigue siendo por fecha de pedido.
+  let comisionPropiaAmt: number | null = null;
+  if (esVendedor && comisionPropiaConfig != null) {
+    const mesActual = mesAR(new Date());
+    const { agg } = await cargarComisionesAnio(Number(mesActual.slice(0, 4)));
+    const clientesMes = Object.values(agg[user.id]?.[mesActual] ?? {});
+    const suma = clientesMes.reduce((acc, c) => acc + c.comisionLive, 0);
+    comisionPropiaAmt = suma > 0 ? Math.round(suma) : null;
+  }
 
   const fmtARS = (n: number) =>
     new Intl.NumberFormat("es-AR", { style: "currency", currency: "ARS", maximumFractionDigits: 0 }).format(n);
@@ -295,7 +271,7 @@ export default async function PreventistaPage() {
                 </p>
               </div>
               <div>
-                <p className="text-xs text-neutral-400 mb-0.5">Tu comisión del mes</p>
+                <p className="text-xs text-neutral-400 mb-0.5">Tu comisión del mes <span className="text-neutral-300">· sobre pedidos entregados</span></p>
                 <p className={`text-xl font-semibold font-display tabular-nums ${comisionPropiaAmt ? "text-tierra-700" : "text-neutral-400"}`}>
                   {comisionPropiaAmt != null ? fmtARS(comisionPropiaAmt) : "—"}
                 </p>

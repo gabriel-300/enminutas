@@ -1,12 +1,9 @@
-import { calcularComisionOrden } from "@/lib/comisiones";
-import { listAllUsers } from "@/lib/supabase/users";
-import { mesValido } from "@/lib/fecha";
-import { VENTAS_STATUSES } from "@/lib/order-status";
+import { cargarComisionesAnio } from "@/lib/comisiones-data";
+import { mesAR, mesValido } from "@/lib/fecha";
 import { fmt } from "@/lib/format";
 import type { Metadata } from "next";
 import { createClient, createAdminClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
-import { getParametros } from "@/lib/parametros";
 import { MesSelector } from "./mes-selector";
 import { ComisionAcciones } from "./comision-acciones";
 
@@ -33,86 +30,14 @@ export default async function ComisionesPage({
   if (user.app_metadata?.role !== "admin") redirect("/admin/dashboard");
 
   const { mes: mesParam } = await searchParams;
-  const now = new Date();
-  const mesSel = mesValido(mesParam) ?? `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+  const mesSel = mesValido(mesParam) ?? mesAR(new Date());
   const [selYear] = mesSel.split("-").map(Number);
 
   const db = createAdminClient() as any;
-  const { iva_pct, comision_pct } = await getParametros();
 
-  // ── Vendedores (preventistas + la comercializadora) ────────────────────
-  const allUsers = (await listAllUsers()) as any[];
-  const vendedoresUsers = allUsers.filter((u: any) => u.app_metadata?.role === "vendedor");
-  const vendedorIds = vendedoresUsers.map((u: any) => u.id as string);
-
-  // Sin % configurado explícitamente = sin comisión (no se asume el default
-  // global), igual que en /admin/preventista ("Aún no tenés comisión asignada").
-  const { data: perfilesVendedores } = vendedorIds.length > 0
-    ? await db.from("profiles").select("id, comision_preventista_pct, es_comercializadora").in("id", vendedorIds)
-    : { data: [] };
-  const pctMap:            Record<string, number>  = {};
-  const pctConfiguradoMap: Record<string, boolean> = {};
-  let comercializadoraId: string | null = null;
-  for (const p of (perfilesVendedores ?? []) as any[]) {
-    pctConfiguradoMap[p.id] = p.comision_preventista_pct != null;
-    pctMap[p.id] = p.comision_preventista_pct != null ? Number(p.comision_preventista_pct) : 0;
-    if (p.es_comercializadora) comercializadoraId = p.id;
-  }
-
-  const vendedores = vendedoresUsers
-    .map((u: any) => ({
-      id:             u.id as string,
-      nombre:         (u.user_metadata?.full_name as string | undefined) ?? (u.email as string | undefined) ?? (u.id as string),
-      pct:            pctMap[u.id] ?? 0,
-      pctConfigurado: pctConfiguradoMap[u.id] ?? false,
-      esComercializadora: u.id === comercializadoraId,
-    }))
-    .sort((a: any, b: any) => (a.esComercializadora === b.esComercializadora ? a.nombre.localeCompare(b.nombre) : a.esComercializadora ? -1 : 1));
-
-  // ── Clientes B2B: vendedor asignado + % de comisión que tienen en su precio ─
-  // profiles.role no es confiable para distinguir B2B de B2C (desincronizado
-  // en producción, igual que pasa con el role de staff) — b2b_status sí lo es,
-  // se setea únicamente en el alta como cliente B2B.
-  const { data: perfilesClientes } = await db
-    .from("profiles")
-    .select("id, full_name, vendedor_id, comision_pct_override")
-    .not("b2b_status", "is", null);
-  const clienteVendedorMap: Record<string, string | null> = {};
-  const clientePoolPctMap:  Record<string, number>        = {};
-  const clienteNombreMap:   Record<string, string>        = {};
-  for (const c of (perfilesClientes ?? []) as any[]) {
-    clienteVendedorMap[c.id] = c.vendedor_id ?? null;
-    clientePoolPctMap[c.id]  = c.comision_pct_override != null ? Number(c.comision_pct_override) : comision_pct;
-    clienteNombreMap[c.id]   = c.full_name ?? "—";
-  }
-  const clienteIds = Object.keys(clienteVendedorMap);
-
-  // ── Pedidos de todo el año seleccionado ────────────────────────────────
-  const yearStart = new Date(selYear, 0, 1).toISOString();
-  const yearEnd   = new Date(selYear, 11, 31, 23, 59, 59).toISOString();
-
-  const { data: rawOrders } = clienteIds.length > 0
-    ? await db.from("orders")
-        .select("id, customer_id, total, created_at")
-        .eq("channel", "b2b_mayorista")
-        .in("customer_id", clienteIds)
-        .in("status", VENTAS_STATUSES)
-        .gte("created_at", yearStart)
-        .lte("created_at", yearEnd)
-    : { data: [] };
-  const orders = (rawOrders ?? []) as any[];
-  const orderIds = orders.map((o) => o.id);
-
-  // Pedidos cobrados "sin factura": la comisión de esos pedidos se calcula
-  // sobre lo efectivamente cobrado, no sobre el total con IVA.
-  const { data: pagosSinFactura } = orderIds.length > 0
-    ? await db.from("pagos").select("order_id, monto").in("order_id", orderIds).eq("sin_factura", true)
-    : { data: [] };
-  const netoSinFacturaMap: Record<string, number> = {};
-  for (const p of (pagosSinFactura ?? []) as any[]) {
-    if (!p.order_id) continue;
-    netoSinFacturaMap[p.order_id] = (netoSinFacturaMap[p.order_id] ?? 0) + Number(p.monto);
-  }
+  // Vendedores y comisión por vendedor × mes × cliente (criterio: pedidos entregados).
+  const { vendedores, comercializadoraId, agg: clientesPorVendedorMes } = await cargarComisionesAnio(selYear);
+  const vendedorIds = vendedores.map((v) => v.id);
 
   // ── Comisiones ya marcadas como pagadas este año (por vendedor+mes+cliente) ─
   const { data: rawPagosComision } = vendedorIds.length > 0
@@ -125,52 +50,6 @@ export default async function ComisionesPage({
   const pagoComisionMap: Record<string, PagoComisionRow> = {};
   for (const p of (rawPagosComision ?? []) as PagoComisionRow[]) {
     pagoComisionMap[`${p.vendedor_id}_${p.mes}_${p.cliente_id}`] = p;
-  }
-
-  // ── Repartir cada pedido entre el preventista asignado y la comercializadora ─
-  // Pool de comisión del cliente = lo que realmente tiene cargado en su precio
-  // (comision_pct_override, o el % global si no tiene override — así los
-  // clientes con override 0 dan comisión $0 para todos, sin reglas aparte).
-  // El preventista asignado se queda con su % (tope: el pool del cliente);
-  // la comercializadora se queda con el resto del pool.
-  // Se agrega por vendedor × mes × cliente (no solo vendedor × mes) para poder
-  // pagar cliente por cliente.
-  type ClienteMesAgg = { nombre: string; ventas: number; comisionLive: number; pct: number };
-  const clientesPorVendedorMes: Record<string, Record<string, Record<string, ClienteMesAgg>>> = {};
-  // vendedorId -> mesKey -> clienteId -> agg
-
-  function sumar(vid: string, mesKey: string, clienteId: string, ventas: number, comisionMonto: number, pctEfectivo: number) {
-    clientesPorVendedorMes[vid] ??= {};
-    clientesPorVendedorMes[vid][mesKey] ??= {};
-    const agg = (clientesPorVendedorMes[vid][mesKey][clienteId] ??= {
-      nombre: clienteNombreMap[clienteId] ?? "—", ventas: 0, comisionLive: 0, pct: pctEfectivo,
-    });
-    agg.ventas        += ventas;
-    agg.comisionLive  += comisionMonto;
-    agg.pct            = pctEfectivo;
-  }
-
-  for (const o of orders) {
-    const customerId = o.customer_id;
-    const d = new Date(o.created_at);
-    const mesKey = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
-    const total = Number(o.total);
-    const base  = netoSinFacturaMap[o.id] ?? total;
-
-    const poolPct = clientePoolPctMap[customerId] ?? comision_pct;
-
-    const assignedVid = clienteVendedorMap[customerId];
-    const assignedEsOtroQueLaComercializadora = assignedVid && assignedVid !== comercializadoraId;
-    const assignedPct = assignedEsOtroQueLaComercializadora ? (pctMap[assignedVid!] ?? 0) : 0;
-
-    const comision = calcularComisionOrden({ base, ivaPct: iva_pct, poolPct, preventistaPct: assignedPct });
-
-    if (assignedEsOtroQueLaComercializadora) {
-      sumar(assignedVid!, mesKey, customerId, total, comision.preventista, comision.preventistaPct);
-    }
-    if (comercializadoraId) {
-      sumar(comercializadoraId, mesKey, customerId, total, comision.comercializadora, comision.comercializadoraPct);
-    }
   }
 
   type ComisionClienteRow = {
@@ -235,6 +114,7 @@ export default async function ComisionesPage({
           <h1 className="text-xl md:text-2xl font-semibold font-display text-neutral-900">Comisiones</h1>
           <p className="text-sm text-neutral-500 mt-1">
             Comisión de preventistas y comercializadora, por cliente, mes y año — lo que hay que pagarles.
+            Se cuenta cuando el pedido se entrega, en el mes de la entrega (en una entrega parcial, solo lo entregado).
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -301,7 +181,7 @@ export default async function ComisionesPage({
                   )}
                 </p>
                 <p className="text-xs text-neutral-400 mt-0.5">
-                  Ventas {mesLabel}: {fmt(f.mesSelData.ventas)}
+                  Entregado {mesLabel}: {fmt(f.mesSelData.ventas)}
                   {" · "}
                   {f.esComercializadora ? (
                     <span>resto de la comisión de cada cliente (según % configurado en cada uno)</span>

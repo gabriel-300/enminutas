@@ -1,10 +1,7 @@
-import { calcularComisionOrden } from "@/lib/comisiones";
-import { listAllUsers } from "@/lib/supabase/users";
-import { mesValido, anioValido } from "@/lib/fecha";
-import { VENTAS_STATUSES } from "@/lib/order-status";
+import { cargarComisionesAnio, type ClienteMesAgg } from "@/lib/comisiones-data";
+import { mesAR, mesValido, anioValido } from "@/lib/fecha";
 import { NextRequest, NextResponse } from "next/server";
 import { createClient, createAdminClient } from "@/lib/supabase/server";
-import { getParametros } from "@/lib/parametros";
 
 
 const csvRow = (vals: (string | number)[]) =>
@@ -29,71 +26,15 @@ export async function GET(request: NextRequest) {
   }
 
   const now = new Date();
-  const anio = anioParam ?? (mesParam ? Number(mesParam.split("-")[0]) : now.getFullYear());
+  const anio = anioParam ?? (mesParam ? Number(mesParam.split("-")[0]) : Number(mesAR(now).slice(0, 4)));
 
   const db = createAdminClient() as any;
-  const { iva_pct, comision_pct } = await getParametros();
 
-  // ── Vendedores (preventistas + la comercializadora) ────────────────────
-  const allUsers = (await listAllUsers()) as any[];
-  const vendedoresUsers = allUsers.filter((u: any) => u.app_metadata?.role === "vendedor");
-  const vendedorIds = vendedoresUsers.map((u: any) => u.id as string);
-
-  // Sin % configurado explícitamente = sin comisión (no se asume el default global).
-  const { data: perfilesVendedores } = vendedorIds.length > 0
-    ? await db.from("profiles").select("id, comision_preventista_pct, es_comercializadora").in("id", vendedorIds)
-    : { data: [] };
-  const pctMap: Record<string, number> = {};
-  let comercializadoraId: string | null = null;
-  for (const p of (perfilesVendedores ?? []) as any[]) {
-    pctMap[p.id] = p.comision_preventista_pct != null ? Number(p.comision_preventista_pct) : 0;
-    if (p.es_comercializadora) comercializadoraId = p.id;
-  }
-
+  // Vendedores y comisión por vendedor × mes × cliente (criterio: pedidos entregados).
+  const { vendedores, agg } = await cargarComisionesAnio(anio);
+  const vendedorIds = vendedores.map((v) => v.id);
   const vendedorNombre: Record<string, string> = {};
-  for (const u of vendedoresUsers) {
-    vendedorNombre[u.id] = (u.user_metadata?.full_name as string | undefined) ?? u.email ?? u.id;
-  }
-
-  // ── Clientes B2B: vendedor asignado + % que tienen cargado en su precio ─
-  const { data: perfilesClientes } = await db
-    .from("profiles")
-    .select("id, full_name, vendedor_id, comision_pct_override")
-    .not("b2b_status", "is", null);
-  const clienteVendedorMap: Record<string, string | null> = {};
-  const clientePoolPctMap:  Record<string, number>        = {};
-  const clienteNombreMap:   Record<string, string>        = {};
-  for (const c of (perfilesClientes ?? []) as any[]) {
-    clienteVendedorMap[c.id] = c.vendedor_id ?? null;
-    clientePoolPctMap[c.id]  = c.comision_pct_override != null ? Number(c.comision_pct_override) : comision_pct;
-    clienteNombreMap[c.id]   = c.full_name ?? "—";
-  }
-  const clienteIds = Object.keys(clienteVendedorMap);
-
-  // ── Pedidos del año ─────────────────────────────────────────────────────
-  const yearStart = new Date(anio, 0, 1).toISOString();
-  const yearEnd   = new Date(anio, 11, 31, 23, 59, 59).toISOString();
-
-  const { data: rawOrders } = clienteIds.length > 0
-    ? await db.from("orders")
-        .select("id, customer_id, total, created_at")
-        .eq("channel", "b2b_mayorista")
-        .in("customer_id", clienteIds)
-        .in("status", VENTAS_STATUSES)
-        .gte("created_at", yearStart)
-        .lte("created_at", yearEnd)
-    : { data: [] };
-  const orders = (rawOrders ?? []) as any[];
-  const orderIds = orders.map((o) => o.id);
-
-  const { data: pagosSinFactura } = orderIds.length > 0
-    ? await db.from("pagos").select("order_id, monto").in("order_id", orderIds).eq("sin_factura", true)
-    : { data: [] };
-  const netoSinFacturaMap: Record<string, number> = {};
-  for (const p of (pagosSinFactura ?? []) as any[]) {
-    if (!p.order_id) continue;
-    netoSinFacturaMap[p.order_id] = (netoSinFacturaMap[p.order_id] ?? 0) + Number(p.monto);
-  }
+  for (const v of vendedores) vendedorNombre[v.id] = v.nombre;
 
   const { data: rawPagosComision } = vendedorIds.length > 0
     ? await db.from("comisiones_pagos").select("*").in("vendedor_id", vendedorIds).like("mes", `${anio}-%`)
@@ -101,46 +42,6 @@ export async function GET(request: NextRequest) {
   const pagoComisionMap: Record<string, any> = {};
   for (const p of (rawPagosComision ?? []) as any[]) {
     pagoComisionMap[`${p.vendedor_id}_${p.mes}_${p.cliente_id}`] = p;
-  }
-
-  // ── Repartir cada pedido: preventista asignado (tope: pool del cliente) ─
-  // + comercializadora (el resto del pool). Ver comentario en la página
-  // /admin/comisiones para el detalle del criterio.
-  type MesAgg = { ventas: number; comision: number };
-  const aggMap: Record<string, Record<string, MesAgg>> = {};
-  type ClienteMesAgg = { nombre: string; ventas: number; comision: number };
-  const clienteMesMap: Record<string, Record<string, ClienteMesAgg>> = {}; // `${vid}_${mes}` -> clienteId -> agg
-
-  for (const o of orders) {
-    const customerId = o.customer_id;
-    const d = new Date(o.created_at);
-    const mesKey = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
-    const total = Number(o.total);
-    const base  = netoSinFacturaMap[o.id] ?? total;
-
-    const poolPct = clientePoolPctMap[customerId] ?? comision_pct;
-
-    const assignedVid = clienteVendedorMap[customerId];
-    const assignedEsOtroQueLaComercializadora = assignedVid && assignedVid !== comercializadoraId;
-    const assignedPct = assignedEsOtroQueLaComercializadora ? (pctMap[assignedVid!] ?? 0) : 0;
-
-    const comision = calcularComisionOrden({ base, ivaPct: iva_pct, poolPct, preventistaPct: assignedPct });
-
-    function sumar(vid: string, comisionMonto: number) {
-      aggMap[vid] ??= {};
-      aggMap[vid][mesKey] ??= { ventas: 0, comision: 0 };
-      aggMap[vid][mesKey].ventas   += total;
-      aggMap[vid][mesKey].comision += comisionMonto;
-
-      const ckey = `${vid}_${mesKey}`;
-      clienteMesMap[ckey] ??= {};
-      clienteMesMap[ckey][customerId] ??= { nombre: clienteNombreMap[customerId] ?? "—", ventas: 0, comision: 0 };
-      clienteMesMap[ckey][customerId].ventas   += total;
-      clienteMesMap[ckey][customerId].comision += comisionMonto;
-    }
-
-    if (assignedEsOtroQueLaComercializadora) sumar(assignedVid!, comision.preventista);
-    if (comercializadoraId) sumar(comercializadoraId, comision.comercializadora);
   }
 
   function comisionDeCliente(vid: string, mesKey: string, clienteId: string, live: number) {
@@ -153,16 +54,16 @@ export async function GET(request: NextRequest) {
 
   if (mesParam && /^\d{4}-\d{2}$/.test(mesParam)) {
     // ── Detalle por cliente, un mes ──────────────────────────────────────
-    rows = [csvRow(["Vendedor", "Cliente", "Ventas mes", "Comisión", "Estado", "Fecha de pago"])];
+    rows = [csvRow(["Vendedor", "Cliente", "Entregado mes", "Comisión", "Estado", "Fecha de pago"])];
 
     for (const vid of vendedorIds) {
-      const clientes = clienteMesMap[`${vid}_${mesParam}`] ?? {};
+      const clientes = agg[vid]?.[mesParam] ?? {};
       const nombre = vendedorNombre[vid] ?? vid;
       const clienteEntries = Object.entries(clientes) as [string, ClienteMesAgg][];
       if (clienteEntries.length === 0) continue;
 
       for (const [clienteId, c] of clienteEntries) {
-        const { monto, pagada, fechaPago } = comisionDeCliente(vid, mesParam, clienteId, c.comision);
+        const { monto, pagada, fechaPago } = comisionDeCliente(vid, mesParam, clienteId, c.comisionLive);
         rows.push(csvRow([
           nombre, c.nombre,
           c.ventas.toFixed(2), monto.toFixed(2),
@@ -180,9 +81,9 @@ export async function GET(request: NextRequest) {
       const montos: number[] = [];
       for (let i = 0; i < 12; i++) {
         const mesKey = `${anio}-${String(i + 1).padStart(2, "0")}`;
-        const clientes = clienteMesMap[`${vid}_${mesKey}`] ?? {};
+        const clientes = agg[vid]?.[mesKey] ?? {};
         const montoMes = Object.entries(clientes).reduce(
-          (s, [clienteId, c]) => s + comisionDeCliente(vid, mesKey, clienteId, (c as ClienteMesAgg).comision).monto,
+          (s, [clienteId, c]) => s + comisionDeCliente(vid, mesKey, clienteId, (c as ClienteMesAgg).comisionLive).monto,
           0,
         );
         montos.push(montoMes);

@@ -42,6 +42,16 @@ export function ahoraAR(): Date {
   return new Date(new Date().toLocaleString("en-US", { timeZone: TZ }));
 }
 
+/** "YYYY-MM" del instante dado, en hora Argentina (no la del servidor, que en Vercel es UTC). */
+export function mesAR(date: string | Date): string {
+  return new Date(date).toLocaleDateString("en-CA", { timeZone: TZ }).slice(0, 7);
+}
+
+/** Límites ISO de un año calendario en hora Argentina (UTC-3 fijo, sin horario de verano). */
+export function rangoAnioAR(anio: number): { desde: string; hasta: string } {
+  return { desde: `${anio}-01-01T00:00:00-03:00`, hasta: `${anio}-12-31T23:59:59.999-03:00` };
+}
+
 /** "YYYY-MM" con mes 01–12, o null. Los ?mes= vienen de la URL: nunca asumir el formato. */
 export function mesValido(mes: string | null | undefined): string | null {
   return mes && /^\d{4}-(0[1-9]|1[0-2])$/.test(mes) ? mes : null;
