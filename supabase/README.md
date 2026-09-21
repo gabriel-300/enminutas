@@ -11,8 +11,8 @@ Se aplican con `apply_migration` (MCP de Supabase) usando el mismo nombre, así 
 ## `legacy/`
 
 Scripts históricos (`002`–`048`, `combined_migration.sql`, `cms-nuevos-campos.sql`) que se corrían a mano en el SQL Editor,
-antes de usar `supabase/migrations/`. Se conservan sólo como referencia: **no volver a ejecutarlos**. Varios son seeds/resets de
-datos demo, y `048_limpiar_pedidos.sql` borra todos los pedidos.
+antes de usar `supabase/migrations/`. Se conservan sólo como referencia: **no volver a ejecutarlos**. Varios son seeds de datos demo.
+Los scripts de borrado (`009_reset_demo_data`, `010_seed_nuevos_usuarios`, `048_limpiar_pedidos`) se eliminaron; siguen en el historial de git.
 
 ## Estado conocido (2026-09-21)
 
