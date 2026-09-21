@@ -1,3 +1,4 @@
+import { calcularComisionOrden } from "@/lib/comisiones";
 import { listAllUsers } from "@/lib/supabase/users";
 import { mesValido } from "@/lib/fecha";
 import { VENTAS_STATUSES } from "@/lib/order-status";
@@ -156,24 +157,19 @@ export default async function ComisionesPage({
     const total = Number(o.total);
     const base  = netoSinFacturaMap[o.id] ?? total;
 
-    const poolPct       = clientePoolPctMap[customerId] ?? comision_pct;
-    const divisorCliente = 1 + iva_pct + poolPct;
-    const comisionTotalOrden = poolPct > 0 ? (base * poolPct) / divisorCliente : 0;
+    const poolPct = clientePoolPctMap[customerId] ?? comision_pct;
 
     const assignedVid = clienteVendedorMap[customerId];
     const assignedEsOtroQueLaComercializadora = assignedVid && assignedVid !== comercializadoraId;
     const assignedPct = assignedEsOtroQueLaComercializadora ? (pctMap[assignedVid!] ?? 0) : 0;
-    const preventistaPctEfectivo = Math.min(assignedPct, poolPct);
 
-    const comisionPreventista = poolPct > 0 ? (base * preventistaPctEfectivo) / divisorCliente : 0;
-    const comisionResto       = comisionTotalOrden - comisionPreventista;
+    const comision = calcularComisionOrden({ base, ivaPct: iva_pct, poolPct, preventistaPct: assignedPct });
 
     if (assignedEsOtroQueLaComercializadora) {
-      sumar(assignedVid!, mesKey, customerId, total, comisionPreventista, preventistaPctEfectivo);
+      sumar(assignedVid!, mesKey, customerId, total, comision.preventista, comision.preventistaPct);
     }
     if (comercializadoraId) {
-      const pctResto = Math.max(poolPct - preventistaPctEfectivo, 0);
-      sumar(comercializadoraId, mesKey, customerId, total, comisionResto, pctResto);
+      sumar(comercializadoraId, mesKey, customerId, total, comision.comercializadora, comision.comercializadoraPct);
     }
   }
 
