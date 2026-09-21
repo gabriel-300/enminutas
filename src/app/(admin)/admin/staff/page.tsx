@@ -1,3 +1,4 @@
+import { listAllUsers } from "@/lib/supabase/users";
 import type { Metadata } from "next";
 import { createClient, createAdminClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
@@ -16,17 +17,20 @@ export default async function AdminStaffPage() {
 
   const adminClient = createAdminClient();
   const [
-    { data: { users }, error },
+    { users, error },
     { data: zonasRaw },
   ] = await Promise.all([
-    adminClient.auth.admin.listUsers({ perPage: 1000 }),
+    listAllUsers().then(
+      (users) => ({ users, error: null as string | null }),
+      (e: Error) => ({ users: [], error: e.message }),
+    ),
     (adminClient as any).from("delivery_zones").select("id, name").order("name"),
   ]);
 
   if (error) {
     return (
       <div className="p-8 text-sm text-danger">
-        Error al cargar usuarios: {error.message}
+        Error al cargar usuarios: {error}
       </div>
     );
   }

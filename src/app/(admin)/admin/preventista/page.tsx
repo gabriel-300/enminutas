@@ -1,3 +1,4 @@
+import { listAllUsers } from "@/lib/supabase/users";
 import { VENTAS_STATUSES } from "@/lib/order-status";
 import type { Metadata } from "next";
 import { createClient, createAdminClient } from "@/lib/supabase/server";
@@ -47,7 +48,7 @@ export default async function PreventistaPage() {
 
   // ── Metas de venta ───────────────────────────────────────────────────────
   // Lista de vendedores del sistema
-  const { data: { users: allUsers } } = await adminClient.auth.admin.listUsers({ perPage: 1000 });
+  const allUsers = await listAllUsers();
   const vendedores = (allUsers ?? [])
     .filter((u: any) => u.app_metadata?.role === "vendedor")
     .map((u: any) => ({

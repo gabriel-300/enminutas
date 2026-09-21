@@ -1,4 +1,5 @@
 import { createAdminClient } from "@/lib/supabase/server";
+import { listAllUsers } from "@/lib/supabase/users";
 import { ahoraAR } from "@/lib/fecha";
 import { pctChange } from "../_lib/helpers";
 import { VENTAS_STATUSES } from "@/lib/order-status";
@@ -27,7 +28,7 @@ export async function loadAdminDashboard() {
     { data: prodAtascados },
     { data: b2cSinPago },
     { count: productosSinDatosB2B },
-    { data: { users } },
+    users,
     { data: ventasConVendedor },
   ] = await Promise.all([
     db.from("orders").select("*", { count: "exact", head: true })
@@ -89,7 +90,7 @@ export async function loadAdminDashboard() {
       .eq("is_active", true)
       .is("costo", null),
 
-    adminClient.auth.admin.listUsers({ perPage: 1000 }),
+    listAllUsers(),
 
     // Ventas del mes por cliente B2B (para ranking preventistas + desglose por cliente)
     db.from("orders")

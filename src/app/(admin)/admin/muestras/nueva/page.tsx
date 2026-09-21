@@ -1,3 +1,4 @@
+import { listAllUsers } from "@/lib/supabase/users";
 import type { Metadata } from "next";
 import { createClient, createAdminClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
@@ -20,7 +21,7 @@ export default async function NuevaMuestraPage() {
   // tampoco es un valor válido del enum, así que este filtro no devolvía
   // ningún cliente nunca. Se identifica clientes reales via app_metadata,
   // igual que el resto de la app.
-  const { data: { users: allUsers } } = await db.auth.admin.listUsers({ perPage: 1000 });
+  const allUsers = await listAllUsers();
   const clienteIds = (allUsers ?? [])
     .filter((u: any) => ["customer_b2b", "customer_b2c"].includes(u.app_metadata?.role))
     .map((u: any) => u.id as string);

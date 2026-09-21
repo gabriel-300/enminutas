@@ -1,3 +1,4 @@
+import { listAllUsers } from "@/lib/supabase/users";
 import { mesValido, anioValido } from "@/lib/fecha";
 import { VENTAS_STATUSES } from "@/lib/order-status";
 import { NextRequest, NextResponse } from "next/server";
@@ -33,8 +34,7 @@ export async function GET(request: NextRequest) {
   const { iva_pct, comision_pct } = await getParametros();
 
   // ── Vendedores (preventistas + la comercializadora) ────────────────────
-  const { data: listUsersData } = await db.auth.admin.listUsers({ perPage: 1000 });
-  const allUsers = (listUsersData?.users ?? []) as any[];
+  const allUsers = (await listAllUsers()) as any[];
   const vendedoresUsers = allUsers.filter((u: any) => u.app_metadata?.role === "vendedor");
   const vendedorIds = vendedoresUsers.map((u: any) => u.id as string);
 

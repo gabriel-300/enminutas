@@ -1,4 +1,5 @@
 import { createAdminClient } from "@/lib/supabase/server";
+import { listAllUsers } from "@/lib/supabase/users";
 import { VENTAS_STATUSES } from "@/lib/order-status";
 import { mesValido } from "@/lib/fecha";
 
@@ -25,7 +26,7 @@ export async function loadReportes(mes: string | undefined) {
   const [
     { data: rawCur },
     { data: rawPrev },
-    { data: { users: allUsers } },
+    allUsers,
     { data: rawDeuda },
   ] = await Promise.all([
     db.from("orders")
@@ -44,7 +45,7 @@ export async function loadReportes(mes: string | undefined) {
       .gte("created_at", prevDesde)
       .lte("created_at", prevHasta),
 
-    db.auth.admin.listUsers({ perPage: 1000 }),
+    listAllUsers(),
 
     // Deuda en cuenta corriente: pedidos no liquidados ni cancelados
     db.from("orders")

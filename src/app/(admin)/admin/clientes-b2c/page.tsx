@@ -1,3 +1,4 @@
+import { listAllUsers } from "@/lib/supabase/users";
 import type { Metadata } from "next";
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
@@ -12,11 +13,9 @@ export default async function ClientesB2CPage() {
   if (!user) redirect("/login");
 
   // Traer usuarios sin rol de staff ni B2B (clientes B2C)
-  const { data: authUsers } = await (await import("@/lib/supabase/server"))
-    .createAdminClient()
-    .auth.admin.listUsers({ perPage: 200 });
+  const authUsers = await listAllUsers();
 
-  const clientes = (authUsers?.users ?? [])
+  const clientes = authUsers
     .filter((u) => {
       const role = u.app_metadata?.role;
       return !role || role === "customer_b2c";

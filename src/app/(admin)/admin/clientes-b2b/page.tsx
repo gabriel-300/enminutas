@@ -1,3 +1,4 @@
+import { listAllUsers } from "@/lib/supabase/users";
 import type { Metadata } from "next";
 import { createClient, createAdminClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
@@ -16,11 +17,11 @@ export default async function AdminClientesBb2Page() {
   const adminClient = createAdminClient();
 
   const [
-    { data: { users } },
+    users,
     { data: zonasRaw },
     { data: canalesRaw },
   ] = await Promise.all([
-    adminClient.auth.admin.listUsers({ perPage: 1000 }),
+    listAllUsers(),
     (adminClient as any).from("delivery_zones").select("id, name").order("name"),
     (adminClient as any).from("canales").select("id, slug, nombre, descuento_pct").eq("activo", true).order("sort_order"),
   ]);

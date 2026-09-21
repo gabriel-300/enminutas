@@ -1,3 +1,4 @@
+import { listAllUsers } from "@/lib/supabase/users";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { createClient, createAdminClient } from "@/lib/supabase/server";
@@ -46,9 +47,9 @@ export default async function AdminPedidosPage() {
     }
   }
 
-  const [{ data: rawOrders, error }, { data: { users } }] = await Promise.all([
+  const [{ data: rawOrders, error }, users] = await Promise.all([
     ordersQuery,
-    adminClient.auth.admin.listUsers({ perPage: 1000 }),
+    listAllUsers(),
   ]);
 
   if (error) {
