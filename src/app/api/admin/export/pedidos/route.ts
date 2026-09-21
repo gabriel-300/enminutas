@@ -1,3 +1,4 @@
+import { mesValido } from "@/lib/fecha";
 import { NextRequest, NextResponse } from "next/server";
 import { createClient, createAdminClient } from "@/lib/supabase/server";
 
@@ -13,8 +14,13 @@ export async function GET(request: NextRequest) {
   }
 
   const { searchParams } = request.nextUrl;
-  const mes   = searchParams.get("mes");   // "2026-05"
-  const canal = searchParams.get("canal"); // "b2b_mayorista" | "b2c_nacional" | null = todos
+  const mesRaw = searchParams.get("mes");  // "2026-05"
+  const mes    = mesValido(mesRaw);
+  const canal  = searchParams.get("canal"); // "b2b_mayorista" | "b2c_nacional" | null = todos
+
+  if (mesRaw && !mes) {
+    return NextResponse.json({ error: "Parámetro mes inválido (formato YYYY-MM)" }, { status: 400 });
+  }
 
   const db = createAdminClient() as any;
 

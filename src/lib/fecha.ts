@@ -41,3 +41,13 @@ export function fmtHora(date: string | Date): string {
 export function ahoraAR(): Date {
   return new Date(new Date().toLocaleString("en-US", { timeZone: TZ }));
 }
+
+/** "YYYY-MM" con mes 01–12, o null. Los ?mes= vienen de la URL: nunca asumir el formato. */
+export function mesValido(mes: string | null | undefined): string | null {
+  return mes && /^\d{4}-(0[1-9]|1[0-2])$/.test(mes) ? mes : null;
+}
+
+/** Año de 4 dígitos, o null. */
+export function anioValido(anio: string | null | undefined): number | null {
+  return anio && /^\d{4}$/.test(anio) ? Number(anio) : null;
+}

@@ -1,3 +1,4 @@
+import { mesValido, anioValido } from "@/lib/fecha";
 import { VENTAS_STATUSES } from "@/lib/order-status";
 import { NextRequest, NextResponse } from "next/server";
 import { createClient, createAdminClient } from "@/lib/supabase/server";
@@ -16,15 +17,17 @@ export async function GET(request: NextRequest) {
   }
 
   const { searchParams } = request.nextUrl;
-  const mesParam  = searchParams.get("mes");   // 'YYYY-MM'
-  const anioParam = searchParams.get("anio");  // 'YYYY'
+  const mesRaw    = searchParams.get("mes");   // 'YYYY-MM'
+  const anioRaw   = searchParams.get("anio");  // 'YYYY'
+  const mesParam  = mesValido(mesRaw);
+  const anioParam = anioValido(anioRaw);
+
+  if ((mesRaw && !mesParam) || (anioRaw && anioParam === null)) {
+    return NextResponse.json({ error: "Parámetros inválidos (mes: YYYY-MM, anio: YYYY)" }, { status: 400 });
+  }
 
   const now = new Date();
-  const anio = anioParam
-    ? Number(anioParam)
-    : mesParam
-      ? Number(mesParam.split("-")[0])
-      : now.getFullYear();
+  const anio = anioParam ?? (mesParam ? Number(mesParam.split("-")[0]) : now.getFullYear());
 
   const db = createAdminClient() as any;
   const { iva_pct, comision_pct } = await getParametros();

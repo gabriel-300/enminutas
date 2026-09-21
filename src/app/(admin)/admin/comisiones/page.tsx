@@ -1,3 +1,4 @@
+import { mesValido } from "@/lib/fecha";
 import { VENTAS_STATUSES } from "@/lib/order-status";
 import { fmt } from "@/lib/format";
 import type { Metadata } from "next";
@@ -31,9 +32,7 @@ export default async function ComisionesPage({
 
   const { mes: mesParam } = await searchParams;
   const now = new Date();
-  const mesSel = mesParam && /^\d{4}-\d{2}$/.test(mesParam)
-    ? mesParam
-    : `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+  const mesSel = mesValido(mesParam) ?? `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
   const [selYear] = mesSel.split("-").map(Number);
 
   const db = createAdminClient() as any;

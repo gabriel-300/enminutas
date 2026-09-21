@@ -1,3 +1,4 @@
+import { mesValido } from "@/lib/fecha";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { createClient, createAdminClient } from "@/lib/supabase/server";
@@ -28,7 +29,7 @@ export default async function HistorialProduccionPage({
 }) {
   const sp = await searchParams;
   const now = new Date();
-  const mesParam = sp.mes ?? `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+  const mesParam = mesValido(sp.mes) ?? `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
   const [yearStr, monthStr] = mesParam.split("-");
   const year  = parseInt(yearStr, 10);
   const month = parseInt(monthStr, 10);

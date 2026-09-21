@@ -1,3 +1,4 @@
+import { mesValido } from "@/lib/fecha";
 import { fmt } from "@/lib/format";
 import type { Metadata } from "next";
 import Link from "next/link";
@@ -29,7 +30,7 @@ export default async function FacturacionPage({
   const db = createAdminClient() as any;
 
   const now   = new Date();
-  const mes   = sp.mes ?? `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+  const mes   = mesValido(sp.mes) ?? `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
   const [year, month] = mes.split("-").map(Number);
   const desde = `${year}-${String(month).padStart(2, "0")}-01`;
   const hasta = new Date(year, month, 1).toISOString().split("T")[0];
