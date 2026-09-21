@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { createClient, createAdminClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
+import type { OrderStatus } from "@/lib/order-status";
 import { ObjetivosClient } from "./objetivos-client";
 
 export const metadata: Metadata = { title: "Objetivos de ventas — Admin" };
@@ -8,7 +9,7 @@ export const revalidate = 0;
 
 const CANALES = ["b2b_mayorista", "b2c_nacional", "pedido_ya_local"] as const;
 
-const ACTIVE_STATUSES = [
+const ACTIVE_STATUSES: OrderStatus[] = [
   "paid", "preparing", "ready", "in_delivery",
   "shipped", "delivered", "liquidado", "entrega_parcial",
 ];
@@ -24,7 +25,7 @@ export default async function ObjetivosPage() {
   if (!user) redirect("/login");
   if (user.app_metadata?.role !== "admin") redirect("/admin/dashboard");
 
-  const db = createAdminClient() as any;
+  const db = createAdminClient();
 
   // Últimos 6 meses + mes actual
   const hoy   = new Date();
@@ -40,7 +41,7 @@ export default async function ObjetivosPage() {
   // Pedidos reales en el rango
   const { data: ordenes } = await db
     .from("orders")
-    .select("total_amount, channel, created_at")
+    .select("total, channel, created_at")
     .in("status", ACTIVE_STATUSES)
     .gte("created_at", fechaDesde);
 
@@ -62,7 +63,7 @@ export default async function ObjetivosPage() {
     const anio = d.getFullYear();
     const mes  = d.getMonth() + 1;
     const key  = `${anio}-${mes}-${o.channel}`;
-    realesMap.set(key, (realesMap.get(key) ?? 0) + Number(o.total_amount ?? 0));
+    realesMap.set(key, (realesMap.get(key) ?? 0) + Number(o.total ?? 0));
   }
 
   const meses = periodos.map(({ anio, mes }) => {
