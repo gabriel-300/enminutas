@@ -1,3 +1,4 @@
+import { fmt } from "@/lib/format";
 import type { Metadata } from "next";
 import { createClient, createAdminClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
@@ -6,9 +7,6 @@ import { ExportDropdown } from "@/components/admin/export-dropdown";
 
 export const metadata: Metadata = { title: "Reportes — Admin En Minutas" };
 export const revalidate = 0;
-
-const fmt = (n: number) =>
-  new Intl.NumberFormat("es-AR", { style: "currency", currency: "ARS", maximumFractionDigits: 0 }).format(n);
 
 const fmtK = (n: number) => {
   if (n >= 1_000_000) return `$${(n / 1_000_000).toFixed(1)}M`;

@@ -1,3 +1,4 @@
+import { fmt } from "@/lib/format";
 import type { Metadata } from "next";
 import { createClient, createAdminClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
@@ -5,9 +6,6 @@ import { LiquidacionesClient } from "./liquidaciones-client";
 
 export const metadata: Metadata = { title: "Liquidaciones IDEIA — Admin" };
 export const revalidate = 0;
-
-const fmt = (n: number) =>
-  new Intl.NumberFormat("es-AR", { style: "currency", currency: "ARS", maximumFractionDigits: 0 }).format(n);
 
 export default async function LiquidacionesPage() {
   const supabase = await createClient();

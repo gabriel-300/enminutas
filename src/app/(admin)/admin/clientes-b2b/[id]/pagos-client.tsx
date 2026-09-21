@@ -1,5 +1,6 @@
 "use client";
 
+import { fmt } from "@/lib/format";
 import { useState, useTransition } from "react";
 import { registrarPago, registrarPagoPedidos, eliminarPago } from "../pagos-actions";
 import { fmtFechaSolo } from "@/lib/fecha";
@@ -33,9 +34,6 @@ const METODOS = [
 ];
 
 type Imputacion = "pedido" | "factura" | "cuenta";
-
-const fmt = (n: number) =>
-  new Intl.NumberFormat("es-AR", { style: "currency", currency: "ARS", maximumFractionDigits: 0 }).format(n);
 
 const hoy = () => new Date().toISOString().slice(0, 10);
 

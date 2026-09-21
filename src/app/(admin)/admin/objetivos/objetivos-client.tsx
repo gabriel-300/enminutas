@@ -1,11 +1,9 @@
 "use client";
 
+import { fmt } from "@/lib/format";
 import { useState, useTransition } from "react";
 import { guardarObjetivo } from "./actions";
 import { Edit2, Check, X } from "lucide-react";
-
-const fmt = (n: number) =>
-  new Intl.NumberFormat("es-AR", { style: "currency", currency: "ARS", maximumFractionDigits: 0 }).format(n);
 
 const CANAL_LABEL: Record<string, string> = {
   b2b_mayorista:  "B2B Mayorista",

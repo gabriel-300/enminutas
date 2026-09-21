@@ -1,5 +1,6 @@
 "use client";
 
+import { fmt2 as fmt } from "@/lib/format";
 import { useState, useTransition, useId } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
@@ -13,9 +14,6 @@ const today = () => new Date().toISOString().slice(0, 10);
 const emptyItem = (): DevolucionItemInput & { _key: number } => ({
   _key: Math.random(), descripcion: "", cantidad: 1, precio_unitario: 0,
 });
-
-const fmt = (n: number) =>
-  new Intl.NumberFormat("es-AR", { style: "currency", currency: "ARS", maximumFractionDigits: 2 }).format(n);
 
 export function NuevaDevolucionClient({
   clientes,

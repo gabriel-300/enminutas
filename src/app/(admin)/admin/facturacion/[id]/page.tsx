@@ -1,3 +1,4 @@
+import { fmt2 as fmt } from "@/lib/format";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { createClient, createAdminClient } from "@/lib/supabase/server";
@@ -7,9 +8,6 @@ import { FacturaActions } from "./factura-actions";
 
 export const metadata: Metadata = { title: "Factura — Admin" };
 export const revalidate = 0;
-
-const fmt = (n: number) =>
-  new Intl.NumberFormat("es-AR", { style: "currency", currency: "ARS", maximumFractionDigits: 2 }).format(n);
 
 const ESTADO_CFG: Record<string, { label: string; bg: string; color: string }> = {
   borrador: { label: "Borrador", bg: "#f5f5f5", color: "#737373" },

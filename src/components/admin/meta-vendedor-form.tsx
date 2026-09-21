@@ -1,10 +1,8 @@
 "use client";
 
+import { fmt } from "@/lib/format";
 import { useState, useTransition } from "react";
 import { guardarMeta } from "@/app/(admin)/admin/preventista/actions";
-
-const fmt = (n: number) =>
-  new Intl.NumberFormat("es-AR", { style: "currency", currency: "ARS", maximumFractionDigits: 0 }).format(n);
 
 function BarMeta({ actual, objetivo }: { actual: number; objetivo: number }) {
   const pct = objetivo > 0 ? Math.min((actual / objetivo) * 100, 100) : 0;

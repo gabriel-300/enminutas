@@ -1,10 +1,8 @@
 "use client";
 
+import { fmt } from "@/lib/format";
 import { useState, useTransition, useRef, useEffect } from "react";
 import { actualizarCostoProducto } from "./actions";
-
-const fmt = (n: number) =>
-  new Intl.NumberFormat("es-AR", { style: "currency", currency: "ARS", maximumFractionDigits: 0 }).format(n);
 
 type Props = {
   productId:        string;

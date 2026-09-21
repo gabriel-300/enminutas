@@ -1,3 +1,4 @@
+import { fmt } from "@/lib/format";
 import type { Metadata } from "next";
 import { createClient, createAdminClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
@@ -46,9 +47,6 @@ const IC = {
 };
 
 const ACTIVE_STATUSES = ["aprobado", "enviado_prod", "despachado", "en_distribucion", "entrega_parcial", "delivered", "liquidado"];
-
-const fmt = (n: number) =>
-  new Intl.NumberFormat("es-AR", { style: "currency", currency: "ARS", maximumFractionDigits: 0 }).format(n);
 
 const fmtK = (n: number) => {
   if (n >= 1_000_000) return `$${(n / 1_000_000).toFixed(1)}M`;

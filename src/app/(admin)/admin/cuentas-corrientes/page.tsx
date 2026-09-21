@@ -1,3 +1,4 @@
+import { fmt } from "@/lib/format";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { createClient, createAdminClient } from "@/lib/supabase/server";
@@ -6,9 +7,6 @@ import { AlertCircle, TrendingUp, Users } from "lucide-react";
 
 export const metadata: Metadata = { title: "Cuentas Corrientes — Admin" };
 export const revalidate = 0;
-
-const fmt = (n: number) =>
-  new Intl.NumberFormat("es-AR", { style: "currency", currency: "ARS", maximumFractionDigits: 0 }).format(n);
 
 function saldoColor(saldo: number, limite: number) {
   if (saldo <= 0) return { text: "text-emerald-600", bg: "bg-emerald-50" };

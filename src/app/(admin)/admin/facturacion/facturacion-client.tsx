@@ -1,5 +1,6 @@
 "use client";
 
+import { fmt } from "@/lib/format";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { FileText } from "lucide-react";
@@ -44,9 +45,6 @@ function numeroCmp(tipo: string, pv: number, numero: number | null) {
   if (!numero) return "—";
   return `${tipo} ${String(pv).padStart(4, "0")}-${String(numero).padStart(8, "0")}`;
 }
-
-const fmt = (n: number) =>
-  new Intl.NumberFormat("es-AR", { style: "currency", currency: "ARS", maximumFractionDigits: 0 }).format(n);
 
 const ESTADOS = ["todas", "borrador", "emitida", "cobrada", "anulada"];
 

@@ -1,5 +1,6 @@
 "use client";
 
+import { fmt } from "@/lib/format";
 import { useState } from "react";
 import Link from "next/link";
 import { ClienteContactoPanel } from "./cliente-contacto";
@@ -29,9 +30,6 @@ function BadgeDias({ dias }: { dias: number | null }) {
   if (dias > 15) return <span className="px-2 py-0.5 rounded-full text-xs font-semibold bg-warning-bg text-warning">{dias}d sin comprar</span>;
   return <span className="px-2 py-0.5 rounded-full text-xs font-semibold bg-success-bg text-success">{dias}d</span>;
 }
-
-const fmt = (n: number) =>
-  new Intl.NumberFormat("es-AR", { style: "currency", currency: "ARS", maximumFractionDigits: 0 }).format(n);
 
 export function PreventistaClientesList({
   clientes,

@@ -1,5 +1,6 @@
 "use client";
 
+import { fmt2 as fmt } from "@/lib/format";
 import { useState, useTransition, useId } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
@@ -35,9 +36,6 @@ const emptyItem = (): FacturaItemInput => ({
 });
 
 const r2 = (n: number) => Math.round(n * 100) / 100;
-const fmt = (n: number) =>
-  new Intl.NumberFormat("es-AR", { style: "currency", currency: "ARS", maximumFractionDigits: 2 }).format(n);
-
 export function NuevaFacturaClient({ clientes, productos }: { clientes: Cliente[]; productos: Producto[] }) {
   const router  = useRouter();
   const uid     = useId();

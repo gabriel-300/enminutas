@@ -1,5 +1,6 @@
 "use client";
 
+import { fmt } from "@/lib/format";
 import { useState, useTransition } from "react";
 import {
   agregarDireccion,
@@ -22,9 +23,6 @@ type Direccion = {
 };
 
 const inputCls = "w-full px-3 py-2 text-sm border border-neutral-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-tierra-700/20 disabled:opacity-50";
-
-const fmt = (n: number) =>
-  new Intl.NumberFormat("es-AR", { style: "currency", currency: "ARS", maximumFractionDigits: 0 }).format(n);
 
 function DireccionForm({
   profileId,

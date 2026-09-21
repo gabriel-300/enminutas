@@ -1,10 +1,8 @@
 "use client";
 
+import { fmt } from "@/lib/format";
 import { useState, useTransition } from "react";
 import { crearLiquidacion, marcarPagada, eliminarLiquidacion } from "./actions";
-
-const fmt = (n: number) =>
-  new Intl.NumberFormat("es-AR", { style: "currency", currency: "ARS", maximumFractionDigits: 0 }).format(n);
 
 const fmtDate = (d: string) =>
   new Date(d).toLocaleDateString("es-AR", { day: "2-digit", month: "short", year: "numeric" });

@@ -1,3 +1,4 @@
+import { fmt } from "@/lib/format";
 import type { Metadata } from "next";
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
@@ -8,9 +9,6 @@ import { ReorderButton } from "@/components/b2b/reorder-button";
 
 export const metadata: Metadata = { title: "Mis pedidos — Portal B2B En Minutas" };
 export const revalidate = 0;
-
-const fmt = (n: number) =>
-  new Intl.NumberFormat("es-AR", { style: "currency", currency: "ARS", maximumFractionDigits: 0 }).format(n);
 
 export default async function B2BPedidosPage() {
   const supabase = await createClient();

@@ -1,3 +1,4 @@
+import { fmt } from "@/lib/format";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { createClient, createAdminClient } from "@/lib/supabase/server";
@@ -7,9 +8,6 @@ import { Plus } from "lucide-react";
 
 export const metadata: Metadata = { title: "Facturación — Admin" };
 export const revalidate = 0;
-
-const fmt = (n: number) =>
-  new Intl.NumberFormat("es-AR", { style: "currency", currency: "ARS", maximumFractionDigits: 0 }).format(n);
 
 export function numeroComprobante(tipo: string, pv: number, numero: number | null) {
   if (!numero) return "BORRADOR";

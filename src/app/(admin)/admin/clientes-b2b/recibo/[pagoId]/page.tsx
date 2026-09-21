@@ -1,11 +1,9 @@
+import { fmt2 as fmt } from "@/lib/format";
 import { createAdminClient, createClient } from "@/lib/supabase/server";
 import { redirect, notFound } from "next/navigation";
 import { PrintButton } from "./print-button";
 
 export const revalidate = 0;
-
-const fmt = (n: number) =>
-  new Intl.NumberFormat("es-AR", { style: "currency", currency: "ARS", maximumFractionDigits: 2 }).format(n);
 
 const fmtFecha = (s: string) =>
   new Date(s + "T12:00:00").toLocaleDateString("es-AR", {

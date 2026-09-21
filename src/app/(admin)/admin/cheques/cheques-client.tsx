@@ -1,5 +1,6 @@
 "use client";
 
+import { fmt } from "@/lib/format";
 import { useState, useTransition, useId } from "react";
 import { registrarCheque, depositarCheque, acreditarCheque, rechazarCheque } from "./actions";
 import { Plus, X } from "lucide-react";
@@ -26,9 +27,6 @@ const ESTADO_CFG: Record<string, { label: string; bg: string; text: string }> = 
   acreditado: { label: "Acreditado", bg: "#ecfdf5", text: "#059669" },
   rechazado:  { label: "Rechazado",  bg: "#fef2f2", text: "#dc2626" },
 };
-
-const fmt = (n: number) =>
-  new Intl.NumberFormat("es-AR", { style: "currency", currency: "ARS", maximumFractionDigits: 0 }).format(n);
 
 const today = () => new Date().toISOString().slice(0, 10);
 

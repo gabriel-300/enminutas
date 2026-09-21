@@ -1,3 +1,4 @@
+import { fmt } from "@/lib/format";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { createClient, createAdminClient } from "@/lib/supabase/server";
@@ -6,9 +7,6 @@ import { ChequesClient } from "./cheques-client";
 
 export const metadata: Metadata = { title: "Cheques — Admin" };
 export const revalidate = 0;
-
-const fmt = (n: number) =>
-  new Intl.NumberFormat("es-AR", { style: "currency", currency: "ARS", maximumFractionDigits: 0 }).format(n);
 
 const TABS = ["todos", "en_cartera", "depositado", "acreditado", "rechazado"] as const;
 const TAB_LABEL: Record<string, string> = {

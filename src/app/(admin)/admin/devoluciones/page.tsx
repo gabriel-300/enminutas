@@ -1,3 +1,4 @@
+import { fmt } from "@/lib/format";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { createClient, createAdminClient } from "@/lib/supabase/server";
@@ -6,9 +7,6 @@ import { Plus } from "lucide-react";
 
 export const metadata: Metadata = { title: "Devoluciones — Admin" };
 export const revalidate = 0;
-
-const fmt = (n: number) =>
-  new Intl.NumberFormat("es-AR", { style: "currency", currency: "ARS", maximumFractionDigits: 0 }).format(n);
 
 const ESTADO_CFG = {
   solicitada: { label: "Solicitada", bg: "#eff6ff", text: "#2563eb" },

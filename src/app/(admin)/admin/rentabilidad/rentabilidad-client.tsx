@@ -1,5 +1,6 @@
 "use client";
 
+import { fmt } from "@/lib/format";
 import { useState } from "react";
 
 type FilaCanal = {
@@ -10,9 +11,6 @@ type FilaProducto = {
   nombre: string; linea: string;
   unidades: number; ingresos: number; costoMP: number; contribucion: number;
 };
-
-const fmt = (n: number) =>
-  new Intl.NumberFormat("es-AR", { style: "currency", currency: "ARS", maximumFractionDigits: 0 }).format(n);
 
 function pct(contribucion: number, ingresos: number) {
   if (ingresos === 0) return 0;

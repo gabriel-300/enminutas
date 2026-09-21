@@ -1,5 +1,6 @@
 "use client";
 
+import { fmt2 as fmt } from "@/lib/format";
 import { useState, useTransition, useId } from "react";
 import { guardarPrecioCliente, eliminarPrecioCliente } from "../actions";
 import { Plus, X, Trash2 } from "lucide-react";
@@ -18,9 +19,6 @@ type Override = {
 };
 
 type Producto = { id: string; name: string; price_b2b: number };
-
-const fmt = (n: number) =>
-  new Intl.NumberFormat("es-AR", { style: "currency", currency: "ARS", maximumFractionDigits: 2 }).format(n);
 
 const today = () => new Date().toISOString().slice(0, 10);
 

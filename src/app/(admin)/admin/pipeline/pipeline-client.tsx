@@ -1,5 +1,6 @@
 "use client";
 
+import { fmt } from "@/lib/format";
 import { useState, useTransition, useId } from "react";
 import { crearProspecto, avanzarEstado, eliminarProspecto } from "./actions";
 import { ESTADOS, FLUJO, type EstadoKey } from "./constants";
@@ -22,9 +23,6 @@ type Prospecto = {
 };
 
 type Preventista = { id: string; full_name: string };
-
-const fmt = (n: number) =>
-  new Intl.NumberFormat("es-AR", { style: "currency", currency: "ARS", maximumFractionDigits: 0 }).format(n);
 
 export function PipelineClient({
   prospectos,
