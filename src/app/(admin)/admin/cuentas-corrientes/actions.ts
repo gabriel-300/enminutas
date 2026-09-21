@@ -1,14 +1,8 @@
 "use server";
 
-import { createClient, createAdminClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/server";
+import { requireAdmin } from "@/lib/auth";
 import { revalidatePath } from "next/cache";
-
-async function getAdminUser() {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user || user.app_metadata?.role !== "admin") throw new Error("No autorizado");
-  return user;
-}
 
 export async function registrarPagoOrden(payload: {
   orderId:    string;
@@ -19,7 +13,7 @@ export async function registrarPagoOrden(payload: {
   fecha:      string;
 }): Promise<{ error?: string; liquidado?: boolean }> {
   try {
-    const user = await getAdminUser();
+    const user = await requireAdmin();
     const db = createAdminClient() as any;
 
     const { error } = await db.from("cc_movimientos").insert({
@@ -70,7 +64,7 @@ export async function registrarMovimiento(payload: {
   facturaId?: string;
 }): Promise<{ error?: string }> {
   try {
-    const user = await getAdminUser();
+    const user = await requireAdmin();
     const db = createAdminClient() as any;
 
     // pagos y notas de crédito se guardan con monto negativo
@@ -105,7 +99,7 @@ export async function actualizarLimiteCredito(
   limite: number
 ): Promise<{ error?: string }> {
   try {
-    await getAdminUser();
+    await requireAdmin();
     const db = createAdminClient() as any;
 
     const { error } = await db
@@ -125,7 +119,7 @@ export async function actualizarLimiteCredito(
 
 export async function eliminarMovimiento(id: string): Promise<{ error?: string }> {
   try {
-    await getAdminUser();
+    await requireAdmin();
     const db = createAdminClient() as any;
 
     // primero obtenemos el cliente_id para revalidar

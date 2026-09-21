@@ -1,5 +1,6 @@
 "use server";
 
+import { requireAdmin } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 
@@ -13,6 +14,7 @@ function toSlug(name: string): string {
 }
 
 export async function crearCategoria(formData: FormData) {
+  await requireAdmin();
   const name = (formData.get("name") as string).trim();
   if (!name) throw new Error("El nombre es requerido");
 
@@ -23,6 +25,7 @@ export async function crearCategoria(formData: FormData) {
 }
 
 export async function actualizarCategoria(id: string, formData: FormData) {
+  await requireAdmin();
   const name = (formData.get("name") as string | null)?.trim();
   if (!name) throw new Error("El nombre es requerido");
 
@@ -40,6 +43,7 @@ export async function actualizarCategoria(id: string, formData: FormData) {
 }
 
 export async function toggleVisibilidadTienda(id: string, visible: boolean) {
+  await requireAdmin();
   const supabase = createAdminClient();
   const { error } = await supabase
     .from("categories")
@@ -52,6 +56,7 @@ export async function toggleVisibilidadTienda(id: string, visible: boolean) {
 }
 
 export async function eliminarCategoria(id: string) {
+  await requireAdmin();
   const supabase = createAdminClient();
   const { error } = await supabase.from("categories").delete().eq("id", id);
   if (error) throw new Error(error.message);

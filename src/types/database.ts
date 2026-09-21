@@ -1,4 +1,4 @@
-﻿export type Json =
+export type Json =
   | string
   | number
   | boolean
@@ -382,6 +382,70 @@ export type Database = {
           {
             foreignKeyName: "cheques_created_by_fkey"
             columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      comisiones_pagos: {
+        Row: {
+          cliente_id: string
+          created_at: string
+          created_by: string | null
+          fecha_pago: string
+          id: string
+          mes: string
+          monto: number
+          notas: string | null
+          pct: number
+          vendedor_id: string
+          ventas: number
+        }
+        Insert: {
+          cliente_id: string
+          created_at?: string
+          created_by?: string | null
+          fecha_pago?: string
+          id?: string
+          mes: string
+          monto: number
+          notas?: string | null
+          pct: number
+          vendedor_id: string
+          ventas: number
+        }
+        Update: {
+          cliente_id?: string
+          created_at?: string
+          created_by?: string | null
+          fecha_pago?: string
+          id?: string
+          mes?: string
+          monto?: number
+          notas?: string | null
+          pct?: number
+          vendedor_id?: string
+          ventas?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "comisiones_pagos_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "comisiones_pagos_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "comisiones_pagos_vendedor_id_fkey"
+            columns: ["vendedor_id"]
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
@@ -1076,21 +1140,32 @@ export type Database = {
       }
       lineas_producto: {
         Row: {
+          canal_exclusivo_id: string | null
           id: number
           nombre: string
           orden: number
         }
         Insert: {
+          canal_exclusivo_id?: string | null
           id?: number
           nombre: string
           orden: number
         }
         Update: {
+          canal_exclusivo_id?: string | null
           id?: number
           nombre?: string
           orden?: number
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "lineas_producto_canal_exclusivo_id_fkey"
+            columns: ["canal_exclusivo_id"]
+            isOneToOne: false
+            referencedRelation: "canales"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       lotes: {
         Row: {
@@ -1311,6 +1386,8 @@ export type Database = {
           aprobado_at: string | null
           aprobado_por: string | null
           assigned_driver_id: string | null
+          cargo_adicional_concepto: string | null
+          cargo_adicional_monto: number
           channel: Database["public"]["Enums"]["order_channel"]
           created_at: string
           customer_id: string | null
@@ -1355,6 +1432,8 @@ export type Database = {
           aprobado_at?: string | null
           aprobado_por?: string | null
           assigned_driver_id?: string | null
+          cargo_adicional_concepto?: string | null
+          cargo_adicional_monto?: number
           channel: Database["public"]["Enums"]["order_channel"]
           created_at?: string
           customer_id?: string | null
@@ -1399,6 +1478,8 @@ export type Database = {
           aprobado_at?: string | null
           aprobado_por?: string | null
           assigned_driver_id?: string | null
+          cargo_adicional_concepto?: string | null
+          cargo_adicional_monto?: number
           channel?: Database["public"]["Enums"]["order_channel"]
           created_at?: string
           customer_id?: string | null
@@ -1491,12 +1572,14 @@ export type Database = {
           created_by: string | null
           factura_numero: string | null
           fecha: string
+          grupo_id: string | null
           id: string
           metodo: string
           monto: number
           notas: string | null
           order_id: string | null
           referencia: string | null
+          sin_factura: boolean
         }
         Insert: {
           cliente_id: string
@@ -1504,12 +1587,14 @@ export type Database = {
           created_by?: string | null
           factura_numero?: string | null
           fecha?: string
+          grupo_id?: string | null
           id?: string
           metodo?: string
           monto: number
           notas?: string | null
           order_id?: string | null
           referencia?: string | null
+          sin_factura?: boolean
         }
         Update: {
           cliente_id?: string
@@ -1517,12 +1602,14 @@ export type Database = {
           created_by?: string | null
           factura_numero?: string | null
           fecha?: string
+          grupo_id?: string | null
           id?: string
           metodo?: string
           monto?: number
           notas?: string | null
           order_id?: string | null
           referencia?: string | null
+          sin_factura?: boolean
         }
         Relationships: [
           {
@@ -2085,6 +2172,7 @@ export type Database = {
           direccion_piso: string | null
           document_number: string | null
           document_type: string | null
+          es_comercializadora: boolean
           full_name: string | null
           id: string
           notas_internas: string | null
@@ -2108,6 +2196,7 @@ export type Database = {
           direccion_piso?: string | null
           document_number?: string | null
           document_type?: string | null
+          es_comercializadora?: boolean
           full_name?: string | null
           id: string
           notas_internas?: string | null
@@ -2131,6 +2220,7 @@ export type Database = {
           direccion_piso?: string | null
           document_number?: string | null
           document_type?: string | null
+          es_comercializadora?: boolean
           full_name?: string | null
           id?: string
           notas_internas?: string | null
@@ -2163,10 +2253,12 @@ export type Database = {
           created_by: string | null
           fecha: string
           id: string
+          imagen_url: string | null
           notas: string | null
           numero: string
           otros_impuestos: number
           proveedor: string
+          proveedor_cuit: string | null
           tipo: string
           total: number | null
         }
@@ -2175,10 +2267,12 @@ export type Database = {
           created_by?: string | null
           fecha?: string
           id?: string
+          imagen_url?: string | null
           notas?: string | null
           numero: string
           otros_impuestos?: number
           proveedor: string
+          proveedor_cuit?: string | null
           tipo: string
           total?: number | null
         }
@@ -2187,10 +2281,12 @@ export type Database = {
           created_by?: string | null
           fecha?: string
           id?: string
+          imagen_url?: string | null
           notas?: string | null
           numero?: string
           otros_impuestos?: number
           proveedor?: string
+          proveedor_cuit?: string | null
           tipo?: string
           total?: number | null
         }
@@ -2729,4 +2825,3 @@ export const Constants = {
     },
   },
 } as const
-

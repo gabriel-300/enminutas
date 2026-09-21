@@ -1,9 +1,11 @@
 "use server";
 
+import { requireAdmin } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 
 export async function actualizarCampo(clave: string, valor: string) {
+  await requireAdmin();
   const supabase = await createClient();
   const { error } = await supabase
     .from("contenido_web")
@@ -14,6 +16,7 @@ export async function actualizarCampo(clave: string, valor: string) {
 }
 
 export async function guardarSeccion(entries: { clave: string; valor: string }[]) {
+  await requireAdmin();
   const supabase = await createClient();
   const now = new Date().toISOString();
   for (const { clave, valor } of entries) {

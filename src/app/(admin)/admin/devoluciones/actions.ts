@@ -1,14 +1,8 @@
 "use server";
 
-import { createClient, createAdminClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/server";
+import { requireAdmin } from "@/lib/auth";
 import { revalidatePath } from "next/cache";
-
-async function getAdminUser() {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user || user.app_metadata?.role !== "admin") throw new Error("No autorizado");
-  return user;
-}
 
 export type DevolucionItemInput = {
   descripcion: string;
@@ -25,7 +19,7 @@ export async function crearDevolucion(payload: {
   items: DevolucionItemInput[];
 }): Promise<{ id?: string; error?: string }> {
   try {
-    const user = await getAdminUser();
+    const user = await requireAdmin();
     const db = createAdminClient() as any;
 
     const monto_total = payload.items.reduce(
@@ -70,7 +64,7 @@ export async function crearDevolucion(payload: {
 
 export async function aprobarDevolucion(id: string): Promise<{ error?: string }> {
   try {
-    const user = await getAdminUser();
+    const user = await requireAdmin();
     const db = createAdminClient() as any;
 
     const { data: dev } = await db
@@ -116,7 +110,7 @@ export async function aprobarDevolucion(id: string): Promise<{ error?: string }>
 
 export async function rechazarDevolucion(id: string): Promise<{ error?: string }> {
   try {
-    await getAdminUser();
+    await requireAdmin();
     const db = createAdminClient() as any;
 
     const { data: dev } = await db
@@ -138,7 +132,7 @@ export async function rechazarDevolucion(id: string): Promise<{ error?: string }
 
 export async function cerrarDevolucion(id: string): Promise<{ error?: string }> {
   try {
-    await getAdminUser();
+    await requireAdmin();
     const db = createAdminClient() as any;
 
     const { data: dev } = await db

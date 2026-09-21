@@ -1,14 +1,8 @@
 "use server";
 
-import { createClient, createAdminClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/server";
+import { requireAdmin } from "@/lib/auth";
 import { revalidatePath } from "next/cache";
-
-async function getAdminUser() {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user || user.app_metadata?.role !== "admin") throw new Error("No autorizado");
-  return user;
-}
 
 export async function registrarCheque(payload: {
   clienteId: string;
@@ -21,7 +15,7 @@ export async function registrarCheque(payload: {
   observaciones?: string;
 }): Promise<{ id?: string; error?: string }> {
   try {
-    const user = await getAdminUser();
+    const user = await requireAdmin();
     const db = createAdminClient() as any;
 
     const { data, error } = await db.from("cheques").insert({
@@ -46,7 +40,7 @@ export async function registrarCheque(payload: {
 
 export async function depositarCheque(id: string): Promise<{ error?: string }> {
   try {
-    await getAdminUser();
+    await requireAdmin();
     const db = createAdminClient() as any;
 
     const { data: ch } = await db.from("cheques").select("estado").eq("id", id).single();
@@ -64,7 +58,7 @@ export async function depositarCheque(id: string): Promise<{ error?: string }> {
 
 export async function acreditarCheque(id: string): Promise<{ error?: string }> {
   try {
-    const user = await getAdminUser();
+    const user = await requireAdmin();
     const db = createAdminClient() as any;
 
     const { data: ch } = await db
@@ -105,7 +99,7 @@ export async function acreditarCheque(id: string): Promise<{ error?: string }> {
 
 export async function rechazarCheque(id: string): Promise<{ error?: string }> {
   try {
-    await getAdminUser();
+    await requireAdmin();
     const db = createAdminClient() as any;
 
     const { data: ch } = await db.from("cheques").select("estado").eq("id", id).single();

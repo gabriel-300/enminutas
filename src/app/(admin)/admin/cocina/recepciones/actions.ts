@@ -1,6 +1,7 @@
 "use server";
 
 import { createAdminClient, createClient } from "@/lib/supabase/server";
+import { requireRole } from "@/lib/auth";
 import { revalidatePath } from "next/cache";
 import { leerComprobanteConGroq, validarComprobante } from "@/lib/groq";
 
@@ -22,6 +23,7 @@ export type InsumoBasico = {
 };
 
 export async function getInsumos(): Promise<InsumoBasico[]> {
+  await requireRole("admin", "produccion");
   const db = createAdminClient() as any;
   const { data } = await db
     .from("insumos")
@@ -192,11 +194,10 @@ export async function registrarRecepcion(
   imagenUrl:        string | null = null,
   proveedorCuit:    string | null = null,
 ): Promise<Result> {
-  const supabase = await createClient();
   const db       = createAdminClient() as any;
 
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return { error: "No autenticado" };
+  let user;
+  try { user = await requireRole("admin", "produccion"); } catch { return { error: "No autorizado" }; }
 
   if (!tipo || !numero.trim() || !proveedor.trim())
     return { error: "Tipo, número y proveedor son requeridos" };
@@ -298,6 +299,7 @@ export type RecepcionHistorial = {
 };
 
 export async function getHistorialRecepciones(limit = 30): Promise<RecepcionHistorial[]> {
+  await requireRole("admin", "produccion");
   const db = createAdminClient() as any;
 
   const { data } = await db

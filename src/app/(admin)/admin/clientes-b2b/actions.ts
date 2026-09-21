@@ -1,6 +1,7 @@
 "use server";
 
 import { createClient, createAdminClient } from "@/lib/supabase/server";
+import { requireAdmin } from "@/lib/auth";
 import { revalidatePath } from "next/cache";
 import { emailClienteAprobado } from "@/lib/email";
 
@@ -129,12 +130,6 @@ export async function invitarClienteB2B(formData: FormData): Promise<{ error?: s
   } catch (err: any) {
     return { error: err.message ?? "Error inesperado al enviar la invitación" };
   }
-}
-
-async function requireAdmin() {
-  const auth = await createClient();
-  const { data: { user } } = await auth.auth.getUser();
-  if (!user || user.app_metadata?.role !== "admin") throw new Error("No autorizado");
 }
 
 export async function aprobarCliente(profileId: string) {

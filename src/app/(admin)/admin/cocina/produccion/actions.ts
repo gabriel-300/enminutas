@@ -1,6 +1,7 @@
 "use server";
 
-import { createAdminClient, createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/server";
+import { requireRole } from "@/lib/auth";
 import { revalidatePath } from "next/cache";
 
 type Result = { error: string } | { ok: true; id: string; numero_lote: string };
@@ -36,11 +37,10 @@ async function generarNumeroLote(db: any): Promise<string> {
 }
 
 export async function registrarProduccion(formData: FormData): Promise<Result> {
-  const supabase    = await createClient();
   const db          = createAdminClient() as any;
 
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return { error: "No autenticado" };
+  let user;
+  try { user = await requireRole("admin", "produccion"); } catch { return { error: "No autorizado" }; }
 
   const productoId    = formData.get("producto_id") as string;
   const recetaId      = formData.get("receta_id") as string;
@@ -120,6 +120,7 @@ export type ProductoConReceta = {
 };
 
 export async function getProductosConReceta(): Promise<ProductoConReceta[]> {
+  await requireRole("admin", "produccion");
   const db = createAdminClient() as any;
 
   const { data: products } = await db
@@ -188,6 +189,7 @@ export type ProduccionHistorial = {
 };
 
 export async function getHistorialProduccion(limit = 30): Promise<ProduccionHistorial[]> {
+  await requireRole("admin", "produccion");
   const db = createAdminClient() as any;
   const { data } = await db
     .from("produccion")

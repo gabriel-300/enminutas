@@ -1,6 +1,7 @@
 "use server";
 
-import { createClient, createAdminClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/server";
+import { requireRole } from "@/lib/auth";
 import { revalidatePath } from "next/cache";
 
 export async function registrarLote(formData: FormData) {
@@ -10,11 +11,9 @@ export async function registrarLote(formData: FormData) {
 
   if (!productId || !qty || qty <= 0) throw new Error("Datos inválidos");
 
-  const authClient  = await createClient();
   const adminClient = createAdminClient() as any;
 
-  const { data: { user } } = await authClient.auth.getUser();
-  if (!user) throw new Error("No autorizado");
+  const user = await requireRole("admin", "produccion");
 
   await adminClient.rpc("increment_stock", {
     p_product_id: productId,
@@ -42,11 +41,9 @@ export async function ajustarStock(formData: FormData) {
 
   if (!productId || isNaN(qty)) throw new Error("Datos inválidos");
 
-  const authClient  = await createClient();
   const adminClient = createAdminClient() as any;
 
-  const { data: { user } } = await authClient.auth.getUser();
-  if (!user) throw new Error("No autorizado");
+  const user = await requireRole("admin", "produccion");
 
   const updates: Record<string, number> = { stock_cajas: Math.max(qty, 0) };
   if (minimo !== undefined && !isNaN(minimo)) updates.stock_minimo = Math.max(minimo, 0);

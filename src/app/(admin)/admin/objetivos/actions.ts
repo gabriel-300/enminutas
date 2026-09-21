@@ -1,14 +1,8 @@
 "use server";
 
-import { createClient, createAdminClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/server";
+import { requireAdmin } from "@/lib/auth";
 import { revalidatePath } from "next/cache";
-
-async function getAdminUser() {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user || user.app_metadata?.role !== "admin") throw new Error("No autorizado");
-  return user;
-}
 
 export async function guardarObjetivo(
   anio: number,
@@ -17,7 +11,7 @@ export async function guardarObjetivo(
   montoMeta: number
 ): Promise<{ error?: string }> {
   try {
-    const user = await getAdminUser();
+    const user = await requireAdmin();
     const db = createAdminClient() as any;
 
     // upsert por (anio, mes, canal)

@@ -1,22 +1,14 @@
 "use server";
 
-import { createClient, createAdminClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/server";
+import { requireRole } from "@/lib/auth";
 import { revalidatePath } from "next/cache";
-
-async function getStaff() {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) throw new Error("No autorizado");
-  const role = user.app_metadata?.role;
-  if (!["admin", "distribucion"].includes(role)) throw new Error("No autorizado");
-  return user;
-}
 
 export async function guardarOrdenRuta(
   items: { id: string; orden: number }[]
 ): Promise<{ error?: string }> {
   try {
-    await getStaff();
+    await requireRole("admin", "distribucion");
     const db = createAdminClient() as any;
 
     // Actualizar en paralelo por lotes
@@ -37,7 +29,7 @@ export async function guardarOrdenRuta(
 
 export async function limpiarOrdenRuta(ids: string[]): Promise<{ error?: string }> {
   try {
-    await getStaff();
+    await requireRole("admin", "distribucion");
     const db = createAdminClient() as any;
     const { error } = await db
       .from("orders")

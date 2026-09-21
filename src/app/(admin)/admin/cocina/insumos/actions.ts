@@ -1,5 +1,6 @@
 "use server";
 
+import { requireRole } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 
@@ -14,6 +15,7 @@ function revalidateAll() {
 // ── Insumos CRUD ───────────────────────────────────────────────────────────────
 
 export async function crearInsumo(formData: FormData): Promise<Result> {
+  await requireRole("admin", "produccion");
   const nombre    = (formData.get("nombre") as string)?.trim();
   const unidad    = (formData.get("unidad") as string)?.trim() || "gr";
   const precio    = parseFloat((formData.get("precio_unitario") as string)?.replace(",", ".")) || 0;
@@ -34,6 +36,7 @@ export async function crearInsumo(formData: FormData): Promise<Result> {
 }
 
 export async function actualizarPrecioInsumo(id: string, precio: number): Promise<Result> {
+  await requireRole("admin", "produccion");
   const db = createAdminClient() as any;
   const { error } = await db.from("insumos").update({ precio_unitario: precio }).eq("id", id);
   if (error) return { error: error.message };
@@ -42,6 +45,7 @@ export async function actualizarPrecioInsumo(id: string, precio: number): Promis
 }
 
 export async function actualizarInsumo(id: string, formData: FormData): Promise<Result> {
+  await requireRole("admin", "produccion");
   const nombre    = (formData.get("nombre") as string)?.trim();
   const unidad    = (formData.get("unidad") as string)?.trim() || "gr";
   const precio    = parseFloat((formData.get("precio_unitario") as string)?.replace(",", ".")) || 0;
@@ -62,6 +66,7 @@ export async function actualizarInsumo(id: string, formData: FormData): Promise<
 }
 
 export async function eliminarInsumo(id: string): Promise<Result> {
+  await requireRole("admin", "produccion");
   const db = createAdminClient() as any;
 
   const { data: uso } = await db
@@ -86,6 +91,7 @@ export async function ingresarStock(
   cantidad: number,
   notas: string | null,
 ): Promise<Result> {
+  await requireRole("admin", "produccion");
   if (cantidad <= 0) return { error: "La cantidad debe ser mayor a 0" };
   const db = createAdminClient() as any;
   const { data: cur } = await db.from("insumos").select("stock_actual").eq("id", insumoId).single();
@@ -104,6 +110,7 @@ export async function ajustarStock(
   stockNuevo: number,
   notas: string | null,
 ): Promise<Result> {
+  await requireRole("admin", "produccion");
   const db = createAdminClient() as any;
   const { data: cur } = await db.from("insumos").select("stock_actual").eq("id", insumoId).single();
   const delta = stockNuevo - Number(cur?.stock_actual ?? 0);
@@ -123,6 +130,7 @@ export async function actualizarStockControl(
   puntoPedido: number,
   stockMaximo: number,
 ): Promise<Result> {
+  await requireRole("admin", "produccion");
   const db = createAdminClient() as any;
   const { error } = await db.from("insumos")
     .update({ stock_minimo: stockMinimo, punto_pedido: puntoPedido, stock_maximo: stockMaximo })
@@ -151,6 +159,7 @@ function slugify(s: string): string {
 }
 
 export async function getCategorias(): Promise<Categoria[]> {
+  await requireRole("admin", "produccion");
   const db = createAdminClient() as any;
   const { data } = await db
     .from("categorias_insumos")
@@ -161,6 +170,7 @@ export async function getCategorias(): Promise<Categoria[]> {
 }
 
 export async function crearCategoria(nombre: string, color: string): Promise<Result> {
+  await requireRole("admin", "produccion");
   const nom = nombre.trim();
   if (!nom) return { error: "El nombre es requerido" };
   const valor = slugify(nom);
@@ -177,6 +187,7 @@ export async function crearCategoria(nombre: string, color: string): Promise<Res
 }
 
 export async function actualizarCategoria(id: string, nombre: string, color: string): Promise<Result> {
+  await requireRole("admin", "produccion");
   const nom = nombre.trim();
   if (!nom) return { error: "El nombre es requerido" };
 
@@ -188,6 +199,7 @@ export async function actualizarCategoria(id: string, nombre: string, color: str
 }
 
 export async function eliminarCategoria(id: string): Promise<Result> {
+  await requireRole("admin", "produccion");
   const db = createAdminClient() as any;
 
   // Verificar que no haya insumos usando esta categoría
@@ -219,6 +231,7 @@ export type ImportResult = {
 } | { error: string };
 
 export async function importarPreciosCSV(csvText: string): Promise<ImportResult> {
+  await requireRole("admin", "produccion");
   if (!csvText?.trim()) return { error: "El archivo está vacío." };
 
   const lines = csvText.trim().split(/\r?\n/).filter(Boolean);

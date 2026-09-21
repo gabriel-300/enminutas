@@ -1,16 +1,8 @@
 "use server";
 
-import { createClient, createAdminClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/server";
+import { requireRole } from "@/lib/auth";
 import { revalidatePath } from "next/cache";
-
-async function getAuthUser() {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) throw new Error("No autorizado");
-  const role = user.app_metadata?.role;
-  if (role !== "admin" && role !== "vendedor") throw new Error("No autorizado");
-  return user;
-}
 
 export async function crearProspecto(payload: {
   empresa: string;
@@ -24,7 +16,7 @@ export async function crearProspecto(payload: {
   notas?: string;
 }): Promise<{ error?: string; id?: string }> {
   try {
-    const user = await getAuthUser();
+    const user = await requireRole("admin", "vendedor");
     const db = createAdminClient() as any;
 
     const { data, error } = await db.from("pipeline_prospectos").insert({
@@ -62,7 +54,7 @@ export async function actualizarProspecto(id: string, payload: {
   motivoPerdida?: string;
 }): Promise<{ error?: string }> {
   try {
-    await getAuthUser();
+    await requireRole("admin", "vendedor");
     const db = createAdminClient() as any;
 
     const patch: Record<string, unknown> = {};
@@ -90,7 +82,7 @@ export async function actualizarProspecto(id: string, payload: {
 
 export async function avanzarEstado(id: string, nuevoEstado: string, motivoPerdida?: string): Promise<{ error?: string }> {
   try {
-    await getAuthUser();
+    await requireRole("admin", "vendedor");
     const db = createAdminClient() as any;
 
     const patch: Record<string, unknown> = { estado: nuevoEstado };
@@ -108,7 +100,7 @@ export async function avanzarEstado(id: string, nuevoEstado: string, motivoPerdi
 
 export async function eliminarProspecto(id: string): Promise<{ error?: string }> {
   try {
-    const user = await getAuthUser();
+    const user = await requireRole("admin", "vendedor");
     if (user.app_metadata?.role !== "admin") return { error: "Solo administradores pueden eliminar prospectos" };
     const db = createAdminClient() as any;
     const { error } = await db.from("pipeline_prospectos").delete().eq("id", id);

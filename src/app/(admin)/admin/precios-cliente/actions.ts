@@ -1,14 +1,8 @@
 "use server";
 
-import { createClient, createAdminClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/server";
+import { requireAdmin } from "@/lib/auth";
 import { revalidatePath } from "next/cache";
-
-async function getAdminUser() {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user || user.app_metadata?.role !== "admin") throw new Error("No autorizado");
-  return user;
-}
 
 export async function guardarPrecioCliente(payload: {
   clienteId: string;
@@ -21,7 +15,7 @@ export async function guardarPrecioCliente(payload: {
   notas?: string;
 }): Promise<{ error?: string }> {
   try {
-    const user = await getAdminUser();
+    const user = await requireAdmin();
     const db = createAdminClient() as any;
 
     if (payload.tipo === "precio_fijo" && (!payload.precioFijo || payload.precioFijo < 0))
@@ -55,7 +49,7 @@ export async function guardarPrecioCliente(payload: {
 
 export async function eliminarPrecioCliente(id: string, clienteId: string): Promise<{ error?: string }> {
   try {
-    await getAdminUser();
+    await requireAdmin();
     const db = createAdminClient() as any;
     const { error } = await db.from("precios_cliente").delete().eq("id", id);
     if (error) return { error: error.message };

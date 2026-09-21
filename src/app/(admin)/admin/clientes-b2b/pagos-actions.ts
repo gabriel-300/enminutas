@@ -1,9 +1,27 @@
 "use server";
 
-import { createAdminClient, createClient } from "@/lib/supabase/server";
+import type { User } from "@supabase/supabase-js";
+import { createAdminClient } from "@/lib/supabase/server";
+import { requireRole } from "@/lib/auth";
 import { revalidatePath } from "next/cache";
 
 type Result = { error: string } | { ok: true; pagoId: string };
+
+// Admin: cualquier cliente. Vendedor: sólo los clientes que tiene asignados.
+async function autorizarCliente(clienteId: string): Promise<{ error: string } | { user: User }> {
+  let user: User;
+  try {
+    user = await requireRole("admin", "vendedor");
+  } catch {
+    return { error: "No autorizado" };
+  }
+  if (user.app_metadata?.role === "vendedor") {
+    const { data } = await (createAdminClient() as any)
+      .from("profiles").select("vendedor_id").eq("id", clienteId).single();
+    if (!data || data.vendedor_id !== user.id) return { error: "No autorizado" };
+  }
+  return { user };
+}
 
 export async function registrarPago(formData: FormData): Promise<Result> {
   const clienteId      = (formData.get("cliente_id") as string)?.trim();
@@ -21,9 +39,9 @@ export async function registrarPago(formData: FormData): Promise<Result> {
   if (isNaN(monto) || monto <= 0) return { error: "El monto debe ser mayor a cero" };
   if (!fecha) return { error: "La fecha es requerida" };
 
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return { error: "No autenticado" };
+  const auth = await autorizarCliente(clienteId);
+  if ("error" in auth) return { error: auth.error };
+  const { user } = auth;
 
   const db = createAdminClient() as any;
 
@@ -72,9 +90,9 @@ export async function registrarPagoPedidos(payload: {
   if (items.some((it) => isNaN(it.monto) || it.monto <= 0))
     return { error: "El monto de cada pedido debe ser mayor a cero" };
 
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return { error: "No autenticado" };
+  const auth = await autorizarCliente(clienteId);
+  if ("error" in auth) return { error: auth.error };
+  const { user } = auth;
 
   const db = createAdminClient() as any;
   const pagoIds: string[] = [];
@@ -112,6 +130,12 @@ export async function registrarPagoPedidos(payload: {
 
 export async function eliminarPago(pagoId: string, clienteId: string): Promise<{ error: string } | { ok: true }> {
   const db = createAdminClient() as any;
+  // El cliente se toma del pago en la base, no del parámetro (que controla el llamador).
+  const { data: pago } = await db.from("pagos").select("cliente_id").eq("id", pagoId).single();
+  if (!pago) return { error: "Pago no encontrado" };
+  const auth = await autorizarCliente(pago.cliente_id);
+  if ("error" in auth) return { error: auth.error };
+
   const { error } = await db.from("pagos").delete().eq("id", pagoId);
   if (error) return { error: error.message };
   revalidatePath(`/admin/clientes-b2b/${clienteId}`);

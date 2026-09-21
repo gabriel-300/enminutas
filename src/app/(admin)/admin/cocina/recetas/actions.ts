@@ -1,5 +1,6 @@
 "use server";
 
+import { requireRole } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 
@@ -12,6 +13,7 @@ function revalidateAll() {
 }
 
 export async function guardarReceta(formData: FormData): Promise<ActionResult> {
+  await requireRole("admin", "produccion");
   const productId    = formData.get("product_id") as string;
   const yieldCajas   = parseFloat((formData.get("yield_cajas") as string)?.replace(",", ".")) || 1;
   const vidaUtilDias = parseInt(formData.get("vida_util_dias") as string, 10) || 180;
@@ -103,6 +105,7 @@ export async function actualizarCostoProducto(
   costoNuevoPorCaja: number,
   bolsasCaja: number,
 ): Promise<ActionResult> {
+  await requireRole("admin", "produccion");
   if (costoNuevoPorCaja <= 0) return { error: "El costo debe ser mayor a cero" };
   const bolsas = bolsasCaja > 0 ? bolsasCaja : 1;
   const costoUnidad = costoNuevoPorCaja / bolsas;
@@ -114,6 +117,7 @@ export async function actualizarCostoProducto(
 }
 
 export async function eliminarReceta(productId: string): Promise<ActionResult> {
+  await requireRole("admin", "produccion");
   const db = createAdminClient() as any;
   const { error } = await db.from("recipes").delete().eq("product_id", productId);
   if (error) return { error: error.message };
@@ -122,6 +126,7 @@ export async function eliminarReceta(productId: string): Promise<ActionResult> {
 }
 
 export async function sincronizarCostoProducto(productId: string): Promise<ActionResult> {
+  await requireRole("admin", "produccion");
   const db = createAdminClient() as any;
 
   const { data: recipe } = await db

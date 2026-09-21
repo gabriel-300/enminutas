@@ -1,10 +1,12 @@
 "use server";
 
+import { requireAdmin } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
 export async function toggleProductActive(productId: string, isActive: boolean) {
+  await requireAdmin();
   const supabase = createAdminClient();
   const { error } = await supabase
     .from("products")
@@ -16,6 +18,7 @@ export async function toggleProductActive(productId: string, isActive: boolean) 
 }
 
 export async function toggleProductMuestra(productId: string, esMuestra: boolean) {
+  await requireAdmin();
   const supabase = createAdminClient() as any;
   const { error } = await supabase
     .from("products")
@@ -27,6 +30,7 @@ export async function toggleProductMuestra(productId: string, esMuestra: boolean
 }
 
 export async function updateProductPrice(productId: string, priceB2c: number, priceB2b: number) {
+  await requireAdmin();
   const supabase = createAdminClient();
   const { error } = await supabase
     .from("products")
@@ -73,6 +77,7 @@ function parseB2vPayload(formData: FormData): Record<string, any> {
 }
 
 export async function crearProducto(formData: FormData): Promise<{ error: string } | void> {
+  await requireAdmin();
   const supabase = createAdminClient();
 
   const payload = parseB2vPayload(formData);
@@ -102,6 +107,7 @@ export async function crearProducto(formData: FormData): Promise<{ error: string
 }
 
 export async function actualizarProducto(productId: string, formData: FormData) {
+  await requireAdmin();
   const supabase = createAdminClient();
 
   const payload = parseB2vPayload(formData);
@@ -124,6 +130,7 @@ export async function actualizarProducto(productId: string, formData: FormData) 
 }
 
 export async function eliminarProducto(productId: string) {
+  await requireAdmin();
   const supabase = createAdminClient();
   const { error } = await supabase.from("products").delete().eq("id", productId);
   if (error) throw new Error(error.message);

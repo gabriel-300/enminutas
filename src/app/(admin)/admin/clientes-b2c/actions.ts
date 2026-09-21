@@ -1,9 +1,20 @@
 "use server";
 
 import { createAdminClient } from "@/lib/supabase/server";
+import { requireRole } from "@/lib/auth";
 import { revalidatePath } from "next/cache";
 
+// Sólo se pueden tocar cuentas de clientes B2C: nunca staff ni clientes B2B.
+async function assertClienteB2C(supabase: ReturnType<typeof createAdminClient>, userId: string) {
+  const { data, error } = await supabase.auth.admin.getUserById(userId);
+  const role = data?.user?.app_metadata?.role as string | undefined;
+  if (error || !data?.user || (role && role !== "customer_b2c")) {
+    throw new Error("El usuario no es un cliente B2C");
+  }
+}
+
 export async function crearClienteB2C(formData: FormData) {
+  await requireRole("admin", "vendedor");
   const email    = (formData.get("email") as string).trim().toLowerCase();
   const name     = (formData.get("name") as string | null)?.trim() ?? "";
   const phone    = (formData.get("phone") as string | null)?.trim() ?? "";
@@ -36,10 +47,12 @@ export async function crearClienteB2C(formData: FormData) {
 }
 
 export async function resetearPasswordClienteB2C(userId: string, newPassword: string) {
+  await requireRole("admin", "vendedor");
   if (!newPassword || newPassword.length < 8)
     throw new Error("La contraseña debe tener al menos 8 caracteres");
 
   const supabase = createAdminClient();
+  await assertClienteB2C(supabase, userId);
   const { error } = await supabase.auth.admin.updateUserById(userId, {
     password: newPassword,
   });
@@ -47,7 +60,9 @@ export async function resetearPasswordClienteB2C(userId: string, newPassword: st
 }
 
 export async function eliminarClienteB2C(userId: string) {
+  await requireRole("admin", "vendedor");
   const supabase = createAdminClient();
+  await assertClienteB2C(supabase, userId);
   const { error } = await supabase.auth.admin.deleteUser(userId);
   if (error) throw new Error(error.message);
   revalidatePath("/admin/clientes-b2c");

@@ -1,13 +1,8 @@
 "use server";
 
-import { createClient, createAdminClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/server";
+import { requireAdmin } from "@/lib/auth";
 import { revalidatePath } from "next/cache";
-
-async function requireAdmin() {
-  const auth = await createClient();
-  const { data: { user } } = await auth.auth.getUser();
-  if (!user || user.app_metadata?.role !== "admin") throw new Error("No autorizado");
-}
 
 export async function asignarZonaDistribuidor(userId: string, zonaId: string | null) {
   await requireAdmin();
@@ -113,6 +108,7 @@ export async function resetearPasswordAdmin(userId: string, newPassword: string)
 }
 
 export async function enviarEmailRecuperacion(email: string) {
+  await requireAdmin();
   const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
   const supabase = createAdminClient();
 

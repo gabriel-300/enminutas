@@ -1,14 +1,9 @@
 "use server";
 
-import { createAdminClient, createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/server";
+import { requireAdmin } from "@/lib/auth";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-
-async function requireAdmin() {
-  const auth = await createClient();
-  const { data: { user } } = await auth.auth.getUser();
-  if (!user || user.app_metadata?.role !== "admin") throw new Error("No autorizado");
-}
 
 export async function crearCanal(formData: FormData) {
   await requireAdmin();

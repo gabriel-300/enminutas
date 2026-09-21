@@ -1,11 +1,13 @@
 "use server";
 
+import { requireAdmin } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 
 type Result = { error: string } | { ok: true };
 
 export async function guardarTier(formData: FormData): Promise<Result> {
+  await requireAdmin();
   const id           = formData.get("id") as string | null;
   const minCajas     = parseInt(formData.get("min_cajas") as string, 10);
   const descuentoPct = parseFloat(formData.get("descuento_pct") as string);
@@ -29,6 +31,7 @@ export async function guardarTier(formData: FormData): Promise<Result> {
 }
 
 export async function eliminarTier(id: string): Promise<Result> {
+  await requireAdmin();
   const db = createAdminClient() as any;
   const { error } = await db.from("volume_discounts").delete().eq("id", id);
   if (error) return { error: error.message };
@@ -38,6 +41,7 @@ export async function eliminarTier(id: string): Promise<Result> {
 }
 
 export async function toggleTier(id: string, activo: boolean): Promise<Result> {
+  await requireAdmin();
   const db = createAdminClient() as any;
   const { error } = await db.from("volume_discounts").update({ activo }).eq("id", id);
   if (error) return { error: error.message };

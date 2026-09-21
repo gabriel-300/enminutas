@@ -1,14 +1,8 @@
 "use server";
 
-import { createClient, createAdminClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/server";
+import { requireAdmin } from "@/lib/auth";
 import { revalidatePath } from "next/cache";
-
-async function getAdminUser() {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user || user.app_metadata?.role !== "admin") throw new Error("No autorizado");
-  return user;
-}
 
 export type ComisionClienteItem = {
   clienteId: string;
@@ -28,7 +22,7 @@ export async function marcarComisionesPagadas(payload: {
   items:      ComisionClienteItem[];
 }): Promise<{ error: string } | { ok: true }> {
   try {
-    const user = await getAdminUser();
+    const user = await requireAdmin();
 
     if (!payload.vendedorId) return { error: "Vendedor requerido" };
     if (!/^\d{4}-\d{2}$/.test(payload.mes)) return { error: "Mes inválido" };
@@ -66,7 +60,7 @@ export async function revertirComisionPagada(
   clienteId: string,
 ): Promise<{ error: string } | { ok: true }> {
   try {
-    await getAdminUser();
+    await requireAdmin();
     const db = createAdminClient() as any;
     const { error } = await db
       .from("comisiones_pagos")
