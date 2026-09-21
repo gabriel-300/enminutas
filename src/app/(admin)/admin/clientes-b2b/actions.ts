@@ -193,6 +193,27 @@ export async function setPasswordCliente(profileId: string, password: string): P
   return {};
 }
 
+export async function cambiarEmailCliente(profileId: string, nuevoEmail: string): Promise<{ error?: string }> {
+  await requireAdmin();
+  const email = nuevoEmail.trim().toLowerCase();
+  if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return { error: "Ingresá un email válido" };
+
+  const supabase = createAdminClient();
+  // email_confirm: true aplica el cambio directo, sin mail de confirmación al cliente
+  const { error } = await supabase.auth.admin.updateUserById(profileId, { email, email_confirm: true });
+  if (error) {
+    const msg = error.message?.toLowerCase() ?? "";
+    if (msg.includes("already") || msg.includes("duplicate") || msg.includes("exist")) {
+      return { error: "Ya existe un usuario con ese email." };
+    }
+    return { error: error.message };
+  }
+
+  revalidatePath("/admin/clientes-b2b");
+  revalidatePath(`/admin/clientes-b2b/${profileId}`);
+  return {};
+}
+
 export async function cambiarEstadoCliente(profileId: string, status: "pendiente" | "activo" | "inactivo") {
   await requireAdmin();
   const supabase = createAdminClient();

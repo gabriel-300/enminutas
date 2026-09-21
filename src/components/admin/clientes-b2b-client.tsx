@@ -12,6 +12,7 @@ import {
   eliminarClienteB2B,
   enviarResetPassword,
   setPasswordCliente,
+  cambiarEmailCliente,
 } from "@/app/(admin)/admin/clientes-b2b/actions";
 
 type Cliente = {
@@ -135,6 +136,63 @@ function EditForm({
         </button>
         {editError && <p className="text-xs text-danger">{editError}</p>}
       </div>
+    </div>
+  );
+}
+
+// ── Email panel (inline, below the edit form) ────────────────────────────────
+
+function EmailPanel({ clienteId, emailActual }: { clienteId: string; emailActual: string | null }) {
+  const [editing, setEditing] = useState(false);
+  const [email, setEmail]     = useState("");
+  const [msg, setMsg]         = useState<string | null>(null);
+  const [err, setErr]         = useState<string | null>(null);
+  const [isPending, start]    = useTransition();
+
+  function handleSave() {
+    setErr(null); setMsg(null);
+    start(async () => {
+      try {
+        const res = await cambiarEmailCliente(clienteId, email);
+        if (res.error) setErr(res.error);
+        else { setMsg("Email actualizado. El cliente ya debe ingresar con el nuevo."); setEditing(false); setEmail(""); }
+      } catch (e: any) {
+        setErr(e?.message ?? "Error inesperado");
+      }
+    });
+  }
+
+  return (
+    <div className="mt-3 px-3 py-3 border border-neutral-200 rounded-xl bg-neutral-50 space-y-2">
+      <p className="text-xs font-medium text-neutral-500">Email de acceso</p>
+      {!editing ? (
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="text-sm text-neutral-700">{emailActual ?? "—"}</span>
+          <button type="button" onClick={() => { setEditing(true); setEmail(emailActual ?? ""); setMsg(null); setErr(null); }}
+            className="px-3 py-1.5 text-xs font-medium rounded-lg border border-neutral-300 text-neutral-600 hover:bg-neutral-100">
+            Cambiar email
+          </button>
+        </div>
+      ) : (
+        <div className="flex items-center gap-2">
+          <input
+            type="email" value={email} onChange={e => setEmail(e.target.value)}
+            placeholder="nuevo@email.com"
+            className="flex-1 px-3 py-1.5 text-sm border border-neutral-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-tierra-700/20"
+            disabled={isPending}
+          />
+          <button type="button" onClick={handleSave} disabled={isPending || !email.trim()}
+            className="px-3 py-1.5 text-xs font-medium rounded-lg bg-tierra-700 text-white hover:bg-tierra-800 disabled:opacity-50">
+            {isPending ? "Guardando…" : "Guardar"}
+          </button>
+          <button type="button" onClick={() => { setEditing(false); setErr(null); }} disabled={isPending}
+            className="px-3 py-1.5 text-xs font-medium rounded-lg border border-neutral-200 text-neutral-500 hover:bg-neutral-100">
+            Cancelar
+          </button>
+        </div>
+      )}
+      {msg && <p className="text-xs text-success">{msg}</p>}
+      {err && <p className="text-xs text-danger">{err}</p>}
     </div>
   );
 }
@@ -322,6 +380,7 @@ function ClienteMobileCard({ cliente, zonas, vendedores, canales, esAdmin }: {
         <div className="mt-3 pt-3 border-t border-neutral-100">
           <EditForm cliente={cliente} zonas={zonas} canales={canales} vendedores={vendedores}
             esAdmin={esAdmin} isPending={isPending} editError={editError} onSubmit={handleEdit} />
+          {esAdmin && <EmailPanel clienteId={cliente.id} emailActual={cliente.email} />}
           {esAdmin && <PasswordPanel clienteId={cliente.id} />}
         </div>
       )}
@@ -435,6 +494,7 @@ function ClienteRow({ cliente, zonas, vendedores, canales, esAdmin }: {
           {esAdmin && (
             <tr className="bg-neutral-50 border-b border-neutral-200">
               <td colSpan={7} className="px-4 pb-4 pt-0">
+                <EmailPanel clienteId={cliente.id} emailActual={cliente.email} />
                 <PasswordPanel clienteId={cliente.id} />
               </td>
             </tr>
