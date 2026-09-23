@@ -3,6 +3,7 @@ import Link from "next/link";
 import { createClient, createAdminClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { PlanificadorClient } from "@/components/admin/planificador-client";
+import { resolverRecetas } from "@/lib/receta-base";
 
 export const metadata: Metadata = { title: "Planificador — Cocina En Minutas" };
 export const revalidate = 0;
@@ -28,7 +29,7 @@ export default async function PlanificadorPage({
     .in("status", ["aprobado", "enviado_prod"]);
   const pendingIds = (rawPendingOrders ?? []).map((o: any) => o.id as string);
 
-  const [{ data: rawProducts }, { data: rawPendingLines }, { data: rawRecipes }, { data: rawLotes }] = await Promise.all([
+  const [{ data: rawProducts }, { data: rawPendingLines }, { data: rawRecipes }, { data: rawLotes }, { data: rawTodos }] = await Promise.all([
     adminClient
       .from("products")
       .select("id, name, sku, bolsas_caja, stock_minimo, category:categories!category_id (name)")
@@ -48,6 +49,9 @@ export default async function PlanificadorPage({
       .from("lotes")
       .select("producto_id, cantidad_actual")
       .eq("activo", true),
+
+    // Incluye inactivos: el dueño de una receta compartida puede estar inactivo
+    adminClient.from("products").select("id, receta_producto_id, kg_caja"),
   ]);
 
   // Stock real por producto (suma de lotes activos)
@@ -64,24 +68,27 @@ export default async function PlanificadorPage({
     demandaMap[line.product_id] = (demandaMap[line.product_id] ?? 0) + line.quantity;
   }
 
-  // Recetas: minutos por lote y cajas por lote
-  const recetaMap: Record<string, { minPorLote: number; yieldCajas: number }> = {};
-  for (const r of (rawRecipes ?? []) as any[]) {
-    const minPorLote = (r.steps ?? []).reduce((s: number, st: any) => s + Number(st.minutes), 0);
-    recetaMap[r.product_id] = { minPorLote, yieldCajas: r.yield_cajas };
-  }
+  // Recetas: propia o heredada del producto base (presentaciones que comparten receta)
+  const recetaMap = resolverRecetas((rawTodos ?? []) as any[], (rawRecipes ?? []) as any[]);
 
   const items = ((rawProducts ?? []) as any[]).map((p) => {
     const stock   = stockMap[p.id] ?? 0;
     const minimo  = p.stock_minimo ?? 0;
     const demanda = demandaMap[p.id] ?? 0;
-    const receta  = recetaMap[p.id] ?? null;
+    const rr      = recetaMap[p.id] ?? null;
+    const receta  = rr
+      ? {
+          minPorLote: (rr.receta.steps ?? []).reduce((s: number, st: any) => s + Number(st.minutes), 0),
+          yieldCajas: Number(rr.receta.yield_cajas),
+        }
+      : null;
 
     // Producir para cubrir demanda Y mantener el stock mínimo
     const cajasNecesarias = Math.max(demanda + minimo - stock, 0);
 
-    const minutos = receta && receta.yieldCajas > 0 && cajasNecesarias > 0
-      ? Math.ceil((receta.minPorLote * cajasNecesarias) / receta.yieldCajas)
+    // cajasNecesarias está en cajas de esta presentación: se pasa a cajas del base antes de dividir por el rinde
+    const minutos = rr && receta && receta.yieldCajas > 0 && cajasNecesarias > 0
+      ? Math.ceil((receta.minPorLote * cajasNecesarias * rr.factor) / receta.yieldCajas)
       : null;
 
     return {

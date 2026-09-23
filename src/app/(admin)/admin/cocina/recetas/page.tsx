@@ -3,6 +3,9 @@ import Link from "next/link";
 import { createClient, createAdminClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { CostoCajaEdit } from "./costo-edit";
+import { factorABase, cajasPorLote } from "@/lib/receta-base";
+
+const fmtRinde = (n: number) => new Intl.NumberFormat("es-AR", { maximumFractionDigits: 2 }).format(n);
 
 export const metadata: Metadata = { title: "Recetas — Admin En Minutas" };
 export const revalidate = 0;
@@ -26,23 +29,28 @@ export default async function RecetasPage() {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
-  const [{ data: rawProducts }, { data: rawRecipes }] = await Promise.all([
+  const [{ data: rawProducts }, { data: rawRecipes }, { data: todosKg }] = await Promise.all([
     adminClient
       .from("products")
-      .select("id, name, sku, costo, bolsas_caja, category:categories!category_id (name)")
+      .select("id, name, sku, costo, bolsas_caja, kg_caja, receta_producto_id, unit_label, category:categories!category_id (name)")
       .eq("is_active", true)
       .order("name"),
 
     adminClient
       .from("recipes")
       .select("id, product_id, yield_cajas, steps:recipe_steps (id, minutes), ingredients:recipe_ingredients (cantidad, insumo:insumos!insumo_id (precio_unitario))"),
+
+    // Incluye inactivos: el dueño de una receta compartida puede estar inactivo
+    adminClient.from("products").select("id, name, kg_caja"),
   ]);
 
   const recipeMap: Record<string, {
-    yieldCajas:   number;
+    yieldCajas:   number | null;
     totalMinutos: number;
     pasos:        number;
     costoCaja:    number;
+    /** producto dueño de la receta, si este producto es una presentación */
+    baseId?:      string;
   }> = {};
 
   for (const r of (rawRecipes ?? []) as any[]) {
@@ -61,6 +69,23 @@ export default async function RecetasPage() {
   }
 
   const products  = (rawProducts ?? []) as any[];
+  const todos     = (todosKg ?? []) as { id: string; name: string; kg_caja: number | null }[];
+  const kgCajaDe  = (id: string) => todos.find((p) => p.id === id)?.kg_caja;
+
+  // Presentaciones: heredan pasos/tiempo de la receta base; rendimiento y costo se prorratean por peso
+  for (const p of products) {
+    const base = p.receta_producto_id ? recipeMap[p.receta_producto_id] : null;
+    if (!base || recipeMap[p.id]) continue;
+    const factor = factorABase(p.kg_caja, kgCajaDe(p.receta_producto_id));
+    recipeMap[p.id] = {
+      yieldCajas:   cajasPorLote(base.yieldCajas, factor),
+      totalMinutos: base.totalMinutos,
+      pasos:        base.pasos,
+      costoCaja:    factor !== null ? base.costoCaja * factor : 0,
+      baseId:       p.receta_producto_id,
+    };
+  }
+
   const conReceta = products.filter((p) => recipeMap[p.id]);
   const sinReceta = products.filter((p) => !recipeMap[p.id]);
 
@@ -129,9 +154,19 @@ export default async function RecetasPage() {
                       <td className="px-5 py-3">
                         <p className="font-medium text-neutral-900">{p.name}</p>
                         <p className="text-xs text-neutral-400 font-mono">{p.sku}</p>
+                        {r.baseId && (
+                          <p className="text-xs text-neutral-400">
+                            Presentación{p.unit_label ? ` ${p.unit_label}` : ""} · usa la receta de{" "}
+                            <Link href={`/admin/cocina/recetas/${r.baseId}`} className="text-tierra-700 hover:underline">
+                              {todos.find((x) => x.id === r.baseId)?.name ?? "otro producto"}
+                            </Link>
+                          </p>
+                        )}
                       </td>
                       <td className="px-5 py-3 text-center text-sm text-neutral-600">
-                        {r.yieldCajas} caja{r.yieldCajas !== 1 ? "s" : ""}
+                        {r.yieldCajas === null
+                          ? <span className="text-amber-600 text-xs">falta kg/caja</span>
+                          : <>{fmtRinde(r.yieldCajas)} caja{r.yieldCajas !== 1 ? "s" : ""}</>}
                       </td>
                       <td className="px-5 py-3 text-center text-sm text-neutral-600">{r.pasos}</td>
                       <td className="px-5 py-3 text-center text-sm font-medium text-neutral-800">
@@ -160,7 +195,7 @@ export default async function RecetasPage() {
                       </td>
 
                       <td className="px-5 py-3 text-right">
-                        <Link href={`/admin/cocina/recetas/${p.id}`}
+                        <Link href={`/admin/cocina/recetas/${r.baseId ?? p.id}`}
                           className="text-xs text-tierra-700 hover:underline font-medium">
                           Editar
                         </Link>

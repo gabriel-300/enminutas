@@ -1911,6 +1911,7 @@ export type Database = {
       produccion: {
         Row: {
           cantidad_cajas: number
+          cantidad_lotes: number | null
           created_at: string
           created_by: string | null
           fecha: string
@@ -1921,6 +1922,7 @@ export type Database = {
         }
         Insert: {
           cantidad_cajas: number
+          cantidad_lotes?: number | null
           created_at?: string
           created_by?: string | null
           fecha?: string
@@ -1931,6 +1933,7 @@ export type Database = {
         }
         Update: {
           cantidad_cajas?: number
+          cantidad_lotes?: number | null
           created_at?: string
           created_by?: string | null
           fecha?: string
@@ -2038,6 +2041,7 @@ export type Database = {
           precio_lista: number | null
           precio_min: number | null
           presentacion: string | null
+          receta_producto_id: string | null
           price_b2b: number
           price_b2c: number
           short_description: string | null
@@ -2084,6 +2088,7 @@ export type Database = {
           precio_lista?: number | null
           precio_min?: number | null
           presentacion?: string | null
+          receta_producto_id?: string | null
           price_b2b: number
           price_b2c: number
           short_description?: string | null
@@ -2130,6 +2135,7 @@ export type Database = {
           precio_lista?: number | null
           precio_min?: number | null
           presentacion?: string | null
+          receta_producto_id?: string | null
           price_b2b?: number
           price_b2c?: number
           short_description?: string | null

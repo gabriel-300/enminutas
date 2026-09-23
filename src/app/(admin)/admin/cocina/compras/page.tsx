@@ -3,6 +3,7 @@ import Link from "next/link";
 import { createClient, createAdminClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { PrintButton } from "@/components/admin/print-button";
+import { resolverRecetas } from "@/lib/receta-base";
 
 export const metadata: Metadata = { title: "Lista de compras — Cocina En Minutas" };
 export const revalidate = 0;
@@ -35,6 +36,7 @@ export default async function ComprasPage() {
     { data: rawIngs },
     { data: rawLotes },
     { data: rawInsumos },
+    { data: rawTodos },
   ] = await Promise.all([
     adminClient
       .from("products")
@@ -65,6 +67,9 @@ export default async function ComprasPage() {
       .from("insumos")
       .select("id, nombre, unidad, stock_actual, stock_minimo, punto_pedido, precio_unitario")
       .order("nombre"),
+
+    // Incluye inactivos: el dueño de una receta compartida puede estar inactivo
+    adminClient.from("products").select("id, receta_producto_id, kg_caja"),
   ]);
 
   // Stock real de productos terminados (suma de lotes activos)
@@ -108,25 +113,18 @@ export default async function ComprasPage() {
     });
   }
 
-  // Recetas por product_id
-  const recetaMap: Record<string, { id: string; yieldCajas: number; ingredients: { insumo_id: string; nombre: string; cantidad: number; unidad: string; precio: number }[] }> = {};
-  for (const r of (rawRecipes ?? []) as any[]) {
-    recetaMap[r.product_id] = {
-      id:          r.id,
-      yieldCajas:  r.yield_cajas,
-      ingredients: ingsByRecipe[r.id] ?? [],
-    };
-  }
+  // Receta de cada producto: propia o heredada del producto base (presentaciones que comparten receta)
+  const recetaResuelta = resolverRecetas((rawTodos ?? []) as any[], (rawRecipes ?? []) as any[]);
 
-  // Calcular lotes necesarios por producto
+  // Calcular lotes necesarios por receta. Las presentaciones que comparten receta se suman
+  // en cajas del base antes de redondear, para no pedir un lote de más por cada presentación.
   type NeedItem = {
-    id: string; name: string; sku: string;
-    cajasNecesarias: number; yieldCajas: number; lotes: number;
-    demanda: number; stock: number;
+    id: string; name: string;
+    cajasBase: number; yieldCajas: number; lotes: number;
     ingredients: { insumo_id: string; nombre: string; cantidad: number; unidad: string; precio: number }[];
   };
 
-  const needItems: NeedItem[] = [];
+  const needByRecipe: Record<string, Omit<NeedItem, "lotes">> = {};
   const sinIngredientes: { name: string; cajasNecesarias: number }[] = [];
 
   for (const p of (rawProducts ?? []) as any[]) {
@@ -136,20 +134,25 @@ export default async function ComprasPage() {
     const cajasNecesarias = Math.max(demanda + minimo - stock, 0);
     if (cajasNecesarias <= 0) continue;
 
-    const receta = recetaMap[p.id];
-    if (!receta || receta.ingredients.length === 0) {
+    const rr = recetaResuelta[p.id];
+    const ingredients = rr ? (ingsByRecipe[rr.receta.id] ?? []) : [];
+    if (!rr || ingredients.length === 0) {
       sinIngredientes.push({ name: p.name, cajasNecesarias });
       continue;
     }
 
-    const lotes = Math.ceil(cajasNecesarias / receta.yieldCajas);
-    needItems.push({
-      id: p.id, name: p.name, sku: p.sku,
-      cajasNecesarias, yieldCajas: receta.yieldCajas, lotes,
-      demanda, stock,
-      ingredients: receta.ingredients,
-    });
+    const acc = needByRecipe[rr.receta.id] ??= {
+      id: rr.baseId, name: p.name, cajasBase: 0,
+      yieldCajas: Number(rr.receta.yield_cajas), ingredients,
+    };
+    if (!acc.name.split(" + ").includes(p.name)) acc.name += ` + ${p.name}`;
+    acc.cajasBase += cajasNecesarias * rr.factor;
   }
+
+  const needItems: NeedItem[] = Object.values(needByRecipe).map(n => ({
+    ...n,
+    lotes: Math.ceil(n.cajasBase / n.yieldCajas),
+  }));
 
   // Consolidar ingredientes por insumo_id
   type IngConsolidado = {

@@ -3,6 +3,12 @@ import Link from "next/link";
 import { createClient, createAdminClient } from "@/lib/supabase/server";
 import { redirect, notFound } from "next/navigation";
 import { RecetaEditor } from "@/components/admin/receta-editor";
+import {
+  PresentacionesReceta,
+  type PresentacionVinculada,
+  type ProductoVinculable,
+} from "@/components/admin/presentaciones-receta";
+import { factorABase, cajasPorLote } from "@/lib/receta-base";
 
 export const metadata: Metadata = { title: "Editor de receta — Admin En Minutas" };
 export const revalidate = 0;
@@ -23,7 +29,7 @@ export default async function RecetaEditorPage({
   const [{ data: product }, { data: recipeRaw }, { data: insumosRaw }] = await Promise.all([
     adminClient
       .from("products")
-      .select("id, name, sku, unit_label, bolsas_caja")
+      .select("id, name, sku, unit_label, bolsas_caja, kg_caja, receta_producto_id")
       .eq("id", productId)
       .single(),
 
@@ -40,6 +46,43 @@ export default async function RecetaEditorPage({
   ]);
 
   if (!product) notFound();
+
+  // Una presentación no tiene receta propia: se edita en el producto base
+  if (product.receta_producto_id) redirect(`/admin/cocina/recetas/${product.receta_producto_id}`);
+
+  // Presentaciones vinculadas y productos que se podrían vincular (solo si ya hay receta)
+  let vinculadas: PresentacionVinculada[] = [];
+  let candidatos: ProductoVinculable[] = [];
+  if (recipeRaw?.id) {
+    const factorDe = (kg: number | string | null) => factorABase(kg, product.kg_caja);
+    const [{ data: linked }, { data: activos }, { data: conReceta }] = await Promise.all([
+      adminClient
+        .from("products")
+        .select("id, name, sku, unit_label, kg_caja")
+        .eq("receta_producto_id", productId)
+        .order("name"),
+      adminClient
+        .from("products")
+        .select("id, name, sku, unit_label, kg_caja, receta_producto_id")
+        .eq("is_active", true)
+        .is("receta_producto_id", null)
+        .neq("id", productId)
+        .order("name"),
+      adminClient.from("recipes").select("product_id"),
+    ]);
+    vinculadas = ((linked ?? []) as any[]).map((p) => ({
+      id: p.id, name: p.name, sku: p.sku, unit_label: p.unit_label,
+      kg_caja:      p.kg_caja !== null ? Number(p.kg_caja) : null,
+      cajasPorLote: cajasPorLote(recipeRaw.yield_cajas, factorDe(p.kg_caja)),
+    }));
+    const tienenReceta = new Set(((conReceta ?? []) as any[]).map((r) => r.product_id));
+    candidatos = ((activos ?? []) as any[])
+      .filter((p) => !tienenReceta.has(p.id))
+      .map((p) => ({
+        id: p.id, name: p.name, sku: p.sku, unit_label: p.unit_label,
+        kg_caja: p.kg_caja !== null ? Number(p.kg_caja) : null,
+      }));
+  }
 
   const insumos = (insumosRaw ?? []) as { id: string; nombre: string; unidad: string; precio_unitario: number }[];
 
@@ -88,6 +131,15 @@ export default async function RecetaEditorPage({
       </div>
 
       <RecetaEditor productId={productId} insumos={insumos} recipe={recipe} />
+
+      {recipe && (
+        <PresentacionesReceta
+          baseId={productId}
+          baseKgCaja={product.kg_caja !== null ? Number(product.kg_caja) : null}
+          vinculadas={vinculadas}
+          candidatos={candidatos}
+        />
+      )}
     </div>
   );
 }

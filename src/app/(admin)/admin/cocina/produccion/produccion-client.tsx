@@ -24,7 +24,9 @@ type Props = {
 
 export function ProduccionClient({ productos, historial }: Props) {
   const [productoId,    setProductoId]    = useState("");
+  const [presentacionId, setPresentacionId] = useState("");
   const [cantLotes,     setCantLotes]     = useState("1");
+  const [cajasManual,   setCajasManual]   = useState("");
   const [vidaUtil,      setVidaUtil]      = useState(180);
   const [fecha,         setFecha]         = useState(hoy());
   const [notas,         setNotas]         = useState("");
@@ -37,17 +39,34 @@ export function ProduccionClient({ productos, historial }: Props) {
     [productos, productoId],
   );
 
-  // Al cambiar de producto, actualizar vida útil configurada
+  const presentacion = useMemo(
+    () => producto?.presentaciones.find(p => p.id === presentacionId) ?? null,
+    [producto, presentacionId],
+  );
+
+  // Al cambiar de producto: vida útil de la receta y presentación sugerida (la que más falta)
   function handleProductoChange(id: string) {
     setProductoId(id);
     const p = productos.find(p => p.id === id);
-    if (p) setVidaUtil(p.vida_util_dias);
+    if (p) {
+      setVidaUtil(p.vida_util_dias);
+      const inicial = p.presentaciones.find(x => x.id === p.sugerida_id)
+        ?? p.presentaciones.find(x => x.es_base)
+        ?? p.presentaciones[0];
+      setPresentacionId(inicial?.id ?? "");
+    } else {
+      setPresentacionId("");
+    }
+    setCajasManual("");
     setResultado(null);
     setError(null);
   }
 
   const lotes = parseFloat(cantLotes.replace(",", ".")) || 0;
-  const cajas = producto?.receta ? lotes * producto.receta.yield_cajas : 0;
+  const cajasPorLote = presentacion?.cajas_por_lote ?? null;
+  const cajasCalculadas = cajasPorLote !== null ? Math.round(lotes * cajasPorLote * 100) / 100 : 0;
+  const cajasManualNum = parseFloat(cajasManual.replace(",", ".")) || 0;
+  const cajas = cajasManualNum > 0 ? cajasManualNum : cajasCalculadas;
   const fechaVenc = fecha && vidaUtil > 0 ? calcularVencimiento(fecha, vidaUtil) : null;
 
   // Calcular insumos a descontar
@@ -66,14 +85,15 @@ export function ProduccionClient({ productos, historial }: Props) {
     e.preventDefault();
     setError(null);
     setResultado(null);
-    if (!productoId) return setError("Seleccioná un producto");
+    if (!productoId || !presentacionId) return setError("Seleccioná un producto y su presentación");
     if (lotes <= 0) return setError("La cantidad de lotes debe ser mayor a 0");
+    if (cajas <= 0) return setError("Falta cargar el kg por caja de la presentación para calcular las cajas. Ingresalas a mano en «Cajas obtenidas».");
 
     const fd = new FormData();
-    fd.set("producto_id",   productoId);
-    fd.set("receta_id",     producto!.receta!.id);
+    fd.set("producto_id",   presentacionId);
+    fd.set("receta_id",     producto!.receta.id);
     fd.set("cantidad_lotes",String(lotes));
-    fd.set("yield_cajas",   String(producto!.receta!.yield_cajas));
+    if (cajasManualNum > 0) fd.set("cajas_reales", String(cajasManualNum));
     fd.set("vida_util_dias",String(vidaUtil));
     fd.set("fecha",         fecha);
     fd.set("notas",         notas);
@@ -81,8 +101,8 @@ export function ProduccionClient({ productos, historial }: Props) {
     start(async () => {
       const res = await registrarProduccion(fd);
       if ("error" in res) { setError(res.error); return; }
-      setResultado({ numero_lote: res.numero_lote, cajas });
-      setProductoId(""); setCantLotes("1"); setNotas(""); setFecha(hoy());
+      setResultado({ numero_lote: res.numero_lote, cajas: res.cajas });
+      setProductoId(""); setPresentacionId(""); setCantLotes("1"); setCajasManual(""); setNotas(""); setFecha(hoy());
     });
   }
 
@@ -110,7 +130,7 @@ export function ProduccionClient({ productos, historial }: Props) {
                 value={productoId}
                 onChange={e => handleProductoChange(e.target.value)}
                 className={inputCls} disabled={isPending} required>
-                <option value="">— Seleccionar producto —</option>
+                <option value="">— Seleccionar receta / producto —</option>
                 {productos.map(p => (
                   <option key={p.id} value={p.id}>
                     {p.name}{p.sku ? ` (${p.sku})` : ""}
@@ -129,13 +149,53 @@ export function ProduccionClient({ productos, historial }: Props) {
             </div>
           </div>
 
+          {/* Presentación + cajas obtenidas */}
+          {producto && (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="md:col-span-2">
+                <label className="block text-xs font-medium text-neutral-500 mb-1">Presentación *</label>
+                <select
+                  value={presentacionId}
+                  onChange={e => { setPresentacionId(e.target.value); setCajasManual(""); setResultado(null); }}
+                  className={inputCls} disabled={isPending} required>
+                  {producto.presentaciones.map(p => (
+                    <option key={p.id} value={p.id}>
+                      {p.unit_label?.trim() || p.name}{p.sku ? ` (${p.sku})` : ""}
+                      {p.id === producto.sugerida_id ? ` — sugerida, faltan ${fmt(p.faltante)}` : ""}
+                    </option>
+                  ))}
+                </select>
+                {producto.sugerida_id && (
+                  <p className="text-xs text-neutral-400 mt-1">
+                    Sugerida según pedidos pendientes y stock mínimo. Podés elegir otra.
+                  </p>
+                )}
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-neutral-500 mb-1">Cajas obtenidas</label>
+                <input
+                  type="text" inputMode="decimal"
+                  placeholder={cajasCalculadas > 0 ? fmt(cajasCalculadas) : "—"}
+                  value={cajasManual}
+                  onChange={e => { setCajasManual(e.target.value); setResultado(null); }}
+                  className={inputCls} disabled={isPending} />
+                <p className="text-xs text-neutral-400 mt-1">
+                  {cajasPorLote === null
+                    ? "Falta kg por caja: ingresalas a mano."
+                    : "Se calcula por peso; corregilo si salió distinto."}
+                </p>
+              </div>
+            </div>
+          )}
+
           {/* Info de rendimiento */}
-          {producto?.receta && (
+          {producto && presentacion && (
             <div className="text-xs text-neutral-400 bg-neutral-50 rounded-xl px-4 py-3 flex flex-wrap gap-x-6 gap-y-1">
               <span>
-                Receta: rinde <strong className="text-neutral-700">{fmt(producto.receta.yield_cajas)} cajas</strong> / lote
+                Receta: 1 lote{producto.receta.kg_lote !== null ? <> ≈ <strong className="text-neutral-700">{fmt(producto.receta.kg_lote)} kg</strong></> : ""}
+                {cajasPorLote !== null && <> = <strong className="text-neutral-700">{fmt(cajasPorLote)} cajas</strong> de esta presentación</>}
               </span>
-              {lotes > 0 && (
+              {lotes > 0 && cajas > 0 && (
                 <span>
                   Producción: <strong className="text-neutral-800">{lotes} lote{lotes !== 1 ? "s" : ""}</strong>
                   {" = "}
@@ -270,6 +330,7 @@ export function ProduccionClient({ productos, historial }: Props) {
                   <td className="px-5 py-3 font-medium text-neutral-800">
                     {h.producto?.name ?? "—"}
                     {h.producto?.sku && <span className="text-neutral-400 font-mono text-xs ml-1">{h.producto.sku}</span>}
+                    {h.producto?.unit_label && <span className="block text-xs text-neutral-400 font-normal">{h.producto.unit_label}</span>}
                   </td>
                   <td className="px-5 py-3 text-right tabular-nums font-semibold text-neutral-800">
                     {fmt(h.cantidad_cajas)}
