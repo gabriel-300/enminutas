@@ -15,9 +15,11 @@ type Producto = {
   u_bolsa:       number;
   precio_caja:   number;
   precio_unidad: number;
+  precio_caja_zona: Record<string, number>; // precio de la caja con el flete de cada zona incluido
 };
 
 type Canal = { slug: string; label: string };
+type Zona  = { id: string; name: string; flete_pct: number };
 
 type LineaCarrito = { producto: Producto; cajas: number };
 
@@ -39,11 +41,13 @@ function uid() {
 
 export function SimuladorPedido({
   productos,
+  zonas,
   canales,
   canalActivo,
   ivaPct,
 }: {
   productos:   Producto[];
+  zonas:       Zona[];
   canales:     Canal[];
   canalActivo: string;
   ivaPct:      number;
@@ -53,8 +57,13 @@ export function SimuladorPedido({
   const [busqueda,     setBusqueda]     = useState("");
   const [carrito,      setCarrito]      = useState<Record<string, number>>({});
   const [percepciones, setPercepciones] = useState<Percepcion[]>([]);
+  const [zonaId,       setZonaId]       = useState("");
 
   const canalLabel = canales.find((c) => c.slug === canalActivo)?.label ?? canalActivo;
+
+  // El flete va incluido en el precio de la caja: sin zona o con zona sin flete = precio base
+  const zona = zonas.find((z) => z.id === zonaId) ?? null;
+  const precioCaja = (p: Producto) => (zonaId && p.precio_caja_zona[zonaId]) || p.precio_caja;
 
   // Productos filtrados
   const filtrados = useMemo(() => {
@@ -83,7 +92,7 @@ export function SimuladorPedido({
 
   // Totales base
   const totalConIVA = lineasCarrito.reduce(
-    (s, l) => s + l.producto.precio_caja * l.cajas, 0,
+    (s, l) => s + precioCaja(l.producto) * l.cajas, 0,
   );
   const totalSinIVA = totalConIVA / (1 + ivaPct);
   const totalIVA    = totalConIVA - totalSinIVA;
@@ -136,6 +145,7 @@ export function SimuladorPedido({
     setCarrito({});
     setPercepciones([]);
     setBusqueda("");
+    setZonaId("");
   }
 
   const hayCarrito = lineasCarrito.length > 0;
@@ -159,25 +169,42 @@ export function SimuladorPedido({
           </p>
         </div>
 
-        {/* Selector de canal */}
-        <div className="flex gap-1 bg-neutral-100 rounded-xl p-1">
-          {canales.map((c) => (
-            <button
-              key={c.slug}
-              onClick={() => {
-                setCarrito({});
-                setPercepciones([]);
-                router.push(`/admin/preventista/simulador?canal=${c.slug}`);
-              }}
-              className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
-                c.slug === canalActivo
-                  ? "bg-white text-neutral-900 shadow-sm"
-                  : "text-neutral-500 hover:text-neutral-700"
-              }`}
-            >
-              {c.label}
-            </button>
-          ))}
+        <div className="flex items-center gap-2 flex-wrap">
+          {/* Zona de entrega: el precio de la caja ya incluye el flete de la zona */}
+          <select
+            value={zonaId}
+            onChange={(e) => setZonaId(e.target.value)}
+            aria-label="Zona de entrega"
+            className="px-3 py-2 text-sm border border-neutral-200 rounded-xl bg-white text-neutral-700 focus:outline-none focus:ring-2 focus:ring-tierra-700/20"
+          >
+            <option value="">Zona de entrega…</option>
+            {zonas.map((z) => (
+              <option key={z.id} value={z.id}>
+                {z.name}{z.flete_pct > 0 ? ` (+${Math.round(z.flete_pct * 10000) / 100}%)` : ""}
+              </option>
+            ))}
+          </select>
+
+          {/* Selector de canal */}
+          <div className="flex gap-1 bg-neutral-100 rounded-xl p-1">
+            {canales.map((c) => (
+              <button
+                key={c.slug}
+                onClick={() => {
+                  setCarrito({});
+                  setPercepciones([]);
+                  router.push(`/admin/preventista/simulador?canal=${c.slug}`);
+                }}
+                className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+                  c.slug === canalActivo
+                    ? "bg-white text-neutral-900 shadow-sm"
+                    : "text-neutral-500 hover:text-neutral-700"
+                }`}
+              >
+                {c.label}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
 
@@ -224,7 +251,7 @@ export function SimuladorPedido({
                         <p className="text-xs text-neutral-400 mt-0.5">{p.linea} · {p.presentacion}</p>
                       </td>
                       <td className="px-4 py-2.5 text-right tabular-nums font-medium text-neutral-700 hidden sm:table-cell">
-                        {fmt(p.precio_caja)}
+                        {fmt(precioCaja(p))}
                       </td>
                       <td className="px-4 py-2.5">
                         <div className="flex items-center justify-center gap-1">
@@ -290,6 +317,13 @@ export function SimuladorPedido({
               )}
             </div>
 
+            {/* Solo en pantalla: nota interna para el preventista, nunca se imprime */}
+            {zona && zona.flete_pct > 0 && (
+              <p className="text-xs text-neutral-400 print:hidden">
+                {zona.name}: los precios incluyen un {Math.round(zona.flete_pct * 10000) / 100}% de recargo por entrega.
+              </p>
+            )}
+
             {!hayCarrito ? (
               <p className="text-sm text-neutral-400 text-center py-2">
                 Agregá productos del catálogo
@@ -303,11 +337,11 @@ export function SimuladorPedido({
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-medium text-neutral-800 truncate">{p.nombre}</p>
                         <p className="text-xs text-neutral-400">
-                          {cajas} caja{cajas !== 1 ? "s" : ""} × {fmt(p.precio_caja)}
+                          {cajas} caja{cajas !== 1 ? "s" : ""} × {fmt(precioCaja(p))}
                         </p>
                       </div>
                       <p className="text-sm font-semibold tabular-nums text-neutral-900 shrink-0">
-                        {fmt(p.precio_caja * cajas)}
+                        {fmt(precioCaja(p) * cajas)}
                       </p>
                     </div>
                   ))}

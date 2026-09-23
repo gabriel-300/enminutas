@@ -15,7 +15,7 @@ export default async function AdminZonasPage() {
 
   const [{ data: zonas, error }, { data: clienteCounts }] = await Promise.all([
     db.from("delivery_zones")
-      .select("id, name, codigo, km, precio_km, capacidad_kg, updated_at")
+      .select("id, name, codigo, km, flete_pct, updated_at")
       .order("km", { ascending: true }),
     db.from("profiles").select("zona_id").not("zona_id", "is", null),
   ]);
@@ -39,8 +39,7 @@ export default async function AdminZonasPage() {
     codigo:       z.codigo ?? "",
     name:         z.name,
     km:           z.km ?? 0,
-    precio_km:    z.precio_km ?? 0,
-    capacidad_kg: z.capacidad_kg ?? 1200,
+    flete_pct:    Number(z.flete_pct ?? 0),
     client_count: countMap[z.id] ?? 0,
     updated_at:   z.updated_at ?? null,
   }));
@@ -50,7 +49,7 @@ export default async function AdminZonasPage() {
       <div className="mb-6">
         <h1 className="text-2xl font-semibold font-display text-neutral-900">Zonas — Fletes y destinos</h1>
         <p className="text-sm text-neutral-500 mt-1">
-          Flete local (Posadas/NEA): incluido en precio · Fuera de Misiones: km × 2 × $/km, cobrado aparte
+          El flete va incluido en el precio de la mercadería: un % sobre el precio de lista s/IVA de cada zona. 0% = sin flete.
         </p>
       </div>
       <ZonasClient zonas={lista} />

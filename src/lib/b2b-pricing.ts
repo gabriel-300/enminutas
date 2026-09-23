@@ -1,18 +1,19 @@
 // Fórmula de precios B2B — En Minutas v5
 // Especificación: EnMinutas_EspecTecnica_ListaPrecios_v5.pdf
 //
-// FINAL c/IVA = (lista_siva × 1.21) + (lista_siva × 0.15)
-// El IVA se aplica SOLO sobre lista_siva, NO sobre la comisión.
+// FINAL c/IVA = (lista_siva × 1.21) + (lista_siva × 0.15) + (lista_siva × flete_pct × 1.21)
+// El IVA se aplica SOLO sobre lista_siva y el flete, NO sobre la comisión.
+// El flete es CIF: un % de lista_siva por zona, incluido en el precio (no se cobra aparte).
 
 export type PrecioB2B = {
   lista_siva:    number;
   lista_civa:    number;
   comision:      number;
+  flete:         number;   // flete CIF c/IVA incluido en final_civa (0 si la zona no tiene)
   final_civa:    number;   // precio que paga el cliente por la caja
   precio_unidad: number;   // final_civa ÷ total de unidades individuales
   pvp_unidad:    number;   // precio sugerido al consumidor por unidad
   precio_cajita: number;   // final_civa ÷ bolsas/cajitas (display alternativo)
-  costo_viaje:   number;   // flete zona — se muestra separado, nunca en precio
 };
 
 export function calcularPrecio(p: {
@@ -29,9 +30,7 @@ export function calcularPrecio(p: {
   markup_pvp:            number;           // ej: 0.80
   iva_pct?:           number;           // default 0.21
   comision_pct?:      number;           // default 0.15
-  flete_kg?:          number;           // siempre 0 en v5; contemplado para futuro
-  km?:                number;
-  precio_km?:         number;
+  flete_pct?:         number;           // ej: 0.02 = 2% de lista_siva (zona de destino); default 0
 }): PrecioB2B {
   const r2 = (n: number) => Math.round(n * 100) / 100;
   const r0 = (n: number) => Math.round(n);
@@ -57,30 +56,28 @@ export function calcularPrecio(p: {
   // Paso 4 — Comisión (sin IVA adicional)
   const comision = r2(lista_siva * comision_pct);
 
-  // Paso 5 — FINAL c/IVA
-  const flete_kg_total = r2((p.flete_kg ?? 0) * (p.bolsas_caja ?? 1));
-  const final_civa = r0(lista_civa + comision + flete_kg_total);
+  // Paso 5 — Flete CIF (% de lista_siva por zona, con IVA; fuera de la base de comisión)
+  const flete = r2(lista_siva * (p.flete_pct ?? 0) * (1 + iva));
 
-  // Paso 6 — Precio por unidad
+  // Paso 6 — FINAL c/IVA
+  const final_civa = r0(lista_civa + comision + flete);
+
+  // Paso 7 — Precio por unidad
   const div_unidades = p.divisiones_display != null
     ? p.u_bolsa * p.divisiones_display
     : p.u_bolsa * p.bolsas_caja;
   const precio_unidad = r0(final_civa / div_unidades);
 
-  // Paso 7 — PVP sugerido por unidad
+  // Paso 8 — PVP sugerido por unidad
   const pvp_unidad = r0(final_civa * (1 + p.markup_pvp) / div_unidades);
 
-  // Paso 8 — Precio por cajita/bolsa
+  // Paso 9 — Precio por cajita/bolsa
   const div_cajitas  = p.divisiones_display ?? p.bolsas_caja;
   const precio_cajita = r0(final_civa / div_cajitas);
 
-  // Paso 9 — Flete por viaje (cobrado aparte, no en el precio)
-  const costo_viaje = r0((p.km ?? 0) * 2 * (p.precio_km ?? 0));
-
   return {
-    lista_siva, lista_civa, comision, final_civa,
+    lista_siva, lista_civa, comision, flete, final_civa,
     precio_unidad, pvp_unidad, precio_cajita,
-    costo_viaje,
   };
 }
 

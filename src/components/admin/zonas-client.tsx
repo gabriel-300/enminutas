@@ -3,42 +3,37 @@
 import { useState, useTransition } from "react";
 import { crearZona, actualizarZona, eliminarZona } from "@/app/(admin)/admin/zonas/actions";
 
-const fmtNum = (n: number) => `$ ${Number(n).toLocaleString("es-AR")}`;
-
 type Zona = {
   id:           string;
   codigo:       string;
   name:         string;
   km:           number;
-  precio_km:    number;
-  capacidad_kg: number;
+  flete_pct:    number;   // fracción: 0.02 = 2%
   client_count: number;
   updated_at:   string | null;
 };
 
-function costoViaje(km: number, precio_km: number) {
-  return Math.round(km * 2 * precio_km);
-}
+// fracción en la base → porcentaje para mostrar/editar (0.015 → 1,5)
+const pctDeFraccion = (f: number) => Math.round(f * 10000) / 100;
 
 function ZonaRow({ zona }: { zona: Zona }) {
   const [editing, setEditing]        = useState(false);
   const [codigo, setCodigo]          = useState(zona.codigo);
   const [name, setName]              = useState(zona.name);
   const [km, setKm]                  = useState(String(zona.km));
-  const [precioKm, setPrecioKm]      = useState(String(zona.precio_km));
-  const [capacidad, setCapacidad]    = useState(String(zona.capacidad_kg));
+  const [flete, setFlete]            = useState(String(pctDeFraccion(zona.flete_pct)));
   const [isPending, startTransition] = useTransition();
 
   function handleSave() {
     const fd = new FormData();
     fd.set("codigo", codigo); fd.set("name", name);
-    fd.set("km", km); fd.set("precio_km", precioKm); fd.set("capacidad_kg", capacidad);
+    fd.set("km", km); fd.set("flete_pct", flete);
     startTransition(async () => { await actualizarZona(zona.id, fd); setEditing(false); });
   }
 
   function handleCancel() {
     setCodigo(zona.codigo); setName(zona.name); setKm(String(zona.km));
-    setPrecioKm(String(zona.precio_km)); setCapacidad(String(zona.capacidad_kg));
+    setFlete(String(pctDeFraccion(zona.flete_pct)));
     setEditing(false);
   }
 
@@ -48,11 +43,9 @@ function ZonaRow({ zona }: { zona: Zona }) {
   }
 
   const inp = "px-2 py-1 text-sm border border-tierra-700/60 rounded-lg focus:outline-none focus:border-tierra-700";
-  const costo = costoViaje(zona.km, zona.precio_km);
-  const esLocal = zona.km === 0;
+  const pct = pctDeFraccion(zona.flete_pct);
 
   if (editing) {
-    const previewCosto = costoViaje(Number(km), Number(precioKm));
     return (
       <tr className="bg-crema-50">
         <td className="px-3 py-3">
@@ -68,15 +61,12 @@ function ZonaRow({ zona }: { zona: Zona }) {
             placeholder="0" className={`${inp} w-20`} disabled={isPending} />
         </td>
         <td className="px-3 py-3">
-          <input type="number" value={precioKm} onChange={(e) => setPrecioKm(e.target.value)}
-            placeholder="800" className={`${inp} w-24`} disabled={isPending} />
-        </td>
-        <td className="px-3 py-3 text-sm font-medium text-neutral-700 tabular-nums">
-          {previewCosto > 0 ? fmtNum(previewCosto) : <span className="text-neutral-300">—</span>}
-        </td>
-        <td className="px-3 py-3">
-          <input type="number" value={capacidad} onChange={(e) => setCapacidad(e.target.value)}
-            placeholder="1200" className={`${inp} w-20`} disabled={isPending} />
+          <div className="flex items-center gap-1">
+            <input type="number" step="0.01" min="0" max="99.99" value={flete}
+              onChange={(e) => setFlete(e.target.value)}
+              placeholder="0" className={`${inp} w-20`} disabled={isPending} />
+            <span className="text-sm text-neutral-500">%</span>
+          </div>
         </td>
         <td className="px-3 py-3" colSpan={3}>
           <div className="flex gap-3">
@@ -102,16 +92,12 @@ function ZonaRow({ zona }: { zona: Zona }) {
       </td>
       <td className="px-3 py-3 font-medium text-neutral-900">{zona.name}</td>
       <td className="px-3 py-3 tabular-nums text-neutral-600 text-sm">
-        {esLocal ? <span className="text-neutral-300">—</span> : `${zona.km} km`}
-      </td>
-      <td className="px-3 py-3 tabular-nums text-neutral-600 text-sm">
-        {zona.precio_km > 0 ? `${fmtNum(zona.precio_km)}/km` : <span className="text-neutral-300">—</span>}
+        {zona.km === 0 ? <span className="text-neutral-300">—</span> : `${zona.km} km`}
       </td>
       <td className="px-3 py-3 tabular-nums font-semibold text-neutral-800 text-sm">
-        {costo > 0 ? fmtNum(costo) : <span className="text-neutral-300">—</span>}
-      </td>
-      <td className="px-3 py-3 tabular-nums text-neutral-500 text-sm">
-        {zona.capacidad_kg > 0 ? `${zona.capacidad_kg.toLocaleString("es-AR")} kg` : "—"}
+        {pct > 0
+          ? `${pct.toLocaleString("es-AR")}%`
+          : <span className="font-normal text-neutral-300">Sin flete</span>}
       </td>
       <td className="px-3 py-3 text-sm">
         <span className="inline-flex items-center gap-1 text-success text-xs font-medium">
@@ -161,9 +147,7 @@ export function ZonasClient({ zonas }: { zonas: Zona[] }) {
               <th className="px-3 py-3 font-medium text-neutral-500 w-16">Cód.</th>
               <th className="px-3 py-3 font-medium text-neutral-500">Zona</th>
               <th className="px-3 py-3 font-medium text-neutral-500">km desde Posadas</th>
-              <th className="px-3 py-3 font-medium text-neutral-500">$ por km</th>
-              <th className="px-3 py-3 font-medium text-neutral-500">Costo viaje</th>
-              <th className="px-3 py-3 font-medium text-neutral-500">Capacidad kg</th>
+              <th className="px-3 py-3 font-medium text-neutral-500">Flete incluido</th>
               <th className="px-3 py-3 font-medium text-neutral-500">Estado</th>
               <th className="px-3 py-3 font-medium text-neutral-500 whitespace-nowrap">Última act.</th>
               <th className="px-3 py-3 w-28"></th>
@@ -172,7 +156,7 @@ export function ZonasClient({ zonas }: { zonas: Zona[] }) {
           <tbody className="divide-y divide-neutral-100">
             {zonas.length === 0 && (
               <tr>
-                <td colSpan={9} className="px-4 py-10 text-center text-neutral-400">
+                <td colSpan={7} className="px-4 py-10 text-center text-neutral-400">
                   No hay zonas configuradas.
                 </td>
               </tr>
@@ -200,25 +184,20 @@ export function ZonasClient({ zonas }: { zonas: Zona[] }) {
                 className="w-full px-3 py-2 text-sm border border-neutral-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-tierra-700/20" />
             </div>
           </div>
-          <div className="grid grid-cols-3 gap-4">
+          <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs font-medium text-neutral-500 mb-1">km ida</label>
-              <input name="km" type="number" placeholder="800" min="0" disabled={isPending}
+              <label className="block text-xs font-medium text-neutral-500 mb-1">km desde Posadas</label>
+              <input name="km" type="number" placeholder="1000" min="0" disabled={isPending}
                 className="w-full px-3 py-2 text-sm border border-neutral-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-tierra-700/20" />
             </div>
             <div>
-              <label className="block text-xs font-medium text-neutral-500 mb-1">$/km</label>
-              <input name="precio_km" type="number" placeholder="800" min="0" disabled={isPending}
-                className="w-full px-3 py-2 text-sm border border-neutral-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-tierra-700/20" />
-            </div>
-            <div>
-              <label className="block text-xs font-medium text-neutral-500 mb-1">Capacidad (kg)</label>
-              <input name="capacidad_kg" type="number" placeholder="1200" min="0" disabled={isPending}
+              <label className="block text-xs font-medium text-neutral-500 mb-1">Flete incluido (%)</label>
+              <input name="flete_pct" type="number" step="0.01" min="0" max="99.99" placeholder="0" disabled={isPending}
                 className="w-full px-3 py-2 text-sm border border-neutral-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-tierra-700/20" />
             </div>
           </div>
           <p className="text-xs text-neutral-400">
-            Flete = km × 2 × $/km. Posadas/NEA: km = 0 (incluido en precio).
+            El flete se suma al precio de la mercadería: % sobre el precio de lista s/IVA, más IVA. 0 = sin flete (Posadas/NEA).
           </p>
           <button type="submit" disabled={isPending}
             className="px-5 py-2 rounded-xl bg-tierra-700 text-white text-sm font-medium hover:bg-tierra-800 disabled:opacity-50 transition-colors">

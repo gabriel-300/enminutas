@@ -3,7 +3,8 @@
     "allow": [
       "Bash(ls -la \"c:\\\\claude-proyecto\" 2>&1)",
       "Read(//c/claude-proyecto/**)",
-      "WebSearch"
+      "WebSearch",
+      "mcp__supabase__execute_sql"
     ]
   }
 }

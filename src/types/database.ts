@@ -528,6 +528,7 @@ export type Database = {
           codigo: string | null
           estimated_minutes: number
           flete_kg: number | null
+          flete_pct: number
           id: string
           is_active: boolean | null
           km: number | null
@@ -542,6 +543,7 @@ export type Database = {
           codigo?: string | null
           estimated_minutes: number
           flete_kg?: number | null
+          flete_pct?: number
           id?: string
           is_active?: boolean | null
           km?: number | null
@@ -556,6 +558,7 @@ export type Database = {
           codigo?: string | null
           estimated_minutes?: number
           flete_kg?: number | null
+          flete_pct?: number
           id?: string
           is_active?: boolean | null
           km?: number | null

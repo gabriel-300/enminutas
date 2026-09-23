@@ -29,7 +29,6 @@ type CrearPedidoPayload = {
   discountAmount?: number;
   cargoAdicionalConcepto?: string | null;
   cargoAdicionalMonto?:    number;
-  shippingFee?:            number;
   shippingAddress?: { calle: string | null; numero: string | null; piso: string | null; ciudad: string | null } | null;
 };
 
@@ -37,8 +36,6 @@ export async function crearPedidoAdmin(payload: CrearPedidoPayload): Promise<{ o
   const { clientId, canal, zonaId, items, notes, paymentMethod, initialStatus, shippingAddress } = payload;
   const cargoAdicionalMonto = Math.max(0, Number(payload.cargoAdicionalMonto ?? 0));
   if (isNaN(cargoAdicionalMonto)) return { error: "Monto de cargo adicional inválido" };
-  const shippingFee = Math.max(0, Number(payload.shippingFee ?? 0));
-  if (isNaN(shippingFee)) return { error: "Monto de flete inválido" };
 
   if (!clientId)         return { error: "Seleccioná un cliente" };
   if (items.length === 0) return { error: "Agregá al menos un producto" };
@@ -76,7 +73,7 @@ export async function crearPedidoAdmin(payload: CrearPedidoPayload): Promise<{ o
   const productIds = items.map((i) => i.productId);
 
   // Fetch datos de pricing server-side en paralelo
-  const [params, clientProfileRes, productsRes, volumeDiscounts] = await Promise.all([
+  const [params, clientProfileRes, productsRes, volumeDiscounts, zonaRes] = await Promise.all([
     getParametros(),
     (adminClient as any)
       .from("profiles")
@@ -88,7 +85,13 @@ export async function crearPedidoAdmin(payload: CrearPedidoPayload): Promise<{ o
       .select("id, costo, bolsas_caja, pkg_unitario, pkg_bulto, u_bolsa, categoria, divisiones_display, min_quantity_b2b")
       .in("id", productIds),
     getActiveVolumeDiscounts(),
+    // Flete CIF de la zona de entrega: mismo % que usó la pantalla para mostrar precios
+    zonaId
+      ? (adminClient as any).from("delivery_zones").select("flete_pct").eq("id", zonaId).maybeSingle()
+      : Promise.resolve({ data: null }),
   ]);
+
+  const fletePct = Number(zonaRes.data?.flete_pct ?? 0);
 
   const canalData = clientProfileRes.data?.canal as { margen_std: number; margen_premium: number; markup_pvp: number } | null | undefined;
   if (!canalData) return { error: "El cliente no tiene canal asignado" };
@@ -120,6 +123,7 @@ export async function crearPedidoAdmin(payload: CrearPedidoPayload): Promise<{ o
       markup_pvp:         Number(canalData.markup_pvp),
       iva_pct:            params.iva_pct,
       comision_pct:       params.comision_pct,
+      flete_pct:          fletePct,
     });
     serverPrices.set(item.productId, precio.final_civa);
   }
@@ -131,7 +135,7 @@ export async function crearPedidoAdmin(payload: CrearPedidoPayload): Promise<{ o
 
   const validDiscount  = calcVolumeDiscount(volumeDiscounts, totalQty, subtotalBruto);
   const descuento      = Math.max(0, Math.min(subtotalBruto, validDiscount?.amount ?? 0));
-  const total          = subtotalBruto - descuento + cargoAdicionalMonto + shippingFee;
+  const total          = subtotalBruto - descuento + cargoAdicionalMonto;
 
   const shippingSnapshot = (shippingAddress?.calle || shippingAddress?.ciudad)
     ? {
@@ -147,7 +151,7 @@ export async function crearPedidoAdmin(payload: CrearPedidoPayload): Promise<{ o
     customer_id:             clientId,
     status:                  safeStatus,
     subtotal:                r(subtotalBruto),
-    shipping_fee:            r(shippingFee),
+    shipping_fee:            0,
     discount:                r(descuento),
     total:                   r(total),
     cargo_adicional_concepto: cargoAdicionalMonto > 0 ? (payload.cargoAdicionalConcepto?.trim() || null) : null,

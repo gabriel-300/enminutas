@@ -3,24 +3,50 @@
 import { useRouter } from "next/navigation";
 
 type Canal = { slug: string; label: string };
+type Zona  = { id: string; name: string; flete_pct: number };
 
 export function ListaPreciosControls({
   canales,
   canalActivo,
+  zonas,
+  zonaActiva,
 }: {
-  canales: Canal[];
+  canales:     Canal[];
   canalActivo: string;
+  zonas:       Zona[];
+  zonaActiva:  string;
 }) {
   const router = useRouter();
 
+  function ir(canal: string, zona: string) {
+    const qs = new URLSearchParams({ canal });
+    if (zona) qs.set("zona", zona);
+    router.push(`/admin/preventista/lista-precios?${qs.toString()}`);
+  }
+
   return (
     <div className="flex items-center gap-2 flex-wrap">
+      {/* Zona de entrega: los precios de la lista ya incluyen el flete de la zona */}
+      <select
+        value={zonaActiva}
+        onChange={(e) => ir(canalActivo, e.target.value)}
+        aria-label="Zona de entrega"
+        className="px-3 py-2 text-sm border border-neutral-200 rounded-xl bg-white text-neutral-700 focus:outline-none focus:ring-2 focus:ring-tierra-700/20"
+      >
+        <option value="">Zona de entrega…</option>
+        {zonas.map((z) => (
+          <option key={z.id} value={z.id}>
+            {z.name}{z.flete_pct > 0 ? ` (+${Math.round(z.flete_pct * 10000) / 100}%)` : ""}
+          </option>
+        ))}
+      </select>
+
       {/* Selector de canal */}
       <div className="flex gap-1 bg-neutral-100 rounded-xl p-1">
         {canales.map((c) => (
           <button
             key={c.slug}
-            onClick={() => router.push(`/admin/preventista/lista-precios?canal=${c.slug}`)}
+            onClick={() => ir(c.slug, zonaActiva)}
             className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
               c.slug === canalActivo
                 ? "bg-white text-neutral-900 shadow-sm"

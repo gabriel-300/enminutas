@@ -18,7 +18,7 @@ const CANALES = [
 export default async function ListaPreciosPage({
   searchParams,
 }: {
-  searchParams: Promise<{ canal?: string }>;
+  searchParams: Promise<{ canal?: string; zona?: string }>;
 }) {
   const sp        = await searchParams;
   const canalSlug = CANALES.find((c) => c.slug === sp.canal)?.slug ?? "dist";
@@ -33,7 +33,7 @@ export default async function ListaPreciosPage({
   const role = user.app_metadata?.role as string | undefined;
   if (role !== "admin" && role !== "vendedor") redirect("/admin");
 
-  const [params, { data: canal }, { data: rawProducts }] = await Promise.all([
+  const [params, { data: canal }, { data: rawProducts }, { data: rawZonas }] = await Promise.all([
     getParametros(),
 
     adminClient
@@ -54,7 +54,18 @@ export default async function ListaPreciosPage({
       .eq("is_active", true)
       .not("codigo", "is", null)
       .order("codigo"),
+
+    adminClient
+      .from("delivery_zones")
+      .select("id, name, flete_pct")
+      .order("name"),
   ]);
+
+  const zonas = ((rawZonas ?? []) as any[]).map((z) => ({
+    id: z.id as string, name: z.name as string, flete_pct: Number(z.flete_pct ?? 0),
+  }));
+  // Sin zona (o zona sin flete) = precio base. El flete queda dentro del precio, nunca como línea aparte.
+  const zonaActiva = zonas.find((z) => z.id === sp.zona) ?? null;
 
   type Fila = {
     codigo:          number;
@@ -87,6 +98,7 @@ export default async function ListaPreciosPage({
       markup_pvp:         Number(canal.markup_pvp),
       iva_pct:            params.iva_pct,
       comision_pct:       params.comision_pct,
+      flete_pct:          zonaActiva?.flete_pct ?? 0,
     });
 
     filas.push({
@@ -123,10 +135,18 @@ export default async function ListaPreciosPage({
           </h1>
           <p className="text-sm text-neutral-500 mt-0.5">
             Canal <span className="font-medium text-neutral-700">{canalLabel}</span> — {fecha}
+            {zonaActiva && zonaActiva.flete_pct > 0 && (
+              <> · Zona <span className="font-medium text-neutral-700">{zonaActiva.name}</span></>
+            )}
           </p>
         </div>
 
-        <ListaPreciosControls canales={CANALES} canalActivo={canalSlug} />
+        <ListaPreciosControls
+          canales={CANALES}
+          canalActivo={canalSlug}
+          zonas={zonas}
+          zonaActiva={zonaActiva?.id ?? ""}
+        />
       </div>
 
       {/* Encabezado de impresión — solo visible al imprimir */}

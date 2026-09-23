@@ -31,7 +31,7 @@ export default async function SimuladorPage({
   const role = user.app_metadata?.role as string | undefined;
   if (role !== "admin" && role !== "vendedor") redirect("/admin");
 
-  const [params, { data: canal }, { data: rawProducts }] = await Promise.all([
+  const [params, { data: canal }, { data: rawProducts }, { data: rawZonas }] = await Promise.all([
     getParametros(),
 
     adminClient
@@ -52,7 +52,18 @@ export default async function SimuladorPage({
       .eq("is_active", true)
       .not("codigo", "is", null)
       .order("codigo"),
+
+    adminClient
+      .from("delivery_zones")
+      .select("id, name, flete_pct")
+      .order("name"),
   ]);
+
+  const zonas = ((rawZonas ?? []) as any[]).map((z) => ({
+    id: z.id as string, name: z.name as string, flete_pct: Number(z.flete_pct ?? 0),
+  }));
+  // Solo las zonas con flete cambian el precio; las demás usan el precio base
+  const zonasConFlete = zonas.filter((z) => z.flete_pct > 0);
 
   type ProductoConPrecio = {
     id:           string;
@@ -64,6 +75,8 @@ export default async function SimuladorPage({
     u_bolsa:      number;
     precio_caja:  number;
     precio_unidad: number;
+    // precio de la caja con el flete de cada zona ya incluido: { [zonaId]: precio }
+    precio_caja_zona: Record<string, number>;
   };
 
   const productos: ProductoConPrecio[] = [];
@@ -71,7 +84,7 @@ export default async function SimuladorPage({
   for (const p of rawProducts ?? []) {
     if (!p.costo || !p.bolsas_caja || !p.u_bolsa || !p.categoria || !canal) continue;
 
-    const precio = calcularPrecio({
+    const base = {
       costo:              Number(p.costo),
       bolsas_caja:        Number(p.bolsas_caja),
       pkg_unitario:       Number(p.pkg_unitario ?? 0),
@@ -84,7 +97,13 @@ export default async function SimuladorPage({
       markup_pvp:         Number(canal.markup_pvp),
       iva_pct:            params.iva_pct,
       comision_pct:       params.comision_pct,
-    });
+    };
+    const precio = calcularPrecio(base);
+
+    const precio_caja_zona: Record<string, number> = {};
+    for (const z of zonasConFlete) {
+      precio_caja_zona[z.id] = calcularPrecio({ ...base, flete_pct: z.flete_pct }).final_civa;
+    }
 
     productos.push({
       id:           p.id,
@@ -96,12 +115,14 @@ export default async function SimuladorPage({
       u_bolsa:      Number(p.u_bolsa),
       precio_caja:  precio.final_civa,
       precio_unidad: precio.precio_unidad,
+      precio_caja_zona,
     });
   }
 
   return (
     <SimuladorPedido
       productos={productos}
+      zonas={zonas}
       canales={CANALES}
       canalActivo={canalSlug}
       ivaPct={params.iva_pct}

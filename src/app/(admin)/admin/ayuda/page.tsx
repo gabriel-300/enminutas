@@ -113,7 +113,7 @@ export default async function AyudaPage() {
             <Steps items={[
               "Ir a Pedidos → + Nuevo pedido.",
               "Seleccionar el cliente B2B. Los precios se calculan automáticamente según su canal (distribuidor, minorista, etc.).",
-              "Elegir la dirección de entrega. El sistema calcula el flete según la zona.",
+              "Elegir la dirección de entrega. El flete de la zona ya va incluido en el precio de cada producto.",
               "Buscar y agregar productos usando el buscador o los filtros por línea. Escribir la cantidad en el campo o usar los botones + / −.",
               "En el panel derecho elegir la forma de pago y el estado inicial del pedido.",
               "Hacer click en Crear pedido. El cliente recibe un email de confirmación.",
@@ -268,7 +268,7 @@ export default async function AyudaPage() {
             {[
               { label: "Actualizar precio de un producto", desc: "Configuración → Productos → editar producto → cambiar Costo. Los precios de todos los canales se recalculan automáticamente." },
               { label: "Cambiar márgenes de un canal", desc: "Configuración → Canales B2B → editar el canal. Los precios se actualizan al instante." },
-              { label: "Agregar una nueva zona de entrega", desc: "Configuración → Zonas → Nueva zona. Definí nombre, km de distancia y precio por km." },
+              { label: "Agregar una nueva zona de entrega", desc: "Configuración → Zonas → Nueva zona. Definí nombre, km de distancia y el % de flete incluido en el precio (0 = sin flete)." },
               { label: "Crear un pedido aprobado directamente", desc: "Pedidos → Nuevo pedido → Estado inicial: Aprobado. El pedido entra directamente a producción sin pasar por pendiente de pago." },
               { label: "Ver comisiones del mes", desc: "Preventista → ver la tarjeta de comisión de cada vendedor. Reportes para el total general." },
               { label: "Liquidar comisiones IDEIA", desc: "Liquidaciones → Nueva liquidación → seleccionar período. El sistema calcula automáticamente el GMV y la comisión." },

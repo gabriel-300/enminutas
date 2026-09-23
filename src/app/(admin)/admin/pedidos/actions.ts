@@ -740,14 +740,14 @@ export async function agregarLineaPedido(
 
   const { data: order } = await db
     .from("orders")
-    .select("status, discount, shipping_fee, customer_id")
+    .select("status, discount, shipping_fee, customer_id, delivery_zone_id")
     .eq("id", orderId)
     .single();
   if (!order) return { error: "Pedido no encontrado" };
   if (!ESTADOS_EDITABLES.includes(order.status))
     return { error: `Solo se pueden editar pedidos en estado: ${ESTADOS_EDITABLES.join(", ")}` };
 
-  const [productRes, profileRes, params] = await Promise.all([
+  const [productRes, profileRes, params, zonaRes] = await Promise.all([
     db.from("products")
       .select("id, name, sku, costo, bolsas_caja, pkg_unitario, pkg_bulto, u_bolsa, categoria, divisiones_display")
       .eq("id", productId)
@@ -757,6 +757,10 @@ export async function agregarLineaPedido(
       .eq("id", order.customer_id)
       .single(),
     getParametros(),
+    // Misma zona de entrega del pedido: la línea nueva lleva el mismo flete CIF que las demás
+    order.delivery_zone_id
+      ? db.from("delivery_zones").select("flete_pct").eq("id", order.delivery_zone_id).maybeSingle()
+      : Promise.resolve({ data: null }),
   ]);
 
   const prod      = productRes.data;
@@ -779,6 +783,7 @@ export async function agregarLineaPedido(
     markup_pvp:         Number(canalData.markup_pvp),
     iva_pct:            params.iva_pct,
     comision_pct:       params.comision_pct,
+    flete_pct:          Number(zonaRes.data?.flete_pct ?? 0),
   });
 
   const unitPrice = precio.final_civa;
@@ -792,7 +797,7 @@ export async function agregarLineaPedido(
       quantity,
       unit_price:       unitPrice,
       line_total:       lineTotal,
-      product_snapshot: { name: prod.name, sku: prod.sku ?? null },
+      product_snapshot: { name: prod.name, sku: prod.sku ?? null, precio: { flete: precio.flete } },
     });
   if (insError) return { error: insError.message };
 

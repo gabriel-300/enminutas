@@ -26,7 +26,8 @@ export async function GET(req: NextRequest) {
 
   const { data: zonas } = await (adminClient as any)
     .from("delivery_zones")
-    .select("id, name, km, precio_km")
+    .select("id, name, flete_pct")
+    .gt("flete_pct", 0)
     .order("name");
 
   const { data: rawProducts } = await (adminClient as any)
@@ -42,8 +43,9 @@ export async function GET(req: NextRequest) {
     .not("codigo", "is", null)
     .order("codigo");
 
+  // Solo zonas con flete CIF: las demás tienen el mismo precio que la lista base
   const zonasList = (zonas ?? []) as Array<{
-    id: string; name: string; km: number; precio_km: number;
+    id: string; name: string; flete_pct: number;
   }>;
 
   const headers = [
@@ -51,7 +53,7 @@ export async function GET(req: NextRequest) {
     "u/cajita", "cajas", "kg/caja",
     "Lista s/IVA", "Lista c/IVA", `Comisión ${Math.round(params.comision_pct * 100)}%`, "FINAL s/IVA", "FINAL c/IVA",
     "$/u", "PVP/u", "PVP/cajita",
-    ...zonasList.map((z) => `Flete ${z.name}`),
+    ...zonasList.map((z) => `Puesto en ${z.name} c/IVA (flete ${Math.round(Number(z.flete_pct) * 10000) / 100}%)`),
   ];
 
   const rows: string[][] = [];
@@ -59,7 +61,7 @@ export async function GET(req: NextRequest) {
   for (const p of rawProducts ?? []) {
     if (!p.costo || !p.bolsas_caja || !p.u_bolsa || !p.categoria) continue;
 
-    const precio = calcularPrecio({
+    const base = {
       costo:              Number(p.costo),
       bolsas_caja:        Number(p.bolsas_caja),
       pkg_unitario:       Number(p.pkg_unitario ?? 0),
@@ -72,14 +74,14 @@ export async function GET(req: NextRequest) {
       markup_pvp:         Number(canal.markup_pvp),
       iva_pct:            params.iva_pct,
       comision_pct:       params.comision_pct,
-    });
+    };
+    const precio = calcularPrecio(base);
 
     const final_siva = Math.round(precio.lista_siva + precio.comision);
 
-    const zonaFletes = zonasList.map((z) => {
-      const costo_viaje = Math.round(z.km * 2 * z.precio_km);
-      return costo_viaje > 0 ? String(costo_viaje) : "$0";
-    });
+    const zonaFletes = zonasList.map((z) =>
+      String(calcularPrecio({ ...base, flete_pct: Number(z.flete_pct) }).final_civa),
+    );
 
     rows.push([
       String(p.codigo ?? ""),

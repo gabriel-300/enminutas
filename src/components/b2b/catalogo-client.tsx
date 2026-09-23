@@ -152,11 +152,9 @@ const REORDER_KEY = "b2b-reorder-pending";
 export function CatalogoB2BClient({
   products,
   zonaId = null,
-  costoViaje = 0,
 }: {
   products:    Producto[];
   zonaId?:     string | null;
-  costoViaje?: number;
 }) {
   const [cart, dispatch] = useReducer(cartReducer, undefined, (): CartItem[] => {
     if (typeof window === "undefined") return [];
@@ -259,10 +257,7 @@ export function CatalogoB2BClient({
                 <p className="text-sm font-medium">
                   {totalQty} caja{totalQty !== 1 ? "s" : ""} · {fmt(totalCiva)}
                 </p>
-                <p className="text-xs text-neutral-400">
-                  Total c/IVA
-                  {costoViaje > 0 && ` · + flete ${fmt(costoViaje)} aparte`}
-                </p>
+                <p className="text-xs text-neutral-400">Total c/IVA</p>
               </div>
               <button onClick={() => setShowNota(!showNota)}
                 className="text-neutral-400 hover:text-white transition-colors text-xs shrink-0">
