@@ -77,7 +77,7 @@ export async function crearPedidoAdmin(payload: CrearPedidoPayload): Promise<{ o
     getParametros(),
     (adminClient as any)
       .from("profiles")
-      .select("canal:canales!canal_id (margen_std, margen_premium, markup_pvp)")
+      .select("comision_pct_override, canal:canales!canal_id (margen_std, margen_premium, markup_pvp)")
       .eq("id", clientId)
       .single(),
     (adminClient as any)
@@ -95,6 +95,10 @@ export async function crearPedidoAdmin(payload: CrearPedidoPayload): Promise<{ o
 
   const canalData = clientProfileRes.data?.canal as { margen_std: number; margen_premium: number; markup_pvp: number } | null | undefined;
   if (!canalData) return { error: "El cliente no tiene canal asignado" };
+
+  const comisionPctCliente = clientProfileRes.data?.comision_pct_override != null
+    ? Number(clientProfileRes.data.comision_pct_override)
+    : params.comision_pct;
 
   // Validar cantidades mínimas y recalcular precios server-side
   const productMap  = new Map<string, any>((productsRes.data ?? []).map((p: any) => [p.id, p]));
@@ -122,7 +126,7 @@ export async function crearPedidoAdmin(payload: CrearPedidoPayload): Promise<{ o
       margen_premium:     Number(canalData.margen_premium),
       markup_pvp:         Number(canalData.markup_pvp),
       iva_pct:            params.iva_pct,
-      comision_pct:       params.comision_pct,
+      comision_pct:       comisionPctCliente,
       flete_pct:          fletePct,
     });
     serverPrices.set(item.productId, precio.final_civa);

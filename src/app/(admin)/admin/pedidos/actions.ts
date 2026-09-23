@@ -471,7 +471,9 @@ export type LineaEntregada = {
 };
 
 export async function confirmarEntregaParcial(orderId: string, lineas: LineaEntregada[]) {
-  const role = await getCallerRole();
+  const authClient = await createClient();
+  const { data: { user } } = await authClient.auth.getUser();
+  const role = user?.app_metadata?.role as string | undefined;
   if (role !== "admin" && role !== "distribucion") throw new Error("No autorizado");
 
   const todosEntregados = lineas.every((l) => l.entregado >= l.pedido);
@@ -483,12 +485,41 @@ export async function confirmarEntregaParcial(orderId: string, lineas: LineaEntr
   }
 
   const supabase = createAdminClient();
+
+  const { data: order } = await (supabase as any)
+    .from("orders")
+    .select("total, shipping_fee, discount, payment_method, customer_id, order_number")
+    .eq("id", orderId)
+    .single();
+  if (!order) throw new Error("Pedido no encontrado");
+
+  // Recalcular subtotal/total en base a lo efectivamente entregado, tomando
+  // el precio unitario ya calculado de cada línea (mismo criterio que usa el
+  // remito para mostrar el total real de una entrega parcial).
+  const { data: orderLines } = await (supabase as any)
+    .from("order_lines")
+    .select("product_id, unit_price")
+    .eq("order_id", orderId);
+  const priceMap = new Map<string, number>(
+    ((orderLines ?? []) as any[]).map((l) => [l.product_id, Number(l.unit_price)])
+  );
+
+  const newSubtotal = lineas.reduce(
+    (acc, l) => acc + (priceMap.get(l.productId) ?? 0) * l.entregado, 0
+  );
+  const flete       = Number(order.shipping_fee ?? 0);
+  const descuento    = Number(order.discount ?? 0);
+  const newTotal     = Math.round((newSubtotal + flete - descuento) * 100) / 100;
+  const totalOriginal = Number(order.total);
+
   const { data: updated, error } = await (supabase as any)
     .from("orders")
     .update({
       status:             "entrega_parcial",
       entregado_at:       new Date().toISOString(),
       delivered_snapshot: { lineas, timestamp: new Date().toISOString() },
+      subtotal:           newSubtotal,
+      total:              newTotal,
     })
     .eq("id", orderId)
     .in("status", ["despachado", "en_distribucion"])
@@ -496,7 +527,27 @@ export async function confirmarEntregaParcial(orderId: string, lineas: LineaEntr
 
   if (error) throw new Error(error.message);
   if (!updated?.length) throw new Error("El pedido no está en estado de distribución");
-  await logOrderEvent(supabase, orderId, "entrega_parcial", "Entrega parcial confirmada");
+  await logOrderEvent(
+    supabase, orderId, "entrega_parcial",
+    `Entrega parcial confirmada — total ajustado de $${totalOriginal} a $${newTotal}`,
+    user?.id,
+  );
+
+  // Ajustar el cargo en cuenta corriente por la diferencia (el cargo original
+  // se hizo por el total completo al despachar, antes de saber que habría
+  // entrega parcial).
+  const diferencia = newTotal - totalOriginal;
+  if (order.payment_method === "cuenta_corriente" && order.customer_id && Math.abs(diferencia) >= 0.01) {
+    await (supabase as any).from("cc_movimientos").insert({
+      cliente_id:  order.customer_id,
+      order_id:    orderId,
+      tipo:        "ajuste",
+      descripcion: `Ajuste por entrega parcial — Pedido ${order.order_number}`,
+      monto:       diferencia,
+      fecha:       new Date().toISOString().slice(0, 10),
+      created_by:  user?.id ?? null,
+    });
+  }
 
   // Reintegrar al stock las unidades no entregadas
   for (const linea of lineas) {
@@ -517,7 +568,12 @@ export async function confirmarEntregaParcial(orderId: string, lineas: LineaEntr
 
   revalidatePath("/admin/distribucion");
   revalidatePath("/admin/pedidos");
+  revalidatePath(`/admin/pedidos/${orderId}`);
   revalidatePath("/admin/dashboard");
+  revalidatePath("/admin/cuentas-corrientes");
+  revalidatePath("/admin/reportes");
+  if (order.customer_id) revalidatePath(`/admin/clientes-b2b/${order.customer_id}`);
+  revalidatePath(`/remito/${orderId}`);
 }
 
 // Cancela un pedido ya despachado / en distribución (antes de que se confirme
@@ -753,7 +809,7 @@ export async function agregarLineaPedido(
       .eq("id", productId)
       .single(),
     db.from("profiles")
-      .select("canal:canales!canal_id (margen_std, margen_premium, markup_pvp)")
+      .select("comision_pct_override, canal:canales!canal_id (margen_std, margen_premium, markup_pvp)")
       .eq("id", order.customer_id)
       .single(),
     getParametros(),
@@ -770,6 +826,10 @@ export async function agregarLineaPedido(
   if (!prod.costo) return { error: "El producto no tiene costo configurado" };
   if (!canalData) return { error: "El cliente no tiene canal asignado" };
 
+  const comisionPctCliente = profileRes.data?.comision_pct_override != null
+    ? Number(profileRes.data.comision_pct_override)
+    : params.comision_pct;
+
   const precio = calcularPrecio({
     costo:              Number(prod.costo),
     bolsas_caja:        Number(prod.bolsas_caja),
@@ -782,7 +842,7 @@ export async function agregarLineaPedido(
     margen_premium:     Number(canalData.margen_premium),
     markup_pvp:         Number(canalData.markup_pvp),
     iva_pct:            params.iva_pct,
-    comision_pct:       params.comision_pct,
+    comision_pct:       comisionPctCliente,
     flete_pct:          Number(zonaRes.data?.flete_pct ?? 0),
   });
 

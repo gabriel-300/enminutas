@@ -42,6 +42,11 @@ const STATUS_MSG: Record<string, { title: string; body: string; color: string }>
     body:  "Este pedido fue cancelado. Contactanos si tenés dudas.",
     color: "bg-danger-bg border-danger/30 text-danger",
   },
+  entrega_parcial: {
+    title: "Entrega parcial",
+    body:  "Se entregó parte del pedido. El total ya está ajustado a lo efectivamente recibido — el detalle de productos abajo muestra las cantidades originales.",
+    color: "bg-warning-bg border-warning/30 text-warning",
+  },
 };
 
 const fmt = (n: number) =>
@@ -63,7 +68,7 @@ export default async function B2BPedidoDetailPage({
     .from("orders")
     .select(`
       id, order_number, status, total, subtotal, created_at, notes,
-      payment_method, payment_declared_at, payment_confirmed_at,
+      payment_method, payment_declared_at, payment_confirmed_at, delivered_snapshot,
       lines:order_lines (id, quantity, unit_price, line_total, product_snapshot)
     `)
     .eq("id", id)
@@ -238,6 +243,23 @@ export default async function B2BPedidoDetailPage({
         </table>
       </div>
 
+      {/* Detalle entrega parcial */}
+      {o.status === "entrega_parcial" && o.delivered_snapshot?.lineas && (
+        <div className="bg-warning-bg border border-warning/30 rounded-2xl p-5 mb-4">
+          <p className="text-sm font-medium text-warning mb-3">Cantidades entregadas</p>
+          <div className="space-y-2">
+            {(o.delivered_snapshot.lineas as any[]).map((l: any, i: number) => (
+              <div key={i} className="flex items-center justify-between text-sm">
+                <span className="text-neutral-700 truncate flex-1 mr-4">{l.name}</span>
+                <span className={`tabular-nums font-medium ${l.entregado < l.pedido ? "text-warning" : "text-neutral-600"}`}>
+                  {l.entregado} / {l.pedido}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Total */}
       <div className="bg-white rounded-2xl border border-neutral-200 p-5 sm:max-w-xs sm:ml-auto mb-4">
         <div className="flex justify-between font-semibold text-neutral-900">
@@ -245,6 +267,9 @@ export default async function B2BPedidoDetailPage({
           <span className="tabular-nums">{fmt(Number(o.total))}</span>
         </div>
         <p className="text-xs text-neutral-400 mt-1">IVA (21%) incluido en todos los precios</p>
+        {o.status === "entrega_parcial" && (
+          <p className="text-xs text-neutral-400 mt-1">Ya ajustado según lo entregado.</p>
+        )}
       </div>
 
       {/* Nota del admin (si existe y es relevante para el cliente) */}

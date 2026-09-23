@@ -353,6 +353,11 @@ export default async function AdminPedidoDetailPage({
                 <span>Total</span>
                 <span>{fmt(total)}</span>
               </div>
+              {o.status === "entrega_parcial" && (
+                <p className="text-xs text-neutral-400 pt-1">
+                  Ajustado según lo efectivamente entregado (el detalle de productos arriba muestra las cantidades originales del pedido).
+                </p>
+              )}
             </div>
           );
         })()}
