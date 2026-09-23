@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { vincularPresentacion, desvincularPresentacion } from "@/app/(admin)/admin/cocina/recetas/actions";
 
@@ -15,10 +16,13 @@ export type ProductoVinculable = {
 
 const fmt = (n: number) => new Intl.NumberFormat("es-AR", { maximumFractionDigits: 2 }).format(n);
 
+const norm = (s: string) => s.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "");
+
 export function PresentacionesReceta({
-  baseId, baseKgCaja, vinculadas, candidatos,
+  baseId, baseName, baseKgCaja, vinculadas, candidatos,
 }: {
   baseId:     string;
+  baseName:   string;
   baseKgCaja: number | null;
   vinculadas: PresentacionVinculada[];
   candidatos: ProductoVinculable[];
@@ -27,6 +31,13 @@ export function PresentacionesReceta({
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
   const [elegido, setElegido] = useState("");
+
+  // Relacionados = comparten la primera palabra del nombre (ej. "Bastoncito", "Chipa")
+  const clave = norm(baseName).split(/\s+/)[0] ?? "";
+  const relacionados = candidatos.filter(c => clave && norm(c.name).includes(clave));
+  const otros = candidatos.filter(c => !relacionados.includes(c));
+  const etiqueta = (c: ProductoVinculable) =>
+    `${c.name}${c.unit_label ? ` · ${c.unit_label}` : ""}${c.sku ? ` (${c.sku})` : ""}${c.kg_caja ? "" : " — sin kg/caja"}`;
 
   function vincular() {
     if (!elegido) return;
@@ -96,11 +107,16 @@ export function PresentacionesReceta({
           <select value={elegido} onChange={e => setElegido(e.target.value)} disabled={isPending}
             className="flex-1 min-w-0 truncate px-3 py-2 text-sm border border-neutral-200 rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-tierra-700/20 disabled:opacity-50">
             <option value="">— Agregar presentación (producto sin receta propia) —</option>
-            {candidatos.map(c => (
-              <option key={c.id} value={c.id}>
-                {c.name}{c.unit_label ? ` · ${c.unit_label}` : ""}{c.sku ? ` (${c.sku})` : ""}{c.kg_caja ? "" : " — sin kg/caja"}
-              </option>
-            ))}
+            {relacionados.length > 0 && (
+              <optgroup label={`Relacionados con ${baseName}`}>
+                {relacionados.map(c => <option key={c.id} value={c.id}>{etiqueta(c)}</option>)}
+              </optgroup>
+            )}
+            {otros.length > 0 && (
+              <optgroup label="Otros productos sin receta">
+                {otros.map(c => <option key={c.id} value={c.id}>{etiqueta(c)}</option>)}
+              </optgroup>
+            )}
           </select>
           <button type="button" onClick={vincular} disabled={isPending || !elegido}
             className="shrink-0 px-4 py-2 rounded-xl border border-neutral-200 text-sm text-neutral-700 hover:bg-neutral-50 disabled:opacity-50 transition-colors">
@@ -108,7 +124,14 @@ export function PresentacionesReceta({
           </button>
         </div>
         <p className="text-xs text-neutral-400">
-          ¿La presentación no existe (ej. empanada x32)? Creala primero en Productos con su kg por caja y después vinculala acá.
+          {relacionados.length === 0 && (
+            <span className="text-amber-700">
+              No hay productos sin receta relacionados con «{baseName}». {" "}
+            </span>
+          )}
+          ¿La presentación no existe (ej. caja de 500 g o empanada x32)? Creala primero en{" "}
+          <Link href="/admin/productos/nuevo" className="text-tierra-700 hover:underline font-medium">Productos → Nuevo</Link>
+          {" "}con su kg por caja y después vinculala acá.
         </p>
         {error && <p className="text-sm text-danger">{error}</p>}
       </div>

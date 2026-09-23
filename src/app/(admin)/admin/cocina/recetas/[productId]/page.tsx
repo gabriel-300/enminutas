@@ -135,6 +135,7 @@ export default async function RecetaEditorPage({
       {recipe && (
         <PresentacionesReceta
           baseId={productId}
+          baseName={product.name}
           baseKgCaja={product.kg_caja !== null ? Number(product.kg_caja) : null}
           vinculadas={vinculadas}
           candidatos={candidatos}
