@@ -99,3 +99,50 @@ export function calcularEntregaParcial(input: {
     nadaEntregado:  lineas.every((l) => l.entregado <= 0),
   };
 }
+
+export type LineaSnapshotEntrega = {
+  lineId?: string;
+  productId: string;
+  name: string;
+  pedido: number;
+  entregado: number;
+};
+
+export type LineaFaltante = {
+  productId: string;
+  name: string;
+  quantity: number;
+  unitPrice: number;
+  lineTotal: number;
+  productSnapshot: Record<string, unknown>;
+};
+
+/**
+ * Lo que faltó entregar, listo para armar el pedido de reprogramación. Mantiene el precio unitario
+ * original (el acordado con el cliente) y el snapshot del producto de la línea original. Los snapshots
+ * viejos no tienen lineId: se busca por producto.
+ */
+export function calcularFaltante(
+  snapshot: LineaSnapshotEntrega[],
+  lineasPedido: { id: string; product_id: string; unit_price: number; product_snapshot?: Record<string, unknown> | null }[],
+): LineaFaltante[] {
+  const out: LineaFaltante[] = [];
+  for (const s of snapshot) {
+    const quantity = Number(s.pedido) - Number(s.entregado);
+    if (quantity <= 0) continue;
+    const linea =
+      lineasPedido.find((l) => s.lineId && l.id === s.lineId) ??
+      lineasPedido.find((l) => l.product_id === s.productId);
+    if (!linea) throw new Error(`No se encontró la línea original de ${s.name}`);
+    const unitPrice = Number(linea.unit_price);
+    out.push({
+      productId:       s.productId,
+      name:            s.name,
+      quantity,
+      unitPrice,
+      lineTotal:       r2(unitPrice * quantity),
+      productSnapshot: linea.product_snapshot ?? { name: s.name },
+    });
+  }
+  return out;
+}

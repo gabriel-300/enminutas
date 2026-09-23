@@ -7,8 +7,9 @@ import { OrderStatusSelect } from "@/components/admin/order-status-select";
 import { AprobarPedidoButton } from "@/components/admin/aprobar-pedido-button";
 import { NotasPedidoForm } from "@/components/admin/notas-pedido-form";
 import { EditarCantidadesForm } from "@/components/admin/editar-cantidades-form";
-import { fmtFechaHora, fmtFecha } from "@/lib/fecha";
+import { fmtFechaHora, fmtFecha, fmtFechaSolo } from "@/lib/fecha";
 import { MOTIVOS_FALTANTE } from "@/lib/entrega-parcial";
+import { ReprogramarFaltanteButton } from "@/components/admin/reprogramar-faltante-button";
 
 export const metadata: Metadata = { title: "Detalle de pedido — Admin En Minutas" };
 export const revalidate = 0;
@@ -30,10 +31,10 @@ export default async function AdminPedidoDetailPage({
   const { data: order, error: orderError } = await (adminClient as any)
     .from("orders")
     .select(`
-      id, order_number, status, channel, total, subtotal, shipping_fee, discount,
+      id, order_number, status, channel, customer_id, entregado_at, total, subtotal, shipping_fee, discount,
       cargo_adicional_concepto, cargo_adicional_monto,
       payment_method, payment_declared_at, payment_confirmed_at,
-      shipping_method, shipping_snapshot, delivered_snapshot, notes, notes_visible_cliente, created_at,
+      shipping_method, shipping_snapshot, delivered_snapshot, origen_order_id, fecha_compromiso, notes, notes_visible_cliente, created_at,
       guest_email, guest_phone,
       customer:profiles!customer_id (full_name, phone, canal, canal_id, vendedor_id),
       lines:order_lines (
@@ -59,6 +60,40 @@ export default async function AdminPedidoDetailPage({
   const lineasVisibles = ((o.lines ?? []) as any[]).filter((l) => !o.delivered_snapshot?.lineas || Number(l.quantity) > 0);
   const motivoFaltante = MOTIVOS_FALTANTE.find((m) => m.value === o.delivered_snapshot?.motivo)?.label ?? null;
   const fmtMonto = (n: number) => `$ ${Math.round(n).toLocaleString("es-AR")}`;
+
+  // Faltante: pedido del que sale este (si es una reprogramación) y pedido al que se reprogramó el faltante de este
+  const faltantes = ((o.delivered_snapshot?.lineas ?? []) as any[]).filter((l) => l.entregado < l.pedido);
+  const [{ data: pedidoOrigen }, { data: pedidoReprogramado }] = await Promise.all([
+    o.origen_order_id
+      ? (adminClient as any).from("orders").select("id, order_number").eq("id", o.origen_order_id).maybeSingle()
+      : Promise.resolve({ data: null }),
+    (adminClient as any).from("orders").select("id, order_number, status").eq("origen_order_id", o.id).neq("status", "cancelled").maybeSingle(),
+  ]);
+
+  // ¿El cliente ya volvió a pedir lo que faltó? (evita duplicar al reprogramar)
+  const yaPedido: { name: string; pedidos: string[] }[] = [];
+  if (esAdmin && !pedidoReprogramado && faltantes.length > 0 && o.customer_id && o.entregado_at) {
+    const { data: posteriores } = await (adminClient as any)
+      .from("orders")
+      .select("id, order_number")
+      .eq("customer_id", o.customer_id)
+      .neq("status", "cancelled")
+      .neq("id", o.id)
+      .gt("created_at", o.entregado_at);
+    const ids = ((posteriores ?? []) as any[]).map((x) => x.id);
+    if (ids.length > 0) {
+      const { data: lineasPost } = await (adminClient as any)
+        .from("order_lines")
+        .select("order_id, product_id")
+        .in("order_id", ids)
+        .in("product_id", faltantes.map((l: any) => l.productId));
+      const numeroPorId = new Map(((posteriores ?? []) as any[]).map((x) => [x.id, x.order_number as string]));
+      for (const f of faltantes as any[]) {
+        const nums = [...new Set(((lineasPost ?? []) as any[]).filter((l) => l.product_id === f.productId).map((l) => numeroPorId.get(l.order_id)!))];
+        if (nums.length > 0) yaPedido.push({ name: f.name, pedidos: nums });
+      }
+    }
+  }
 
   // Resolver nombre del vendedor asignado al cliente
   let vendedorNombre: string | null = null;
@@ -156,6 +191,14 @@ export default async function AdminPedidoDetailPage({
           )}
         </div>
       </div>
+
+      {pedidoOrigen && (
+        <div className="mb-5 rounded-xl bg-warning-bg border border-warning/20 px-4 py-3 text-sm text-neutral-700">
+          Faltante del pedido{" "}
+          <Link href={`/admin/pedidos/${pedidoOrigen.id}`} className="font-mono font-medium underline">{pedidoOrigen.order_number}</Link>
+          {o.fecha_compromiso && <> · compromiso de entrega: <span className="font-medium">{fmtFechaSolo(o.fecha_compromiso)}</span></>}
+        </div>
+      )}
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 md:gap-4 mb-5 md:mb-6">
         {/* Cliente */}
@@ -318,6 +361,19 @@ export default async function AdminPedidoDetailPage({
               Total del pedido original: {fmtMonto(Number(o.delivered_snapshot.total_original))} · entregado: {fmtMonto(Number(o.total))}
             </p>
           )}
+          {pedidoReprogramado ? (
+            <p className="text-sm text-neutral-700 mt-3">
+              Faltante reprogramado en{" "}
+              <Link href={`/admin/pedidos/${pedidoReprogramado.id}`} className="font-mono font-medium underline">{pedidoReprogramado.order_number}</Link>
+              {" "}<OrderStatusBadge status={pedidoReprogramado.status} />
+            </p>
+          ) : esAdmin && faltantes.length > 0 ? (
+            <ReprogramarFaltanteButton
+              orderId={o.id}
+              faltante={faltantes.map((l: any) => ({ name: l.name, cantidad: l.pedido - l.entregado }))}
+              yaPedido={yaPedido}
+            />
+          ) : null}
           {o.delivered_snapshot.timestamp && (
             <p className="text-xs text-neutral-400 mt-1">
               Registrado: {new Date(o.delivered_snapshot.timestamp).toLocaleString("es-AR")}

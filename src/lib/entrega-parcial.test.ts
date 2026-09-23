@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { calcularEntregaParcial, esMotivoFaltante } from "./entrega-parcial";
+import { calcularEntregaParcial, calcularFaltante, esMotivoFaltante } from "./entrega-parcial";
 
 const lineas = [
   { id: "l1", product_id: "a", quantity: 10, unit_price: 1000, product_snapshot: { name: "A" } },
@@ -62,5 +62,34 @@ describe("esMotivoFaltante", () => {
     expect(esMotivoFaltante("sin_stock")).toBe(true);
     expect(esMotivoFaltante("inventado")).toBe(false);
     expect(esMotivoFaltante(undefined)).toBe(false);
+  });
+});
+
+describe("calcularFaltante", () => {
+  const pedido = [
+    { id: "l1", product_id: "a", unit_price: 1000, product_snapshot: { name: "A", sku: "A1" } },
+    { id: "l2", product_id: "b", unit_price: 2500.5, product_snapshot: { name: "B" } },
+  ];
+
+  it("devuelve solo lo que faltó, con el precio original y el snapshot de la línea", () => {
+    const r = calcularFaltante(
+      [
+        { lineId: "l1", productId: "a", name: "A", pedido: 10, entregado: 6 },
+        { lineId: "l2", productId: "b", name: "B", pedido: 4, entregado: 4 },
+      ],
+      pedido,
+    );
+    expect(r).toHaveLength(1);
+    expect(r[0]).toMatchObject({ productId: "a", quantity: 4, unitPrice: 1000, lineTotal: 4000, productSnapshot: { name: "A", sku: "A1" } });
+  });
+
+  it("acepta snapshots viejos sin lineId (busca por producto)", () => {
+    const r = calcularFaltante([{ productId: "b", name: "B", pedido: 3, entregado: 0 }], pedido);
+    expect(r[0]).toMatchObject({ quantity: 3, unitPrice: 2500.5, lineTotal: 7501.5 });
+  });
+
+  it("sin faltante devuelve lista vacía; con línea inexistente falla", () => {
+    expect(calcularFaltante([{ productId: "a", name: "A", pedido: 2, entregado: 2 }], pedido)).toEqual([]);
+    expect(() => calcularFaltante([{ productId: "zzz", name: "Z", pedido: 2, entregado: 0 }], pedido)).toThrow(/línea original/);
   });
 });

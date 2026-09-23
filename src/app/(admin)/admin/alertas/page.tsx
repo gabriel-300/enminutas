@@ -242,6 +242,26 @@ export default async function AlertasPage() {
     });
   }
 
+  // ── 9. FALTANTES REPROGRAMADOS VENCIDOS ──────────────────────────
+  // Pedidos creados con el faltante de una entrega parcial cuya fecha de compromiso ya pasó sin despacharse
+  const { count: faltantesVencidos } = await db
+    .from("orders")
+    .select("id", { count: "exact", head: true })
+    .not("origen_order_id", "is", null)
+    .in("status", ["aprobado", "enviado_prod"])
+    .lt("fecha_compromiso", hoyStr);
+
+  if (faltantesVencidos && faltantesVencidos > 0) {
+    alertas.push({
+      nivel: "urgente",
+      categoria: "Faltantes",
+      titulo: `${faltantesVencidos} faltante${faltantesVencidos > 1 ? "s" : ""} reprogramado${faltantesVencidos > 1 ? "s" : ""} vencido${faltantesVencidos > 1 ? "s" : ""}`,
+      descripcion: "Pedidos de faltante que pasaron su fecha de compromiso sin despacharse. Entregalos o cancelalos.",
+      href: "/admin/pedidos",
+      count: faltantesVencidos,
+    });
+  }
+
   // Ordenar: crítico → urgente → aviso
   const NIVEL_ORDEN = { critico: 0, urgente: 1, aviso: 2 };
   alertas.sort((a, b) => NIVEL_ORDEN[a.nivel] - NIVEL_ORDEN[b.nivel]);

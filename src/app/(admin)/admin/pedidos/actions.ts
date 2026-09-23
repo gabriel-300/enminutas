@@ -5,7 +5,9 @@ import { revalidatePath } from "next/cache";
 import { emailPagoConfirmado, emailPedidoModificadoDespacho } from "@/lib/email";
 import { calcularPrecio } from "@/lib/b2b-pricing";
 import { getParametros } from "@/lib/parametros";
-import { calcularEntregaParcial, esMotivoFaltante, type EntregaLineaInput } from "@/lib/entrega-parcial";
+import { calcularEntregaParcial, calcularFaltante, esMotivoFaltante, type EntregaLineaInput } from "@/lib/entrega-parcial";
+import { insertarPedidoB2B } from "@/lib/order-number";
+import { requireAdmin } from "@/lib/auth";
 
 async function logOrderEvent(
   db: ReturnType<typeof createAdminClient>,
@@ -719,6 +721,103 @@ export async function cancelarPedidoDistribucion(orderId: string) {
 
   if (fallos.length)
     throw new Error(`El pedido se canceló, pero falló: ${fallos.join("; ")}. Revisá stock y cuenta corriente.`);
+}
+
+// Reprogramar el faltante de una entrega parcial: crea UN pedido nuevo, aprobado y enlazado, con lo que no
+// se entregó (al precio original). Es una decisión del admin: el faltante queda cerrado por defecto.
+// No hay cargo ni comisión hasta que el pedido nuevo se despache / entregue, por el flujo normal.
+export async function crearPedidoConFaltante(
+  orderId: string,
+  fechaCompromiso: string,
+): Promise<{ orderId: string; orderNumber: string } | { error: string }> {
+  const user = await requireAdmin();
+  const supabase = createAdminClient();
+
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(fechaCompromiso)) return { error: "Fecha de compromiso inválida" };
+  const hoy = new Date().toLocaleDateString("en-CA", { timeZone: "America/Argentina/Buenos_Aires" });
+  if (fechaCompromiso < hoy) return { error: "La fecha de compromiso no puede ser anterior a hoy" };
+
+  const { data: original } = await (supabase as any)
+    .from("orders")
+    .select("id, order_number, status, channel, customer_id, payment_method, delivery_zone_id, shipping_snapshot, delivered_snapshot")
+    .eq("id", orderId)
+    .single();
+  if (!original) return { error: "Pedido no encontrado" };
+  if (original.channel !== "b2b_mayorista" || !original.customer_id) return { error: "Solo se puede reprogramar el faltante de pedidos B2B" };
+  if (!["entrega_parcial", "liquidado", "delivered"].includes(original.status) || !original.delivered_snapshot?.lineas)
+    return { error: "El pedido no tiene una entrega parcial registrada" };
+
+  const { data: yaReprogramado } = await (supabase as any)
+    .from("orders")
+    .select("order_number")
+    .eq("origen_order_id", orderId)
+    .neq("status", "cancelled")
+    .maybeSingle();
+  if (yaReprogramado) return { error: `El faltante ya fue reprogramado en ${yaReprogramado.order_number}` };
+
+  const { data: lineasOriginales } = await (supabase as any)
+    .from("order_lines")
+    .select("id, product_id, unit_price, product_snapshot")
+    .eq("order_id", orderId);
+
+  let faltante;
+  try {
+    faltante = calcularFaltante(original.delivered_snapshot.lineas, lineasOriginales ?? []);
+  } catch (e: any) {
+    return { error: e.message };
+  }
+  if (faltante.length === 0) return { error: "El pedido no tiene faltante" };
+
+  const subtotal = Math.round(faltante.reduce((s, l) => s + l.lineTotal, 0) * 100) / 100;
+  const ahora = new Date().toISOString();
+
+  const inserted = await insertarPedidoB2B(supabase, {
+    channel:                 "b2b_mayorista",
+    customer_id:             original.customer_id,
+    status:                  "aprobado",
+    aprobado_por:            user.id,
+    aprobado_at:             ahora,
+    subtotal,
+    shipping_fee:            0,
+    discount:                0,
+    total:                   subtotal,
+    cargo_adicional_monto:   0,
+    ideia_commission_rate:   0.15,
+    ideia_commission_amount: 0,
+    shipping_method:         "b2b_despacho",
+    payment_method:          original.payment_method,
+    notes:                   `Faltante del pedido ${original.order_number}`,
+    delivery_zone_id:        original.delivery_zone_id,
+    shipping_snapshot:       original.shipping_snapshot,
+    origen_order_id:         orderId,
+    fecha_compromiso:        fechaCompromiso,
+  });
+  if ("error" in inserted) return { error: inserted.error };
+
+  const { error: errLineas } = await (supabase as any).from("order_lines").insert(
+    faltante.map((l) => ({
+      order_id:         inserted.id,
+      product_id:       l.productId,
+      product_snapshot: l.productSnapshot,
+      quantity:         l.quantity,
+      unit_price:       l.unitPrice,
+      line_total:       l.lineTotal,
+    })),
+  );
+  if (errLineas) {
+    await (supabase as any).from("orders").delete().eq("id", inserted.id);
+    return { error: errLineas.message };
+  }
+
+  await logOrderEvent(supabase, inserted.id, "aprobado", `Creado como faltante del pedido ${original.order_number} — compromiso ${fechaCompromiso}`, user.id);
+  await logOrderEvent(supabase, orderId, original.status, `Faltante reprogramado en ${inserted.orderNumber}`, user.id);
+
+  revalidatePath("/admin/pedidos");
+  revalidatePath(`/admin/pedidos/${orderId}`);
+  revalidatePath(`/admin/pedidos/${inserted.id}`);
+  revalidatePath("/admin/produccion");
+  revalidatePath("/admin/alertas");
+  return { orderId: inserted.id, orderNumber: inserted.orderNumber };
 }
 
 // ── Editar cantidades de un pedido ────────────────────────────────────────────

@@ -7,6 +7,7 @@ import { getParametros } from "@/lib/parametros";
 import { getActiveVolumeDiscounts } from "@/lib/volume-discounts-server";
 import { calcVolumeDiscount } from "@/lib/volume-discounts";
 import { emailPedidoAdminCreado } from "@/lib/email";
+import { insertarPedidoB2B } from "@/lib/order-number";
 
 type ItemPedido = {
   productId:  string;
@@ -174,35 +175,13 @@ export async function crearPedidoAdmin(payload: CrearPedidoPayload): Promise<{ o
   }
 
   // Insertar con retry en caso de colisión de número (constraint UNIQUE)
-  const year = new Date().getFullYear();
-  let order: { id: string } | null = null;
-  let orderNum = "";
-  for (let attempt = 0; attempt < 5; attempt++) {
-    const { data: maxRow } = await adminClient
-      .from("orders")
-      .select("order_number")
-      .like("order_number", `B2B-${year}-%`)
-      .order("order_number", { ascending: false })
-      .limit(1)
-      .maybeSingle();
-    let nextSeq = 1;
-    if ((maxRow as any)?.order_number) {
-      const last = parseInt((maxRow as any).order_number.split("-").pop() ?? "0", 10);
-      if (!isNaN(last)) nextSeq = last + 1;
-    }
-    orderNum = `B2B-${year}-${String(nextSeq).padStart(4, "0")}`;
-    const { data: o, error: oErr } = await adminClient
-      .from("orders")
-      .insert({ ...baseInsert, order_number: orderNum } as any)
-      .select("id")
-      .single();
-    if (!oErr && o) { order = o; break; }
-    if (oErr?.code !== "23505") return { error: oErr?.message ?? "Error al crear el pedido" };
-  }
-  if (!order) return { error: "No se pudo generar número de pedido único. Intentá de nuevo." };
+  const inserted = await insertarPedidoB2B(adminClient, baseInsert);
+  if ("error" in inserted) return { error: inserted.error };
+  const order = { id: inserted.id };
+  const orderNum = inserted.orderNumber;
 
   const lines = items.map((item) => ({
-    order_id:         order!.id,
+    order_id:         order.id,
     product_id:       item.productId,
     product_snapshot: {
       name:        item.name,
