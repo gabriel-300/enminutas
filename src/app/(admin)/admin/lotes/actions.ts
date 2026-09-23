@@ -59,9 +59,16 @@ export async function ajustarCantidad(
     await requireAdmin();
     const db = createAdminClient() as any;
 
+    const { data: lote } = await db.from("lotes").select("cantidad_inicial").eq("id", id).single();
+
+    // Si la nueva cantidad supera la inicial (entró más stock, no fue consumo),
+    // subimos también la inicial para que el % consumido no quede negativo.
+    const update: { cantidad_actual: number; cantidad_inicial?: number } = { cantidad_actual: nuevaCantidad };
+    if (lote && nuevaCantidad > Number(lote.cantidad_inicial)) update.cantidad_inicial = nuevaCantidad;
+
     const { error } = await db
       .from("lotes")
-      .update({ cantidad_actual: nuevaCantidad })
+      .update(update)
       .eq("id", id);
 
     if (error) return { error: error.message };

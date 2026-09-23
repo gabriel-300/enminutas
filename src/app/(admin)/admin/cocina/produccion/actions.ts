@@ -35,6 +35,18 @@ export async function registrarProduccion(formData: FormData): Promise<Result> {
 
   const cantCajas = cantLotes * yieldCajas;
 
+  // Unidad de stock del lote = unidad de venta del producto (no "cajas" fijo),
+  // para que sea consistente con los lotes cargados manualmente y la suma en /admin/stock tenga sentido.
+  const { data: producto } = await db
+    .from("products")
+    .select("unit_label, bolsas_caja")
+    .eq("id", productoId)
+    .single();
+
+  const bolsasCaja      = Number(producto?.bolsas_caja ?? 1);
+  const unidadLote       = producto?.unit_label?.trim() || "cajas";
+  const cantidadEnUnidad = cantCajas * bolsasCaja;
+
   // 1. Registrar producción (trigger descuenta insumos automáticamente)
   const { data: prod, error: errProd } = await db
     .from("produccion")
@@ -64,9 +76,9 @@ export async function registrarProduccion(formData: FormData): Promise<Result> {
     numero_lote,
     fecha_ingreso:    fecha,
     fecha_vencimiento: fechaVenc,
-    cantidad_inicial: cantCajas,
-    cantidad_actual:  cantCajas,
-    unidad:           "cajas",
+    cantidad_inicial: cantidadEnUnidad,
+    cantidad_actual:  cantidadEnUnidad,
+    unidad:           unidadLote,
     observaciones:    notas,
     created_by:       user.id,
   });

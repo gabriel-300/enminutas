@@ -95,7 +95,7 @@ export function LotesClient({
     if (!nuevo.productoId) { setErrorNuevo("Elegí un producto"); return; }
     if (!nuevo.fechaVencimiento) { setErrorNuevo("Ingresá la fecha de vencimiento"); return; }
     if (isNaN(cantidad) || cantidad <= 0) { setErrorNuevo("La cantidad debe ser mayor a 0"); return; }
-    if (!nuevo.unidad.trim()) { setErrorNuevo("Ingresá la unidad"); return; }
+    if (!nuevo.unidad.trim()) { setErrorNuevo("El producto elegido no tiene unidad configurada. Configurala en Productos antes de cargar el lote."); return; }
 
     setErrorNuevo(null);
     start(async () => {
@@ -395,13 +395,14 @@ export function LotesClient({
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-neutral-500 mb-1">Unidad *</label>
+                  <label className="block text-xs font-medium text-neutral-500 mb-1">Unidad</label>
                   <input
                     type="text"
                     value={nuevo.unidad}
-                    onChange={e => setNuevo(n => ({ ...n, unidad: e.target.value }))}
-                    placeholder="ej: caja 5 bolsas x 2kg"
-                    className={inputClass}
+                    readOnly
+                    disabled
+                    placeholder="Elegí un producto"
+                    className={`${inputClass} bg-neutral-50 text-neutral-500 cursor-not-allowed`}
                   />
                 </div>
               </div>
