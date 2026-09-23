@@ -2,11 +2,12 @@
 
 import { createAdminClient } from "@/lib/supabase/server";
 import { requireAdmin } from "@/lib/auth";
+import { generarNumeroLote } from "@/lib/lotes";
 import { revalidatePath } from "next/cache";
 
 export async function crearLote(payload: {
   productoId: string;
-  numeroLote: string;
+  numeroLote?: string;
   fechaIngreso: string;
   fechaVencimiento: string;
   cantidadInicial: number;
@@ -20,9 +21,11 @@ export async function crearLote(payload: {
     const user = await requireAdmin();
     const db = createAdminClient() as any;
 
+    const numeroLote = payload.numeroLote?.trim() || (await generarNumeroLote(db));
+
     const { data, error } = await db.from("lotes").insert({
       producto_id:       payload.productoId,
-      numero_lote:       payload.numeroLote.trim(),
+      numero_lote:       numeroLote,
       fecha_ingreso:     payload.fechaIngreso,
       fecha_vencimiento: payload.fechaVencimiento,
       cantidad_inicial:  payload.cantidadInicial,
@@ -37,10 +40,11 @@ export async function crearLote(payload: {
 
     if (error) {
       if (error.code === "23505" || error.message?.includes("idx_lotes_numero_unico"))
-        return { error: `El lote "${payload.numeroLote}" ya existe para este producto. Usá otro número de lote.` };
+        return { error: `El lote "${numeroLote}" ya existe para este producto. Usá otro número de lote.` };
       return { error: error.message };
     }
     revalidatePath("/admin/lotes");
+    revalidatePath("/admin/stock");
     return { id: data.id };
   } catch (e: any) {
     return { error: e.message };
@@ -62,6 +66,7 @@ export async function ajustarCantidad(
 
     if (error) return { error: error.message };
     revalidatePath("/admin/lotes");
+    revalidatePath("/admin/stock");
     return {};
   } catch (e: any) {
     return { error: e.message };
@@ -80,6 +85,7 @@ export async function darDeBajaLote(id: string): Promise<{ error?: string }> {
 
     if (error) return { error: error.message };
     revalidatePath("/admin/lotes");
+    revalidatePath("/admin/stock");
     return {};
   } catch (e: any) {
     return { error: e.message };

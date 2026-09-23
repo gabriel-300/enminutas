@@ -2,6 +2,7 @@
 
 import { createAdminClient } from "@/lib/supabase/server";
 import { requireRole } from "@/lib/auth";
+import { generarNumeroLote } from "@/lib/lotes";
 import { revalidatePath } from "next/cache";
 
 type Result = { error: string } | { ok: true; id: string; numero_lote: string };
@@ -12,28 +13,6 @@ function revalidateAll() {
   revalidatePath("/admin/cocina/recetas");
   revalidatePath("/admin/lotes");
   revalidatePath("/admin/stock");
-}
-
-// Genera número de lote: correlativo global (ej: 0045), continuando desde el máximo existente
-async function generarNumeroLote(db: any): Promise<string> {
-  const { data } = await db
-    .from("lotes")
-    .select("numero_lote")
-    .order("created_at", { ascending: false })
-    .limit(100);
-
-  let maxNum = 0;
-  for (const row of data ?? []) {
-    const nro = row.numero_lote as string;
-    // Extraer el número final del lote (soporta formatos "0045", "L-2026-045", "P-20260902-001", etc.)
-    const match = nro.match(/(\d+)$/);
-    if (match) {
-      const n = parseInt(match[1], 10);
-      if (n > maxNum) maxNum = n;
-    }
-  }
-
-  return String(maxNum + 1).padStart(4, "0");
 }
 
 export async function registrarProduccion(formData: FormData): Promise<Result> {

@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { createClient, createAdminClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { LotesClient } from "./lotes-client";
+import { generarNumeroLote } from "@/lib/lotes";
 
 export const metadata: Metadata = { title: "Lotes — Admin" };
 export const revalidate = 0;
@@ -34,9 +35,10 @@ export default async function LotesPage() {
     .eq("activo", true)
     .order("fecha_vencimiento", { ascending: true });
 
-  const [{ data: productosData }, { data: depositosData }] = await Promise.all([
+  const [{ data: productosData }, { data: depositosData }, numeroLoteSugerido] = await Promise.all([
     db.from("products").select("id, name, unit_label").eq("is_active", true).order("name"),
     db.from("depositos").select("id, nombre").eq("activo", true).order("nombre"),
+    generarNumeroLote(db),
   ]);
 
   const lotes = ((lotesData ?? []) as any[]).map((l: any) => {
@@ -89,7 +91,7 @@ export default async function LotesPage() {
         ))}
       </div>
 
-      <LotesClient lotes={lotes} productos={productos} depositos={depositos} />
+      <LotesClient lotes={lotes} productos={productos} depositos={depositos} numeroLoteSugerido={numeroLoteSugerido} />
     </div>
   );
 }

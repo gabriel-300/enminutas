@@ -1,8 +1,8 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { ajustarCantidad, darDeBajaLote } from "./actions";
-import { AlertTriangle, PackageX } from "lucide-react";
+import { ajustarCantidad, darDeBajaLote, crearLote } from "./actions";
+import { AlertTriangle, PackageX, Plus, X, Search } from "lucide-react";
 
 type Lote = {
   id: string;
@@ -37,13 +37,16 @@ export function LotesClient({
   lotes,
   productos,
   depositos,
+  numeroLoteSugerido,
 }: {
   lotes: Lote[];
   productos: Producto[];
   depositos: Deposito[];
+  numeroLoteSugerido: string;
 }) {
   const [filtro, setFiltro]         = useState<"todos" | "vencido" | "critico" | "proximo" | "vigente">("todos");
   const [filtroDeposito, setFiltroDeposito] = useState<string>("todos");
+  const [busqueda, setBusqueda]     = useState("");
   const [pending, start]            = useTransition();
   const [error, setError]           = useState<string | null>(null);
 
@@ -51,9 +54,75 @@ export function LotesClient({
   const [ajustando, setAjustando] = useState<string | null>(null);
   const [nuevaCant, setNuevaCant] = useState("");
 
+  // Nuevo lote
+  const [modalAbierto, setModalAbierto] = useState(false);
+  const [nuevo, setNuevo] = useState(() => ({
+    productoId: "",
+    numeroLote: numeroLoteSugerido,
+    fechaIngreso: today(),
+    fechaVencimiento: "",
+    cantidadInicial: "",
+    unidad: "",
+    depositoId: "",
+    proveedor: "",
+    observaciones: "",
+  }));
+  const [errorNuevo, setErrorNuevo] = useState<string | null>(null);
+
+  function abrirModal() {
+    setNuevo({
+      productoId: "",
+      numeroLote: numeroLoteSugerido,
+      fechaIngreso: today(),
+      fechaVencimiento: "",
+      cantidadInicial: "",
+      unidad: "",
+      depositoId: "",
+      proveedor: "",
+      observaciones: "",
+    });
+    setErrorNuevo(null);
+    setModalAbierto(true);
+  }
+
+  function handleProductoChange(productoId: string) {
+    const p = productos.find(p => p.id === productoId);
+    setNuevo(n => ({ ...n, productoId, unidad: p?.unit_label ?? n.unidad }));
+  }
+
+  function handleCrearLote() {
+    const cantidad = parseFloat(nuevo.cantidadInicial.replace(",", "."));
+    if (!nuevo.productoId) { setErrorNuevo("Elegí un producto"); return; }
+    if (!nuevo.fechaVencimiento) { setErrorNuevo("Ingresá la fecha de vencimiento"); return; }
+    if (isNaN(cantidad) || cantidad <= 0) { setErrorNuevo("La cantidad debe ser mayor a 0"); return; }
+    if (!nuevo.unidad.trim()) { setErrorNuevo("Ingresá la unidad"); return; }
+
+    setErrorNuevo(null);
+    start(async () => {
+      const res = await crearLote({
+        productoId: nuevo.productoId,
+        numeroLote: nuevo.numeroLote,
+        fechaIngreso: nuevo.fechaIngreso,
+        fechaVencimiento: nuevo.fechaVencimiento,
+        cantidadInicial: cantidad,
+        unidad: nuevo.unidad.trim(),
+        depositoId: nuevo.depositoId || undefined,
+        proveedor: nuevo.proveedor || undefined,
+        observaciones: nuevo.observaciones || undefined,
+      });
+      if (res.error) { setErrorNuevo(res.error); return; }
+      setModalAbierto(false);
+    });
+  }
+
+  const busquedaNorm = busqueda.trim().toLowerCase();
   const lotesFiltrados = lotes
     .filter(l => filtro === "todos" || l.estado === filtro)
-    .filter(l => filtroDeposito === "todos" || l.deposito_id === filtroDeposito || (filtroDeposito === "__sin__" && !l.deposito_id));
+    .filter(l => filtroDeposito === "todos" || l.deposito_id === filtroDeposito || (filtroDeposito === "__sin__" && !l.deposito_id))
+    .filter(l => !busquedaNorm
+      || l.producto_nombre.toLowerCase().includes(busquedaNorm)
+      || l.numero_lote.toLowerCase().includes(busquedaNorm)
+      || (l.proveedor?.toLowerCase().includes(busquedaNorm) ?? false));
   const vencidos  = lotes.filter(l => l.estado === "vencido").length;
   const criticos  = lotes.filter(l => l.estado === "critico").length;
 
@@ -102,6 +171,16 @@ export function LotesClient({
 
       {/* Header acciones */}
       <div className="flex flex-col gap-3">
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-neutral-300" />
+          <input
+            type="text"
+            value={busqueda}
+            onChange={e => setBusqueda(e.target.value)}
+            placeholder="Buscar por producto, número de lote o proveedor..."
+            className="w-full rounded-xl border border-neutral-200 pl-9 pr-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#16233f]/20 focus:border-[#16233f]"
+          />
+        </div>
         <div className="flex items-center justify-between gap-4">
           {/* Filtros estado */}
           <div className="flex gap-1.5 flex-wrap">
@@ -122,6 +201,13 @@ export function LotesClient({
               </button>
             ))}
           </div>
+          <button
+            onClick={abrirModal}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium bg-[#16233f] text-white hover:bg-[#1e2f54] transition-colors shrink-0"
+          >
+            <Plus className="size-3.5" />
+            Nuevo lote
+          </button>
         </div>
         {/* Filtro depósito */}
         {depositos.length > 0 && (
@@ -155,7 +241,8 @@ export function LotesClient({
       <div className="bg-white rounded-2xl border border-neutral-200 overflow-hidden">
         {lotesFiltrados.length === 0 ? (
           <p className="px-5 py-10 text-center text-sm text-neutral-400">
-            {filtro === "todos" ? "No hay lotes registrados aún." : "No hay lotes en esta categoría."}
+            {busquedaNorm ? "No hay lotes que coincidan con la búsqueda."
+              : filtro === "todos" ? "No hay lotes registrados aún." : "No hay lotes en esta categoría."}
           </p>
         ) : (
           <table className="w-full text-sm">
@@ -270,6 +357,137 @@ export function LotesClient({
           </table>
         )}
       </div>
+
+      {/* Modal nuevo lote */}
+      {modalAbierto && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
+          <div className="bg-white rounded-2xl border border-neutral-200 w-full max-w-md max-h-[90vh] overflow-y-auto p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-lg font-bold font-display text-neutral-900">Nuevo lote</h2>
+              <button onClick={() => setModalAbierto(false)} className="p-1 rounded-lg text-neutral-400 hover:bg-neutral-100">
+                <X className="size-4" />
+              </button>
+            </div>
+
+            <div className="space-y-3">
+              <div>
+                <label className="block text-xs font-medium text-neutral-500 mb-1">Producto *</label>
+                <select
+                  value={nuevo.productoId}
+                  onChange={e => handleProductoChange(e.target.value)}
+                  className={inputClass}
+                >
+                  <option value="">Seleccionar...</option>
+                  {productos.map(p => (
+                    <option key={p.id} value={p.id}>{p.name}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-medium text-neutral-500 mb-1">Cantidad *</label>
+                  <input
+                    type="number" min="0" step="0.001"
+                    value={nuevo.cantidadInicial}
+                    onChange={e => setNuevo(n => ({ ...n, cantidadInicial: e.target.value }))}
+                    className={inputClass}
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-neutral-500 mb-1">Unidad *</label>
+                  <input
+                    type="text"
+                    value={nuevo.unidad}
+                    onChange={e => setNuevo(n => ({ ...n, unidad: e.target.value }))}
+                    placeholder="ej: caja 5 bolsas x 2kg"
+                    className={inputClass}
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-medium text-neutral-500 mb-1">Fecha ingreso</label>
+                  <input
+                    type="date"
+                    value={nuevo.fechaIngreso}
+                    onChange={e => setNuevo(n => ({ ...n, fechaIngreso: e.target.value }))}
+                    className={inputClass}
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-neutral-500 mb-1">Vencimiento *</label>
+                  <input
+                    type="date"
+                    value={nuevo.fechaVencimiento}
+                    onChange={e => setNuevo(n => ({ ...n, fechaVencimiento: e.target.value }))}
+                    className={inputClass}
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-medium text-neutral-500 mb-1">Número de lote</label>
+                  <input
+                    type="text"
+                    value={nuevo.numeroLote}
+                    onChange={e => setNuevo(n => ({ ...n, numeroLote: e.target.value }))}
+                    className={inputClass}
+                  />
+                </div>
+                {depositos.length > 0 && (
+                  <div>
+                    <label className="block text-xs font-medium text-neutral-500 mb-1">Depósito</label>
+                    <select
+                      value={nuevo.depositoId}
+                      onChange={e => setNuevo(n => ({ ...n, depositoId: e.target.value }))}
+                      className={inputClass}
+                    >
+                      <option value="">Sin asignar</option>
+                      {depositos.map(d => (
+                        <option key={d.id} value={d.id}>{d.nombre}</option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+              </div>
+
+              <div>
+                <label className="block text-xs font-medium text-neutral-500 mb-1">Observaciones</label>
+                <input
+                  type="text"
+                  value={nuevo.observaciones}
+                  onChange={e => setNuevo(n => ({ ...n, observaciones: e.target.value }))}
+                  placeholder="opcional"
+                  className={inputClass}
+                />
+              </div>
+
+              {errorNuevo && (
+                <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-xl px-3 py-2">{errorNuevo}</p>
+              )}
+
+              <div className="flex gap-2 pt-2">
+                <button
+                  onClick={() => setModalAbierto(false)}
+                  className="flex-1 px-4 py-2 rounded-xl border border-neutral-200 text-sm font-medium text-neutral-600 hover:bg-neutral-50"
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={handleCrearLote}
+                  disabled={pending}
+                  className="flex-1 px-4 py-2 rounded-xl bg-[#16233f] text-white text-sm font-medium hover:bg-[#1e2f54] disabled:opacity-50"
+                >
+                  {pending ? "Guardando..." : "Crear lote"}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
