@@ -94,7 +94,7 @@ export function PresentacionesReceta({
       <div className="px-5 py-4 border-t border-neutral-100 space-y-2">
         <div className="flex items-center gap-2">
           <select value={elegido} onChange={e => setElegido(e.target.value)} disabled={isPending}
-            className="flex-1 px-3 py-2 text-sm border border-neutral-200 rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-tierra-700/20 disabled:opacity-50">
+            className="flex-1 min-w-0 truncate px-3 py-2 text-sm border border-neutral-200 rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-tierra-700/20 disabled:opacity-50">
             <option value="">— Agregar presentación (producto sin receta propia) —</option>
             {candidatos.map(c => (
               <option key={c.id} value={c.id}>
@@ -103,7 +103,7 @@ export function PresentacionesReceta({
             ))}
           </select>
           <button type="button" onClick={vincular} disabled={isPending || !elegido}
-            className="px-4 py-2 rounded-xl border border-neutral-200 text-sm text-neutral-700 hover:bg-neutral-50 disabled:opacity-50 transition-colors">
+            className="shrink-0 px-4 py-2 rounded-xl border border-neutral-200 text-sm text-neutral-700 hover:bg-neutral-50 disabled:opacity-50 transition-colors">
             Vincular
           </button>
         </div>
