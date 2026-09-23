@@ -3,6 +3,7 @@ import { redirect, notFound } from "next/navigation";
 import { PrintTrigger, PrintButton } from "@/components/remito/print-trigger";
 import { FirmaCanvas } from "@/components/remito/firma-canvas";
 import { fmtFechaSolo } from "@/lib/fecha";
+import { MOTIVOS_FALTANTE } from "@/lib/entrega-parcial";
 
 export const revalidate = 0;
 
@@ -81,31 +82,15 @@ export default async function RemitoPage({
   const cargoAdicional  = Number(o.cargo_adicional_monto ?? 0);
   const cargoConcepto   = (o.cargo_adicional_concepto as string | null) ?? "Cargo adicional";
 
-  // Si hubo entrega parcial, el remito muestra lo efectivamente entregado
-  // (no lo pedido originalmente) y recalcula los totales sobre esas cantidades.
-  const snapshot = o.delivered_snapshot as { lineas: LineaEntregadaSnapshot[] } | null;
-  const linesRaw = (o.lines ?? []) as any[];
+  // Una entrega parcial ya deja las líneas y el total del pedido en lo efectivamente entregado
+  // (confirmarEntregaParcial), así que el remito lee siempre lo mismo. El snapshot solo aporta el faltante.
+  const snapshot = o.delivered_snapshot as { lineas: LineaEntregadaSnapshot[]; motivo?: string } | null;
+  const displayLines = ((o.lines ?? []) as any[]).filter((l: any) => Number(l.quantity) > 0);
+  const faltantes = (snapshot?.lineas ?? []).filter((l) => l.entregado < l.pedido);
+  const motivoFaltante = MOTIVOS_FALTANTE.find((m) => m.value === snapshot?.motivo)?.label ?? null;
 
-  const displayLines = snapshot?.lineas
-    ? snapshot.lineas
-        .filter((l) => l.entregado > 0)
-        .map((l) => {
-          const orig      = linesRaw.find((ol: any) => ol.product_id === l.productId);
-          const unitPrice = Number(orig?.unit_price ?? 0);
-          return {
-            id:               orig?.id ?? l.productId,
-            quantity:         l.entregado,
-            unit_price:       unitPrice,
-            line_total:       Math.round(unitPrice * l.entregado),
-            product_snapshot: orig?.product_snapshot ?? { name: l.name },
-          };
-        })
-    : linesRaw.filter((l: any) => Number(l.quantity) > 0);
-
-  const subtotal = snapshot?.lineas
-    ? displayLines.reduce((s, l) => s + l.line_total, 0)
-    : Number(o.subtotal ?? 0);
-  const total = snapshot?.lineas ? subtotal + flete - descuento + cargoAdicional : Number(o.total ?? 0);
+  const subtotal = Number(o.subtotal ?? 0);
+  const total    = Number(o.total ?? 0);
 
   const fecha = fmtFechaSolo(o.created_at);
 
@@ -224,13 +209,6 @@ export default async function RemitoPage({
           </div>
         )}
 
-        {/* Aviso de entrega parcial */}
-        {snapshot?.lineas && (
-          <div style={{ marginBottom: 16, padding: "8px 12px", borderRadius: 6, background: "#fef9c3", color: "#854d0e", fontSize: 12 }}>
-            Entrega parcial — se muestran solo las cantidades efectivamente entregadas.
-          </div>
-        )}
-
         {/* Notas — siempre visibles para staff; para el cliente solo si se marcaron como visibles */}
         {o.notes && (STAFF.includes(role ?? "") || o.notes_visible_cliente) && (
           <div style={{ marginBottom: 24 }}>
@@ -270,6 +248,19 @@ export default async function RemitoPage({
             ))}
           </tbody>
         </table>
+
+        {/* Faltante de una entrega parcial: cerrado, no se cobra */}
+        {faltantes.length > 0 && (
+          <div style={{ marginBottom: 24, padding: "10px 12px", borderRadius: 6, background: "#fef9c3", color: "#854d0e", fontSize: 12 }}>
+            <p style={{ fontWeight: 700, marginBottom: 4 }}>Entrega parcial — no se entregó y no se cobra:</p>
+            {faltantes.map((l, i) => (
+              <p key={i}>
+                {l.name}: se pidieron {l.pedido}, se entregaron {l.entregado} (faltaron {l.pedido - l.entregado})
+              </p>
+            ))}
+            {motivoFaltante && <p style={{ marginTop: 4 }}>Motivo: {motivoFaltante}</p>}
+          </div>
+        )}
 
         {/* Totales */}
         <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 40 }}>

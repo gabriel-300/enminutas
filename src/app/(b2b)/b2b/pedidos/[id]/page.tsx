@@ -79,6 +79,8 @@ export default async function B2BPedidoDetailPage({
   if (!order) notFound();
 
   const o = order as any;
+  // Tras una entrega parcial las líneas sin nada entregado no se muestran (el faltante va en el bloque de entrega parcial)
+  const lineasVisibles = ((o.lines ?? []) as any[]).filter((l) => !o.delivered_snapshot?.lineas || Number(l.quantity) > 0);
   const msg = STATUS_MSG[o.status];
 
   const bankCbu    = process.env.NEXT_PUBLIC_BANK_CBU   ?? "";
@@ -191,7 +193,7 @@ export default async function B2BPedidoDetailPage({
 
         {/* Mobile: cards */}
         <div className="md:hidden divide-y divide-neutral-100">
-          {(o.lines ?? []).map((line: any) => (
+          {lineasVisibles.map((line: any) => (
             <div key={line.id} className="px-4 py-3 flex items-start justify-between gap-3">
               <div className="min-w-0">
                 <p className="text-sm text-neutral-800 font-medium leading-snug">
@@ -222,7 +224,7 @@ export default async function B2BPedidoDetailPage({
             </tr>
           </thead>
           <tbody className="divide-y divide-neutral-50">
-            {(o.lines ?? []).map((line: any) => (
+            {lineasVisibles.map((line: any) => (
               <tr key={line.id}>
                 <td className="px-5 py-3 text-neutral-800">
                   <p>{line.product_snapshot?.name ?? "Producto"}</p>
@@ -243,19 +245,24 @@ export default async function B2BPedidoDetailPage({
         </table>
       </div>
 
-      {/* Detalle entrega parcial */}
-      {o.status === "entrega_parcial" && o.delivered_snapshot?.lineas && (
+      {/* Detalle entrega parcial: lo pedido vs lo entregado; el faltante queda cerrado */}
+      {o.delivered_snapshot?.lineas && (o.delivered_snapshot.lineas as any[]).some((l: any) => l.entregado < l.pedido) && (
         <div className="bg-warning-bg border border-warning/30 rounded-2xl p-5 mb-4">
-          <p className="text-sm font-medium text-warning mb-3">Cantidades entregadas</p>
+          <p className="text-sm font-medium text-warning mb-1">Entrega parcial</p>
+          <p className="text-xs text-neutral-500 mb-3">
+            Estos productos no se entregaron y no se te cobran. El total de abajo es solo lo entregado.
+          </p>
           <div className="space-y-2">
-            {(o.delivered_snapshot.lineas as any[]).map((l: any, i: number) => (
-              <div key={i} className="flex items-center justify-between text-sm">
-                <span className="text-neutral-700 truncate flex-1 mr-4">{l.name}</span>
-                <span className={`tabular-nums font-medium ${l.entregado < l.pedido ? "text-warning" : "text-neutral-600"}`}>
-                  {l.entregado} / {l.pedido}
-                </span>
-              </div>
-            ))}
+            {(o.delivered_snapshot.lineas as any[])
+              .filter((l: any) => l.entregado < l.pedido)
+              .map((l: any, i: number) => (
+                <div key={i} className="flex items-center justify-between text-sm">
+                  <span className="text-neutral-700 truncate flex-1 mr-4">{l.name}</span>
+                  <span className="tabular-nums font-medium text-warning">
+                    faltaron {l.pedido - l.entregado} de {l.pedido}
+                  </span>
+                </div>
+              ))}
           </div>
         </div>
       )}
@@ -267,9 +274,6 @@ export default async function B2BPedidoDetailPage({
           <span className="tabular-nums">{fmt(Number(o.total))}</span>
         </div>
         <p className="text-xs text-neutral-400 mt-1">IVA (21%) incluido en todos los precios</p>
-        {o.status === "entrega_parcial" && (
-          <p className="text-xs text-neutral-400 mt-1">Ya ajustado según lo entregado.</p>
-        )}
       </div>
 
       {/* Nota del admin (si existe y es relevante para el cliente) */}

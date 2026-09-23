@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { emailPagoConfirmado, emailPedidoModificadoDespacho } from "@/lib/email";
 import { calcularPrecio } from "@/lib/b2b-pricing";
 import { getParametros } from "@/lib/parametros";
+import { calcularEntregaParcial, esMotivoFaltante, type EntregaLineaInput } from "@/lib/entrega-parcial";
 
 async function logOrderEvent(
   db: ReturnType<typeof createAdminClient>,
@@ -331,10 +332,11 @@ export async function despacharPedidoConAjuste(
   // Actualizar cantidades si alguna difiere
   for (const a of ajustes) {
     const newTotal = Math.round(a.unitPrice * a.quantityDespacho);
-    await (supabase as any)
+    const { error: errLinea } = await (supabase as any)
       .from("order_lines")
       .update({ quantity: a.quantityDespacho, line_total: newTotal })
       .eq("id", a.lineId);
+    if (errLinea) throw new Error(`No se pudo ajustar la línea: ${errLinea.message}`);
   }
 
   // Recalcular subtotal y total del pedido a partir de las líneas actualizadas
@@ -463,108 +465,163 @@ export async function agregarNota(orderId: string, nota: string, visibleCliente:
   revalidatePath(`/remito/${orderId}`);
 }
 
-export type LineaEntregada = {
-  productId: string;
-  name:      string;
-  pedido:    number;
-  entregado: number;
-};
+// Devuelve al stock (lotes, FEFO inverso, y products.stock_cajas) lo que volvió al depósito sin entregar.
+// Devuelve el mensaje de error, o null si salió bien.
+async function reintegrarStock(
+  db: ReturnType<typeof createAdminClient>,
+  productId: string,
+  qty: number,
+  orderId: string,
+  notes: string,
+): Promise<string | null> {
+  const { error } = await (db as any).rpc("reintegrar_lote_stock", { p_product_id: productId, p_qty: qty });
+  if (error) return error.message;
+  const { error: errMov } = await (db as any).from("stock_movements").insert({
+    product_id: productId,
+    qty,
+    type:       "ajuste",
+    order_id:   orderId,
+    notes,
+  });
+  return errMov?.message ?? null;
+}
 
-export async function confirmarEntregaParcial(orderId: string, lineas: LineaEntregada[]) {
+// Lo que el pedido tiene hoy en cuenta corriente (cargos + ajustes; los pagos se llevan aparte).
+async function cargoNetoCC(db: ReturnType<typeof createAdminClient>, orderId: string) {
+  const { data } = await (db as any)
+    .from("cc_movimientos")
+    .select("monto")
+    .eq("order_id", orderId)
+    .in("tipo", ["cargo", "ajuste"]);
+  const movs = (data ?? []) as { monto: number }[];
+  return { cantidad: movs.length, neto: movs.reduce((s, m) => s + Number(m.monto), 0) };
+}
+
+// Entrega parcial: lo que no se entregó se CIERRA (no queda pendiente). El pedido pasa a reflejar solo
+// lo entregado (order_lines, subtotal y total); lo pedido originalmente y el motivo del faltante quedan
+// en delivered_snapshot. Las cantidades pedidas y los precios salen de la base, no del cliente.
+export async function confirmarEntregaParcial(
+  orderId: string,
+  entregas: EntregaLineaInput[],
+  motivo?: string,
+) {
   const authClient = await createClient();
   const { data: { user } } = await authClient.auth.getUser();
   const role = user?.app_metadata?.role as string | undefined;
-  if (role !== "admin" && role !== "distribucion") throw new Error("No autorizado");
-
-  const todosEntregados = lineas.every((l) => l.entregado >= l.pedido);
-
-  // Si todo fue entregado usar el flujo normal
-  if (todosEntregados) {
-    await confirmarEntrega(orderId);
-    return;
-  }
+  if (!user || (role !== "admin" && role !== "distribucion")) throw new Error("No autorizado");
 
   const supabase = createAdminClient();
 
   const { data: order } = await (supabase as any)
     .from("orders")
-    .select("total, shipping_fee, discount, payment_method, customer_id, order_number")
+    .select("status, total, shipping_fee, discount, cargo_adicional_monto, payment_method, customer_id, order_number")
     .eq("id", orderId)
     .single();
   if (!order) throw new Error("Pedido no encontrado");
+  if (!["despachado", "en_distribucion"].includes(order.status))
+    throw new Error("El pedido no está en estado de distribución");
 
-  // Recalcular subtotal/total en base a lo efectivamente entregado, tomando
-  // el precio unitario ya calculado de cada línea (mismo criterio que usa el
-  // remito para mostrar el total real de una entrega parcial).
   const { data: orderLines } = await (supabase as any)
     .from("order_lines")
-    .select("product_id, unit_price")
+    .select("id, product_id, quantity, unit_price, product_snapshot")
     .eq("order_id", orderId);
-  const priceMap = new Map<string, number>(
-    ((orderLines ?? []) as any[]).map((l) => [l.product_id, Number(l.unit_price)])
-  );
+  if (!orderLines?.length) throw new Error("El pedido no tiene líneas");
 
-  const newSubtotal = lineas.reduce(
-    (acc, l) => acc + (priceMap.get(l.productId) ?? 0) * l.entregado, 0
-  );
-  const flete       = Number(order.shipping_fee ?? 0);
-  const descuento    = Number(order.discount ?? 0);
-  const newTotal     = Math.round((newSubtotal + flete - descuento) * 100) / 100;
+  const calc = calcularEntregaParcial({
+    lineas:         orderLines,
+    entregas,
+    descuento:      Number(order.discount ?? 0),
+    flete:          Number(order.shipping_fee ?? 0),
+    cargoAdicional: Number(order.cargo_adicional_monto ?? 0),
+  });
+
+  // Todo entregado: es una entrega normal
+  if (calc.todoEntregado) {
+    await confirmarEntrega(orderId);
+    return;
+  }
+  if (calc.nadaEntregado)
+    throw new Error("No se entregó nada del pedido: pedile al administrador que lo cancele desde distribución.");
+  if (!esMotivoFaltante(motivo)) throw new Error("Indicá el motivo del faltante");
+
   const totalOriginal = Number(order.total);
+  const ahora = new Date().toISOString();
 
+  // Primero el cambio de estado, con guard: si dos personas confirman a la vez, solo una pasa
   const { data: updated, error } = await (supabase as any)
     .from("orders")
     .update({
-      status:             "entrega_parcial",
-      entregado_at:       new Date().toISOString(),
-      delivered_snapshot: { lineas, timestamp: new Date().toISOString() },
-      subtotal:           newSubtotal,
-      total:              newTotal,
+      status:       "entrega_parcial",
+      entregado_at: ahora,
+      subtotal:     calc.subtotal,
+      discount:     calc.descuento,
+      total:        calc.total,
+      delivered_snapshot: {
+        lineas: calc.lineas.map((l) => ({
+          lineId: l.lineId, productId: l.productId, name: l.name, pedido: l.pedido, entregado: l.entregado,
+        })),
+        motivo,
+        total_original: totalOriginal,
+        timestamp: ahora,
+      },
     })
     .eq("id", orderId)
     .in("status", ["despachado", "en_distribucion"])
     .select("id");
-
   if (error) throw new Error(error.message);
   if (!updated?.length) throw new Error("El pedido no está en estado de distribución");
+
+  // Los pasos que siguen se controlan uno a uno: si alguno falla se avisa, no se pasa en silencio
+  const fallos: string[] = [];
+
+  // 1. Las líneas pasan a reflejar lo entregado
+  for (const l of calc.lineas) {
+    if (l.entregado === l.pedido) continue;
+    const { error: errLinea } = await (supabase as any)
+      .from("order_lines")
+      .update({ quantity: l.entregado, line_total: l.lineTotal })
+      .eq("id", l.lineId)
+      .eq("order_id", orderId);
+    if (errLinea) fallos.push(`línea ${l.name}: ${errLinea.message}`);
+  }
+
+  // 2. Cuenta corriente: llevar el cargo al total entregado
+  if (order.payment_method === "cuenta_corriente" && order.customer_id) {
+    const { cantidad, neto } = await cargoNetoCC(supabase, orderId);
+    const diferencia = Math.round((calc.total - neto) * 100) / 100;
+    if (Math.abs(diferencia) >= 0.01) {
+      const { error: errCC } = await (supabase as any).from("cc_movimientos").insert({
+        cliente_id:  order.customer_id,
+        order_id:    orderId,
+        tipo:        cantidad === 0 ? "cargo" : "ajuste",
+        descripcion: cantidad === 0
+          ? `Pedido ${order.order_number} (entrega parcial)`
+          : `Ajuste por entrega parcial — Pedido ${order.order_number}`,
+        monto:       diferencia,
+        fecha:       ahora.slice(0, 10),
+        created_by:  user.id,
+      });
+      if (errCC) fallos.push(`cuenta corriente: ${errCC.message}`);
+    }
+  }
+
+  // 3. Lo no entregado vuelve al stock
+  for (const l of calc.lineas) {
+    const noEntregado = l.pedido - l.entregado;
+    if (noEntregado <= 0) continue;
+    const errStock = await reintegrarStock(
+      supabase, l.productId, noEntregado, orderId,
+      `Reintegro entrega parcial — ${noEntregado} de ${l.pedido} no entregados`,
+    );
+    if (errStock) fallos.push(`stock ${l.name}: ${errStock}`);
+  }
+
   await logOrderEvent(
     supabase, orderId, "entrega_parcial",
-    `Entrega parcial confirmada — total ajustado de $${totalOriginal} a $${newTotal}`,
-    user?.id,
+    `Entrega parcial — faltante cerrado (${motivo}). Total de $${totalOriginal} a $${calc.total}` +
+      (fallos.length ? ` — ATENCIÓN, fallaron: ${fallos.join("; ")}` : ""),
+    user.id,
   );
-
-  // Ajustar el cargo en cuenta corriente por la diferencia (el cargo original
-  // se hizo por el total completo al despachar, antes de saber que habría
-  // entrega parcial).
-  const diferencia = newTotal - totalOriginal;
-  if (order.payment_method === "cuenta_corriente" && order.customer_id && Math.abs(diferencia) >= 0.01) {
-    await (supabase as any).from("cc_movimientos").insert({
-      cliente_id:  order.customer_id,
-      order_id:    orderId,
-      tipo:        "ajuste",
-      descripcion: `Ajuste por entrega parcial — Pedido ${order.order_number}`,
-      monto:       diferencia,
-      fecha:       new Date().toISOString().slice(0, 10),
-      created_by:  user?.id ?? null,
-    });
-  }
-
-  // Reintegrar al stock las unidades no entregadas
-  for (const linea of lineas) {
-    const noEntregado = linea.pedido - linea.entregado;
-    if (noEntregado <= 0) continue;
-    await (supabase as any).rpc("increment_stock", {
-      p_product_id: linea.productId,
-      p_qty:        noEntregado,
-    });
-    await (supabase as any).from("stock_movements").insert({
-      product_id: linea.productId,
-      qty:        noEntregado,
-      type:       "ajuste",
-      order_id:   orderId,
-      notes:      `Reintegro entrega parcial — ${noEntregado} de ${linea.pedido} no entregados`,
-    });
-  }
 
   revalidatePath("/admin/distribucion");
   revalidatePath("/admin/pedidos");
@@ -572,13 +629,20 @@ export async function confirmarEntregaParcial(orderId: string, lineas: LineaEntr
   revalidatePath("/admin/dashboard");
   revalidatePath("/admin/cuentas-corrientes");
   revalidatePath("/admin/reportes");
-  if (order.customer_id) revalidatePath(`/admin/clientes-b2b/${order.customer_id}`);
+  revalidatePath("/admin/stock");
+  if (order.customer_id) {
+    revalidatePath(`/admin/clientes-b2b/${order.customer_id}`);
+    revalidatePath(`/admin/cuentas-corrientes/${order.customer_id}`);
+  }
   revalidatePath(`/remito/${orderId}`);
+
+  if (fallos.length)
+    throw new Error(`La entrega parcial se registró, pero falló: ${fallos.join("; ")}. Avisale al administrador.`);
 }
 
 // Cancela un pedido ya despachado / en distribución (antes de que se confirme
 // entrega). Revierte el stock consumido en el despacho y, si el pedido era
-// cuenta corriente, anula el cargo generado — a diferencia de updateOrderStatus,
+// cuenta corriente, anula lo cargado — a diferencia de updateOrderStatus,
 // que solo cambia el status sin tocar stock ni cta cte.
 export async function cancelarPedidoDistribucion(orderId: string) {
   const authClient = await createClient();
@@ -610,54 +674,51 @@ export async function cancelarPedidoDistribucion(orderId: string) {
   if (error) throw new Error(error.message);
   if (!updated?.length) throw new Error("El pedido ya fue procesado");
 
-  await logOrderEvent(
-    supabase, orderId, "cancelled",
-    "Pedido cancelado desde distribución — stock y cuenta corriente revertidos",
-    user.id,
-  );
+  const fallos: string[] = [];
 
   // Reintegrar el stock consumido al despachar
   for (const line of (lines ?? []) as { product_id: string; quantity: number }[]) {
     if (Number(line.quantity) <= 0) continue;
-    await (supabase as any).rpc("increment_stock", {
-      p_product_id: line.product_id,
-      p_qty:        Number(line.quantity),
-    });
-    await (supabase as any).from("stock_movements").insert({
-      product_id: line.product_id,
-      qty:        Number(line.quantity),
-      type:       "ajuste",
-      order_id:   orderId,
-      notes:      "Reintegro por cancelación de pedido en distribución",
-    });
+    const errStock = await reintegrarStock(
+      supabase, line.product_id, Number(line.quantity), orderId,
+      "Reintegro por cancelación de pedido en distribución",
+    );
+    if (errStock) fallos.push(`stock: ${errStock}`);
   }
 
-  // Revertir el cargo en cuenta corriente, si lo hubo
+  // Revertir lo que el pedido tenga cargado en cuenta corriente, si lo hubo
   if (order.payment_method === "cuenta_corriente" && order.customer_id) {
-    const { data: cargo } = await (supabase as any)
-      .from("cc_movimientos")
-      .select("id, monto")
-      .eq("order_id", orderId)
-      .eq("tipo", "cargo")
-      .maybeSingle();
-
-    if (cargo) {
-      await (supabase as any).from("cc_movimientos").insert({
+    const { cantidad, neto } = await cargoNetoCC(supabase, orderId);
+    if (cantidad > 0 && Math.abs(neto) >= 0.01) {
+      const { error: errCC } = await (supabase as any).from("cc_movimientos").insert({
         cliente_id:  order.customer_id,
         order_id:    orderId,
         tipo:        "ajuste",
         descripcion: `Reversión por cancelación — Pedido ${order.order_number}`,
-        monto:       -Math.abs(Number(cargo.monto)),
+        monto:       -neto,
         fecha:       new Date().toISOString().slice(0, 10),
         created_by:  user.id,
       });
+      if (errCC) fallos.push(`cuenta corriente: ${errCC.message}`);
     }
   }
+
+  await logOrderEvent(
+    supabase, orderId, "cancelled",
+    "Pedido cancelado desde distribución — stock y cuenta corriente revertidos" +
+      (fallos.length ? ` — ATENCIÓN, fallaron: ${fallos.join("; ")}` : ""),
+    user.id,
+  );
 
   revalidatePath("/admin/distribucion");
   revalidatePath("/admin/pedidos");
   revalidatePath("/admin/dashboard");
+  revalidatePath("/admin/stock");
   revalidatePath(`/admin/pedidos/${orderId}`);
+  if (order.customer_id) revalidatePath(`/admin/cuentas-corrientes/${order.customer_id}`);
+
+  if (fallos.length)
+    throw new Error(`El pedido se canceló, pero falló: ${fallos.join("; ")}. Revisá stock y cuenta corriente.`);
 }
 
 // ── Editar cantidades de un pedido ────────────────────────────────────────────

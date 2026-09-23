@@ -6,9 +6,10 @@ import { StockClient } from "./stock-client";
 export const metadata: Metadata = { title: "Stock — Admin" };
 export const revalidate = 0;
 
-// Pedidos en curso (no entregados, no cancelados) — consumen stock comprometido
+// Pedidos en curso (no entregados, no cancelados) — consumen stock comprometido.
+// "entrega_parcial" no va: es un pedido cerrado (lo no entregado se cancela y vuelve al stock).
 const COMMITTED_STATUSES = [
-  "aprobado", "enviado_prod", "despachado", "en_distribucion", "entrega_parcial",
+  "aprobado", "enviado_prod", "despachado", "en_distribucion",
 ];
 
 export default async function StockPage() {
@@ -45,45 +46,22 @@ export default async function StockPage() {
     disponibleMap[l.producto_id] = (disponibleMap[l.producto_id] ?? 0) + Number(l.cantidad_actual);
   }
 
-  // 3. Stock comprometido: pedidos activos. En "entrega_parcial" se descuenta
-  // lo que ya se entregó de cada línea (delivered_snapshot) — solo queda
-  // comprometido lo que falta despachar, no el pedido original completo.
+  // 3. Stock comprometido: líneas de los pedidos activos
   const { data: committedOrdersRaw } = await db
     .from("orders")
-    .select("id, status, delivered_snapshot")
+    .select("id")
     .in("status", COMMITTED_STATUSES);
-  const committedOrders = (committedOrdersRaw ?? []) as any[];
-
-  const parciales = committedOrders.filter((o) => o.status === "entrega_parcial");
-  // Si a un parcial le falta el snapshot (no debería pasar, pero por las
-  // dudas) se cuenta su pedido original completo, igual que antes.
-  const parcialesConSnapshot = parciales.filter((o) => Array.isArray(o.delivered_snapshot?.lineas) && o.delivered_snapshot.lineas.length > 0);
-  const parcialesSinSnapshot = parciales.filter((o) => !parcialesConSnapshot.includes(o));
-
-  const ordenesConteoCompleto = [
-    ...committedOrders.filter((o) => o.status !== "entrega_parcial"),
-    ...parcialesSinSnapshot,
-  ].map((o) => o.id as string);
+  const committedIds = ((committedOrdersRaw ?? []) as any[]).map((o) => o.id as string);
 
   const { data: linesRaw } = await db
     .from("order_lines")
     .select("product_id, quantity")
-    .in("order_id", ordenesConteoCompleto.length > 0 ? ordenesConteoCompleto : ["00000000-0000-0000-0000-000000000000"])
+    .in("order_id", committedIds.length > 0 ? committedIds : ["00000000-0000-0000-0000-000000000000"])
     .in("product_id", productoIds.length > 0 ? productoIds : ["00000000-0000-0000-0000-000000000000"]);
 
   const comprometidoMap: Record<string, number> = {};
   for (const l of (linesRaw ?? []) as any[]) {
     comprometidoMap[l.product_id] = (comprometidoMap[l.product_id] ?? 0) + Number(l.quantity);
-  }
-
-  type LineaEntregadaSnapshot = { productId: string; pedido: number; entregado: number };
-  for (const o of parcialesConSnapshot) {
-    const lineas = o.delivered_snapshot.lineas as LineaEntregadaSnapshot[];
-    for (const l of lineas) {
-      const pendiente = Number(l.pedido) - Number(l.entregado);
-      if (pendiente <= 0) continue;
-      comprometidoMap[l.productId] = (comprometidoMap[l.productId] ?? 0) + pendiente;
-    }
   }
 
   // 4. Construir filas

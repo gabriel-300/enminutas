@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { calcularComisionOrden, proporcionEntregada } from "./comisiones";
+import { calcularComisionOrden } from "./comisiones";
 
 const IVA = 0.21;
 
@@ -58,56 +58,5 @@ describe("calcularComisionOrden", () => {
     expect(c.total).toBe(0);
     expect(c.preventista).toBe(0);
     expect(c.comercializadora).toBe(0);
-  });
-});
-
-describe("proporcionEntregada", () => {
-  const lineas = [
-    { product_id: "a", line_total: 60_000 },
-    { product_id: "b", line_total: 40_000 },
-  ];
-
-  it("sin snapshot (entrega total) es 1", () => {
-    expect(proporcionEntregada(lineas, null)).toBe(1);
-    expect(proporcionEntregada(lineas, [])).toBe(1);
-  });
-
-  it("pondera por el valor de cada línea, no por unidades", () => {
-    // Del producto a (60k) se entrega la mitad; b (40k) completo → 70k de 100k.
-    const snapshot = [
-      { productId: "a", pedido: 10, entregado: 5 },
-      { productId: "b", pedido: 4,  entregado: 4 },
-    ];
-    expect(proporcionEntregada(lineas, snapshot)).toBeCloseTo(0.7, 10);
-  });
-
-  it("una línea que no figura en el snapshot cuenta como entregada completa", () => {
-    const snapshot = [{ productId: "a", pedido: 10, entregado: 0 }];
-    expect(proporcionEntregada(lineas, snapshot)).toBeCloseTo(0.4, 10);
-  });
-
-  it("no pasa de 1 aunque se registre más de lo pedido", () => {
-    const snapshot = [{ productId: "a", pedido: 10, entregado: 15 }];
-    expect(proporcionEntregada(lineas, snapshot)).toBe(1);
-  });
-
-  it("nada entregado es 0", () => {
-    const snapshot = [
-      { productId: "a", pedido: 10, entregado: 0 },
-      { productId: "b", pedido: 4,  entregado: 0 },
-    ];
-    expect(proporcionEntregada(lineas, snapshot)).toBe(0);
-  });
-
-  it("sin líneas devuelve 1 en vez de dividir por cero", () => {
-    expect(proporcionEntregada([], [{ productId: "a", pedido: 1, entregado: 0 }])).toBe(1);
-  });
-
-  it("la comisión de un parcial baja en la misma proporción", () => {
-    const total = 493_328;
-    const entregado = total * proporcionEntregada(lineas, [{ productId: "a", pedido: 10, entregado: 5 }, { productId: "b", pedido: 4, entregado: 4 }]);
-    const completo = calcularComisionOrden({ base: total, ivaPct: IVA, poolPct: 0.15, preventistaPct: 0 });
-    const parcial  = calcularComisionOrden({ base: entregado, ivaPct: IVA, poolPct: 0.15, preventistaPct: 0 });
-    expect(parcial.total / completo.total).toBeCloseTo(0.7, 10);
   });
 });

@@ -2,8 +2,9 @@
 
 import { useState, useTransition } from "react";
 import { confirmarEntrega, confirmarEntregaParcial } from "@/app/(admin)/admin/pedidos/actions";
+import { MOTIVOS_FALTANTE } from "@/lib/entrega-parcial";
 
-type Linea = { productId: string; name: string; pedido: number };
+type Linea = { lineId: string; name: string; pedido: number };
 
 export function ConfirmarEntregaButton({
   orderId,
@@ -14,8 +15,10 @@ export function ConfirmarEntregaButton({
 }) {
   const [mode, setMode]             = useState<"idle" | "confirm" | "parcial">("idle");
   const [cantidades, setCantidades] = useState<Record<string, number>>(
-    Object.fromEntries(lineas.map((l) => [l.productId, l.pedido]))
+    Object.fromEntries(lineas.map((l) => [l.lineId, l.pedido]))
   );
+  const [motivo, setMotivo]         = useState<string>("");
+  const [error, setError]           = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
 
   // ── Idle ─────────────────────────────────────────────────────────────────
@@ -66,15 +69,26 @@ export function ConfirmarEntregaButton({
   }
 
   // ── Entrega parcial ───────────────────────────────────────────────────────
+  const entregadoDe = (l: Linea) => Math.max(0, Math.min(cantidades[l.lineId] ?? 0, l.pedido));
+  const hayFaltante = lineas.some((l) => entregadoDe(l) < l.pedido);
+  const nadaEntregado = lineas.every((l) => entregadoDe(l) <= 0);
+
   function handleParcial() {
+    setError(null);
+    if (hayFaltante && !motivo) {
+      setError("Indicá el motivo del faltante");
+      return;
+    }
     startTransition(async () => {
-      const payload = lineas.map((l) => ({
-        productId: l.productId,
-        name:      l.name,
-        pedido:    l.pedido,
-        entregado: Math.max(0, Math.min(cantidades[l.productId] ?? 0, l.pedido)),
-      }));
-      await confirmarEntregaParcial(orderId, payload);
+      try {
+        await confirmarEntregaParcial(
+          orderId,
+          lineas.map((l) => ({ lineId: l.lineId, entregado: entregadoDe(l) })),
+          motivo || undefined,
+        );
+      } catch (e: any) {
+        setError(e?.message ?? "No se pudo registrar la entrega");
+      }
     });
   }
 
@@ -83,16 +97,17 @@ export function ConfirmarEntregaButton({
       <p className="text-xs font-medium text-neutral-700">Ingresá las cantidades entregadas:</p>
       <div className="space-y-2">
         {lineas.map((l) => (
-          <div key={l.productId} className="flex items-center gap-3">
+          <div key={l.lineId} className="flex items-center gap-3">
             <p className="flex-1 text-sm text-neutral-700 truncate min-w-0">{l.name}</p>
             <div className="flex items-center gap-1.5 shrink-0">
               <input
                 type="number"
                 min={0}
                 max={l.pedido}
-                value={cantidades[l.productId] ?? l.pedido}
+                step={1}
+                value={cantidades[l.lineId] ?? l.pedido}
                 onChange={(e) =>
-                  setCantidades((prev) => ({ ...prev, [l.productId]: Number(e.target.value) }))
+                  setCantidades((prev) => ({ ...prev, [l.lineId]: Number(e.target.value) }))
                 }
                 className="w-16 text-center text-sm border border-neutral-200 rounded-lg px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-tierra-700/20 focus:border-tierra-700"
               />
@@ -101,6 +116,36 @@ export function ConfirmarEntregaButton({
           </div>
         ))}
       </div>
+
+      {hayFaltante && (
+        <div className="space-y-1.5">
+          <label className="text-xs font-medium text-neutral-700" htmlFor={`motivo-${orderId}`}>
+            Motivo del faltante
+          </label>
+          <select
+            id={`motivo-${orderId}`}
+            value={motivo}
+            onChange={(e) => setMotivo(e.target.value)}
+            className="w-full text-sm border border-neutral-200 rounded-lg px-2 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-tierra-700/20 focus:border-tierra-700"
+          >
+            <option value="">Elegí un motivo…</option>
+            {MOTIVOS_FALTANTE.map((m) => (
+              <option key={m.value} value={m.value}>{m.label}</option>
+            ))}
+          </select>
+          <p className="text-xs text-neutral-400">
+            Lo que no se entrega se cierra: el pedido y la cuenta corriente quedan solo con lo entregado.
+          </p>
+        </div>
+      )}
+
+      {nadaEntregado && (
+        <p className="text-xs text-danger">
+          Si no se entregó nada, pedile al administrador que cancele el pedido.
+        </p>
+      )}
+      {error && <p className="text-xs text-danger">{error}</p>}
+
       <div className="flex gap-2">
         <button
           onClick={() => setMode("idle")}
@@ -111,7 +156,7 @@ export function ConfirmarEntregaButton({
         </button>
         <button
           onClick={handleParcial}
-          disabled={isPending}
+          disabled={isPending || nadaEntregado}
           className="flex-1 px-3 py-2.5 text-sm rounded-xl bg-tierra-700 text-white font-medium hover:bg-tierra-800 disabled:opacity-50 transition-colors"
         >
           {isPending ? "Registrando…" : "Registrar entrega"}

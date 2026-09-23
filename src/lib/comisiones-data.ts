@@ -1,4 +1,4 @@
-import { calcularComisionOrden, proporcionEntregada, type LineaEntregaSnapshot } from "@/lib/comisiones";
+import { calcularComisionOrden } from "@/lib/comisiones";
 import { COMISION_STATUSES } from "@/lib/order-status";
 import { mesAR, rangoAnioAR } from "@/lib/fecha";
 import { getParametros } from "@/lib/parametros";
@@ -93,7 +93,7 @@ export async function cargarComisionesAnio(anio: number): Promise<ComisionesAnio
   const { desde, hasta } = rangoAnioAR(anio);
   const { data: rawOrders } = clienteIds.length > 0
     ? await db.from("orders")
-        .select("id, customer_id, total, created_at, entregado_at, delivered_snapshot")
+        .select("id, customer_id, total, created_at, entregado_at")
         .eq("channel", "b2b_mayorista")
         .in("customer_id", clienteIds)
         .in("status", COMISION_STATUSES)
@@ -116,21 +116,6 @@ export async function cargarComisionesAnio(anio: number): Promise<ComisionesAnio
     netoSinFacturaMap[p.order_id] = (netoSinFacturaMap[p.order_id] ?? 0) + Number(p.monto);
   }
 
-  // Pedidos con entrega parcial: se traen sus líneas para ponderar lo entregado. Se filtra por
-  // snapshot y no por status porque un parcial que después pasa a "liquidado" conserva su snapshot.
-  const snapshotDe = (o: any): LineaEntregaSnapshot[] | null =>
-    Array.isArray(o.delivered_snapshot?.lineas) && o.delivered_snapshot.lineas.length > 0
-      ? o.delivered_snapshot.lineas
-      : null;
-  const parcialIds = orders.filter((o) => snapshotDe(o)).map((o) => o.id);
-  const { data: rawLineas } = parcialIds.length > 0
-    ? await db.from("order_lines").select("order_id, product_id, line_total").in("order_id", parcialIds)
-    : { data: [] };
-  const lineasPorOrden: Record<string, { product_id: string; line_total: number }[]> = {};
-  for (const l of (rawLineas ?? []) as any[]) {
-    (lineasPorOrden[l.order_id] ??= []).push({ product_id: l.product_id, line_total: Number(l.line_total) });
-  }
-
   // ── Repartir cada pedido entre el preventista asignado y la comercializadora ─
   // Se agrega por vendedor × mes × cliente (no solo vendedor × mes) para poder pagar cliente por cliente.
   const agg: ComisionesAnio["agg"] = {};
@@ -149,7 +134,7 @@ export async function cargarComisionesAnio(anio: number): Promise<ComisionesAnio
   for (const o of orders) {
     const customerId = o.customer_id;
     const mesKey = mesAR(o.entregado_at ?? o.created_at);
-    const entregado = Number(o.total) * proporcionEntregada(lineasPorOrden[o.id] ?? [], snapshotDe(o));
+    const entregado = Number(o.total);
     const base = netoSinFacturaMap[o.id] ?? entregado;
 
     const poolPct = clientePoolPctMap[customerId] ?? comision_pct;

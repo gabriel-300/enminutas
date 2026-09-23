@@ -67,7 +67,7 @@ export default async function DistribucionPage({
         shipping_snapshot,
         customer:profiles!customer_id (full_name, phone, zona:delivery_zones!zona_id (name)),
         guest_phone,
-        lines:order_lines (product_id, quantity, product_snapshot)
+        lines:order_lines (id, product_id, quantity, product_snapshot)
       `)
       .eq("channel", "b2b_mayorista")
       .in("status", status instanceof Array ? status : [status]);
@@ -292,7 +292,7 @@ export default async function DistribucionPage({
                             <ConfirmarEntregaButton
                               orderId={order.id}
                               lineas={(order.lines ?? []).map((l: any) => ({
-                                productId: l.product_id ?? "",
+                                lineId:    l.id,
                                 name:      l.product_snapshot?.name ?? "Producto",
                                 pedido:    Number(l.quantity),
                               }))}

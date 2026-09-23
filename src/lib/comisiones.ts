@@ -19,34 +19,6 @@ export type ComisionOrden = {
   comercializadoraPct: number;
 };
 
-export type LineaPedidoValor = { product_id: string; line_total: number };
-export type LineaEntregaSnapshot = { productId: string; pedido: number; entregado: number };
-
-/**
- * Fracción (0–1) del valor del pedido que se entregó de verdad. `confirmarEntregaParcial` no
- * recalcula orders.total: solo guarda en delivered_snapshot cuánto se pidió y cuánto se entregó
- * por producto. Se pondera por line_total de cada línea; una línea que no figura en el snapshot
- * se considera entregada completa. Sin snapshot (entrega total) devuelve 1.
- */
-export function proporcionEntregada(
-  lineas: LineaPedidoValor[],
-  snapshot: LineaEntregaSnapshot[] | null | undefined,
-): number {
-  if (!snapshot?.length) return 1;
-  const porProducto = new Map(snapshot.map((l) => [l.productId, l]));
-
-  let total = 0;
-  let entregado = 0;
-  for (const l of lineas) {
-    const valor = Number(l.line_total);
-    const s = porProducto.get(l.product_id);
-    const ratio = s && s.pedido > 0 ? Math.min(Math.max(s.entregado / s.pedido, 0), 1) : 1;
-    total += valor;
-    entregado += valor * ratio;
-  }
-  return total > 0 ? entregado / total : 1;
-}
-
 // El pool sale del precio: base × pool / (1 + IVA + pool). El preventista se queda con su %
 // (tope: el pool del cliente) y la comercializadora con el resto. Un cliente con pool 0 no
 // genera comisión para nadie. Ver /admin/comisiones y el export de comisiones.

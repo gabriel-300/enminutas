@@ -8,6 +8,7 @@ import { AprobarPedidoButton } from "@/components/admin/aprobar-pedido-button";
 import { NotasPedidoForm } from "@/components/admin/notas-pedido-form";
 import { EditarCantidadesForm } from "@/components/admin/editar-cantidades-form";
 import { fmtFechaHora, fmtFecha } from "@/lib/fecha";
+import { MOTIVOS_FALTANTE } from "@/lib/entrega-parcial";
 
 export const metadata: Metadata = { title: "Detalle de pedido — Admin En Minutas" };
 export const revalidate = 0;
@@ -54,6 +55,10 @@ export default async function AdminPedidoDetailPage({
   if (!order) notFound();
 
   const o = order as any;
+  // Tras una entrega parcial las líneas sin nada entregado no se muestran (el faltante va en el bloque de entrega parcial)
+  const lineasVisibles = ((o.lines ?? []) as any[]).filter((l) => !o.delivered_snapshot?.lineas || Number(l.quantity) > 0);
+  const motivoFaltante = MOTIVOS_FALTANTE.find((m) => m.value === o.delivered_snapshot?.motivo)?.label ?? null;
+  const fmtMonto = (n: number) => `$ ${Math.round(n).toLocaleString("es-AR")}`;
 
   // Resolver nombre del vendedor asignado al cliente
   let vendedorNombre: string | null = null;
@@ -232,7 +237,7 @@ export default async function AdminPedidoDetailPage({
 
         {/* Mobile: cards */}
         <div className="md:hidden divide-y divide-neutral-100">
-          {(o.lines ?? []).map((line: any) => (
+          {lineasVisibles.map((line: any) => (
             <div key={line.id} className="px-4 py-3 flex items-start justify-between gap-3">
               <div className="min-w-0">
                 <p className="text-sm text-neutral-800 font-medium leading-snug">
@@ -263,7 +268,7 @@ export default async function AdminPedidoDetailPage({
             </tr>
           </thead>
           <tbody className="divide-y divide-neutral-50">
-            {(o.lines ?? []).map((line: any) => (
+            {lineasVisibles.map((line: any) => (
               <tr key={line.id}>
                 <td className="px-5 py-3 text-neutral-800">
                   {line.product_snapshot?.name ?? "Producto"}
@@ -287,21 +292,34 @@ export default async function AdminPedidoDetailPage({
       </div>
 
       {/* Detalle entrega parcial */}
-      {o.status === "entrega_parcial" && o.delivered_snapshot?.lineas && (
+      {o.delivered_snapshot?.lineas && (
         <div className="bg-warning-bg border border-warning/20 rounded-2xl p-5 mb-4">
-          <p className="text-sm font-medium text-warning mb-3">Entrega parcial registrada</p>
+          <p className="text-sm font-medium text-warning mb-1">Entrega parcial — faltante cerrado</p>
+          <p className="text-xs text-neutral-500 mb-3">
+            El pedido y la cuenta corriente quedaron solo con lo entregado. Lo que no se entregó no queda pendiente.
+          </p>
           <div className="space-y-2">
-            {(o.delivered_snapshot.lineas as any[]).map((l: any, i: number) => (
-              <div key={i} className="flex items-center justify-between text-sm">
-                <span className="text-neutral-700 truncate flex-1 mr-4">{l.name}</span>
-                <span className={`tabular-nums font-medium ${l.entregado < l.pedido ? "text-warning" : "text-neutral-600"}`}>
-                  {l.entregado} / {l.pedido} cajas
-                </span>
-              </div>
-            ))}
+            {(o.delivered_snapshot.lineas as any[])
+              .filter((l: any) => l.entregado < l.pedido)
+              .map((l: any, i: number) => (
+                <div key={i} className="flex items-center justify-between text-sm">
+                  <span className="text-neutral-700 truncate flex-1 mr-4">{l.name}</span>
+                  <span className="tabular-nums font-medium text-warning">
+                    entregó {l.entregado} de {l.pedido} · faltó {l.pedido - l.entregado}
+                  </span>
+                </div>
+              ))}
           </div>
+          {motivoFaltante && (
+            <p className="text-xs text-neutral-600 mt-3">Motivo: {motivoFaltante}</p>
+          )}
+          {o.delivered_snapshot.total_original != null && (
+            <p className="text-xs text-neutral-600 mt-1">
+              Total del pedido original: {fmtMonto(Number(o.delivered_snapshot.total_original))} · entregado: {fmtMonto(Number(o.total))}
+            </p>
+          )}
           {o.delivered_snapshot.timestamp && (
-            <p className="text-xs text-neutral-400 mt-3">
+            <p className="text-xs text-neutral-400 mt-1">
               Registrado: {new Date(o.delivered_snapshot.timestamp).toLocaleString("es-AR")}
             </p>
           )}
@@ -353,9 +371,9 @@ export default async function AdminPedidoDetailPage({
                 <span>Total</span>
                 <span>{fmt(total)}</span>
               </div>
-              {o.status === "entrega_parcial" && (
+              {o.delivered_snapshot?.lineas && (
                 <p className="text-xs text-neutral-400 pt-1">
-                  Ajustado según lo efectivamente entregado (el detalle de productos arriba muestra las cantidades originales del pedido).
+                  Total según lo efectivamente entregado.
                 </p>
               )}
             </div>
