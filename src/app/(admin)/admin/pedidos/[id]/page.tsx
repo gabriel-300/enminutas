@@ -95,6 +95,12 @@ export default async function AdminPedidoDetailPage({
     }
   }
 
+  // Cobranza del pedido: pagos registrados contra este pedido (antes o después de entregarlo)
+  const { data: pagosPedidoRaw } = esAdmin && o.channel === "b2b_mayorista"
+    ? await (adminClient as any).from("pagos").select("id, monto, fecha, metodo, sin_factura").eq("order_id", o.id).order("fecha", { ascending: true })
+    : { data: [] };
+  const pagosPedido = (pagosPedidoRaw ?? []) as { id: string; monto: number; fecha: string; metodo: string; sin_factura: boolean }[];
+
   // Resolver nombre del vendedor asignado al cliente
   let vendedorNombre: string | null = null;
   if (o.customer?.vendedor_id) {
@@ -436,6 +442,29 @@ export default async function AdminPedidoDetailPage({
           );
         })()}
       </div>
+
+      {/* Cobranza: lo pagado contra este pedido vs su total (el total ya refleja lo entregado) */}
+      {pagosPedido.length > 0 && (() => {
+        const pagado = pagosPedido.reduce((s, x) => s + Number(x.monto), 0);
+        const sinFactura = pagosPedido.some((x) => x.sin_factura);
+        const saldo = Number(o.total) - pagado;
+        return (
+          <div className="mt-4 bg-white rounded-2xl border border-neutral-200 p-5 sm:max-w-xs sm:ml-auto text-sm space-y-2">
+            <p className="text-xs font-medium text-neutral-400 uppercase tracking-wide">Cobranza</p>
+            <div className="flex justify-between text-neutral-600"><span>Total del pedido</span><span>{fmtMonto(Number(o.total))}</span></div>
+            <div className="flex justify-between text-neutral-600"><span>Pagado</span><span>{fmtMonto(pagado)}</span></div>
+            <div className={`flex justify-between font-semibold pt-2 border-t border-neutral-100 ${saldo > 0.5 && !sinFactura ? "text-danger" : "text-success"}`}>
+              <span>{sinFactura ? "Cobrado sin factura" : saldo > 0.5 ? "Saldo pendiente" : saldo < -0.5 ? "A favor del cliente" : "Saldado"}</span>
+              <span>{sinFactura ? fmtMonto(pagado) : fmtMonto(Math.abs(saldo))}</span>
+            </div>
+            {!sinFactura && saldo < -0.5 && (
+              <p className="text-xs text-neutral-400">
+                Pagó de más (por ejemplo, pagó antes y luego hubo entrega parcial). Se descuenta del saldo general del cliente.
+              </p>
+            )}
+          </div>
+        );
+      })()}
 
       {/* Pago confirmado */}
       {o.payment_confirmed_at && (

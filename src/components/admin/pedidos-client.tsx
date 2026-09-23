@@ -18,7 +18,25 @@ type Order = {
   customer_email: string | null;
   canal:          string | null;
   vendedor_name:  string | null;
+  /** Este pedido lleva el faltante de otro pedido con entrega parcial */
+  faltante_de:    { id: string; order_number: string } | null;
+  /** El faltante de este pedido se reprogramó en otro pedido */
+  faltante_en:    { id: string; order_number: string } | null;
 };
+
+function FaltanteTag({ order }: { order: Order }) {
+  if (!order.faltante_de && !order.faltante_en) return null;
+  return (
+    <p className="text-[11px] text-neutral-500 mt-1">
+      {order.faltante_en && (
+        <>Faltante en <Link href={`/admin/pedidos/${order.faltante_en.id}`} className="font-mono text-tierra-700 hover:underline">{order.faltante_en.order_number}</Link></>
+      )}
+      {order.faltante_de && (
+        <>Faltante de <Link href={`/admin/pedidos/${order.faltante_de.id}`} className="font-mono text-tierra-700 hover:underline">{order.faltante_de.order_number}</Link></>
+      )}
+    </p>
+  );
+}
 
 const TABS = [
   { key: "todos",       label: "Todos" },
@@ -180,6 +198,7 @@ export function PedidosClient({ orders, esAdmin = false }: { orders: Order[]; es
             <div className="flex items-center gap-2 flex-wrap mb-3">
               <OrderStatusBadge status={order.status} />
               <span className="text-xs text-neutral-400">{fmtDate(order.created_at)}</span>
+              <FaltanteTag order={order} />
             </div>
 
             <div className="flex items-center gap-2 flex-wrap">
@@ -254,6 +273,7 @@ export function PedidosClient({ orders, esAdmin = false }: { orders: Order[]; es
                 </td>
                 <td className="px-4 py-3">
                   <OrderStatusBadge status={order.status} />
+                  <FaltanteTag order={order} />
                 </td>
                 <td className="px-4 py-3 text-right text-neutral-500 tabular-nums">
                   {fmtMonto(desgloseIVA(order.total).neto)}

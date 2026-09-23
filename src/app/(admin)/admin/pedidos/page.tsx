@@ -32,7 +32,7 @@ export default async function AdminPedidosPage() {
     .from("orders")
     .select(`
       id, order_number, channel, status, total, payment_method, created_at,
-      customer_id, guest_email,
+      customer_id, guest_email, origen_order_id,
       customer:profiles!customer_id (full_name, canal, vendedor_id)
     `)
     .order("created_at", { ascending: false })
@@ -82,7 +82,23 @@ export default async function AdminPedidosPage() {
     );
   }
 
+  // Faltantes reprogramados: cada pedido con entrega parcial apunta al pedido que lleva su faltante, y viceversa
+  const numeroPorId = new Map<string, string>((rawOrders ?? []).map((o: any) => [o.id as string, o.order_number as string]));
+  const origenesFuera = [...new Set(
+    (rawOrders ?? []).map((o: any) => o.origen_order_id as string | null).filter((id: string | null): id is string => !!id && !numeroPorId.has(id))
+  )];
+  if (origenesFuera.length > 0) {
+    const { data: origenes } = await (adminClient as any).from("orders").select("id, order_number").in("id", origenesFuera);
+    for (const x of (origenes ?? []) as any[]) numeroPorId.set(x.id, x.order_number);
+  }
+  const reprogramadoDe = new Map<string, { id: string; order_number: string }>();
+  for (const o of (rawOrders ?? []) as any[]) {
+    if (o.origen_order_id && o.status !== "cancelled") reprogramadoDe.set(o.origen_order_id, { id: o.id, order_number: o.order_number });
+  }
+
   const orders = (rawOrders ?? []).map((o: any) => ({
+    faltante_de: o.origen_order_id ? { id: o.origen_order_id as string, order_number: numeroPorId.get(o.origen_order_id) ?? "—" } : null,
+    faltante_en: reprogramadoDe.get(o.id) ?? null,
     id: o.id,
     order_number: o.order_number,
     channel: o.channel,

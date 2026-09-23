@@ -618,9 +618,17 @@ export async function confirmarEntregaParcial(
     if (errStock) fallos.push(`stock ${l.name}: ${errStock}`);
   }
 
+  // Si el cliente ya había pagado este pedido (pago anticipado), lo que exceda el nuevo total queda a su favor.
+  // No se mueve plata: el saldo del cliente (facturado − pagado) ya lo refleja; acá solo se deja constancia.
+  const { data: pagosPedido } = await (supabase as any).from("pagos").select("monto, sin_factura").eq("order_id", orderId);
+  const pagadoPedido = ((pagosPedido ?? []) as any[]).reduce((s, x) => s + Number(x.monto), 0);
+  const cobradoSinFactura = ((pagosPedido ?? []) as any[]).some((x) => x.sin_factura);
+  const aFavor = !cobradoSinFactura && pagadoPedido - calc.total > 0.5 ? Math.round((pagadoPedido - calc.total) * 100) / 100 : 0;
+
   await logOrderEvent(
     supabase, orderId, "entrega_parcial",
     `Entrega parcial — faltante cerrado (${motivo}). Total de $${totalOriginal} a $${calc.total}` +
+      (aFavor > 0 ? ` — el cliente ya había pagado $${pagadoPedido}: quedan $${aFavor} a su favor` : "") +
       (fallos.length ? ` — ATENCIÓN, fallaron: ${fallos.join("; ")}` : ""),
     user.id,
   );
