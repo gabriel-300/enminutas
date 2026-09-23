@@ -7,6 +7,7 @@ import {
   PresentacionesReceta,
   type PresentacionVinculada,
   type ProductoVinculable,
+  type LineaOpcion,
 } from "@/components/admin/presentaciones-receta";
 import { factorABase, cajasPorLote } from "@/lib/receta-base";
 
@@ -29,7 +30,7 @@ export default async function RecetaEditorPage({
   const [{ data: product }, { data: recipeRaw }, { data: insumosRaw }] = await Promise.all([
     adminClient
       .from("products")
-      .select("id, name, sku, unit_label, bolsas_caja, kg_caja, receta_producto_id")
+      .select("id, name, sku, unit_label, bolsas_caja, kg_caja, linea_id, receta_producto_id")
       .eq("id", productId)
       .single(),
 
@@ -53,7 +54,11 @@ export default async function RecetaEditorPage({
   // Presentaciones vinculadas y productos que se podrían vincular (solo si ya hay receta)
   let vinculadas: PresentacionVinculada[] = [];
   let candidatos: ProductoVinculable[] = [];
+  let lineas: LineaOpcion[] = [];
   if (recipeRaw?.id) {
+    const { data: lineasRaw } = await adminClient.from("lineas_producto").select("id, nombre").order("id");
+    lineas = (lineasRaw ?? []) as LineaOpcion[];
+
     const factorDe = (kg: number | string | null) => factorABase(kg, product.kg_caja);
     const [{ data: linked }, { data: activos }, { data: conReceta }] = await Promise.all([
       adminClient
@@ -136,6 +141,9 @@ export default async function RecetaEditorPage({
         <PresentacionesReceta
           baseId={productId}
           baseName={product.name}
+          baseLineaId={product.linea_id ?? null}
+          lineas={lineas}
+          puedeCrear={user.app_metadata?.role === "admin"}
           baseKgCaja={product.kg_caja !== null ? Number(product.kg_caja) : null}
           vinculadas={vinculadas}
           candidatos={candidatos}

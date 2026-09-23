@@ -194,6 +194,120 @@ export async function desvincularPresentacion(productId: string): Promise<Action
   return { ok: true };
 }
 
+// Costo de materia prima por unidad (bolsa/cajita) de una presentación: costo del lote de la receta base,
+// dividido por su rinde, prorrateado por peso (factor) y por bolsas de la caja. null si no hay receta.
+async function costoUnidadDesdeReceta(db: any, baseId: string, factor: number, bolsasCaja: number): Promise<number | null> {
+  const { data: recipe } = await db
+    .from("recipes")
+    .select("id, yield_cajas, ingredients:recipe_ingredients(cantidad, insumo:insumos!insumo_id(precio_unitario))")
+    .eq("product_id", baseId)
+    .maybeSingle();
+  if (!recipe) return null;
+
+  const costoLote = (recipe.ingredients ?? []).reduce((s: number, ing: any) => {
+    const precio = Number(ing.insumo?.precio_unitario ?? 0);
+    return s + Number(ing.cantidad) * precio;
+  }, 0);
+
+  const yieldCajas = Number(recipe.yield_cajas) || 1;
+  return ((costoLote / yieldCajas) * factor) / (bolsasCaja > 0 ? bolsasCaja : 1);
+}
+
+export type NuevaPresentacion = {
+  name:         string;
+  sku:          string;
+  unit_label:   string;
+  presentacion: string;
+  kg_caja:      number;
+  bolsas_caja:  number;
+  u_bolsa:      number;
+  pkg_unitario: number | null;
+  pkg_bulto:    number | null;
+  /** costo de materia prima por unidad; si es null se calcula desde la receta */
+  costo:        number | null;
+  linea_id:     number | null;
+};
+
+// Crea un producto nuevo ya vinculado a la receta del base. Queda INACTIVO: hay que revisar
+// precios y activarlo en Productos (si no, aparecería en la tienda con precio 0).
+export async function crearPresentacion(
+  baseProductId: string,
+  input: NuevaPresentacion,
+): Promise<{ error: string } | { ok: true; id: string }> {
+  await requireRole("admin");
+  const db = createAdminClient() as any;
+
+  const sku  = input.sku.trim().toUpperCase();
+  const name = input.name.trim();
+  const unitLabel = input.unit_label.trim();
+  if (!sku)       return { error: "Ingresá el SKU" };
+  if (!name)      return { error: "Ingresá el nombre" };
+  if (!unitLabel) return { error: "Ingresá la unidad de venta (ej. caja 10 cajitas x 500g)" };
+  if (!(input.kg_caja > 0))     return { error: "El kg por caja debe ser mayor a 0" };
+  if (!(input.bolsas_caja >= 1)) return { error: "Las bolsas por caja deben ser al menos 1" };
+  if (!(input.u_bolsa > 0))     return { error: "Las unidades por bolsa deben ser mayor a 0" };
+
+  const [{ data: base }, { data: recetaBase }] = await Promise.all([
+    db.from("products").select("*").eq("id", baseProductId).maybeSingle(),
+    db.from("recipes").select("id").eq("product_id", baseProductId).maybeSingle(),
+  ]);
+  if (!base) return { error: "Producto base no encontrado" };
+  if (!recetaBase) return { error: "El producto base no tiene receta cargada" };
+  if (base.receta_producto_id) return { error: "El producto base usa la receta de otro producto" };
+  const factor = factorABase(input.kg_caja, base.kg_caja);
+  if (factor === null) return { error: "Cargá el kg por caja del producto base (en Productos) para poder calcular equivalencias" };
+
+  const costo = input.costo !== null && input.costo > 0
+    ? input.costo
+    : await costoUnidadDesdeReceta(db, baseProductId, factor, input.bolsas_caja);
+
+  const { data: creado, error } = await db
+    .from("products")
+    .insert({
+      sku,
+      slug:               sku.toLowerCase().replace(/[^a-z0-9]+/g, "-"),
+      name,
+      unit_label:         unitLabel,
+      presentacion:       input.presentacion.trim() || null,
+      kg_caja:            input.kg_caja,
+      bolsas_caja:        input.bolsas_caja,
+      u_bolsa:            input.u_bolsa,
+      pkg_unitario:       input.pkg_unitario,
+      pkg_bulto:          input.pkg_bulto,
+      costo,
+      linea_id:           input.linea_id ?? base.linea_id,
+      receta_producto_id: baseProductId,
+      // Se hereda del base lo que describe al producto
+      category_id:        base.category_id,
+      categoria:          base.categoria,
+      short_description:  base.short_description,
+      description:        base.description,
+      cooking_methods:    base.cooking_methods ?? [],
+      freezer_required:   base.freezer_required,
+      cover_image_url:    base.cover_image_url,
+      vida_util_dias:     base.vida_util_dias,
+      mult_bolsas:        base.mult_bolsas,
+      // Los precios no se copian: dependen del envase y se revisan antes de activarlo
+      price_b2c:          0,
+      price_b2b:          0,
+      min_quantity_b2b:   1,
+      stock_minimo:       0,
+      is_active:          false,
+    })
+    .select("id")
+    .single();
+
+  if (error) {
+    if (error.code === "23505") return { error: `Ya existe un producto con el SKU "${sku}". Usá otro código.` };
+    return { error: error.message };
+  }
+
+  revalidateAll();
+  revalidatePath(`/admin/cocina/recetas/${baseProductId}`);
+  revalidatePath("/admin/productos");
+  return { ok: true, id: creado.id };
+}
+
 export async function sincronizarCostoProducto(productId: string): Promise<ActionResult> {
   await requireRole("admin", "produccion");
   const db = createAdminClient() as any;
@@ -214,24 +328,8 @@ export async function sincronizarCostoProducto(productId: string): Promise<Actio
     factor = f;
   }
 
-  const { data: recipe } = await db
-    .from("recipes")
-    .select("id, yield_cajas, ingredients:recipe_ingredients(cantidad, insumo:insumos!insumo_id(precio_unitario))")
-    .eq("product_id", baseId)
-    .maybeSingle();
-
-  if (!recipe) return { error: "No hay receta cargada para este producto." };
-
-  const costoLote = (recipe.ingredients ?? []).reduce((s: number, ing: any) => {
-    const precio = Number(ing.insumo?.precio_unitario ?? 0);
-    return s + Number(ing.cantidad) * precio;
-  }, 0);
-
-  const yieldCajas = Number(recipe.yield_cajas) || 1;
-  const costoCaja  = (costoLote / yieldCajas) * factor;
-
-  const bolsas = Number(product?.bolsas_caja ?? 1) || 1;
-  const costoUnidad = costoCaja / bolsas;
+  const costoUnidad = await costoUnidadDesdeReceta(db, baseId, factor, Number(product?.bolsas_caja ?? 1) || 1);
+  if (costoUnidad === null) return { error: "No hay receta cargada para este producto." };
 
   const { error } = await db.from("products").update({ costo: costoUnidad }).eq("id", productId);
   if (error) return { error: error.message };
