@@ -1,5 +1,6 @@
 import { createAdminClient } from "@/lib/supabase/server";
 import { ahoraAR } from "@/lib/fecha";
+import { CANALES_FLUJO } from "@/lib/order-channels";
 
 export async function loadProduccionDashboard() {
   const adminClient = createAdminClient();
@@ -12,7 +13,7 @@ export async function loadProduccionDashboard() {
   ] = await Promise.all([
     db.from("orders")
       .select("id, order_number, status, aprobado_at, lines:order_lines(quantity, product_snapshot)")
-      .eq("channel", "b2b_mayorista")
+      .in("channel", CANALES_FLUJO)
       .in("status", ["aprobado", "enviado_prod"])
       .order("aprobado_at", { ascending: true }),
 

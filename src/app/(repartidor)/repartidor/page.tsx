@@ -1,6 +1,7 @@
 import { createClient, createAdminClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { RepartidorClient } from "./repartidor-client";
+import { CANALES_FLUJO, MUESTRA_SELECT, normalizarMuestra } from "@/lib/order-channels";
 
 export const revalidate = 0;
 
@@ -33,10 +34,10 @@ export default async function RepartidorPage() {
         id, order_number, status, despachado_at, orden_ruta,
         shipping_snapshot,
         customer:profiles!customer_id (full_name, phone, zona:delivery_zones!zona_id (name)),
-        guest_phone,
+        guest_phone, ${MUESTRA_SELECT},
         lines:order_lines (product_id, quantity, product_snapshot)
       `)
-      .eq("channel", "b2b_mayorista")
+      .in("channel", CANALES_FLUJO)
       .in("status", statuses);
     if (esDistrib && zonaId) {
       q = q.eq("delivery_zone_id", zonaId);
@@ -49,8 +50,8 @@ export default async function RepartidorPage() {
     (() => {
       let q = db
         .from("orders")
-        .select(`id, order_number, entregado_at, customer:profiles!customer_id (full_name)`)
-        .eq("channel", "b2b_mayorista")
+        .select(`id, order_number, entregado_at, customer:profiles!customer_id (full_name), ${MUESTRA_SELECT}`)
+        .in("channel", CANALES_FLUJO)
         .eq("status", "delivered")
         .gte("entregado_at", hoyInicio.toISOString())
         .order("entregado_at", { ascending: false });
@@ -69,8 +70,8 @@ export default async function RepartidorPage() {
 
   return (
     <RepartidorClient
-      pedidos={lista}
-      entregadosHoy={(entregados ?? []) as any[]}
+      pedidos={lista.map(normalizarMuestra)}
+      entregadosHoy={((entregados ?? []) as any[]).map(normalizarMuestra)}
       userName={perfil?.full_name ?? user.email ?? "Repartidor"}
       zonaNombre={(perfil?.zona as any)?.name ?? null}
     />

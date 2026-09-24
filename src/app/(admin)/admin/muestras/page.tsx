@@ -21,7 +21,7 @@ export default async function MuestrasPage() {
     .from("orders")
     .select(`
       id, order_number, status, created_at, despachado_at,
-      muestra_destinatario, muestra_observacion, guest_phone, notes,
+      muestra_destinatario, muestra_contacto, muestra_observacion, guest_phone, guest_email, shipping_snapshot, notes,
       customer:profiles!customer_id (full_name),
       lines:order_lines (product_id, quantity, product_snapshot)
     `)
@@ -44,7 +44,7 @@ export default async function MuestrasPage() {
             href="/admin/muestras/nueva"
             className="shrink-0 px-4 py-2 rounded-xl bg-tierra-700 text-white text-sm font-medium hover:bg-tierra-800 transition-colors"
           >
-            + Nueva muestra
+            {role === "admin" ? "+ Nueva muestra" : "+ Solicitar muestra"}
           </Link>
         )}
       </div>

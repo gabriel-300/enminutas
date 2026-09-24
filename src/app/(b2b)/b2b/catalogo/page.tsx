@@ -71,6 +71,7 @@ export default async function CatalogoB2BPage() {
       linea:lineas_producto!linea_id (nombre, orden)
     `)
     .eq("is_active", true)
+    .eq("es_muestra", false)
     .in("linea_id", lineasIds.length > 0 ? lineasIds : [0])
     .order("codigo");
 

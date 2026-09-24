@@ -97,6 +97,7 @@ export async function getProducts(categorySlug?: string, publicOnly = false): Pr
     .from("products")
     .select(PRODUCT_SELECT)
     .eq("is_active", true)
+    .eq("es_muestra", false)
     .order("name");
 
   if (publicOnly) {
@@ -129,6 +130,7 @@ export async function getProductBySlug(slug: string): Promise<Product | null> {
     .select(PRODUCT_SELECT)
     .eq("slug", slug)
     .eq("is_active", true)
+    .eq("es_muestra", false)
     .single();
   return data ? mapProduct(data) : null;
 }
@@ -139,6 +141,7 @@ export async function getProductSlugs(): Promise<string[]> {
     .from("products")
     .select("slug")
     .eq("is_active", true)
+    .eq("es_muestra", false)
     .not("slug", "is", null);
   return (data ?? []).map((p: any) => p.slug).filter(Boolean);
 }

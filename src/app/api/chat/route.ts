@@ -34,7 +34,7 @@ Módulos disponibles:
 - Distribución: reparto, estado en tiempo real, despacho_info con repartidor/patente/fecha.
 - Reportes: GMV, margen por canal, rentabilidad. Menú → Reportes.
 - Liquidaciones: comisiones preventistas y liquidaciones IDEIA. Menú → Liquidaciones.
-- Muestras (MST): productos de muestra sin costo. Menú → Comercial → Muestras.
+- Muestras (MST): pedidos sin costo a posibles clientes; el preventista los solicita, el admin aprueba y siguen el circuito de pedidos. Menú → Comercial → Muestras.
 - Pipeline: prospectos en etapas de conversión. Menú → Comercial → Pipeline.
 - Recepciones: ingreso de mercadería con IVA, vencimiento y costo. Menú → Cocina → Recepciones.
 - Cuentas corrientes, cheques, devoluciones: módulos administrativos.`,

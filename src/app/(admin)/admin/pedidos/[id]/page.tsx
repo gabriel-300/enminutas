@@ -10,6 +10,7 @@ import { EditarCantidadesForm } from "@/components/admin/editar-cantidades-form"
 import { fmtFechaHora, fmtFecha, fmtFechaSolo } from "@/lib/fecha";
 import { MOTIVOS_FALTANTE } from "@/lib/entrega-parcial";
 import { ReprogramarFaltanteButton } from "@/components/admin/reprogramar-faltante-button";
+import { esCanalFlujo } from "@/lib/order-channels";
 
 export const metadata: Metadata = { title: "Detalle de pedido — Admin En Minutas" };
 export const revalidate = 0;
@@ -35,7 +36,7 @@ export default async function AdminPedidoDetailPage({
       cargo_adicional_concepto, cargo_adicional_monto,
       payment_method, payment_declared_at, payment_confirmed_at,
       shipping_method, shipping_snapshot, delivered_snapshot, origen_order_id, fecha_compromiso, notes, notes_visible_cliente, created_at,
-      guest_email, guest_phone,
+      guest_email, guest_phone, muestra_destinatario, muestra_contacto, muestra_observacion, muestra_prospecto_id, solicitado_por,
       customer:profiles!customer_id (full_name, phone, canal, canal_id, vendedor_id),
       lines:order_lines (
         id, quantity, unit_price, line_total,
@@ -56,6 +57,7 @@ export default async function AdminPedidoDetailPage({
   if (!order) notFound();
 
   const o = order as any;
+  const esMuestra = o.channel === "muestra";
   // Tras una entrega parcial las líneas sin nada entregado no se muestran (el faltante va en el bloque de entrega parcial)
   const lineasVisibles = ((o.lines ?? []) as any[]).filter((l) => !o.delivered_snapshot?.lineas || Number(l.quantity) > 0);
   const motivoFaltante = MOTIVOS_FALTANTE.find((m) => m.value === o.delivered_snapshot?.motivo)?.label ?? null;
@@ -129,7 +131,14 @@ export default async function AdminPedidoDetailPage({
     b2b_despacho:     "Despacho B2B",
   };
 
-  const customerName  = o.customer?.full_name ?? "Invitado";
+  // Quién pidió la muestra (el preventista) para que el admin sepa a quién consultar
+  let solicitanteNombre: string | null = null;
+  if (esMuestra && o.solicitado_por) {
+    const { data: sol } = await (adminClient as any).from("profiles").select("full_name").eq("id", o.solicitado_por).maybeSingle();
+    solicitanteNombre = sol?.full_name ?? null;
+  }
+
+  const customerName  = o.customer?.full_name ?? o.muestra_destinatario ?? "Invitado";
   const customerPhone = o.customer?.phone ?? o.guest_phone;
   const customerEmail = o.guest_email;
   const customerCanal = o.customer?.canal ?? "dist";
@@ -142,6 +151,7 @@ export default async function AdminPedidoDetailPage({
       .from("products")
       .select("id, name, sku, costo, bolsas_caja, u_bolsa, pkg_unitario, pkg_bulto, categoria, divisiones_display")
       .eq("is_active", true)
+      .eq("es_muestra", false)
       .order("name");
     productosDisponibles = (prods ?? []).map((p: any) => ({
       id: p.id, name: p.name, sku: p.sku,
@@ -187,7 +197,7 @@ export default async function AdminPedidoDetailPage({
               Remito
             </Link>
           )}
-          {esAdmin && o.channel === "b2b_mayorista" && o.status === "pending_payment" && (
+          {esAdmin && esCanalFlujo(o.channel) && o.status === "pending_payment" && (
             <AprobarPedidoButton orderId={o.id} />
           )}
           {esAdmin && (
@@ -211,8 +221,15 @@ export default async function AdminPedidoDetailPage({
         <div className="bg-white rounded-2xl border border-neutral-200 p-5">
           <p className="text-xs font-medium text-neutral-400 uppercase tracking-wide mb-3">Cliente</p>
           <p className="text-sm font-medium text-neutral-900">{customerName}</p>
+          {esMuestra && o.muestra_contacto && <p className="text-sm text-neutral-500 mt-1">Contacto: {o.muestra_contacto}</p>}
           {customerEmail && <p className="text-sm text-neutral-500 mt-1">{customerEmail}</p>}
           {customerPhone && <p className="text-sm text-neutral-500 mt-1">{customerPhone}</p>}
+          {esMuestra && (
+            <p className="text-xs text-neutral-400 mt-2 pt-2 border-t border-neutral-100">
+              {o.muestra_prospecto_id ? "Prospecto del Pipeline" : o.customer ? "Cliente registrado" : "Contacto suelto"}
+              {solicitanteNombre && <> · solicitó <span className="font-medium text-neutral-600">{solicitanteNombre}</span></>}
+            </p>
+          )}
           {vendedorNombre && (
             <p className="text-xs text-neutral-400 mt-2 pt-2 border-t border-neutral-100">
               Vendedor: <span className="font-medium text-neutral-600">{vendedorNombre}</span>
@@ -224,7 +241,7 @@ export default async function AdminPedidoDetailPage({
         <div className="bg-white rounded-2xl border border-neutral-200 p-5">
           <p className="text-xs font-medium text-neutral-400 uppercase tracking-wide mb-3">Pago</p>
           <p className="text-sm font-medium text-neutral-900">
-            {paymentLabel[o.payment_method] ?? o.payment_method}
+            {esMuestra ? "Muestra sin cargo" : (paymentLabel[o.payment_method] ?? o.payment_method)}
           </p>
           {o.payment_declared_at && (
             <p className="text-xs text-neutral-500 mt-1">
@@ -267,7 +284,7 @@ export default async function AdminPedidoDetailPage({
       <div className="bg-white rounded-2xl border border-neutral-200 overflow-hidden mb-4">
         <div className="px-5 py-4 border-b border-neutral-100 flex items-center justify-between gap-3">
           <p className="text-sm font-medium text-neutral-700">Productos</p>
-          {esAdmin && (
+          {esAdmin && !esMuestra && (
             <EditarCantidadesForm
               orderId={o.id}
               status={o.status}
@@ -295,12 +312,14 @@ export default async function AdminPedidoDetailPage({
                 {line.product_snapshot?.sku && (
                   <p className="text-xs text-neutral-400 font-mono">{line.product_snapshot.sku}</p>
                 )}
-                <p className="text-xs text-neutral-400 mt-0.5">
-                  {line.quantity} × $ {Number(line.unit_price).toLocaleString("es-AR")}
-                </p>
+                {!esMuestra && (
+                  <p className="text-xs text-neutral-400 mt-0.5">
+                    {line.quantity} × $ {Number(line.unit_price).toLocaleString("es-AR")}
+                  </p>
+                )}
               </div>
               <span className="font-semibold text-sm text-neutral-900 tabular-nums shrink-0">
-                $ {Number(line.line_total).toLocaleString("es-AR")}
+                {esMuestra ? `${line.quantity} u.` : `$ ${Number(line.line_total).toLocaleString("es-AR")}`}
               </span>
             </div>
           ))}
@@ -311,9 +330,9 @@ export default async function AdminPedidoDetailPage({
           <thead>
             <tr className="text-left border-b border-neutral-100">
               <th className="px-5 py-3 text-xs font-medium text-neutral-400">Producto</th>
-              <th className="px-5 py-3 text-xs font-medium text-neutral-400 text-right">Precio u.</th>
+              {!esMuestra && <th className="px-5 py-3 text-xs font-medium text-neutral-400 text-right">Precio u.</th>}
               <th className="px-5 py-3 text-xs font-medium text-neutral-400 text-right w-20">Cant.</th>
-              <th className="px-5 py-3 text-xs font-medium text-neutral-400 text-right">Subtotal</th>
+              {!esMuestra && <th className="px-5 py-3 text-xs font-medium text-neutral-400 text-right">Subtotal</th>}
             </tr>
           </thead>
           <tbody className="divide-y divide-neutral-50">
@@ -327,13 +346,17 @@ export default async function AdminPedidoDetailPage({
                     </span>
                   )}
                 </td>
-                <td className="px-5 py-3 text-right text-neutral-600">
-                  $ {Number(line.unit_price).toLocaleString("es-AR")}
-                </td>
+                {!esMuestra && (
+                  <td className="px-5 py-3 text-right text-neutral-600">
+                    $ {Number(line.unit_price).toLocaleString("es-AR")}
+                  </td>
+                )}
                 <td className="px-5 py-3 text-right text-neutral-600">{line.quantity}</td>
-                <td className="px-5 py-3 text-right font-medium text-neutral-900">
-                  $ {Number(line.line_total).toLocaleString("es-AR")}
-                </td>
+                {!esMuestra && (
+                  <td className="px-5 py-3 text-right font-medium text-neutral-900">
+                    $ {Number(line.line_total).toLocaleString("es-AR")}
+                  </td>
+                )}
               </tr>
             ))}
           </tbody>
@@ -388,7 +411,15 @@ export default async function AdminPedidoDetailPage({
         </div>
       )}
 
-      {/* Totales */}
+      {esMuestra && o.muestra_observacion && (
+        <div className="mb-4 bg-white rounded-2xl border border-neutral-200 p-5 text-sm">
+          <p className="text-xs font-medium text-neutral-400 uppercase tracking-wide mb-1">Motivo de la muestra</p>
+          <p className="text-neutral-700">{o.muestra_observacion}</p>
+        </div>
+      )}
+
+      {/* Totales (las muestras no tienen precio) */}
+      {!esMuestra && (
       <div className="bg-white rounded-2xl border border-neutral-200 p-5 sm:max-w-xs sm:ml-auto">
         {(() => {
           const total   = Number(o.total);
@@ -442,6 +473,7 @@ export default async function AdminPedidoDetailPage({
           );
         })()}
       </div>
+      )}
 
       {/* Cobranza: lo pagado contra este pedido vs su total (el total ya refleja lo entregado) */}
       {pagosPedido.length > 0 && (() => {

@@ -5,6 +5,7 @@ import Link from "next/link";
 import { OrderStatusBadge } from "@/components/ui/badge";
 import { OrderStatusSelect } from "@/components/admin/order-status-select";
 import { aprobarPedidoB2B } from "@/app/(admin)/admin/pedidos/actions";
+import { esCanalFlujo } from "@/lib/order-channels";
 
 type Order = {
   id:             string;
@@ -106,7 +107,7 @@ export function PedidosClient({ orders, esAdmin = false }: { orders: Order[]; es
   });
 
   const pendingCount = orders.filter(
-    (o) => o.channel === "b2b_mayorista" && o.status === "pending_payment"
+    (o) => esCanalFlujo(o.channel) && o.status === "pending_payment"
   ).length;
 
   return (
@@ -114,7 +115,7 @@ export function PedidosClient({ orders, esAdmin = false }: { orders: Order[]; es
       {/* Alerta pendientes */}
       {pendingCount > 0 && (
         <div className="px-4 py-3 bg-warning-bg border border-warning/30 rounded-xl text-sm text-warning font-medium">
-          {pendingCount} pedido{pendingCount !== 1 ? "s" : ""} B2B esperando aprobación
+          {pendingCount} pedido{pendingCount !== 1 ? "s" : ""} esperando aprobación
         </div>
       )}
 
@@ -177,6 +178,11 @@ export function PedidosClient({ orders, esAdmin = false }: { orders: Order[]; es
                     B2B
                   </span>
                 )}
+                {order.channel === "muestra" && (
+                  <span className="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-warning-bg text-warning uppercase tracking-wide">
+                    Muestra
+                  </span>
+                )}
               </div>
               <div className="text-right shrink-0">
                 <div className="font-semibold text-sm text-neutral-900 tabular-nums">
@@ -202,7 +208,7 @@ export function PedidosClient({ orders, esAdmin = false }: { orders: Order[]; es
             </div>
 
             <div className="flex items-center gap-2 flex-wrap">
-              {esAdmin && order.channel === "b2b_mayorista" && order.status === "pending_payment" && (
+              {esAdmin && esCanalFlujo(order.channel) && order.status === "pending_payment" && (
                 <AprobarInlineButton orderId={order.id} />
               )}
               {esAdmin && (
@@ -258,7 +264,12 @@ export function PedidosClient({ orders, esAdmin = false }: { orders: Order[]; es
                         B2B
                       </span>
                     )}
-                    {esAdmin && order.channel === "b2b_mayorista" && order.status === "pending_payment" && (
+                    {order.channel === "muestra" && (
+                      <span className="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-warning-bg text-warning uppercase tracking-wide">
+                        Muestra
+                      </span>
+                    )}
+                    {esAdmin && esCanalFlujo(order.channel) && order.status === "pending_payment" && (
                       <AprobarInlineButton orderId={order.id} />
                     )}
                   </div>

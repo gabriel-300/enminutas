@@ -6,6 +6,7 @@ import { ConfirmarEntregaButton } from "@/components/admin/confirmar-entrega-but
 import { IniciarDistribucionButton } from "@/components/admin/iniciar-distribucion-button";
 import { DistribucionZonaFiltro } from "@/components/admin/distribucion-zona-filtro";
 import { fmtFecha } from "@/lib/fecha";
+import { CANALES_FLUJO, MUESTRA_SELECT, normalizarMuestra } from "@/lib/order-channels";
 
 export const metadata: Metadata = { title: "Distribución — Admin En Minutas" };
 export const revalidate = 0;
@@ -66,10 +67,10 @@ export default async function DistribucionPage({
         id, order_number, status, created_at, despachado_at, despacho_info,
         shipping_snapshot,
         customer:profiles!customer_id (full_name, phone, zona:delivery_zones!zona_id (name)),
-        guest_phone,
+        guest_phone, ${MUESTRA_SELECT},
         lines:order_lines (id, product_id, quantity, product_snapshot)
       `)
-      .eq("channel", "b2b_mayorista")
+      .in("channel", CANALES_FLUJO)
       .in("status", status instanceof Array ? status : [status]);
     if (esDistribucion && zonaFiltro) {
       q = q.eq("delivery_zone_id", zonaFiltro);
@@ -83,8 +84,8 @@ export default async function DistribucionPage({
     (() => {
       let q = (adminClient as any)
         .from("orders")
-        .select(`id, order_number, entregado_at, customer:profiles!customer_id (full_name, zona:delivery_zones!zona_id (name)), lines:order_lines (product_id, quantity, product_snapshot)`)
-        .eq("channel", "b2b_mayorista").eq("status", "delivered")
+        .select(`id, order_number, entregado_at, customer:profiles!customer_id (full_name, zona:delivery_zones!zona_id (name)), ${MUESTRA_SELECT}, lines:order_lines (product_id, quantity, product_snapshot)`)
+        .in("channel", CANALES_FLUJO).eq("status", "delivered")
         .gte("entregado_at", hoyInicio.toISOString())
         .order("entregado_at", { ascending: false });
       if (esDistribucion && zonaFiltro) q = q.eq("delivery_zone_id", zonaFiltro);
@@ -92,8 +93,8 @@ export default async function DistribucionPage({
     })(),
   ]);
 
-  const lista         = (orders ?? []) as any[];
-  const listaHoy      = (entregadosHoy ?? []) as any[];
+  const lista         = ((orders ?? []) as any[]).map(normalizarMuestra);
+  const listaHoy      = ((entregadosHoy ?? []) as any[]).map(normalizarMuestra);
 
   // Agrupar por zona, "Sin zona" al final
   const byZone: Record<string, any[]> = {};

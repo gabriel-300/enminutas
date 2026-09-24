@@ -1,6 +1,7 @@
 import { createClient, createAdminClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import Link from "next/link";
+import { CANALES_FLUJO } from "@/lib/order-channels";
 
 export const revalidate = 0;
 
@@ -26,7 +27,7 @@ export default async function HistorialDistribucionPage() {
   let q = (adminClient as any)
     .from("orders")
     .select("id, order_number, entregado_at, customer:profiles!customer_id(full_name)")
-    .eq("channel", "b2b_mayorista")
+    .in("channel", CANALES_FLUJO)
     .eq("status", "delivered")
     .gte("entregado_at", desde.toISOString())
     .order("entregado_at", { ascending: false });

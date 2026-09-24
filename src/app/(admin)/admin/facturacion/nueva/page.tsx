@@ -43,6 +43,7 @@ export default async function NuevaFacturaPage() {
     .from("products")
     .select("id, name, cost")
     .eq("is_active", true)
+    .eq("es_muestra", false)
     .order("name");
 
   return (

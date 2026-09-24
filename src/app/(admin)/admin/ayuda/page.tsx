@@ -177,16 +177,16 @@ export default async function AyudaPage() {
               </svg>
             }
           >
-            <p className="text-neutral-600">Las muestras son envíos sin costo para que los clientes potenciales prueben los productos. Se numeran con el prefijo <strong>MST-YYYY-NNNN</strong>.</p>
+            <p className="text-neutral-600">Las muestras son envíos sin costo a posibles clientes. Son pedidos como cualquier otro: se numeran <strong>MST-YYYY-NNNN</strong>, aparecen en Pedidos y siguen el mismo circuito.</p>
             <Steps items={[
-              "Ir a Comercial → Muestras → Nueva muestra.",
-              "Completar el destinatario (nombre del cliente o local).",
-              "Seleccionar los productos marcados como muestra y las cantidades.",
-              "Crear la muestra. Queda en estado Aprobado.",
-              "Producción la prepara y cambia el estado a En producción, luego a Despachado.",
+              "Producción arma un lote de la presentación de muestra (Cocina → Producción), igual que cualquier otro producto. El admin crea esa presentación desde la receta y la marca como Muestra en Productos.",
+              "El preventista entra a Comercial → Muestras → Solicitar muestra, carga los datos del posible cliente (nombre, contacto, teléfono, correo, dirección) y las cantidades.",
+              "El pedido queda Pendiente y el admin lo aprueba desde Pedidos (si lo crea el admin, nace aprobado).",
+              "Producción lo prepara y lo despacha: ahí baja el stock de los lotes.",
+              "Distribución lo entrega como cualquier pedido.",
             ]} />
             <div className="mt-3 p-3 bg-crema-50 rounded-xl border border-tierra-700/10 text-xs text-neutral-600">
-              <strong>Stock:</strong> Las muestras descuentan stock igual que un pedido normal. El campo total siempre es $0. No requieren cliente registrado en el sistema.
+              <strong>Pipeline:</strong> si el contacto es nuevo, se guarda como prospecto en el Pipeline para seguirlo. El stock de muestras es parte del stock de la planta y se ve en Stock y Lotes.
             </div>
           </Section>
         </>

@@ -45,7 +45,7 @@ export default async function RemitoPage({
       id, order_number, status, channel, total, subtotal, shipping_fee, discount,
       cargo_adicional_concepto, cargo_adicional_monto,
       payment_method, payment_confirmed_at, created_at, notes, notes_visible_cliente,
-      customer_id, guest_email, guest_phone,
+      customer_id, guest_email, guest_phone, muestra_destinatario, muestra_contacto, shipping_snapshot,
       firma_data, firma_fecha, firma_aclaracion, despacho_info, delivered_snapshot,
       customer:profiles!customer_id (full_name, phone),
       lines:order_lines (
@@ -64,7 +64,11 @@ export default async function RemitoPage({
   const STAFF = ["admin", "vendedor", "produccion", "distribucion"];
   if (!STAFF.includes(role ?? "") && o.customer_id !== user.id) notFound();
 
-  const customerName  = o.customer?.full_name ?? o.guest_email ?? "Cliente";
+  const esMuestra     = o.channel === "muestra";
+  const customerName  = o.customer?.full_name ?? o.muestra_destinatario ?? o.guest_email ?? "Cliente";
+  const direccionEntrega = o.shipping_snapshot
+    ? [o.shipping_snapshot.street, o.shipping_snapshot.number, o.shipping_snapshot.city].filter(Boolean).join(", ")
+    : "";
   const customerPhone = o.customer?.phone ?? o.guest_phone ?? "";
 
   const paymentLabel: Record<string, string> = {
@@ -153,15 +157,27 @@ export default async function RemitoPage({
               <span style={{ color: "#666" }}>Nombre: </span>
               <span style={{ fontWeight: 600, color: "#111" }}>{customerName}</span>
             </div>
+            {esMuestra && o.muestra_contacto && (
+              <div>
+                <span style={{ color: "#666" }}>Contacto: </span>
+                <span style={{ color: "#111" }}>{o.muestra_contacto}</span>
+              </div>
+            )}
             {customerPhone && (
               <div>
                 <span style={{ color: "#666" }}>Teléfono: </span>
                 <span style={{ color: "#111" }}>{customerPhone}</span>
               </div>
             )}
+            {esMuestra && direccionEntrega && (
+              <div>
+                <span style={{ color: "#666" }}>Dirección: </span>
+                <span style={{ color: "#111" }}>{direccionEntrega}</span>
+              </div>
+            )}
             <div>
-              <span style={{ color: "#666" }}>Forma de pago: </span>
-              <span style={{ color: "#111" }}>{paymentLabel[o.payment_method] ?? o.payment_method ?? "—"}</span>
+              <span style={{ color: "#666" }}>{esMuestra ? "Tipo: " : "Forma de pago: "}</span>
+              <span style={{ color: "#111" }}>{esMuestra ? "Muestra sin cargo" : (paymentLabel[o.payment_method] ?? o.payment_method ?? "—")}</span>
             </div>
             {o.payment_confirmed_at && (
               <div>
@@ -225,8 +241,8 @@ export default async function RemitoPage({
             <tr style={{ borderBottom: "2px solid #e5e7eb" }}>
               <th style={{ textAlign: "left", padding: "8px 6px", color: "#666", fontWeight: 600, fontSize: 11, textTransform: "uppercase" }}>Producto</th>
               <th style={{ textAlign: "center", padding: "8px 6px", color: "#666", fontWeight: 600, fontSize: 11, textTransform: "uppercase", width: 50 }}>Cant.</th>
-              <th style={{ textAlign: "right", padding: "8px 6px", color: "#666", fontWeight: 600, fontSize: 11, textTransform: "uppercase", width: 110 }}>Precio u.</th>
-              <th style={{ textAlign: "right", padding: "8px 6px", color: "#666", fontWeight: 600, fontSize: 11, textTransform: "uppercase", width: 110 }}>Subtotal</th>
+              {!esMuestra && <th style={{ textAlign: "right", padding: "8px 6px", color: "#666", fontWeight: 600, fontSize: 11, textTransform: "uppercase", width: 110 }}>Precio u.</th>}
+              {!esMuestra && <th style={{ textAlign: "right", padding: "8px 6px", color: "#666", fontWeight: 600, fontSize: 11, textTransform: "uppercase", width: 110 }}>Subtotal</th>}
             </tr>
           </thead>
           <tbody>
@@ -242,8 +258,8 @@ export default async function RemitoPage({
                   )}
                 </td>
                 <td style={{ padding: "10px 6px", textAlign: "center", color: "#374151", fontWeight: 600 }}>{line.quantity}</td>
-                <td style={{ padding: "10px 6px", textAlign: "right", color: "#374151", fontFamily: "monospace" }}>{fmt(Number(line.unit_price))}</td>
-                <td style={{ padding: "10px 6px", textAlign: "right", color: "#111", fontWeight: 600, fontFamily: "monospace" }}>{fmt(Number(line.line_total))}</td>
+                {!esMuestra && <td style={{ padding: "10px 6px", textAlign: "right", color: "#374151", fontFamily: "monospace" }}>{fmt(Number(line.unit_price))}</td>}
+                {!esMuestra && <td style={{ padding: "10px 6px", textAlign: "right", color: "#111", fontWeight: 600, fontFamily: "monospace" }}>{fmt(Number(line.line_total))}</td>}
               </tr>
             ))}
           </tbody>
@@ -262,7 +278,8 @@ export default async function RemitoPage({
           </div>
         )}
 
-        {/* Totales */}
+        {/* Totales (las muestras no tienen precio) */}
+        {!esMuestra && (
         <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 40 }}>
           <div style={{ width: 240, fontSize: 13 }}>
             {subtotal > 0 && (
@@ -296,6 +313,7 @@ export default async function RemitoPage({
             <p style={{ fontSize: 10, color: "#888", marginTop: 2 }}>IVA (21%) incluido en todos los precios</p>
           </div>
         </div>
+        )}
 
         {/* Firma */}
         <div style={{ borderTop: "1px solid #e5e7eb", paddingTop: 32, display: "grid", gridTemplateColumns: "1fr 1fr", gap: 40, marginTop: 8 }}>

@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { createClient, createAdminClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { OrdenarRutaClient } from "./ordenar-ruta-client";
+import { CANALES_FLUJO, MUESTRA_SELECT, normalizarMuestra } from "@/lib/order-channels";
 
 export const metadata: Metadata = { title: "Ordenar ruta — Distribución" };
 export const revalidate = 0;
@@ -21,14 +22,14 @@ export default async function OrdenarRutaPage() {
       id, order_number, orden_ruta,
       shipping_snapshot,
       customer:profiles!customer_id (full_name, phone, zona:delivery_zones!zona_id (name)),
-      guest_phone,
+      guest_phone, ${MUESTRA_SELECT},
       lines:order_lines (quantity, product_snapshot)
     `)
-    .eq("channel", "b2b_mayorista")
+    .in("channel", CANALES_FLUJO)
     .in("status", ["despachado", "en_distribucion"])
     .order("orden_ruta", { ascending: true, nullsFirst: false });
 
-  const lista = ((orders ?? []) as any[]).map((o: any, i: number) => ({
+  const lista = ((orders ?? []) as any[]).map(normalizarMuestra).map((o: any, i: number) => ({
     id:            o.id,
     order_number:  o.order_number,
     orden_ruta:    o.orden_ruta ?? null,

@@ -40,6 +40,7 @@ export async function GET(req: NextRequest) {
       linea:lineas_producto!linea_id (nombre)
     `)
     .eq("is_active", true)
+    .eq("es_muestra", false)
     .not("codigo", "is", null)
     .order("codigo");
 

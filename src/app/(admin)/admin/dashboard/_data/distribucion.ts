@@ -1,6 +1,7 @@
 import { createAdminClient } from "@/lib/supabase/server";
 import type { OrderStatus } from "@/lib/order-status";
 import { ahoraAR } from "@/lib/fecha";
+import { CANALES_FLUJO, MUESTRA_SELECT, normalizarMuestra } from "@/lib/order-channels";
 
 export async function loadDistribucionDashboard(user: { id: string }) {
   const adminClient = createAdminClient();
@@ -24,8 +25,8 @@ export async function loadDistribucionDashboard(user: { id: string }) {
 
   const buildQ = (status: OrderStatus) => {
     let q = db.from("orders")
-      .select("id, order_number, entregado_at, despachado_at, customer:profiles!customer_id(full_name, zona:delivery_zones!zona_id(name)), lines:order_lines(quantity, product_snapshot)")
-      .eq("channel", "b2b_mayorista").eq("status", status);
+      .select(`id, order_number, entregado_at, despachado_at, customer:profiles!customer_id(full_name, zona:delivery_zones!zona_id(name)), guest_phone, ${MUESTRA_SELECT}, lines:order_lines(quantity, product_snapshot)`)
+      .in("channel", CANALES_FLUJO).eq("status", status);
     if (zonaFiltro) q = q.eq("delivery_zone_id", zonaFiltro);
     return q;
   };
@@ -40,8 +41,8 @@ export async function loadDistribucionDashboard(user: { id: string }) {
     buildQ("delivered").gte("entregado_at", sixMonthsAgo.toISOString()).order("entregado_at", { ascending: false }),
   ]);
 
-  const enTransitoList    = (enTransito ?? []) as any[];
-  const entregadosHoyList = (entregadosHoy ?? []) as any[];
+  const enTransitoList    = ((enTransito ?? []) as any[]).map(normalizarMuestra);
+  const entregadosHoyList = ((entregadosHoy ?? []) as any[]).map(normalizarMuestra);
   const historico         = (entregadosHistorico ?? []) as any[];
 
   // Agrupar histórico por mes

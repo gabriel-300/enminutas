@@ -32,19 +32,17 @@ export default async function AdminPedidosPage() {
     .from("orders")
     .select(`
       id, order_number, channel, status, total, payment_method, created_at,
-      customer_id, guest_email, origen_order_id,
+      customer_id, guest_email, origen_order_id, muestra_destinatario, solicitado_por,
       customer:profiles!customer_id (full_name, canal, vendedor_id)
     `)
     .order("created_at", { ascending: false })
     .limit(200);
 
   if (clienteIds !== null) {
-    if (clienteIds.length === 0) {
-      // Vendedor sin clientes asignados: no tiene pedidos para ver
-      ordersQuery = ordersQuery.in("customer_id", [] as string[]).limit(0);
-    } else {
-      ordersQuery = ordersQuery.in("customer_id", clienteIds);
-    }
+    // Ve los pedidos de sus clientes y las muestras que solicitó (a prospectos no hay customer_id)
+    ordersQuery = clienteIds.length === 0
+      ? ordersQuery.eq("solicitado_por", user.id)
+      : ordersQuery.or(`customer_id.in.(${clienteIds.join(",")}),solicitado_por.eq.${user.id}`);
   }
 
   const [{ data: rawOrders, error }, users] = await Promise.all([
@@ -106,7 +104,7 @@ export default async function AdminPedidosPage() {
     total: o.total,
     payment_method: o.payment_method,
     created_at: o.created_at,
-    customer_name:  o.customer?.full_name ?? (o.customer_id ? emailMap[o.customer_id] : null) ?? null,
+    customer_name:  o.customer?.full_name ?? (o.customer_id ? emailMap[o.customer_id] : null) ?? o.muestra_destinatario ?? null,
     customer_email: o.guest_email ?? null,
     canal:          (o.customer as any)?.canal ?? null,
     vendedor_name:  o.customer?.vendedor_id ? (vendedorNombreMap[o.customer.vendedor_id] ?? null) : null,

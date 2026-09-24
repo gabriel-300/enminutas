@@ -88,6 +88,7 @@ export async function loadAdminDashboard() {
     db.from("products")
       .select("*", { count: "exact", head: true })
       .eq("is_active", true)
+      .eq("es_muestra", false)
       .is("costo", null),
 
     listAllUsers(),

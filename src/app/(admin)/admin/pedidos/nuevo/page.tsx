@@ -54,6 +54,7 @@ export default async function NuevoPedidoPage({
         linea:lineas_producto!linea_id (nombre)
       `)
       .eq("is_active", true)
+      .eq("es_muestra", false)
       .not("codigo", "is", null)
       .order("codigo"),
 

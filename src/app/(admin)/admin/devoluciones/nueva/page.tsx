@@ -23,6 +23,7 @@ export default async function NuevaDevolucionPage() {
     .from("products")
     .select("id, name, price_b2b")
     .eq("is_active", true)
+    .eq("es_muestra", false)
     .order("name");
 
   return (

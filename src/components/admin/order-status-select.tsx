@@ -37,7 +37,7 @@ export function OrderStatusSelect({
   const [isPending,   startTransition] = useTransition();
   const [error,       setError]        = useState<string | null>(null);
 
-  const options = channel === "b2b_mayorista" ? B2B_OPTIONS : B2C_OPTIONS;
+  const options = channel === "b2b_mayorista" || channel === "muestra" ? B2B_OPTIONS : B2C_OPTIONS;
 
   function handleChange(e: React.ChangeEvent<HTMLSelectElement>) {
     const newStatus = e.target.value;

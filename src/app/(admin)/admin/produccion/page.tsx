@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { MarcarEnviadoProdButton } from "@/components/admin/marcar-enviado-prod-button";
 import { DespacharButton } from "@/components/admin/despachar-button";
 import { fmtFecha } from "@/lib/fecha";
+import { CANALES_FLUJO, MUESTRA_SELECT, normalizarMuestra } from "@/lib/order-channels";
 
 export const metadata: Metadata = { title: "Producción — Admin En Minutas" };
 export const revalidate = 0;
@@ -90,13 +91,14 @@ export default async function ProduccionPage() {
     .select(`
       id, order_number, status, created_at, aprobado_at, despachado_at, despacho_info,
       customer:profiles!customer_id (full_name),
+      guest_phone, ${MUESTRA_SELECT},
       lines:order_lines (id, quantity, unit_price, product_id, product_snapshot)
     `)
-    .eq("channel", "b2b_mayorista")
+    .in("channel", CANALES_FLUJO)
     .in("status", ["aprobado", "enviado_prod", "despachado", "en_distribucion"])
     .order("aprobado_at", { ascending: true });
 
-  const lista       = (orders ?? []) as any[];
+  const lista       = ((orders ?? []) as any[]).map(normalizarMuestra);
   const cola        = lista.filter((o) => o.status === "aprobado");
   const preparando  = lista.filter((o) => o.status === "enviado_prod");
   const despachados = lista.filter((o) => o.status === "despachado" || o.status === "en_distribucion");

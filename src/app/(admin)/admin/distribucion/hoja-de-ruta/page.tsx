@@ -1,6 +1,7 @@
 import { createClient, createAdminClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { PrintButton } from "@/components/admin/print-button";
+import { CANALES_FLUJO, MUESTRA_SELECT, normalizarMuestra } from "@/lib/order-channels";
 
 export const revalidate = 0;
 
@@ -38,10 +39,10 @@ export default async function HojaDeRutaPage({
       id, order_number, despachado_at, entregado_at, orden_ruta,
       shipping_snapshot,
       customer:profiles!customer_id (full_name, phone, zona:delivery_zones!zona_id (name)),
-      guest_phone,
+      guest_phone, ${MUESTRA_SELECT},
       lines:order_lines (quantity, product_snapshot)
     `)
-    .eq("channel", "b2b_mayorista");
+    .in("channel", CANALES_FLUJO);
 
   if (esHistorico) {
     // Mostrar entregados del día indicado
@@ -58,7 +59,7 @@ export default async function HojaDeRutaPage({
   if (esDistribucion && zonaFiltro) q = q.eq("delivery_zone_id", zonaFiltro);
 
   const { data: orders } = await q;
-  const rawLista = (orders ?? []) as any[];
+  const rawLista = ((orders ?? []) as any[]).map(normalizarMuestra);
 
   // Si hay orden_ruta definido, usarlo para ordenar; sino mantener despachado_at
   const tieneOrden = rawLista.some(o => o.orden_ruta !== null);
