@@ -198,12 +198,12 @@ export function NuevoPedidoClient({
       <div className="flex-1 min-w-0 space-y-4 md:space-y-5 w-full">
 
         {/* Selector de cliente */}
-        <div className="bg-white rounded-2xl border border-neutral-200 p-4 md:p-5">
-          <label className="block text-xs font-medium text-neutral-500 mb-2 uppercase tracking-wide">
+        <div className="bg-white rounded-xl border border-neutral-200 shadow-sm p-4 md:p-5">
+          <label className="block text-xs font-medium text-neutral-600 mb-2">
             Cliente B2B *
           </label>
           <select value={clienteId} onChange={(e) => handleClienteChange(e.target.value)}
-            className="w-full px-3 py-2 text-sm border border-neutral-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-tierra-700/20">
+            className="w-full px-3 py-2 text-sm border border-neutral-400 rounded-lg focus:outline-none focus:ring-[3px] focus:ring-brand-500/30 focus:border-brand-700">
             <option value="">Seleccionar cliente…</option>
             {clientes.map((c) => (
               <option key={c.id} value={c.id}>
@@ -215,15 +215,15 @@ export function NuevoPedidoClient({
           {cliente && (
             <div className="mt-3 space-y-2">
               {direcciones.length === 0 ? (
-                <p className="text-xs text-warning bg-warning-bg border border-warning/20 rounded-xl px-3 py-2">
+                <p className="text-xs text-warning bg-warning-bg border border-warning-border rounded-xl px-3 py-2">
                   Este cliente no tiene direcciones de entrega.{" "}
                   <a href={`/admin/clientes-b2b/${cliente.id}`} className="underline">Agregar →</a>
                 </p>
               ) : (
                 <div>
-                  <label className="block text-xs font-medium text-neutral-500 mb-1">Dirección de entrega</label>
+                  <label className="block text-[13px] font-medium text-neutral-800 mb-1.5">Dirección de entrega</label>
                   <select value={direccionId} onChange={(e) => setDireccionId(e.target.value)}
-                    className="w-full px-3 py-2 text-sm border border-neutral-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-tierra-700/20">
+                    className="w-full px-3 py-2 text-sm border border-neutral-400 rounded-lg focus:outline-none focus:ring-[3px] focus:ring-brand-500/30 focus:border-brand-700">
                     {direcciones.map((d) => (
                       <option key={d.id} value={d.id}>
                         {d.alias}{d.ciudad ? ` — ${d.ciudad}` : ""} · {d.zona_name}
@@ -232,7 +232,7 @@ export function NuevoPedidoClient({
                   </select>
                 </div>
               )}
-              <div className="flex items-center gap-2 text-xs text-neutral-500 flex-wrap">
+              <div className="flex items-center gap-2 text-xs text-neutral-600 flex-wrap">
                 <span className="px-2 py-0.5 bg-info-bg text-info rounded-full font-medium">{cliente.canal_nombre}</span>
                 {fletePct > 0 && (
                   <span className="px-2 py-0.5 bg-neutral-100 rounded-full">
@@ -248,16 +248,16 @@ export function NuevoPedidoClient({
         <div className="space-y-2">
           <input type="search" placeholder="Buscar producto…" value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full px-3 py-2 text-sm border border-neutral-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-tierra-700/20" />
+            className="w-full px-3 py-2 text-sm border border-neutral-400 rounded-lg focus:outline-none focus:ring-[3px] focus:ring-brand-500/30 focus:border-brand-700" />
           <div className="overflow-x-auto -mx-4 px-4 md:mx-0 md:px-0">
             <div className="flex items-center gap-1 bg-white border border-neutral-200 rounded-xl p-1 w-max md:w-fit md:flex-wrap">
               <button onClick={() => setFilterLinea("todas")}
-                className={`px-3 py-1 rounded-lg text-xs font-medium transition-colors whitespace-nowrap ${filterLinea === "todas" ? "bg-tierra-700 text-white" : "text-neutral-500 hover:text-neutral-800"}`}>
+                className={`px-3 py-1 rounded-lg text-xs font-medium transition-colors whitespace-nowrap ${filterLinea === "todas" ? "bg-tierra-700 text-white" : "text-neutral-600 hover:text-neutral-800"}`}>
                 Todas
               </button>
               {lineas.map((l) => (
                 <button key={l} onClick={() => setFilterLinea(l)}
-                  className={`px-3 py-1 rounded-lg text-xs font-medium transition-colors whitespace-nowrap ${filterLinea === l ? "bg-tierra-700 text-white" : "text-neutral-500 hover:text-neutral-800"}`}>
+                  className={`px-3 py-1 rounded-lg text-xs font-medium transition-colors whitespace-nowrap ${filterLinea === l ? "bg-tierra-700 text-white" : "text-neutral-600 hover:text-neutral-800"}`}>
                   {l}
                 </button>
               ))}
@@ -268,24 +268,24 @@ export function NuevoPedidoClient({
         {/* ── Mobile: cards ─────────────────────────────────────────── */}
         <div className="md:hidden space-y-2">
           {filtered.length === 0 ? (
-            <p className="text-sm text-neutral-400 text-center py-10">No hay productos.</p>
+            <p className="text-sm text-neutral-600 text-center py-10">No hay productos.</p>
           ) : (
             filtered.map((p) => {
               const qty      = cart[p.id] ?? 0;
               const hasPrice = !!p.precio && !!cliente;
               return (
                 <div key={p.id}
-                  className={`bg-white rounded-2xl border p-4 transition-colors ${qty > 0 ? "border-tierra-700/20 bg-crema-50" : "border-neutral-200"}`}>
+                  className={`bg-white rounded-xl border p-4 transition-colors ${qty > 0 ? "border-tierra-700/20 bg-crema-50" : "border-neutral-200"}`}>
                   <div className="flex items-start justify-between gap-2 mb-2">
                     <div className="min-w-0">
                       <p className="font-medium text-neutral-900 leading-snug">{p.name}</p>
-                      <p className="text-xs text-neutral-400 font-mono mt-0.5">{p.presentacion ?? p.unit_label}</p>
+                      <p className="text-xs text-neutral-600 font-mono mt-0.5">{p.presentacion ?? p.unit_label}</p>
                     </div>
                     {hasPrice && (
                       <div className="text-right shrink-0">
                         <p className="font-semibold text-sm text-neutral-800 tabular-nums">{fmt(p.precio!.final_civa)}</p>
-                        <p className="text-xs text-neutral-400 tabular-nums">s/IVA {fmt(Math.round(p.precio!.final_civa / (1 + iva_pct)))}</p>
-                        {qty > 0 && <p className="text-xs text-neutral-400 tabular-nums">= {fmt(p.precio!.final_civa * qty)}</p>}
+                        <p className="text-xs text-neutral-600 tabular-nums">s/IVA {fmt(Math.round(p.precio!.final_civa / (1 + iva_pct)))}</p>
+                        {qty > 0 && <p className="text-xs text-neutral-600 tabular-nums">= {fmt(p.precio!.final_civa * qty)}</p>}
                       </div>
                     )}
                   </div>
@@ -303,16 +303,16 @@ export function NuevoPedidoClient({
                         placeholder="0"
                         onChange={(e) => setQty(p.id, Math.max(0, parseInt(e.target.value) || 0))}
                         onFocus={(e) => e.target.select()}
-                        className="w-14 text-center text-sm font-semibold tabular-nums border border-neutral-200 rounded-lg py-1 focus:outline-none focus:ring-2 focus:ring-tierra-700/20"
+                        className="w-14 text-center text-sm font-semibold tabular-nums border border-neutral-400 rounded-lg py-1 focus:outline-none focus:ring-[3px] focus:ring-brand-500/30 focus:border-brand-700"
                       />
                       <button onClick={() => setQty(p.id, qty + 1)}
                         className="size-8 rounded-lg bg-tierra-700 text-white hover:bg-tierra-800 flex items-center justify-center font-semibold text-lg leading-none">
                         +
                       </button>
-                      {qty > 0 && <span className="text-xs text-neutral-400 ml-auto">{qty} caja{qty !== 1 ? "s" : ""}</span>}
+                      {qty > 0 && <span className="text-xs text-neutral-600 ml-auto">{qty} caja{qty !== 1 ? "s" : ""}</span>}
                     </div>
                   ) : (
-                    <p className="text-xs text-neutral-400">
+                    <p className="text-xs text-neutral-600">
                       {cliente ? "Sin precio para este canal" : "Seleccioná un cliente para ver el precio"}
                     </p>
                   )}
@@ -323,22 +323,22 @@ export function NuevoPedidoClient({
         </div>
 
         {/* ── Desktop: tabla ─────────────────────────────────────────── */}
-        <div className="hidden md:block bg-white rounded-2xl border border-neutral-200 overflow-hidden">
+        <div className="hidden md:block bg-white rounded-xl border border-neutral-200 shadow-sm overflow-hidden">
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-neutral-200 text-left">
-                <th className="px-4 py-3 font-medium text-neutral-500 w-16">Cód.</th>
-                <th className="px-4 py-3 font-medium text-neutral-500">Producto</th>
-                <th className="px-4 py-3 font-medium text-neutral-500 text-right">Precio s/IVA</th>
-                <th className="px-4 py-3 font-medium text-neutral-500 text-right">Precio caja</th>
-                <th className="px-4 py-3 font-medium text-neutral-500 text-center w-36">Cantidad</th>
-                <th className="px-4 py-3 font-medium text-neutral-500 text-right w-32">Subtotal</th>
+                <th className="text-xs px-4 py-3 font-semibold text-neutral-600 w-16">Cód.</th>
+                <th className="text-xs px-4 py-3 font-semibold text-neutral-600">Producto</th>
+                <th className="text-xs px-4 py-3 font-semibold text-neutral-600 text-right">Precio s/IVA</th>
+                <th className="text-xs px-4 py-3 font-semibold text-neutral-600 text-right">Precio caja</th>
+                <th className="text-xs px-4 py-3 font-semibold text-neutral-600 text-center w-36">Cantidad</th>
+                <th className="text-xs px-4 py-3 font-semibold text-neutral-600 text-right w-32">Subtotal</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-neutral-100">
               {filtered.length === 0 && (
                 <tr>
-                  <td colSpan={6} className="px-4 py-10 text-center text-neutral-400">No hay productos.</td>
+                  <td colSpan={6} className="px-4 py-10 text-center text-neutral-600">No hay productos.</td>
                 </tr>
               )}
               {filtered.map((p) => {
@@ -352,21 +352,21 @@ export function NuevoPedidoClient({
                     </td>
                     <td className="px-4 py-3">
                       <p className="font-medium text-neutral-900">{p.name}</p>
-                      <p className="text-xs text-neutral-400 mt-0.5">
+                      <p className="text-xs text-neutral-600 mt-0.5">
                         {p.presentacion ?? p.unit_label}
                         {p.precio && (p.bolsas_caja > 1 || p.divisiones_display != null) && (
-                          <span className="ml-2 text-neutral-300">· {fmt(p.precio.precio_cajita)}/cajita</span>
+                          <span className="ml-2 text-neutral-500">· {fmt(p.precio.precio_cajita)}/cajita</span>
                         )}
                       </p>
                     </td>
-                    <td className="px-4 py-3 text-right tabular-nums text-neutral-500">
+                    <td className="px-4 py-3 text-right tabular-nums text-neutral-600">
                       {hasPrice ? fmt(precioSIVA!) : (
-                        <span className="text-neutral-300 text-xs">—</span>
+                        <span className="text-neutral-500 text-xs">—</span>
                       )}
                     </td>
                     <td className="px-4 py-3 text-right tabular-nums font-semibold text-neutral-900">
                       {hasPrice ? fmt(p.precio!.final_civa) : (
-                        <span className="text-neutral-300 text-xs font-normal">{cliente ? "Sin datos B2B" : "—"}</span>
+                        <span className="text-neutral-500 text-xs font-normal">{cliente ? "Sin datos B2B" : "—"}</span>
                       )}
                     </td>
                     <td className="px-4 py-3">
@@ -384,7 +384,7 @@ export function NuevoPedidoClient({
                             placeholder="0"
                             onChange={(e) => setQty(p.id, Math.max(0, parseInt(e.target.value) || 0))}
                             onFocus={(e) => e.target.select()}
-                            className="w-14 text-center text-sm font-semibold tabular-nums border border-neutral-200 rounded-lg py-1 focus:outline-none focus:ring-2 focus:ring-tierra-700/20"
+                            className="w-14 text-center text-sm font-semibold tabular-nums border border-neutral-400 rounded-lg py-1 focus:outline-none focus:ring-[3px] focus:ring-brand-500/30 focus:border-brand-700"
                           />
                           <button onClick={() => setQty(p.id, qty + 1)}
                             className="size-7 rounded-lg bg-tierra-700 text-white hover:bg-tierra-800 transition-colors flex items-center justify-center font-semibold text-base leading-none">
@@ -392,7 +392,7 @@ export function NuevoPedidoClient({
                           </button>
                         </div>
                       ) : (
-                        <p className="text-center text-neutral-300 text-xs">—</p>
+                        <p className="text-center text-neutral-500 text-xs">—</p>
                       )}
                     </td>
                     <td className="px-4 py-3 text-right tabular-nums text-neutral-700">
@@ -410,12 +410,12 @@ export function NuevoPedidoClient({
       <div className="w-full md:w-80 md:shrink-0 space-y-4 md:sticky md:top-8">
 
         {/* Resumen del pedido */}
-        <div className="bg-white rounded-2xl border border-neutral-200 overflow-hidden">
+        <div className="bg-white rounded-xl border border-neutral-200 shadow-sm overflow-hidden">
           <div className="px-5 py-4 border-b border-neutral-100">
             <p className="text-sm font-semibold text-neutral-800">Resumen del pedido</p>
           </div>
           {cartItems.length === 0 ? (
-            <p className="px-5 py-6 text-sm text-neutral-400 text-center">
+            <p className="px-5 py-6 text-sm text-neutral-600 text-center">
               Seleccioná un cliente y agregá productos.
             </p>
           ) : (
@@ -424,7 +424,7 @@ export function NuevoPedidoClient({
                 <div key={p.id} className="flex justify-between items-start text-sm gap-2">
                   <div className="flex-1 min-w-0">
                     <p className="text-neutral-800 truncate">{p.name}</p>
-                    <p className="text-xs text-neutral-400">{cart[p.id]} caja{cart[p.id] !== 1 ? "s" : ""}</p>
+                    <p className="text-xs text-neutral-600">{cart[p.id]} caja{cart[p.id] !== 1 ? "s" : ""}</p>
                   </div>
                   <span className="tabular-nums font-medium text-neutral-900 shrink-0">
                     {fmt(p.precio!.final_civa * cart[p.id])}
@@ -433,7 +433,7 @@ export function NuevoPedidoClient({
               ))}
               <div className="pt-3 border-t border-neutral-100 space-y-1.5">
                 {tierAplicado && (
-                  <div className="flex items-center justify-between px-3 py-2 rounded-xl bg-success-bg border border-success/20 text-success text-xs font-medium">
+                  <div className="flex items-center justify-between px-3 py-2 rounded-xl bg-success-bg border border-success-border text-success text-xs font-medium">
                     <span>{tierAplicado.label}</span>
                     <span className="tabular-nums">− {fmt(montoDescuento)}</span>
                   </div>
@@ -441,13 +441,13 @@ export function NuevoPedidoClient({
                 {!tierAplicado && tiers.length > 0 && (() => {
                   const nextTier = [...tiers].sort((a, b) => a.minCajas - b.minCajas).find(t => totalQty < t.minCajas);
                   return nextTier ? (
-                    <div className="px-3 py-2 rounded-xl bg-neutral-50 border border-neutral-200 text-xs text-neutral-500">
+                    <div className="px-3 py-2 rounded-xl bg-neutral-50 border border-neutral-200 text-xs text-neutral-600">
                       Sumá {nextTier.minCajas - totalQty} caja{nextTier.minCajas - totalQty !== 1 ? "s" : ""} más → {nextTier.descuentoPct}% off
                     </div>
                   ) : null;
                 })()}
                 {tierAplicado && (
-                  <div className="flex justify-between text-sm text-neutral-500">
+                  <div className="flex justify-between text-sm text-neutral-600">
                     <span>Subtotal</span>
                     <span className="tabular-nums line-through">{fmt(subtotal)}</span>
                   </div>
@@ -457,13 +457,13 @@ export function NuevoPedidoClient({
                   <span className="tabular-nums">{fmt(totalFinal)}</span>
                 </div>
                 {fleteIncluido > 0 && (
-                  <div className="flex justify-between text-xs text-neutral-400">
+                  <div className="flex justify-between text-xs text-neutral-600">
                     <span>Incluye flete ({direccion?.zona_name})</span>
                     <span className="tabular-nums">{fmt(fleteIncluido)}</span>
                   </div>
                 )}
                 {cargoMontoNum > 0 && (
-                  <div className="flex justify-between text-xs text-neutral-500">
+                  <div className="flex justify-between text-xs text-neutral-600">
                     <span>+ {cargoConcepto.trim() || "Cargo adicional"}</span>
                     <span className="tabular-nums">{fmt(cargoMontoNum)}</span>
                   </div>
@@ -474,7 +474,7 @@ export function NuevoPedidoClient({
                     <span className="tabular-nums">{fmt(totalConCargo)}</span>
                   </div>
                 )}
-                <p className="text-xs text-neutral-400">{totalQty} caja{totalQty !== 1 ? "s" : ""}</p>
+                <p className="text-xs text-neutral-600">{totalQty} caja{totalQty !== 1 ? "s" : ""}</p>
               </div>
             </div>
           )}
@@ -482,19 +482,19 @@ export function NuevoPedidoClient({
           {/* Cargo adicional manual — opcional (flete, IIBB, etc.) */}
           {cartItems.length > 0 && (
             <div className="px-5 py-3 border-t border-neutral-100 space-y-1.5">
-              <label className="block text-xs font-medium text-neutral-500">
+              <label className="block text-[13px] font-medium text-neutral-800">
                 Cargo adicional (opcional)
               </label>
               <div className="flex gap-2">
                 <input
                   type="text" placeholder="Concepto: flete, IIBB…" value={cargoConcepto}
                   onChange={(e) => setCargoConcepto(e.target.value)}
-                  className="flex-1 min-w-0 px-3 py-1.5 text-sm border border-neutral-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-tierra-700/20"
+                  className="flex-1 min-w-0 px-3 py-1.5 text-sm border border-neutral-400 rounded-lg focus:outline-none focus:ring-[3px] focus:ring-brand-500/30 focus:border-brand-700"
                 />
                 <input
                   type="text" inputMode="decimal" placeholder="Monto" value={cargoMonto}
                   onChange={(e) => setCargoMonto(e.target.value)}
-                  className="w-24 shrink-0 px-3 py-1.5 text-sm border border-neutral-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-tierra-700/20"
+                  className="w-24 shrink-0 px-3 py-1.5 text-sm border border-neutral-400 rounded-lg focus:outline-none focus:ring-[3px] focus:ring-brand-500/30 focus:border-brand-700"
                 />
               </div>
             </div>
@@ -502,24 +502,24 @@ export function NuevoPedidoClient({
         </div>
 
         {/* Opciones */}
-        <div className="bg-white rounded-2xl border border-neutral-200 p-5 space-y-4">
+        <div className="bg-white rounded-xl border border-neutral-200 shadow-sm p-5 space-y-4">
           {esAdmin && (
             <div>
-              <label className="flex items-center gap-1.5 text-xs font-medium text-neutral-500 mb-1.5">
+              <label className="flex items-center gap-1.5 text-xs font-medium text-neutral-600 mb-1.5">
                 Estado inicial
                 <HelpTooltip wide text="Aprobado: el pago ya está confirmado, el pedido entra directo a producción. Pendiente de pago: el cliente todavía no pagó, queda en espera hasta que se confirme." />
               </label>
               <select value={initialStatus} onChange={(e) => setInitialStatus(e.target.value)}
-                className="w-full px-3 py-2 text-sm border border-neutral-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-tierra-700/20">
+                className="w-full px-3 py-2 text-sm border border-neutral-400 rounded-lg focus:outline-none focus:ring-[3px] focus:ring-brand-500/30 focus:border-brand-700">
                 <option value="aprobado">Aprobado (va directo a producción)</option>
                 <option value="pending_payment">Pendiente de pago (espera confirmación)</option>
               </select>
             </div>
           )}
           <div>
-            <label className="block text-xs font-medium text-neutral-500 mb-1.5">Forma de pago</label>
+            <label className="block text-[13px] font-medium text-neutral-800 mb-1.5">Forma de pago</label>
             <select value={paymentMethod} onChange={(e) => setPaymentMethod(e.target.value)}
-              className="w-full px-3 py-2 text-sm border border-neutral-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-tierra-700/20">
+              className="w-full px-3 py-2 text-sm border border-neutral-400 rounded-lg focus:outline-none focus:ring-[3px] focus:ring-brand-500/30 focus:border-brand-700">
               <option value="transferencia">Transferencia bancaria</option>
               <option value="efectivo">Efectivo</option>
               <option value="cheque">Cheque</option>
@@ -527,22 +527,22 @@ export function NuevoPedidoClient({
             </select>
           </div>
           <div>
-            <label className="block text-xs font-medium text-neutral-500 mb-1.5">Notas internas</label>
+            <label className="block text-[13px] font-medium text-neutral-800 mb-1.5">Notas internas</label>
             <textarea value={notes} onChange={(e) => setNotes(e.target.value)}
               placeholder="Pedido recibido por WhatsApp, acordado con…"
               rows={3}
-              className="w-full px-3 py-2 text-sm border border-neutral-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-tierra-700/20 resize-none" />
+              className="w-full px-3 py-2 text-sm border border-neutral-400 rounded-lg focus:outline-none focus:ring-[3px] focus:ring-brand-500/30 focus:border-brand-700 resize-none" />
           </div>
         </div>
 
         {error && (
-          <div className="px-4 py-3 bg-danger-bg border border-danger/20 rounded-xl text-sm text-danger">
+          <div className="px-4 py-3 bg-danger-bg border border-danger-border rounded-xl text-sm text-danger">
             {error}
           </div>
         )}
 
         <button onClick={handleSubmit} disabled={isPending || !cliente || cartItems.length === 0}
-          className="w-full py-3 rounded-xl bg-tierra-700 text-white text-sm font-semibold hover:bg-tierra-800 disabled:opacity-40 transition-colors">
+          className="w-full py-3 rounded-lg bg-tierra-700 text-white text-sm font-semibold hover:bg-tierra-800 disabled:opacity-40 transition-colors">
           {isPending
             ? "Creando pedido…"
             : cartItems.length > 0
@@ -551,7 +551,7 @@ export function NuevoPedidoClient({
         </button>
 
         <a href="/admin/pedidos"
-          className="block w-full py-2 text-center text-sm text-neutral-400 hover:text-neutral-700 transition-colors">
+          className="block w-full py-2 text-center text-sm text-neutral-600 hover:text-neutral-700 transition-colors">
           Cancelar
         </a>
       </div>

@@ -1,4 +1,13 @@
-export { Button } from "./button";
+export { Button, IconButton } from "./button";
+export { ButtonLink } from "./button-link";
 export { Badge, OrderStatusBadge } from "./badge";
+export { StatusBadge, PedidoStatusBadge } from "./status-badge";
 export { Input, Textarea, Select } from "./input";
+export { Checkbox } from "./checkbox";
+export { Switch } from "./switch";
+export { Tabs, type TabItem } from "./tabs";
+export { FilterChip } from "./filter-chip";
+export { Card, CardHeader, KpiCard, ConfigCard } from "./card";
+export { PageHeader } from "./page-header";
+export { TONE_STYLES, PEDIDO_TONE, ALERTA_TONE, CLIENTE_TONE, PIPELINE_TONE, type Tone } from "./tones";
 export { Skeleton, ProductCardSkeleton } from "./skeleton";

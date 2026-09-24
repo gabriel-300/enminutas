@@ -73,9 +73,9 @@ export default async function NuevaMuestraPage() {
   ];
 
   return (
-    <div className="p-4 md:p-8">
+    <div className="p-4 md:px-10 md:py-8 md:pb-16">
       <div className="mb-6">
-        <div className="flex items-center gap-2 text-sm text-neutral-400 mb-1">
+        <div className="flex items-center gap-2 text-sm text-neutral-600 mb-1">
           <a href="/admin/muestras" className="hover:text-neutral-600">Muestras</a>
           <span>/</span>
           <span className="text-neutral-600">{esAdmin ? "Nueva" : "Solicitar"}</span>
@@ -83,7 +83,7 @@ export default async function NuevaMuestraPage() {
         <h1 className="text-2xl font-semibold font-display text-neutral-900">
           {esAdmin ? "Nueva muestra" : "Solicitar muestra"}
         </h1>
-        <p className="text-sm text-neutral-500 mt-1">
+        <p className="text-sm text-neutral-600 mt-1">
           {esAdmin
             ? "Sin precio · Queda aprobada y va a Producción · El stock baja de los lotes al despacharla"
             : "Sin precio · Queda pendiente de aprobación del admin · El stock baja de los lotes al despacharla"}

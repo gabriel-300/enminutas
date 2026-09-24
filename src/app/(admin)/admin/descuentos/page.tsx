@@ -20,15 +20,15 @@ export default async function DescuentosPage() {
     .order("min_cajas");
 
   return (
-    <div className="p-8 max-w-3xl">
+    <div className="p-4 md:px-10 md:py-8 md:pb-16">
       <div className="mb-6">
         <h1 className="text-2xl font-semibold font-display text-neutral-900">Descuentos por volumen</h1>
-        <p className="text-sm text-neutral-500 mt-1">
+        <p className="text-sm text-neutral-600 mt-1">
           Se aplican automáticamente en pedidos B2B según la cantidad total de cajas.
         </p>
       </div>
 
-      <div className="mb-6 px-4 py-3 bg-neutral-50 border border-neutral-200 rounded-xl text-xs text-neutral-500 space-y-1">
+      <div className="mb-6 px-4 py-3 bg-neutral-50 border border-neutral-200 rounded-xl text-xs text-neutral-600 space-y-1">
         <p><strong>¿Cómo funciona?</strong> Al crear un pedido, si la cantidad total de cajas alcanza un escalón, el descuento se aplica automáticamente sobre el subtotal.</p>
         <p>Solo se aplica el descuento del escalón más alto alcanzado. Los escalones inactivos se ignoran.</p>
       </div>

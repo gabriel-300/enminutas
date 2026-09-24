@@ -23,7 +23,7 @@ export function DevolucionActions({ id, estado }: { id: string; estado: string }
             <button
               onClick={() => run(() => aprobarDevolucion(id))}
               disabled={pending}
-              className="px-4 py-2 rounded-xl bg-amber-600 text-white text-sm font-medium hover:bg-amber-700 transition-colors disabled:opacity-50"
+              className="px-4 py-2 rounded-xl bg-warning text-white text-sm font-medium hover:bg-warning transition-colors disabled:opacity-50"
             >
               {pending ? "..." : "Aprobar"}
             </button>
@@ -43,13 +43,13 @@ export function DevolucionActions({ id, estado }: { id: string; estado: string }
           <button
             onClick={() => run(() => cerrarDevolucion(id))}
             disabled={pending}
-            className="px-4 py-2 rounded-xl bg-emerald-700 text-white text-sm font-medium hover:bg-emerald-800 transition-colors disabled:opacity-50"
+            className="px-4 py-2 rounded-xl bg-success text-white text-sm font-medium hover:bg-success transition-colors disabled:opacity-50"
           >
             {pending ? "..." : "Marcar cerrada (mercadería recibida)"}
           </button>
         )}
       </div>
-      {error && <p className="text-xs text-red-600">{error}</p>}
+      {error && <p className="text-xs text-danger">{error}</p>}
     </div>
   );
 }

@@ -70,12 +70,12 @@ export function ClienteContactoPanel({
       {/* Badge último contacto + botón abrir */}
       <div className="flex items-center gap-2 flex-wrap">
         {ultimoContacto ? (
-          <span className="text-xs text-neutral-400">
+          <span className="text-xs text-neutral-600">
             Últ. contacto: {diasDesde(ultimoContacto.created_at)}d{" "}
-            <span className="text-neutral-300">({tipoEmoji(ultimoContacto.tipo)})</span>
+            <span className="text-neutral-500">({tipoEmoji(ultimoContacto.tipo)})</span>
           </span>
         ) : (
-          <span className="text-xs text-neutral-300">Sin contacto registrado</span>
+          <span className="text-xs text-neutral-500">Sin contacto registrado</span>
         )}
         <button
           onClick={() => { setOpen(!open); setError(null); setOk(false); }}
@@ -95,7 +95,7 @@ export function ClienteContactoPanel({
                 type="button"
                 onClick={() => setTab(t)}
                 className={`px-3 py-1 text-xs rounded-md font-medium transition-colors capitalize ${
-                  tab === t ? "bg-white text-neutral-800 shadow-sm" : "text-neutral-500"
+                  tab === t ? "bg-white text-neutral-800 shadow-sm" : "text-neutral-600"
                 }`}
               >
                 {t === "historial" ? `Historial${historialContactos.length > 0 ? ` (${historialContactos.length})` : ""}` : t === "notas" ? "Notas" : "Contacto"}
@@ -130,7 +130,7 @@ export function ClienteContactoPanel({
                 onChange={(e) => setNotasLog(e.target.value)}
                 placeholder="Notas del contacto (opcional)"
                 rows={2}
-                className="w-full px-3 py-2 text-xs border border-neutral-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-tierra-700/20 resize-none"
+                className="w-full px-3 py-2 text-xs border border-neutral-400 rounded-lg focus:outline-none focus:ring-[3px] focus:ring-brand-500/30 focus:border-brand-700 resize-none"
                 disabled={isPending}
               />
               <div className="flex items-center gap-2">
@@ -155,7 +155,7 @@ export function ClienteContactoPanel({
                 onChange={(e) => setNotas(e.target.value)}
                 placeholder="Observaciones internas sobre este cliente (preferencias, acuerdos, historial…)"
                 rows={3}
-                className="w-full px-3 py-2 text-xs border border-neutral-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-tierra-700/20 resize-none"
+                className="w-full px-3 py-2 text-xs border border-neutral-400 rounded-lg focus:outline-none focus:ring-[3px] focus:ring-brand-500/30 focus:border-brand-700 resize-none"
                 disabled={isPending}
               />
               <div className="flex items-center gap-2">
@@ -177,7 +177,7 @@ export function ClienteContactoPanel({
           {tab === "historial" && (
             <div>
               {historialContactos.length === 0 ? (
-                <p className="text-xs text-neutral-400 py-2">No hay contactos registrados todavía.</p>
+                <p className="text-xs text-neutral-600 py-2">No hay contactos registrados todavía.</p>
               ) : (
                 <ul className="space-y-2 max-h-48 overflow-y-auto pr-1">
                   {historialContactos.map((c, i) => (
@@ -186,11 +186,11 @@ export function ClienteContactoPanel({
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2">
                           <span className="font-medium text-neutral-700 capitalize">{c.tipo}</span>
-                          <span className="text-neutral-400">· {fechaCorta(c.created_at)}</span>
-                          <span className="text-neutral-300">({diasDesde(c.created_at)}d)</span>
+                          <span className="text-neutral-600">· {fechaCorta(c.created_at)}</span>
+                          <span className="text-neutral-500">({diasDesde(c.created_at)}d)</span>
                         </div>
                         {c.notas && (
-                          <p className="text-neutral-500 mt-0.5 line-clamp-2">{c.notas}</p>
+                          <p className="text-neutral-600 mt-0.5 line-clamp-2">{c.notas}</p>
                         )}
                       </div>
                     </li>

@@ -10,10 +10,10 @@ export const metadata: Metadata = { title: "Devolución — Admin" };
 export const revalidate = 0;
 
 const ESTADO_CFG = {
-  solicitada: { label: "Solicitada", bg: "#eff6ff", text: "#2563eb" },
-  aprobada:   { label: "Aprobada",   bg: "#fffbeb", text: "#b45309" },
-  cerrada:    { label: "Cerrada",    bg: "#ecfdf5", text: "#059669" },
-  rechazada:  { label: "Rechazada",  bg: "#fef2f2", text: "#dc2626" },
+  solicitada: { label: "Solicitada", bg: "#e9f1fc", text: "#1f5bb5" },
+  aprobada:   { label: "Aprobada",   bg: "#fdf4e0", text: "#8a5a00" },
+  cerrada:    { label: "Cerrada",    bg: "#eaf6ee", text: "#1d6b3a" },
+  rechazada:  { label: "Rechazada",  bg: "#fdecea", text: "#b42318" },
 };
 
 export default async function DevolucionDetailPage({
@@ -58,11 +58,11 @@ export default async function DevolucionDetailPage({
   }
 
   return (
-    <div className="p-4 md:p-8 max-w-3xl">
+    <div className="p-4 md:px-10 md:py-8 md:pb-16">
       {/* Header */}
       <div className="mb-6 flex items-start justify-between gap-4">
         <div className="flex items-center gap-3">
-          <Link href="/admin/devoluciones" className="p-1.5 rounded-lg text-neutral-400 hover:bg-neutral-100 transition-colors">
+          <Link href="/admin/devoluciones" className="p-1.5 rounded-lg text-neutral-600 hover:bg-neutral-100 transition-colors">
             <ChevronLeft className="size-5" />
           </Link>
           <div>
@@ -77,7 +77,7 @@ export default async function DevolucionDetailPage({
                 {cfg.label}
               </span>
             </div>
-            <p className="text-sm text-neutral-400 mt-0.5">
+            <p className="text-sm text-neutral-600 mt-0.5">
               {new Date(dev.fecha + "T12:00:00").toLocaleDateString("es-AR")}
             </p>
           </div>
@@ -87,49 +87,49 @@ export default async function DevolucionDetailPage({
 
       <div className="space-y-4">
         {/* Cliente y motivo */}
-        <div className="bg-white rounded-2xl border border-neutral-200 p-5 grid sm:grid-cols-2 gap-5">
+        <div className="bg-white rounded-xl border border-neutral-200 shadow-sm p-5 grid sm:grid-cols-2 gap-5">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-wide text-neutral-400 mb-2">Cliente</p>
+            <p className="text-xs font-semibold text-neutral-600 mb-2">Cliente</p>
             <p className="text-sm font-semibold text-neutral-900">{dev.profiles?.full_name ?? "—"}</p>
-            {dev.profiles?.phone && <p className="text-xs text-neutral-500 mt-0.5">{dev.profiles.phone}</p>}
+            {dev.profiles?.phone && <p className="text-xs text-neutral-600 mt-0.5">{dev.profiles.phone}</p>}
           </div>
           <div>
-            <p className="text-xs font-semibold uppercase tracking-wide text-neutral-400 mb-2">Motivo</p>
+            <p className="text-xs font-semibold text-neutral-600 mb-2">Motivo</p>
             <p className="text-sm text-neutral-900">{dev.motivo}</p>
             {dev.pedido_id && (
-              <p className="text-xs text-neutral-500 mt-1">
+              <p className="text-xs text-neutral-600 mt-1">
                 Pedido ref: <span className="font-mono">{dev.pedido_id}</span>
               </p>
             )}
             {dev.observaciones && (
-              <p className="text-xs text-neutral-400 mt-1 italic">{dev.observaciones}</p>
+              <p className="text-xs text-neutral-600 mt-1 italic">{dev.observaciones}</p>
             )}
           </div>
         </div>
 
         {/* Nota de crédito generada */}
         {movCC && (
-          <div className="bg-emerald-50 border border-emerald-200 rounded-2xl px-5 py-4 flex items-center justify-between">
+          <div className="bg-success-bg border border-success-border rounded-xl px-5 py-4 flex items-center justify-between">
             <div>
-              <p className="text-xs font-semibold text-emerald-700 uppercase tracking-wide mb-0.5">Nota de crédito emitida</p>
-              <p className="text-sm text-emerald-900">{movCC.descripcion}</p>
-              <p className="text-xs text-emerald-600 mt-0.5">
+              <p className="text-xs font-semibold text-success mb-0.5">Nota de crédito emitida</p>
+              <p className="text-sm text-success">{movCC.descripcion}</p>
+              <p className="text-xs text-success mt-0.5">
                 {new Date(movCC.fecha + "T12:00:00").toLocaleDateString("es-AR")}
               </p>
             </div>
-            <p className="text-lg font-bold text-emerald-700 tabular-nums">{fmt(Math.abs(Number(movCC.monto)))}</p>
+            <p className="text-lg font-bold text-success tabular-nums">{fmt(Math.abs(Number(movCC.monto)))}</p>
           </div>
         )}
 
         {/* Ítems */}
-        <div className="bg-white rounded-2xl border border-neutral-200 overflow-hidden">
+        <div className="bg-white rounded-xl border border-neutral-200 shadow-sm overflow-hidden">
           <table className="w-full text-sm">
             <thead className="border-b border-neutral-100">
               <tr>
-                <th className="px-5 py-3 text-left text-xs font-semibold text-neutral-400 uppercase tracking-wide">Descripción</th>
-                <th className="px-5 py-3 text-right text-xs font-semibold text-neutral-400 uppercase tracking-wide">Cant.</th>
-                <th className="px-5 py-3 text-right text-xs font-semibold text-neutral-400 uppercase tracking-wide">Precio unit.</th>
-                <th className="px-5 py-3 text-right text-xs font-semibold text-neutral-400 uppercase tracking-wide">Subtotal</th>
+                <th className="px-5 py-3 text-left text-xs font-semibold text-neutral-600">Descripción</th>
+                <th className="px-5 py-3 text-right text-xs font-semibold text-neutral-600">Cant.</th>
+                <th className="px-5 py-3 text-right text-xs font-semibold text-neutral-600">Precio unit.</th>
+                <th className="px-5 py-3 text-right text-xs font-semibold text-neutral-600">Subtotal</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-neutral-50">
@@ -154,8 +154,8 @@ export default async function DevolucionDetailPage({
         </div>
 
         {/* Flujo de estado */}
-        <div className="bg-neutral-50 rounded-2xl border border-neutral-100 px-5 py-4">
-          <p className="text-xs font-semibold uppercase tracking-wide text-neutral-400 mb-3">Flujo</p>
+        <div className="bg-neutral-50 rounded-xl border border-neutral-100 px-5 py-4">
+          <p className="text-xs font-semibold text-neutral-600 mb-3">Flujo</p>
           <div className="flex items-center gap-2 text-xs">
             {["solicitada", "aprobada", "cerrada"].map((e, i) => {
               const idx = ["solicitada", "aprobada", "cerrada"].indexOf(dev.estado);
@@ -165,19 +165,19 @@ export default async function DevolucionDetailPage({
               return (
                 <div key={e} className="flex items-center gap-2">
                   <span className={`px-2.5 py-1 rounded-full font-medium ${
-                    active   ? "bg-[#16233f] text-white" :
-                    done     ? "bg-emerald-100 text-emerald-700" :
-                    rejected && e === "solicitada" ? "bg-red-100 text-red-600" :
-                    "bg-neutral-100 text-neutral-400"
+                    active   ? "bg-brand-700 text-white" :
+                    done     ? "bg-success-bg text-success" :
+                    rejected && e === "solicitada" ? "bg-danger-bg text-danger" :
+                    "bg-neutral-100 text-neutral-600"
                   }`}>
                     {e.charAt(0).toUpperCase() + e.slice(1)}
                   </span>
-                  {i < 2 && <span className="text-neutral-300">→</span>}
+                  {i < 2 && <span className="text-neutral-500">→</span>}
                 </div>
               );
             })}
             {dev.estado === "rechazada" && (
-              <span className="ml-2 px-2.5 py-1 rounded-full font-medium bg-red-100 text-red-600">Rechazada</span>
+              <span className="ml-2 px-2.5 py-1 rounded-full font-medium bg-danger-bg text-danger">Rechazada</span>
             )}
           </div>
         </div>

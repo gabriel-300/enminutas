@@ -41,7 +41,7 @@ export function CostoCajaEdit({ productId, costoProductoCaja, bolsasCaja, desact
   if (editing) {
     return (
       <div className="flex items-center gap-1 justify-end">
-        <span className="text-xs text-neutral-400 mr-0.5">$</span>
+        <span className="text-xs text-neutral-600 mr-0.5">$</span>
         <input
           ref={inputRef}
           type="text"
@@ -50,7 +50,7 @@ export function CostoCajaEdit({ productId, costoProductoCaja, bolsasCaja, desact
           onChange={e => setValor(e.target.value)}
           onKeyDown={handleKey}
           disabled={isPending}
-          className="w-24 px-2 py-0.5 text-sm text-right border border-tierra-700/40 rounded-lg focus:outline-none focus:ring-2 focus:ring-tierra-700/20 tabular-nums disabled:opacity-50"
+          className="w-24 px-2 py-0.5 text-sm text-right border border-tierra-700/40 rounded-lg focus:outline-none focus:ring-[3px] focus:ring-brand-500/30 focus:border-brand-700 tabular-nums disabled:opacity-50"
         />
         <button onClick={guardar} disabled={isPending}
           className="text-xs font-medium text-tierra-700 hover:text-tierra-800 disabled:opacity-40 px-1">
@@ -58,10 +58,10 @@ export function CostoCajaEdit({ productId, costoProductoCaja, bolsasCaja, desact
         </button>
         <button onClick={() => { setEditing(false); setValor(String(Math.round(costoProductoCaja))); setError(null); }}
           disabled={isPending}
-          className="text-xs text-neutral-400 hover:text-neutral-700 disabled:opacity-40">
+          className="text-xs text-neutral-600 hover:text-neutral-700 disabled:opacity-40">
           ✕
         </button>
-        {error && <span className="text-xs text-red-500 ml-1">{error}</span>}
+        {error && <span className="text-xs text-danger ml-1">{error}</span>}
       </div>
     );
   }
@@ -72,15 +72,15 @@ export function CostoCajaEdit({ productId, costoProductoCaja, bolsasCaja, desact
       onClick={() => setEditing(true)}
       title="Clic para editar el costo del producto"
       className={`font-medium tabular-nums hover:underline cursor-pointer group ${
-        desactualizado ? "text-amber-600" : "text-neutral-800"
+        desactualizado ? "text-warning" : "text-neutral-800"
       }`}
     >
       {fmt(costoProductoCaja)}
       {desactualizado && (
         <span title="El costo guardado difiere del costo real de la receta."
-          className="ml-1 text-amber-500">⚠</span>
+          className="ml-1 text-warning">⚠</span>
       )}
-      <span className="ml-1 text-neutral-300 group-hover:text-tierra-700 text-xs">✏</span>
+      <span className="ml-1 text-neutral-500 group-hover:text-tierra-700 text-xs">✏</span>
     </button>
   );
 }

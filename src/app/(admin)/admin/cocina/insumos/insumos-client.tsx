@@ -24,21 +24,21 @@ const UNIDADES = ["gr", "kg", "ml", "l", "u", "cc", "taza", "cdita", "cda"];
 
 // Paleta de colores disponibles para categorías
 const COLOR_OPCIONES = [
-  { value: "bg-green-100 text-green-700",    bg: "#dcfce7", fg: "#15803d" },
-  { value: "bg-orange-100 text-orange-700",  bg: "#ffedd5", fg: "#c2410c" },
-  { value: "bg-red-100 text-red-700",        bg: "#fee2e2", fg: "#b91c1c" },
-  { value: "bg-sky-100 text-sky-700",        bg: "#e0f2fe", fg: "#0369a1" },
-  { value: "bg-amber-100 text-amber-700",    bg: "#fef3c7", fg: "#b45309" },
-  { value: "bg-purple-100 text-purple-700",  bg: "#f3e8ff", fg: "#7e22ce" },
-  { value: "bg-yellow-100 text-yellow-700",  bg: "#fefce8", fg: "#a16207" },
+  { value: "bg-success-bg text-success",    bg: "#dcfce7", fg: "#15803d" },
+  { value: "bg-warning-bg text-warning",  bg: "#ffedd5", fg: "#c2410c" },
+  { value: "bg-danger-bg text-danger",        bg: "#fee2e2", fg: "#b91c1c" },
+  { value: "bg-info-bg text-info",        bg: "#e0f2fe", fg: "#0369a1" },
+  { value: "bg-warning-bg text-warning",    bg: "#fef3c7", fg: "#8a5a00" },
+  { value: "bg-brand-100 text-brand-700",  bg: "#f3e8ff", fg: "#7e22ce" },
+  { value: "bg-warning-bg text-warning",  bg: "#fefce8", fg: "#a16207" },
   { value: "bg-cyan-100 text-cyan-700",      bg: "#cffafe", fg: "#0e7490" },
-  { value: "bg-pink-100 text-pink-700",      bg: "#fce7f3", fg: "#be185d" },
+  { value: "bg-brand-100 text-brand-700",      bg: "#fce7f3", fg: "#be185d" },
   { value: "bg-lime-100 text-lime-700",      bg: "#ecfccb", fg: "#4d7c0f" },
-  { value: "bg-indigo-100 text-indigo-700",  bg: "#e0e7ff", fg: "#4338ca" },
-  { value: "bg-neutral-100 text-neutral-500",bg: "#f5f5f5", fg: "#737373" },
+  { value: "bg-brand-100 text-brand-700",  bg: "#e0e7ff", fg: "#4338ca" },
+  { value: "bg-neutral-100 text-neutral-600",bg: "#f5f5f5", fg: "#737069" },
 ];
 
-const DEFAULT_COLOR = "bg-neutral-100 text-neutral-500";
+const DEFAULT_COLOR = "bg-neutral-100 text-neutral-600";
 
 function catLabel(valor: string, cats: Categoria[]): string {
   return cats.find(c => c.valor === valor)?.nombre ?? valor;
@@ -65,16 +65,16 @@ function stockEstado(ins: Insumo): "critico" | "pedido" | "ok" | "sin_control" {
 }
 
 const estadoBadge = {
-  critico:     "bg-red-100 text-red-700",
-  pedido:      "bg-amber-100 text-amber-700",
-  ok:          "bg-emerald-100 text-emerald-700",
-  sin_control: "bg-neutral-100 text-neutral-500",
+  critico:     "bg-danger-bg text-danger",
+  pedido:      "bg-warning-bg text-warning",
+  ok:          "bg-success-bg text-success",
+  sin_control: "bg-neutral-100 text-neutral-600",
 };
 
 const estadoDot = {
-  critico:     "bg-red-500",
-  pedido:      "bg-amber-400",
-  ok:          "bg-emerald-500",
+  critico:     "bg-danger-solid",
+  pedido:      "bg-warning-solid",
+  ok:          "bg-success-solid",
   sin_control: "bg-neutral-300",
 };
 
@@ -141,22 +141,22 @@ function GestorCategorias({ categorias }: { categorias: Categoria[] }) {
     });
   }
 
-  const inputCls = "px-2 py-1.5 text-sm border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#16233f]/20 disabled:opacity-50";
+  const inputCls = "px-2 py-1.5 text-sm border border-neutral-400 rounded-lg focus:outline-none focus:ring-[3px] focus:ring-brand-500/30 focus:border-brand-700 disabled:opacity-50";
 
   return (
-    <div className="bg-white rounded-2xl border border-neutral-200 overflow-hidden">
+    <div className="bg-white rounded-xl border border-neutral-200 shadow-sm overflow-hidden">
       <button
         type="button"
         onClick={() => setOpen(v => !v)}
         className="w-full px-5 py-3 flex items-center justify-between text-left hover:bg-neutral-50 transition-colors"
       >
         <div className="flex items-center gap-2">
-          <Tag className="size-4 text-neutral-400" />
+          <Tag className="size-4 text-neutral-600" />
           <span className="text-sm font-semibold text-neutral-800">Gestionar categorías</span>
-          <span className="text-xs text-neutral-400">({categorias.length})</span>
+          <span className="text-xs text-neutral-600">({categorias.length})</span>
         </div>
         <ChevronDown
-          className="size-4 text-neutral-400 transition-transform"
+          className="size-4 text-neutral-600 transition-transform"
           style={{ transform: open ? "rotate(180deg)" : "rotate(0deg)" }}
         />
       </button>
@@ -164,9 +164,9 @@ function GestorCategorias({ categorias }: { categorias: Categoria[] }) {
       {open && (
         <div className="border-t border-neutral-100 px-5 py-4 space-y-4">
           {error && (
-            <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-xl px-3 py-2">
+            <p className="text-sm text-danger bg-danger-bg border border-danger-border rounded-xl px-3 py-2">
               {error}
-              <button onClick={() => setError(null)} className="ml-2 text-red-400 hover:text-red-600 text-xs">✕</button>
+              <button onClick={() => setError(null)} className="ml-2 text-danger hover:text-danger text-xs">✕</button>
             </p>
           )}
 
@@ -188,11 +188,11 @@ function GestorCategorias({ categorias }: { categorias: Categoria[] }) {
                     </div>
                     <div className="flex gap-1 shrink-0">
                       <button onClick={handleActualizar} disabled={isPending}
-                        className="p-1.5 rounded-lg text-emerald-600 hover:bg-emerald-50 disabled:opacity-40">
+                        className="p-1.5 rounded-lg text-success hover:bg-success-bg disabled:opacity-40">
                         <Check className="size-4" />
                       </button>
                       <button onClick={() => { setEditId(null); setError(null); }}
-                        className="p-1.5 rounded-lg text-neutral-400 hover:bg-neutral-100">
+                        className="p-1.5 rounded-lg text-neutral-600 hover:bg-neutral-100">
                         <X className="size-4" />
                       </button>
                     </div>
@@ -202,14 +202,14 @@ function GestorCategorias({ categorias }: { categorias: Categoria[] }) {
                     <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${cat.color}`}>
                       {cat.nombre}
                     </span>
-                    <span className="text-xs text-neutral-400 font-mono">{cat.valor}</span>
+                    <span className="text-xs text-neutral-600 font-mono">{cat.valor}</span>
                     <div className="flex gap-1 ml-auto shrink-0">
                       <button onClick={() => startEdit(cat)} disabled={isPending}
-                        className="p-1.5 rounded-lg text-neutral-300 hover:text-neutral-600 hover:bg-neutral-100 transition-colors">
+                        className="p-1.5 rounded-lg text-neutral-500 hover:text-neutral-600 hover:bg-neutral-100 transition-colors">
                         <Pencil className="size-3.5" />
                       </button>
                       <button onClick={() => handleEliminar(cat.id, cat.nombre)} disabled={isPending}
-                        className="p-1.5 rounded-lg text-neutral-300 hover:text-red-500 hover:bg-red-50 transition-colors">
+                        className="p-1.5 rounded-lg text-neutral-500 hover:text-danger hover:bg-danger-bg transition-colors">
                         <Trash2 className="size-3.5" />
                       </button>
                     </div>
@@ -221,10 +221,10 @@ function GestorCategorias({ categorias }: { categorias: Categoria[] }) {
 
           {/* Nueva categoría */}
           <form onSubmit={handleCrear} className="pt-2 border-t border-neutral-100">
-            <p className="text-xs font-semibold text-neutral-500 uppercase tracking-wide mb-3">Nueva categoría</p>
+            <p className="text-xs font-semibold text-neutral-600 mb-3">Nueva categoría</p>
             <div className="flex flex-wrap gap-3 items-end">
               <div>
-                <label className="block text-xs text-neutral-500 mb-1">Nombre</label>
+                <label className="block text-xs text-neutral-600 mb-1">Nombre</label>
                 <input
                   value={nuevoNombre} onChange={e => setNuevo(e.target.value)}
                   placeholder="Ej: Especias" required
@@ -232,7 +232,7 @@ function GestorCategorias({ categorias }: { categorias: Categoria[] }) {
                 />
               </div>
               <div>
-                <label className="block text-xs text-neutral-500 mb-1">Color</label>
+                <label className="block text-xs text-neutral-600 mb-1">Color</label>
                 <ColorPicker value={nuevoColor} onChange={setNuevoColor} />
               </div>
               {nuevoNombre && (
@@ -241,7 +241,7 @@ function GestorCategorias({ categorias }: { categorias: Categoria[] }) {
                 </span>
               )}
               <button type="submit" disabled={isPending || !nuevoNombre.trim()}
-                className="flex items-center gap-1.5 px-4 py-1.5 bg-[#16233f] text-white text-sm font-medium rounded-xl hover:bg-[#253760] disabled:opacity-40 transition-colors">
+                className="flex items-center gap-1.5 px-4 py-1.5 bg-brand-700 text-white text-sm font-medium rounded-lg hover:bg-brand-800 disabled:opacity-40 transition-colors">
                 <Plus className="size-4" />
                 {isPending ? "Guardando…" : "Agregar"}
               </button>
@@ -272,19 +272,19 @@ function IngresoStockForm({ ins, onClose, onError }: {
     });
   }
 
-  const inputCls = "px-2 py-1.5 text-sm border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#16233f]/20 disabled:opacity-50";
+  const inputCls = "px-2 py-1.5 text-sm border border-neutral-400 rounded-lg focus:outline-none focus:ring-[3px] focus:ring-brand-500/30 focus:border-brand-700 disabled:opacity-50";
 
   return (
-    <tr className="bg-emerald-50/60">
+    <tr className="bg-success-bg/60">
       <td colSpan={9} className="px-4 py-3">
         <form onSubmit={handleSubmit} className="flex items-end gap-3 flex-wrap">
           <div>
-            <p className="text-xs font-semibold text-emerald-700 mb-1.5">
+            <p className="text-xs font-semibold text-success mb-1.5">
               Ingreso de stock — {ins.nombre}
             </p>
             <div className="flex gap-2 items-end flex-wrap">
               <div>
-                <label className="block text-xs text-neutral-500 mb-0.5">Cantidad ({ins.unidad})</label>
+                <label className="block text-xs text-neutral-600 mb-0.5">Cantidad ({ins.unidad})</label>
                 <input
                   value={cantidad} onChange={e => setCantidad(e.target.value)}
                   inputMode="decimal" placeholder="0" autoFocus required
@@ -292,7 +292,7 @@ function IngresoStockForm({ ins, onClose, onError }: {
                 />
               </div>
               <div className="flex-1 min-w-[160px]">
-                <label className="block text-xs text-neutral-500 mb-0.5">Notas (opcional)</label>
+                <label className="block text-xs text-neutral-600 mb-0.5">Notas (opcional)</label>
                 <input
                   value={notas} onChange={e => setNotas(e.target.value)}
                   placeholder="Ej: Compra Proveedor X"
@@ -300,11 +300,11 @@ function IngresoStockForm({ ins, onClose, onError }: {
                 />
               </div>
               <button type="submit" disabled={isPending}
-                className="px-4 py-1.5 bg-emerald-600 text-white text-sm font-medium rounded-lg disabled:opacity-50 hover:bg-emerald-700 transition-colors">
+                className="px-4 py-1.5 bg-success text-white text-sm font-medium rounded-lg disabled:opacity-50 hover:bg-success transition-colors">
                 {isPending ? "Guardando…" : "Confirmar ingreso"}
               </button>
               <button type="button" onClick={onClose}
-                className="px-3 py-1.5 border border-neutral-200 text-sm text-neutral-500 rounded-lg hover:bg-neutral-50">
+                className="px-3 py-1.5 border border-neutral-200 text-sm text-neutral-600 rounded-lg hover:bg-neutral-50">
                 Cancelar
               </button>
             </div>
@@ -334,21 +334,21 @@ function AjusteStockForm({ ins, onClose, onError }: {
     });
   }
 
-  const inputCls = "px-2 py-1.5 text-sm border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#16233f]/20 disabled:opacity-50";
+  const inputCls = "px-2 py-1.5 text-sm border border-neutral-400 rounded-lg focus:outline-none focus:ring-[3px] focus:ring-brand-500/30 focus:border-brand-700 disabled:opacity-50";
   const delta = parseFloat(stockReal.replace(",", ".")) - ins.stock_actual;
   const deltaOk = !isNaN(delta);
 
   return (
-    <tr className="bg-amber-50/60">
+    <tr className="bg-warning-bg/60">
       <td colSpan={9} className="px-4 py-3">
         <form onSubmit={handleSubmit} className="flex items-end gap-3 flex-wrap">
           <div>
-            <p className="text-xs font-semibold text-amber-700 mb-1.5">
+            <p className="text-xs font-semibold text-warning mb-1.5">
               Ajuste de stock — {ins.nombre}
             </p>
             <div className="flex gap-2 items-end flex-wrap">
               <div>
-                <label className="block text-xs text-neutral-500 mb-0.5">Stock real ({ins.unidad})</label>
+                <label className="block text-xs text-neutral-600 mb-0.5">Stock real ({ins.unidad})</label>
                 <input
                   value={stockReal} onChange={e => setStockReal(e.target.value)}
                   inputMode="decimal" autoFocus required
@@ -356,12 +356,12 @@ function AjusteStockForm({ ins, onClose, onError }: {
                 />
               </div>
               {deltaOk && (
-                <span className={`text-xs font-mono px-2 py-1 rounded-md ${delta < 0 ? "bg-red-100 text-red-700" : delta > 0 ? "bg-emerald-100 text-emerald-700" : "bg-neutral-100 text-neutral-500"}`}>
+                <span className={`text-xs font-mono px-2 py-1 rounded-md ${delta < 0 ? "bg-danger-bg text-danger" : delta > 0 ? "bg-success-bg text-success" : "bg-neutral-100 text-neutral-600"}`}>
                   {delta > 0 ? "+" : ""}{delta.toFixed(2)} {ins.unidad}
                 </span>
               )}
               <div className="flex-1 min-w-[160px]">
-                <label className="block text-xs text-neutral-500 mb-0.5">Motivo (opcional)</label>
+                <label className="block text-xs text-neutral-600 mb-0.5">Motivo (opcional)</label>
                 <input
                   value={notas} onChange={e => setNotas(e.target.value)}
                   placeholder="Ej: Recuento físico"
@@ -369,11 +369,11 @@ function AjusteStockForm({ ins, onClose, onError }: {
                 />
               </div>
               <button type="submit" disabled={isPending}
-                className="px-4 py-1.5 bg-amber-600 text-white text-sm font-medium rounded-lg disabled:opacity-50 hover:bg-amber-700 transition-colors">
+                className="px-4 py-1.5 bg-warning text-white text-sm font-medium rounded-lg disabled:opacity-50 hover:bg-warning transition-colors">
                 {isPending ? "Guardando…" : "Confirmar ajuste"}
               </button>
               <button type="button" onClick={onClose}
-                className="px-3 py-1.5 border border-neutral-200 text-sm text-neutral-500 rounded-lg hover:bg-neutral-50">
+                className="px-3 py-1.5 border border-neutral-200 text-sm text-neutral-600 rounded-lg hover:bg-neutral-50">
                 Cancelar
               </button>
             </div>
@@ -435,12 +435,12 @@ function InsumoRow({ ins, cats, onError }: { ins: Insumo; cats: Categoria[]; onE
     });
   }
 
-  const inputCls = "px-2 py-1 text-sm border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#16233f]/20 disabled:opacity-50";
+  const inputCls = "px-2 py-1 text-sm border border-neutral-400 rounded-lg focus:outline-none focus:ring-[3px] focus:ring-brand-500/30 focus:border-brand-700 disabled:opacity-50";
 
   if (editing) {
     return (
       <>
-        <tr className="bg-blue-50/50">
+        <tr className="bg-info-bg/50">
           <td className="px-3 py-2">
             <input value={nombre} onChange={e => setNombre(e.target.value)}
               className={`${inputCls} w-full`} disabled={isPending} autoFocus />
@@ -468,26 +468,26 @@ function InsumoRow({ ins, cats, onError }: { ins: Insumo; cats: Categoria[]; onE
             </select>
           </td>
           {/* Stock actual — read-only en edit */}
-          <td className="px-3 py-2 text-xs text-neutral-400 tabular-nums font-mono">
+          <td className="px-3 py-2 text-xs text-neutral-600 tabular-nums font-mono">
             {fmtNum(ins.stock_actual, ins.unidad)}
           </td>
           {/* Mín / Ped / Máx en una celda */}
           <td className="px-3 py-2">
             <div className="flex flex-col gap-1">
               <div className="flex items-center gap-1">
-                <span className="text-xs text-neutral-400 w-6">mín</span>
+                <span className="text-xs text-neutral-600 w-6">mín</span>
                 <input value={sMin} onChange={e => setSMin(e.target.value)}
                   className={`${inputCls} w-20 text-right`} disabled={isPending}
                   inputMode="decimal" placeholder="0" title="Stock mínimo" />
               </div>
               <div className="flex items-center gap-1">
-                <span className="text-xs text-neutral-400 w-6">ped</span>
+                <span className="text-xs text-neutral-600 w-6">ped</span>
                 <input value={sPed} onChange={e => setSPed(e.target.value)}
                   className={`${inputCls} w-20 text-right`} disabled={isPending}
                   inputMode="decimal" placeholder="0" title="Punto de pedido" />
               </div>
               <div className="flex items-center gap-1">
-                <span className="text-xs text-neutral-400 w-6">máx</span>
+                <span className="text-xs text-neutral-600 w-6">máx</span>
                 <input value={sMax} onChange={e => setSMax(e.target.value)}
                   className={`${inputCls} w-20 text-right`} disabled={isPending}
                   inputMode="decimal" placeholder="0" title="Stock máximo" />
@@ -497,11 +497,11 @@ function InsumoRow({ ins, cats, onError }: { ins: Insumo; cats: Categoria[]; onE
           <td className="px-3 py-2">
             <div className="flex gap-1">
               <button onClick={handleGuardar} disabled={isPending}
-                className="p-1.5 rounded-lg text-emerald-600 hover:bg-emerald-50 disabled:opacity-40">
+                className="p-1.5 rounded-lg text-success hover:bg-success-bg disabled:opacity-40">
                 <Check className="size-4" />
               </button>
               <button onClick={() => { setEditing(false); resetState(); }}
-                className="p-1.5 rounded-lg text-neutral-400 hover:bg-neutral-100">
+                className="p-1.5 rounded-lg text-neutral-600 hover:bg-neutral-100">
                 <X className="size-4" />
               </button>
             </div>
@@ -518,11 +518,11 @@ function InsumoRow({ ins, cats, onError }: { ins: Insumo; cats: Categoria[]; onE
     <>
       <tr className="hover:bg-neutral-50 transition-colors">
         <td className="px-3 py-2.5 font-medium text-neutral-900 text-sm">{ins.nombre}</td>
-        <td className="px-3 py-2.5 text-xs text-neutral-500 font-mono">{ins.unidad}</td>
+        <td className="px-3 py-2.5 text-xs text-neutral-600 font-mono">{ins.unidad}</td>
         <td className="px-3 py-2.5 text-sm font-semibold text-neutral-900 text-right tabular-nums">
           {fmtPrecio(ins.precio_unitario)}
         </td>
-        <td className="px-3 py-2.5 text-xs text-neutral-400">{ins.proveedor || "—"}</td>
+        <td className="px-3 py-2.5 text-xs text-neutral-600">{ins.proveedor || "—"}</td>
         <td className="px-3 py-2.5">
           <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${catColor(ins.categoria, cats)}`}>
             {catLabel(ins.categoria, cats)}
@@ -540,32 +540,32 @@ function InsumoRow({ ins, cats, onError }: { ins: Insumo; cats: Categoria[]; onE
         {/* Mínimo + Punto de pedido en una sola celda */}
         <td className="px-3 py-2.5">
           {ins.stock_minimo > 0 || ins.punto_pedido > 0 ? (
-            <div className="text-xs text-neutral-400 font-mono leading-tight">
+            <div className="text-xs text-neutral-600 font-mono leading-tight">
               {ins.stock_minimo > 0 && <div title="Stock mínimo">mín {fmtNum(ins.stock_minimo, ins.unidad)}</div>}
               {ins.punto_pedido > 0 && <div title="Punto de pedido">ped {fmtNum(ins.punto_pedido, ins.unidad)}</div>}
             </div>
           ) : (
-            <span className="text-xs text-neutral-300">—</span>
+            <span className="text-xs text-neutral-500">—</span>
           )}
         </td>
         <td className="px-3 py-2.5">
           <div className="flex gap-1 justify-end">
             <button onClick={() => { setIngreso(v => !v); setAjuste(false); setEditing(false); }} disabled={isPending}
               title="Registrar ingreso de stock"
-              className="p-1.5 rounded-lg text-neutral-300 hover:text-emerald-600 hover:bg-emerald-50 transition-colors">
+              className="p-1.5 rounded-lg text-neutral-500 hover:text-success hover:bg-success-bg transition-colors">
               <PackagePlus className="size-4" />
             </button>
             <button onClick={() => { setAjuste(v => !v); setIngreso(false); setEditing(false); }} disabled={isPending}
               title="Ajustar stock (corrección manual)"
-              className="p-1.5 rounded-lg text-neutral-300 hover:text-amber-600 hover:bg-amber-50 transition-colors">
+              className="p-1.5 rounded-lg text-neutral-500 hover:text-warning hover:bg-warning-bg transition-colors">
               <SlidersHorizontal className="size-4" />
             </button>
             <button onClick={() => { setEditing(true); setIngreso(false); setAjuste(false); }} disabled={isPending}
-              className="p-1.5 rounded-lg text-neutral-300 hover:text-neutral-600 hover:bg-neutral-100 transition-colors">
+              className="p-1.5 rounded-lg text-neutral-500 hover:text-neutral-600 hover:bg-neutral-100 transition-colors">
               <Pencil className="size-4" />
             </button>
             <button onClick={handleEliminar} disabled={isPending}
-              className="p-1.5 rounded-lg text-neutral-300 hover:text-red-500 hover:bg-red-50 transition-colors">
+              className="p-1.5 rounded-lg text-neutral-500 hover:text-danger hover:bg-danger-bg transition-colors">
               <Trash2 className="size-4" />
             </button>
           </div>
@@ -607,7 +607,7 @@ function NuevoInsumoForm({ cats, nombresExistentes, onError }: { cats: Categoria
   if (!open) {
     return (
       <button onClick={() => setOpen(true)}
-        className="flex items-center gap-1.5 px-4 py-2 bg-[#16233f] text-white text-sm font-medium rounded-xl hover:bg-[#253760] transition-colors">
+        className="flex items-center gap-1.5 px-4 py-2 bg-brand-700 text-white text-sm font-medium rounded-lg hover:bg-brand-800 transition-colors">
         <Plus className="size-4" /> Nuevo insumo
       </button>
     );
@@ -615,37 +615,37 @@ function NuevoInsumoForm({ cats, nombresExistentes, onError }: { cats: Categoria
 
   return (
     <form onSubmit={handleSubmit}
-      className="bg-blue-50 border border-blue-200 rounded-2xl p-4 flex flex-wrap gap-3 items-end">
+      className="bg-info-bg border border-info-border rounded-xl p-4 flex flex-wrap gap-3 items-end">
       <div className="flex-1 min-w-[180px]">
-        <label className="block text-xs font-medium text-neutral-500 mb-1">Nombre *</label>
+        <label className="block text-[13px] font-medium text-neutral-800 mb-1.5">Nombre *</label>
         <input value={nombre} onChange={e => setNombre(e.target.value)} required autoFocus
           placeholder="Harina 000" disabled={isPending} list="insumos-existentes"
-          className="w-full px-3 py-2 text-sm border border-neutral-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#16233f]/20" />
+          className="w-full px-3 py-2 text-sm border border-neutral-400 rounded-lg focus:outline-none focus:ring-[3px] focus:ring-brand-500/30 focus:border-brand-700" />
         <datalist id="insumos-existentes">
           {nombresExistentes.map(n => <option key={n} value={n} />)}
         </datalist>
       </div>
       <div>
-        <label className="block text-xs font-medium text-neutral-500 mb-1">Unidad</label>
+        <label className="block text-[13px] font-medium text-neutral-800 mb-1.5">Unidad</label>
         <select value={unidad} onChange={e => setUnidad(e.target.value)} disabled={isPending}
           className="px-3 py-2 text-sm border border-neutral-200 rounded-xl focus:outline-none bg-white">
           {UNIDADES.map(u => <option key={u} value={u}>{u}</option>)}
         </select>
       </div>
       <div>
-        <label className="block text-xs font-medium text-neutral-500 mb-1">Precio / unidad ($)</label>
+        <label className="block text-[13px] font-medium text-neutral-800 mb-1.5">Precio / unidad ($)</label>
         <input value={precio} onChange={e => setPrecio(e.target.value)} required
           inputMode="decimal" placeholder="0" disabled={isPending}
-          className="w-28 px-3 py-2 text-sm border border-neutral-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#16233f]/20 text-right" />
+          className="w-28 px-3 py-2 text-sm border border-neutral-400 rounded-lg focus:outline-none focus:ring-[3px] focus:ring-brand-500/30 focus:border-brand-700 text-right" />
       </div>
       <div className="flex-1 min-w-[140px]">
-        <label className="block text-xs font-medium text-neutral-500 mb-1">Proveedor</label>
+        <label className="block text-[13px] font-medium text-neutral-800 mb-1.5">Proveedor</label>
         <input value={proveed} onChange={e => setProveed(e.target.value)}
           placeholder="Opcional" disabled={isPending}
-          className="w-full px-3 py-2 text-sm border border-neutral-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#16233f]/20" />
+          className="w-full px-3 py-2 text-sm border border-neutral-400 rounded-lg focus:outline-none focus:ring-[3px] focus:ring-brand-500/30 focus:border-brand-700" />
       </div>
       <div>
-        <label className="block text-xs font-medium text-neutral-500 mb-1">Categoría</label>
+        <label className="block text-[13px] font-medium text-neutral-800 mb-1.5">Categoría</label>
         <select value={cat} onChange={e => setCat(e.target.value)} disabled={isPending}
           className="px-3 py-2 text-sm border border-neutral-200 rounded-xl focus:outline-none bg-white">
           {cats.map(c => <option key={c.valor} value={c.valor}>{c.nombre}</option>)}
@@ -653,7 +653,7 @@ function NuevoInsumoForm({ cats, nombresExistentes, onError }: { cats: Categoria
       </div>
       <div className="flex gap-2">
         <button type="submit" disabled={isPending || !nombre.trim()}
-          className="px-4 py-2 bg-[#16233f] text-white text-sm font-medium rounded-xl disabled:opacity-50 hover:bg-[#253760] transition-colors">
+          className="px-4 py-2 bg-brand-700 text-white text-sm font-medium rounded-lg disabled:opacity-50 hover:bg-brand-800 transition-colors">
           {isPending ? "Guardando…" : "Guardar"}
         </button>
         <button type="button" onClick={() => setOpen(false)}
@@ -703,39 +703,39 @@ function ImportadorCSV({ insumos }: { insumos: Insumo[] }) {
   }
 
   return (
-    <div className="bg-white rounded-2xl border border-neutral-200 p-5">
+    <div className="bg-white rounded-xl border border-neutral-200 shadow-sm p-5">
       <div className="flex items-start gap-3 mb-4">
-        <div className="p-2 bg-neutral-100 rounded-xl"><Upload className="size-4 text-neutral-500" /></div>
+        <div className="p-2 bg-neutral-100 rounded-xl"><Upload className="size-4 text-neutral-600" /></div>
         <div>
           <p className="text-sm font-semibold text-neutral-800">Importar precios desde CSV</p>
-          <p className="text-xs text-neutral-400 mt-0.5">
+          <p className="text-xs text-neutral-600 mt-0.5">
             Cargá un archivo con dos columnas: <span className="font-mono bg-neutral-100 px-1 rounded">nombre,precio</span>.
             Actualiza los precios de los insumos que matcheen por nombre.
           </p>
         </div>
       </div>
       <div className="flex items-center flex-wrap gap-3">
-        <label className={`flex items-center gap-2 px-4 py-2 border-2 border-dashed border-neutral-300 rounded-xl text-sm text-neutral-600 hover:border-[#16233f] hover:text-[#16233f] cursor-pointer transition-colors ${isPending ? "opacity-50 pointer-events-none" : ""}`}>
+        <label className={`flex items-center gap-2 px-4 py-2 border-2 border-dashed border-neutral-300 rounded-xl text-sm text-neutral-600 hover:border-brand-700 hover:text-brand-700 cursor-pointer transition-colors ${isPending ? "opacity-50 pointer-events-none" : ""}`}>
           <Upload className="size-4" />
           {isPending ? "Procesando…" : "Elegir archivo CSV"}
           <input ref={fileRef} type="file" accept=".csv,.txt" className="hidden" onChange={handleFile} disabled={isPending} />
         </label>
         <button type="button" onClick={descargarTemplate}
-          className="flex items-center gap-1.5 text-xs text-neutral-500 hover:text-[#16233f] transition-colors">
+          className="flex items-center gap-1.5 text-xs text-neutral-600 hover:text-brand-700 transition-colors">
           ↓ Bajar template{insumos.length > 0 ? ` con los ${insumos.length} insumos actuales` : ""}
         </button>
       </div>
       {result && (
         <div className="mt-4 space-y-2">
           {"error" in result ? (
-            <p className="text-sm text-red-600 bg-red-50 px-3 py-2 rounded-lg">{result.error}</p>
+            <p className="text-sm text-danger bg-danger-bg px-3 py-2 rounded-lg">{result.error}</p>
           ) : (
             <>
-              <p className="text-sm text-emerald-700 bg-emerald-50 px-3 py-2 rounded-lg font-medium">
+              <p className="text-sm text-success bg-success-bg px-3 py-2 rounded-lg font-medium">
                 ✓ {result.actualizados} insumo{result.actualizados !== 1 ? "s" : ""} actualizado{result.actualizados !== 1 ? "s" : ""}
               </p>
               {result.noEncontrados.length > 0 && (
-                <div className="text-sm text-amber-700 bg-amber-50 px-3 py-2 rounded-lg">
+                <div className="text-sm text-warning bg-warning-bg px-3 py-2 rounded-lg">
                   <p className="font-medium mb-1">No encontrados ({result.noEncontrados.length}):</p>
                   <ul className="list-disc list-inside space-y-0.5 text-xs">
                     {result.noEncontrados.map(n => <li key={n}>{n}</li>)}
@@ -743,7 +743,7 @@ function ImportadorCSV({ insumos }: { insumos: Insumo[] }) {
                 </div>
               )}
               {result.errores.length > 0 && (
-                <div className="text-sm text-red-700 bg-red-50 px-3 py-2 rounded-lg">
+                <div className="text-sm text-danger bg-danger-bg px-3 py-2 rounded-lg">
                   <ul className="list-disc list-inside space-y-0.5 text-xs">
                     {result.errores.map((e, i) => <li key={i}>{e}</li>)}
                   </ul>
@@ -764,7 +764,7 @@ function AlertasStock({ insumos, cats }: { insumos: Insumo[]; cats: Categoria[] 
   if (criticos.length === 0 && pedido.length === 0) return null;
 
   return (
-    <div className="bg-white rounded-2xl border border-neutral-200 overflow-hidden">
+    <div className="bg-white rounded-xl border border-neutral-200 shadow-sm overflow-hidden">
       <div className="px-5 py-3 border-b border-neutral-100">
         <p className="text-sm font-semibold text-neutral-800">Alertas de stock</p>
       </div>
@@ -772,30 +772,30 @@ function AlertasStock({ insumos, cats }: { insumos: Insumo[]; cats: Categoria[] 
         {criticos.map(i => (
           <div key={i.id} className="px-5 py-3 flex items-center justify-between gap-4">
             <div className="flex items-center gap-2">
-              <span className="size-2 rounded-full bg-red-500 shrink-0" />
+              <span className="size-2 rounded-full bg-danger-solid shrink-0" />
               <span className="text-sm font-medium text-neutral-900">{i.nombre}</span>
               <span className={`text-xs px-1.5 py-0.5 rounded-full ${catColor(i.categoria, cats)}`}>
                 {catLabel(i.categoria, cats)}
               </span>
             </div>
             <div className="text-xs text-right">
-              <span className="font-mono text-red-600 font-semibold">{fmtNum(i.stock_actual, i.unidad)}</span>
-              <span className="text-neutral-400 ml-1">· mín {fmtNum(i.stock_minimo, i.unidad)}</span>
+              <span className="font-mono text-danger font-semibold">{fmtNum(i.stock_actual, i.unidad)}</span>
+              <span className="text-neutral-600 ml-1">· mín {fmtNum(i.stock_minimo, i.unidad)}</span>
             </div>
           </div>
         ))}
         {pedido.map(i => (
           <div key={i.id} className="px-5 py-3 flex items-center justify-between gap-4">
             <div className="flex items-center gap-2">
-              <span className="size-2 rounded-full bg-amber-400 shrink-0" />
+              <span className="size-2 rounded-full bg-warning-solid shrink-0" />
               <span className="text-sm text-neutral-700">{i.nombre}</span>
               <span className={`text-xs px-1.5 py-0.5 rounded-full ${catColor(i.categoria, cats)}`}>
                 {catLabel(i.categoria, cats)}
               </span>
             </div>
             <div className="text-xs text-right">
-              <span className="font-mono text-amber-700 font-semibold">{fmtNum(i.stock_actual, i.unidad)}</span>
-              <span className="text-neutral-400 ml-1">· reponer en {fmtNum(i.punto_pedido, i.unidad)}</span>
+              <span className="font-mono text-warning font-semibold">{fmtNum(i.stock_actual, i.unidad)}</span>
+              <span className="text-neutral-600 ml-1">· reponer en {fmtNum(i.punto_pedido, i.unidad)}</span>
             </div>
           </div>
         ))}
@@ -844,9 +844,9 @@ export function InsumosClient({ insumos, categorias }: { insumos: Insumo[]; cate
       <NuevoInsumoForm cats={categorias} nombresExistentes={insumos.map(i => i.nombre)} onError={setError} />
 
       {error && (
-        <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-xl px-4 py-3">
+        <p className="text-sm text-danger bg-danger-bg border border-danger-border rounded-xl px-4 py-3">
           {error}
-          <button onClick={() => setError(null)} className="ml-3 text-red-400 hover:text-red-600 text-xs">✕</button>
+          <button onClick={() => setError(null)} className="ml-3 text-danger hover:text-danger text-xs">✕</button>
         </p>
       )}
 
@@ -854,15 +854,15 @@ export function InsumosClient({ insumos, categorias }: { insumos: Insumo[]; cate
       <GestorCategorias categorias={categorias} />
       <ImportadorCSV insumos={insumos} />
 
-      <div className="bg-white rounded-2xl border border-neutral-200 overflow-hidden">
+      <div className="bg-white rounded-xl border border-neutral-200 shadow-sm overflow-hidden">
         <div className="px-5 py-3 border-b border-neutral-100 flex items-center justify-between gap-3 flex-wrap">
           <p className="text-sm font-semibold text-neutral-800">
-            Catálogo <span className="font-normal text-neutral-400">({insumos.length})</span>
+            Catálogo <span className="font-normal text-neutral-600">({insumos.length})</span>
           </p>
           <div className="flex gap-2 flex-wrap">
             <select
               value={catFiltro} onChange={e => setCatFiltro(e.target.value)}
-              className="text-sm border border-neutral-200 rounded-xl px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-[#16233f]/20 bg-white"
+              className="text-sm border border-neutral-400 rounded-lg px-3 py-1.5 focus:outline-none focus:ring-[3px] focus:ring-brand-500/30 focus:border-brand-700 bg-white"
             >
               <option value="">Todas las categorías</option>
               {categorias.map(c => <option key={c.valor} value={c.valor}>{c.nombre}</option>)}
@@ -870,13 +870,13 @@ export function InsumosClient({ insumos, categorias }: { insumos: Insumo[]; cate
             <input
               value={busqueda} onChange={e => setBusqueda(e.target.value)}
               placeholder="Buscar…"
-              className="text-sm border border-neutral-200 rounded-xl px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-[#16233f]/20 w-40"
+              className="text-sm border border-neutral-400 rounded-lg px-3 py-1.5 focus:outline-none focus:ring-[3px] focus:ring-brand-500/30 focus:border-brand-700 w-40"
             />
           </div>
         </div>
 
         {filtrados.length === 0 ? (
-          <p className="px-5 py-10 text-sm text-neutral-400 text-center">
+          <p className="px-5 py-10 text-sm text-neutral-600 text-center">
             {insumos.length === 0
               ? "Todavía no hay insumos. Creá el primero con el botón de arriba."
               : "Sin resultados para esa búsqueda."}
@@ -886,13 +886,13 @@ export function InsumosClient({ insumos, categorias }: { insumos: Insumo[]; cate
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-neutral-100 text-left">
-                  <th className="px-3 py-3 text-xs font-semibold text-neutral-400 uppercase tracking-wide">Nombre</th>
-                  <th className="px-3 py-3 text-xs font-semibold text-neutral-400 uppercase tracking-wide">Un.</th>
-                  <th className="px-3 py-3 text-xs font-semibold text-neutral-400 uppercase tracking-wide text-right">Precio / u.</th>
-                  <th className="px-3 py-3 text-xs font-semibold text-neutral-400 uppercase tracking-wide">Proveedor</th>
-                  <th className="px-3 py-3 text-xs font-semibold text-neutral-400 uppercase tracking-wide">Categoría</th>
-                  <th className="px-3 py-3 text-xs font-semibold text-neutral-400 uppercase tracking-wide">Stock actual</th>
-                  <th className="px-3 py-3 text-xs font-semibold text-neutral-400 uppercase tracking-wide">Mín / Ped.</th>
+                  <th className="px-3 py-3 text-xs font-semibold text-neutral-600">Nombre</th>
+                  <th className="px-3 py-3 text-xs font-semibold text-neutral-600">Un.</th>
+                  <th className="px-3 py-3 text-xs font-semibold text-neutral-600 text-right">Precio / u.</th>
+                  <th className="px-3 py-3 text-xs font-semibold text-neutral-600">Proveedor</th>
+                  <th className="px-3 py-3 text-xs font-semibold text-neutral-600">Categoría</th>
+                  <th className="px-3 py-3 text-xs font-semibold text-neutral-600">Stock actual</th>
+                  <th className="px-3 py-3 text-xs font-semibold text-neutral-600">Mín / Ped.</th>
                   <th className="px-3 py-3"></th>
                 </tr>
               </thead>
@@ -905,7 +905,7 @@ export function InsumosClient({ insumos, categorias }: { insumos: Insumo[]; cate
                           <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${catColor(cat, categorias)}`}>
                             {catLabel(cat, categorias)}
                           </span>
-                          <span className="text-xs text-neutral-400 ml-2">
+                          <span className="text-xs text-neutral-600 ml-2">
                             {items.length} ítem{items.length !== 1 ? "s" : ""}
                           </span>
                         </td>

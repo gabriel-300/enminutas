@@ -74,7 +74,7 @@ function ImageUploader({
           <button
             type="button"
             onClick={() => onChange("")}
-            className="absolute top-2 right-2 size-6 rounded-full bg-red-600 text-white text-xs flex items-center justify-center hover:bg-red-700"
+            className="absolute top-2 right-2 size-6 rounded-full bg-danger text-white text-xs flex items-center justify-center hover:bg-danger"
           >
             ×
           </button>
@@ -86,25 +86,25 @@ function ImageUploader({
         onDragOver={e => e.preventDefault()}
         onDrop={e => { e.preventDefault(); const f = e.dataTransfer.files[0]; if (f) handleFile(f); }}
         className="flex flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed cursor-pointer p-6"
-        style={{ borderColor: "#2a3f5c", background: "#131e2f" }}
+        style={{ borderColor: "#cfcdc8", background: "#f6f6f4" }}
       >
         {uploading ? (
-          <p className="text-sm" style={{ color: "#5a7a9e" }}>Subiendo...</p>
+          <p className="text-sm" style={{ color: "#57544e" }}>Subiendo...</p>
         ) : (
           <>
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#5a7a9e" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#57544e" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
               <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
               <polyline points="17 8 12 3 7 8"/>
               <line x1="12" y1="3" x2="12" y2="15"/>
             </svg>
-            <p className="text-xs" style={{ color: "#5a7a9e" }}>
+            <p className="text-xs" style={{ color: "#57544e" }}>
               {value ? "Reemplazar imagen" : "Subir imagen"} · click o arrastrar
             </p>
           </>
         )}
       </div>
 
-      {uploadError && <p className="text-xs text-red-400">{uploadError}</p>}
+      {uploadError && <p className="text-xs text-danger">{uploadError}</p>}
       <input
         ref={inputRef}
         type="file"
@@ -117,7 +117,7 @@ function ImageUploader({
         value={value}
         onChange={e => onChange(e.target.value)}
         className="text-xs rounded-lg px-3 py-2 border w-full"
-        style={{ background: "#131e2f", borderColor: "#2a3f5c", color: "#7a9ab8" }}
+        style={{ background: "#ffffff", borderColor: "#928e87", color: "#1c1b18" }}
         placeholder="O pegar URL directamente"
       />
     </div>
@@ -154,19 +154,18 @@ function SeccionCard({ seccion, campos }: { seccion: string; campos: Campo[] }) 
   }
 
   return (
-    <div className="rounded-2xl overflow-hidden" style={{ background: "#141c2e", border: "1px solid rgba(255,255,255,0.06)" }}>
-      <div className="px-6 py-4 flex items-center justify-between" style={{ borderBottom: "1px solid rgba(255,255,255,0.05)" }}>
-        <h2 className="text-sm font-semibold text-white">
+    <div className="rounded-xl overflow-hidden bg-white border border-neutral-200 shadow-sm">
+      <div className="px-6 py-4 flex items-center justify-between border-b border-neutral-100">
+        <h2 className="text-base font-semibold text-neutral-900">
           {SECCION_LABEL[seccion] ?? seccion}
         </h2>
         <div className="flex items-center gap-3">
-          {saved  && <span className="text-xs" style={{ color: "#22d3a0" }}>Guardado ✓</span>}
-          {error  && <span className="text-xs text-red-400">{error}</span>}
+          {saved  && <span className="text-xs" style={{ color: "#1d6b3a" }}>Guardado ✓</span>}
+          {error  && <span className="text-xs text-danger">{error}</span>}
           <button
             onClick={handleSave}
             disabled={saving}
-            className="text-xs font-semibold px-4 py-1.5 rounded-lg disabled:opacity-50"
-            style={{ background: "#0db4c3", color: "#fff" }}
+            className="text-[13px] font-medium px-3 h-8 rounded-lg bg-brand-700 text-white hover:bg-brand-800 disabled:opacity-50"
           >
             {saving ? "Guardando..." : "Guardar sección"}
           </button>
@@ -176,7 +175,7 @@ function SeccionCard({ seccion, campos }: { seccion: string; campos: Campo[] }) 
       <div className="px-6 py-5 flex flex-col gap-5">
         {campos.map(campo => (
           <div key={campo.clave}>
-            <label className="block text-xs font-medium mb-2" style={{ color: "#7a9ab8" }}>
+            <label className="block text-[13px] font-medium mb-1.5 text-neutral-800">
               {campo.etiqueta}
             </label>
 
@@ -191,7 +190,7 @@ function SeccionCard({ seccion, campos }: { seccion: string; campos: Campo[] }) 
                 onChange={e => handleChange(campo.clave, e.target.value)}
                 rows={3}
                 className="w-full text-sm rounded-xl px-4 py-3 border resize-none focus:outline-none"
-                style={{ background: "#0f1623", borderColor: "#2a3f5c", color: "#ccd9e8" }}
+                style={{ background: "#ffffff", borderColor: "#928e87", color: "#1c1b18" }}
               />
             ) : (
               <input
@@ -199,7 +198,7 @@ function SeccionCard({ seccion, campos }: { seccion: string; campos: Campo[] }) 
                 value={values[campo.clave] ?? ""}
                 onChange={e => handleChange(campo.clave, e.target.value)}
                 className="w-full text-sm rounded-xl px-4 py-3 border focus:outline-none"
-                style={{ background: "#0f1623", borderColor: "#2a3f5c", color: "#ccd9e8" }}
+                style={{ background: "#ffffff", borderColor: "#928e87", color: "#1c1b18" }}
               />
             )}
           </div>

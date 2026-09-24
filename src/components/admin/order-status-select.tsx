@@ -76,12 +76,12 @@ export function OrderStatusSelect({
     liquidado:  "Liquidado",
   };
 
-  const selectCls = "text-xs border border-neutral-200 rounded-lg px-2 py-1.5 bg-white text-neutral-700 w-full disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-tierra-700/20";
+  const selectCls = "text-xs border border-neutral-400 rounded-lg px-2 py-1.5 bg-white text-neutral-700 w-full disabled:opacity-50 focus:outline-none focus:ring-[3px] focus:ring-brand-500/30 focus:border-brand-700";
 
   // Estados que no se pueden modificar una vez alcanzados
   if (currentStatus in READONLY_LABELS) {
     return (
-      <span className="text-xs text-neutral-400 px-2 py-1.5 block">
+      <span className="text-xs text-neutral-600 px-2 py-1.5 block">
         {READONLY_LABELS[currentStatus]}
       </span>
     );
@@ -96,7 +96,7 @@ export function OrderStatusSelect({
           <option value={currentStatus}>{currentLabel}</option>
           <option value="liquidado">Liquidado</option>
         </select>
-        {error && <p className="text-[10px] text-danger mt-1 leading-tight">{error}</p>}
+        {error && <p className="text-xs text-danger mt-1 leading-tight">{error}</p>}
       </div>
     );
   }
@@ -110,7 +110,7 @@ export function OrderStatusSelect({
           <option value="aprobado">Aprobado</option>
           <option value="cancelled">Cancelado</option>
         </select>
-        {error && <p className="text-[10px] text-danger mt-1 leading-tight">{error}</p>}
+        {error && <p className="text-xs text-danger mt-1 leading-tight">{error}</p>}
       </div>
     );
   }
@@ -125,7 +125,7 @@ export function OrderStatusSelect({
           <option value={currentStatus}>{currentLabel}</option>
           <option value="cancelled">Cancelado</option>
         </select>
-        {error && <p className="text-[10px] text-danger mt-1 leading-tight">{error}</p>}
+        {error && <p className="text-xs text-danger mt-1 leading-tight">{error}</p>}
       </div>
     );
   }
@@ -133,7 +133,7 @@ export function OrderStatusSelect({
   // Estado no reconocido y fuera de las opciones (fallback seguro)
   if (!options.some((o) => o.value === currentStatus)) {
     return (
-      <span className="text-xs text-neutral-400 px-2 py-1.5 block">
+      <span className="text-xs text-neutral-600 px-2 py-1.5 block">
         {currentStatus}
       </span>
     );
@@ -148,7 +148,7 @@ export function OrderStatusSelect({
           </option>
         ))}
       </select>
-      {error && <p className="text-[10px] text-danger mt-1 leading-tight">{error}</p>}
+      {error && <p className="text-xs text-danger mt-1 leading-tight">{error}</p>}
     </div>
   );
 }

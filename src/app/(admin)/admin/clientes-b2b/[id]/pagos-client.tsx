@@ -175,31 +175,31 @@ export function PagosClient({ clienteId, pagos, totalFacturado, ordenes }: Props
     });
   }
 
-  const inputCls = "w-full px-3 py-2 text-sm border border-neutral-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-tierra-700/20 disabled:opacity-50";
+  const inputCls = "w-full px-3 py-2 text-sm border border-neutral-400 rounded-lg focus:outline-none focus:ring-[3px] focus:ring-brand-500/30 focus:border-brand-700 disabled:opacity-50";
   const radioCls = (active: boolean) =>
     `flex-1 py-2 px-3 text-sm font-medium rounded-lg border transition-colors cursor-pointer text-center ${
       active
         ? "border-tierra-700 bg-tierra-700/5 text-tierra-700"
-        : "border-neutral-200 text-neutral-500 hover:border-neutral-300"
+        : "border-neutral-200 text-neutral-600 hover:border-neutral-300"
     }`;
 
   return (
-    <div className="bg-white rounded-2xl border border-neutral-200 overflow-hidden">
+    <div className="bg-white rounded-xl border border-neutral-200 shadow-sm overflow-hidden">
 
       {/* Header con balance */}
       <div className="px-5 py-4 border-b border-neutral-100 flex items-center justify-between gap-4 flex-wrap">
         <div>
           <p className="text-sm font-semibold text-neutral-700">Cuenta corriente</p>
           <div className="flex items-center gap-4 mt-1.5 flex-wrap">
-            <span className="text-xs text-neutral-400">
+            <span className="text-xs text-neutral-600">
               Facturado: <span className="font-medium text-neutral-700">{fmt(totalFacturado)}</span>
             </span>
-            <span className="text-xs text-neutral-400">
-              Pagado: <span className="font-medium text-emerald-600">{fmt(totalPagado)}</span>
+            <span className="text-xs text-neutral-600">
+              Pagado: <span className="font-medium text-success">{fmt(totalPagado)}</span>
             </span>
             <span className="text-xs font-semibold">
               Saldo:{" "}
-              <span className={saldo <= 0 ? "text-emerald-600" : "text-red-600"}>
+              <span className={saldo <= 0 ? "text-success" : "text-danger"}>
                 {saldo <= 0 ? `${fmt(Math.abs(saldo))} a favor` : fmt(saldo)}
               </span>
             </span>
@@ -209,7 +209,7 @@ export function PagosClient({ clienteId, pagos, totalFacturado, ordenes }: Props
           type="button"
           onClick={() => setMostrarForm(v => !v)}
           disabled={isPending}
-          className="px-4 py-2 text-sm font-medium rounded-xl bg-tierra-700 text-white hover:bg-tierra-800 disabled:opacity-50 transition-colors shrink-0"
+          className="px-4 py-2 text-sm font-medium rounded-lg bg-tierra-700 text-white hover:bg-tierra-800 disabled:opacity-50 transition-colors shrink-0"
         >
           {mostrarForm ? "Cancelar" : "+ Registrar pago"}
         </button>
@@ -221,7 +221,7 @@ export function PagosClient({ clienteId, pagos, totalFacturado, ordenes }: Props
 
           {/* Imputación */}
           <div>
-            <p className="text-xs font-medium text-neutral-500 mb-2">Imputar a</p>
+            <p className="text-xs font-medium text-neutral-600 mb-2">Imputar a</p>
             <div className="flex gap-2">
               <button type="button" className={radioCls(imputacion === "pedido")}
                 onClick={() => setImputacion("pedido")}>
@@ -241,9 +241,9 @@ export function PagosClient({ clienteId, pagos, totalFacturado, ordenes }: Props
           {/* Selector de pedidos (múltiple) */}
           {imputacion === "pedido" && (
             <div className="space-y-2">
-              <label className="block text-xs font-medium text-neutral-500 mb-1">Pedidos * (podés tildar varios)</label>
+              <label className="block text-[13px] font-medium text-neutral-800 mb-1.5">Pedidos * (podés tildar varios)</label>
               {ordenesActivas.length === 0 ? (
-                <p className="text-sm text-neutral-400">Este cliente no tiene pedidos activos.</p>
+                <p className="text-sm text-neutral-600">Este cliente no tiene pedidos activos.</p>
               ) : (
                 <div className="border border-neutral-200 rounded-xl divide-y divide-neutral-100 max-h-48 overflow-y-auto bg-white">
                   {ordenesActivas.map(o => (
@@ -275,7 +275,7 @@ export function PagosClient({ clienteId, pagos, totalFacturado, ordenes }: Props
                     </span>
                   </label>
                   {sinFactura && (
-                    <p className="text-xs text-neutral-400 pl-6">
+                    <p className="text-xs text-neutral-600 pl-6">
                       El monto se recalcula sin el 21% de IVA — la diferencia queda como descuento, no como saldo pendiente.
                     </p>
                   )}
@@ -296,7 +296,7 @@ export function PagosClient({ clienteId, pagos, totalFacturado, ordenes }: Props
           {/* Número de factura */}
           {imputacion === "factura" && (
             <div>
-              <label className="block text-xs font-medium text-neutral-500 mb-1">Número de factura *</label>
+              <label className="block text-[13px] font-medium text-neutral-800 mb-1.5">Número de factura *</label>
               <input type="text" placeholder="Ej: A-0001-00000123"
                 value={facturaNum} onChange={e => setFacturaNum(e.target.value)}
                 className={inputCls} disabled={isPending} />
@@ -304,7 +304,7 @@ export function PagosClient({ clienteId, pagos, totalFacturado, ordenes }: Props
           )}
 
           {imputacion === "cuenta" && (
-            <p className="text-xs text-neutral-400 -mt-1">
+            <p className="text-xs text-neutral-600 -mt-1">
               El pago queda registrado en la cuenta del cliente sin asignarse a un pedido o factura específica.
             </p>
           )}
@@ -312,25 +312,25 @@ export function PagosClient({ clienteId, pagos, totalFacturado, ordenes }: Props
           {/* Datos del pago */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
             <div className="col-span-2 md:col-span-1">
-              <label className="block text-xs font-medium text-neutral-500 mb-1">Monto *</label>
+              <label className="block text-[13px] font-medium text-neutral-800 mb-1.5">Monto *</label>
               <input type="text" inputMode="decimal" placeholder="0"
                 value={monto} onChange={e => setMonto(e.target.value)}
                 className={inputCls} disabled={isPending} autoFocus required />
             </div>
             <div>
-              <label className="block text-xs font-medium text-neutral-500 mb-1">Fecha *</label>
+              <label className="block text-[13px] font-medium text-neutral-800 mb-1.5">Fecha *</label>
               <input type="date" value={fecha} onChange={e => setFecha(e.target.value)}
                 className={inputCls} disabled={isPending} required />
             </div>
             <div>
-              <label className="block text-xs font-medium text-neutral-500 mb-1">Método</label>
+              <label className="block text-[13px] font-medium text-neutral-800 mb-1.5">Método</label>
               <select value={metodo} onChange={e => setMetodo(e.target.value)}
                 className={inputCls} disabled={isPending}>
                 {METODOS.map(m => <option key={m.value} value={m.value}>{m.label}</option>)}
               </select>
             </div>
             <div>
-              <label className="block text-xs font-medium text-neutral-500 mb-1">Referencia</label>
+              <label className="block text-[13px] font-medium text-neutral-800 mb-1.5">Referencia</label>
               <input type="text" placeholder="Nro. transferencia…"
                 value={referencia} onChange={e => setReferencia(e.target.value)}
                 className={inputCls} disabled={isPending} />
@@ -338,21 +338,21 @@ export function PagosClient({ clienteId, pagos, totalFacturado, ordenes }: Props
           </div>
 
           <div>
-            <label className="block text-xs font-medium text-neutral-500 mb-1">Notas (opcional)</label>
+            <label className="block text-[13px] font-medium text-neutral-800 mb-1.5">Notas (opcional)</label>
             <input type="text" placeholder="Observaciones…"
               value={notas} onChange={e => setNotas(e.target.value)}
               className={inputCls} disabled={isPending} />
           </div>
 
-          {error && <p className="text-sm text-red-600">{error}</p>}
+          {error && <p className="text-sm text-danger">{error}</p>}
 
           <div className="flex gap-2">
             <button type="submit" disabled={isPending}
-              className="px-4 py-2 text-sm font-medium rounded-xl bg-tierra-700 text-white hover:bg-tierra-800 disabled:opacity-50 transition-colors">
+              className="px-4 py-2 text-sm font-medium rounded-lg bg-tierra-700 text-white hover:bg-tierra-800 disabled:opacity-50 transition-colors">
               {isPending ? "Guardando…" : "Confirmar pago"}
             </button>
             <button type="button" onClick={reset} disabled={isPending}
-              className="text-sm text-neutral-400 hover:text-neutral-700 px-2">
+              className="text-sm text-neutral-600 hover:text-neutral-700 px-2">
               Cancelar
             </button>
           </div>
@@ -361,17 +361,17 @@ export function PagosClient({ clienteId, pagos, totalFacturado, ordenes }: Props
 
       {/* Banner post-guardado con link al recibo (uno solo, combinado si fueron varios pedidos) */}
       {pagosGuardados && pagosGuardados.length > 0 && (
-        <div className="px-5 py-3 bg-emerald-50 border-b border-emerald-100 flex items-center justify-between gap-3 flex-wrap">
-          <p className="text-sm text-emerald-700 font-medium">
+        <div className="px-5 py-3 bg-success-bg border-b border-success-border flex items-center justify-between gap-3 flex-wrap">
+          <p className="text-sm text-success font-medium">
             ✓ {pagosGuardados.length > 1 ? `${pagosGuardados.length} pagos registrados correctamente` : "Pago registrado correctamente"}
           </p>
           <div className="flex items-center gap-3">
             <a href={`/admin/clientes-b2b/recibo/${pagosGuardados[0]}`} target="_blank"
-              className="px-3 py-1.5 text-sm font-medium rounded-lg border border-emerald-600 text-emerald-700 hover:bg-emerald-100 transition-colors">
+              className="px-3 py-1.5 text-sm font-medium rounded-lg border border-success-border text-success hover:bg-success-bg transition-colors">
               Imprimir recibo
             </a>
             <button type="button" onClick={() => setPagosGuardados(null)}
-              className="text-xs text-emerald-400 hover:text-emerald-700">
+              className="text-xs text-success hover:text-success">
               ✕
             </button>
           </div>
@@ -380,7 +380,7 @@ export function PagosClient({ clienteId, pagos, totalFacturado, ordenes }: Props
 
       {/* Historial */}
       {pagos.length === 0 ? (
-        <p className="px-5 py-8 text-sm text-neutral-400 text-center">Sin pagos registrados todavía.</p>
+        <p className="px-5 py-8 text-sm text-neutral-600 text-center">Sin pagos registrados todavía.</p>
       ) : (
         <div className="divide-y divide-neutral-50">
           {pagos.map(p => (
@@ -388,12 +388,12 @@ export function PagosClient({ clienteId, pagos, totalFacturado, ordenes }: Props
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 flex-wrap">
                   <span className="text-sm font-semibold text-neutral-900 tabular-nums">{fmt(Number(p.monto))}</span>
-                  <span className="text-xs px-2 py-0.5 rounded-full bg-neutral-100 text-neutral-500 capitalize">
+                  <span className="text-xs px-2 py-0.5 rounded-full bg-neutral-100 text-neutral-600 capitalize">
                     {METODOS.find(m => m.value === p.metodo)?.label ?? p.metodo}
                   </span>
-                  <span className="text-xs text-neutral-400">{fmtFechaSolo(p.fecha)}</span>
+                  <span className="text-xs text-neutral-600">{fmtFechaSolo(p.fecha)}</span>
                   {p.referencia && (
-                    <span className="text-xs text-neutral-400 font-mono">{p.referencia}</span>
+                    <span className="text-xs text-neutral-600 font-mono">{p.referencia}</span>
                   )}
                 </div>
                 {/* Imputación */}
@@ -405,15 +405,15 @@ export function PagosClient({ clienteId, pagos, totalFacturado, ordenes }: Props
                     </a>
                   )}
                   {p.factura_numero && (
-                    <span className="text-xs text-neutral-500 font-mono">
+                    <span className="text-xs text-neutral-600 font-mono">
                       Factura {p.factura_numero}
                     </span>
                   )}
                   {!p.order_id && !p.factura_numero && (
-                    <span className="text-xs text-neutral-300">A cuenta</span>
+                    <span className="text-xs text-neutral-500">A cuenta</span>
                   )}
                   {p.notas && (
-                    <span className="text-xs text-neutral-400">· {p.notas}</span>
+                    <span className="text-xs text-neutral-600">· {p.notas}</span>
                   )}
                 </div>
               </div>
@@ -423,7 +423,7 @@ export function PagosClient({ clienteId, pagos, totalFacturado, ordenes }: Props
                   Recibo
                 </a>
                 <button type="button" onClick={() => handleEliminar(p.id)} disabled={isPending}
-                  className="text-xs text-neutral-300 hover:text-red-500 disabled:opacity-40 transition-colors">
+                  className="text-xs text-neutral-500 hover:text-danger disabled:opacity-40 transition-colors">
                   Eliminar
                 </button>
               </div>

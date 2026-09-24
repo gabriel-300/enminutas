@@ -102,7 +102,7 @@ export default async function HojaDeRutaPage({
       {/* Toolbar — solo pantalla */}
       <div className="print:hidden flex items-center justify-between px-8 py-4 border-b border-neutral-200 bg-neutral-50">
         <div className="flex items-center gap-4">
-          <a href={esHistorico ? "/admin/distribucion/historial" : "/admin/distribucion"} className="text-sm text-neutral-500 hover:text-neutral-700">
+          <a href={esHistorico ? "/admin/distribucion/historial" : "/admin/distribucion"} className="text-sm text-neutral-600 hover:text-neutral-700">
             ← Volver
           </a>
           <span className="text-sm font-semibold text-neutral-900">Hoja de ruta</span>
@@ -119,18 +119,18 @@ export default async function HojaDeRutaPage({
             <h1 className="text-2xl font-bold text-neutral-900 print:text-xl">
               {esHistorico ? "Hoja de Ruta — Histórico" : "Hoja de Ruta"}
             </h1>
-            <p className="text-sm text-neutral-500 mt-1 capitalize">{fechaDisplay}</p>
+            <p className="text-sm text-neutral-600 mt-1 capitalize">{fechaDisplay}</p>
           </div>
           <div className="text-right">
             <p className="text-lg font-bold text-neutral-900">En Minutas</p>
-            <p className="text-sm text-neutral-500">
+            <p className="text-sm text-neutral-600">
               {lista.length} parada{lista.length !== 1 ? "s" : ""}
             </p>
           </div>
         </div>
 
         {lista.length === 0 ? (
-          <div className="text-center py-16 text-neutral-400 text-sm">
+          <div className="text-center py-16 text-neutral-600 text-sm">
             No hay pedidos despachados pendientes de entrega.
           </div>
         ) : (
@@ -140,7 +140,7 @@ export default async function HojaDeRutaPage({
                 {/* Encabezado de zona */}
                 <div className="flex items-center gap-3 mb-3">
                   <div className="h-px flex-1 bg-neutral-300" />
-                  <span className="text-xs font-bold uppercase tracking-widest text-neutral-500 px-2">
+                  <span className="text-xs font-bold text-neutral-600 px-2">
                     {zoneName}
                   </span>
                   <div className="h-px flex-1 bg-neutral-300" />
@@ -175,7 +175,7 @@ export default async function HojaDeRutaPage({
                               <p className="font-bold text-neutral-900 text-base print:text-sm">
                                 {order.customer?.full_name ?? "—"}
                               </p>
-                              <p className="text-xs font-mono text-neutral-400">{order.order_number}</p>
+                              <p className="text-xs font-mono text-neutral-600">{order.order_number}</p>
                             </div>
                           </div>
                         </div>
@@ -193,7 +193,7 @@ export default async function HojaDeRutaPage({
                             </p>
                           )}
                           {dias !== null && dias > 0 && (
-                            <p className="text-xs text-neutral-400">
+                            <p className="text-xs text-neutral-600">
                               Despachado hace {dias}d
                             </p>
                           )}
@@ -217,7 +217,7 @@ export default async function HojaDeRutaPage({
 
                         {/* Línea de firma */}
                         <div className="pl-11 print:pl-9 mt-4 pt-3 border-t border-dashed border-neutral-200 flex items-end justify-between">
-                          <p className="text-xs text-neutral-400">Firma / aclaración</p>
+                          <p className="text-xs text-neutral-600">Firma / aclaración</p>
                           <div className="w-48 border-b border-neutral-400" />
                         </div>
                       </div>

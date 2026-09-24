@@ -18,9 +18,9 @@ export default async function NuevoProductoPage() {
   ]);
 
   return (
-    <div className="p-4 md:p-8">
+    <div className="p-4 md:px-10 md:py-8 md:pb-16">
       <div className="mb-6">
-        <Link href="/admin/productos" className="text-sm text-neutral-400 hover:text-neutral-700 transition-colors mb-2 inline-block">
+        <Link href="/admin/productos" className="text-sm text-neutral-600 hover:text-neutral-700 transition-colors mb-2 inline-block">
           ← Volver a productos
         </Link>
         <h1 className="text-2xl font-semibold font-display text-neutral-900">Nuevo producto</h1>

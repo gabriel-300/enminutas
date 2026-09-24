@@ -123,14 +123,14 @@ export default async function RecetaEditorPage({
     : null;
 
   return (
-    <div className="p-8 max-w-3xl">
-      <Link href="/admin/cocina/recetas" className="text-sm text-neutral-400 hover:text-neutral-700 mb-4 inline-block">
+    <div className="p-4 md:px-10 md:py-8 md:pb-16">
+      <Link href="/admin/cocina/recetas" className="text-sm text-neutral-600 hover:text-neutral-700 mb-4 inline-block">
         ← Recetas
       </Link>
 
       <div className="mb-6">
         <h1 className="text-2xl font-semibold font-display text-neutral-900">{product.name}</h1>
-        <p className="text-sm text-neutral-400 font-mono mt-1">
+        <p className="text-sm text-neutral-600 font-mono mt-1">
           {product.sku}{product.bolsas_caja ? ` · ${product.bolsas_caja} u/caja` : ""}
         </p>
       </div>

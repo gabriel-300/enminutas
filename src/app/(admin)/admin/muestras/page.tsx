@@ -31,18 +31,18 @@ export default async function MuestrasPage() {
   const muestras = (rawMuestras ?? []) as any[];
 
   return (
-    <div className="p-4 md:p-8">
+    <div className="p-4 md:px-10 md:py-8 md:pb-16">
       <div className="mb-6 flex items-start justify-between gap-4">
         <div>
           <h1 className="text-2xl font-semibold font-display text-neutral-900">Muestras</h1>
-          <p className="text-sm text-neutral-500 mt-1">
+          <p className="text-sm text-neutral-600 mt-1">
             {muestras.length} muestra{muestras.length !== 1 ? "s" : ""}
           </p>
         </div>
         {["admin", "vendedor"].includes(role ?? "") && (
           <Link
             href="/admin/muestras/nueva"
-            className="shrink-0 px-4 py-2 rounded-xl bg-tierra-700 text-white text-sm font-medium hover:bg-tierra-800 transition-colors"
+            className="shrink-0 px-4 py-2 rounded-lg bg-tierra-700 text-white text-sm font-medium hover:bg-tierra-800 transition-colors"
           >
             {role === "admin" ? "+ Nueva muestra" : "+ Solicitar muestra"}
           </Link>

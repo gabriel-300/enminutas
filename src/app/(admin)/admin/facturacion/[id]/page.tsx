@@ -10,10 +10,10 @@ export const metadata: Metadata = { title: "Factura — Admin" };
 export const revalidate = 0;
 
 const ESTADO_CFG: Record<string, { label: string; bg: string; color: string }> = {
-  borrador: { label: "Borrador", bg: "#f5f5f5", color: "#737373" },
-  emitida:  { label: "Emitida",  bg: "#e8f0fb", color: "#2f5fd0" },
-  cobrada:  { label: "Cobrada",  bg: "#ecfdf5", color: "#059669" },
-  anulada:  { label: "Anulada",  bg: "#fef2f2", color: "#dc2626" },
+  borrador: { label: "Borrador", bg: "#f5f5f5", color: "#737069" },
+  emitida:  { label: "Emitida",  bg: "#e9f1fc", color: "#1f5bb5" },
+  cobrada:  { label: "Cobrada",  bg: "#eaf6ee", color: "#1d6b3a" },
+  anulada:  { label: "Anulada",  bg: "#fdecea", color: "#b42318" },
 };
 
 const PAGO_LABEL: Record<string, string> = {
@@ -65,11 +65,11 @@ export default async function FacturaDetailPage({
   const est   = ESTADO_CFG[f.estado] ?? ESTADO_CFG.borrador;
 
   return (
-    <div className="p-4 md:p-8 max-w-4xl">
+    <div className="p-4 md:px-10 md:py-8 md:pb-16">
       {/* Header */}
       <div className="mb-6 flex items-start justify-between gap-4">
         <div className="flex items-center gap-3">
-          <Link href="/admin/facturacion" className="p-1.5 rounded-lg text-neutral-400 hover:bg-neutral-100 transition-colors">
+          <Link href="/admin/facturacion" className="p-1.5 rounded-lg text-neutral-600 hover:bg-neutral-100 transition-colors">
             <ChevronLeft className="size-5" />
           </Link>
           <div>
@@ -84,7 +84,7 @@ export default async function FacturaDetailPage({
                 {est.label}
               </span>
             </div>
-            <p className="text-sm text-neutral-400 mt-0.5 ml-0">
+            <p className="text-sm text-neutral-600 mt-0.5 ml-0">
               {f.fecha_emision
                 ? `Emitida el ${new Date(f.fecha_emision + "T12:00:00").toLocaleDateString("es-AR")}`
                 : `Creada el ${new Date(f.created_at).toLocaleDateString("es-AR")}`}
@@ -108,7 +108,7 @@ export default async function FacturaDetailPage({
 
       {/* AFIP placeholder */}
       {f.estado === "emitida" && !f.cae && (
-        <div className="mb-5 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 text-sm text-amber-800">
+        <div className="mb-5 bg-warning-bg border border-warning-border rounded-xl px-4 py-3 text-sm text-warning">
           ⚠ Comprobante sin CAE — pendiente integración con ARCA/AFIP. No tiene validez fiscal.
         </div>
       )}
@@ -116,34 +116,34 @@ export default async function FacturaDetailPage({
       <div className="space-y-5">
         {/* Emisor + Receptor */}
         <div className="grid sm:grid-cols-2 gap-4">
-          <div className="bg-white rounded-2xl border border-neutral-200 p-5">
-            <p className="text-xs font-semibold uppercase tracking-wide text-neutral-400 mb-3">Emisor</p>
+          <div className="bg-white rounded-xl border border-neutral-200 shadow-sm p-5">
+            <p className="text-xs font-semibold text-neutral-600 mb-3">Emisor</p>
             <p className="text-sm font-semibold text-neutral-900">En Minutas</p>
-            <p className="text-xs text-neutral-500 mt-1">Punto de venta: {String(f.punto_venta).padStart(4, "0")}</p>
+            <p className="text-xs text-neutral-600 mt-1">Punto de venta: {String(f.punto_venta).padStart(4, "0")}</p>
           </div>
-          <div className="bg-white rounded-2xl border border-neutral-200 p-5">
-            <p className="text-xs font-semibold uppercase tracking-wide text-neutral-400 mb-3">Receptor</p>
+          <div className="bg-white rounded-xl border border-neutral-200 shadow-sm p-5">
+            <p className="text-xs font-semibold text-neutral-600 mb-3">Receptor</p>
             <p className="text-sm font-semibold text-neutral-900">{f.razon_social}</p>
-            <p className="text-xs text-neutral-500 mt-1">CUIT: {f.cuit}</p>
-            <p className="text-xs text-neutral-500">{COND_IVA_LABEL[f.condicion_iva] ?? f.condicion_iva}</p>
-            {f.domicilio_fiscal && <p className="text-xs text-neutral-500">{f.domicilio_fiscal}</p>}
+            <p className="text-xs text-neutral-600 mt-1">CUIT: {f.cuit}</p>
+            <p className="text-xs text-neutral-600">{COND_IVA_LABEL[f.condicion_iva] ?? f.condicion_iva}</p>
+            {f.domicilio_fiscal && <p className="text-xs text-neutral-600">{f.domicilio_fiscal}</p>}
           </div>
         </div>
 
         {/* Condiciones */}
-        <div className="bg-white rounded-2xl border border-neutral-200 p-5">
+        <div className="bg-white rounded-xl border border-neutral-200 shadow-sm p-5">
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-sm">
             <div>
-              <p className="text-xs text-neutral-400 mb-0.5">Tipo</p>
+              <p className="text-xs text-neutral-600 mb-0.5">Tipo</p>
               <p className="font-medium text-neutral-900">Factura {f.tipo}</p>
             </div>
             <div>
-              <p className="text-xs text-neutral-400 mb-0.5">Condición de pago</p>
+              <p className="text-xs text-neutral-600 mb-0.5">Condición de pago</p>
               <p className="font-medium text-neutral-900">{PAGO_LABEL[f.condicion_pago] ?? f.condicion_pago}</p>
             </div>
             {f.fecha_vencimiento && (
               <div>
-                <p className="text-xs text-neutral-400 mb-0.5">Vence</p>
+                <p className="text-xs text-neutral-600 mb-0.5">Vence</p>
                 <p className="font-medium text-neutral-900">
                   {new Date(f.fecha_vencimiento + "T12:00:00").toLocaleDateString("es-AR")}
                 </p>
@@ -151,27 +151,27 @@ export default async function FacturaDetailPage({
             )}
             {f.pedido_refs?.length > 0 && (
               <div>
-                <p className="text-xs text-neutral-400 mb-0.5">Pedidos</p>
+                <p className="text-xs text-neutral-600 mb-0.5">Pedidos</p>
                 <p className="font-medium text-neutral-900 text-xs">{f.pedido_refs.join(", ")}</p>
               </div>
             )}
           </div>
           {f.observaciones && (
-            <p className="mt-3 pt-3 border-t border-neutral-100 text-xs text-neutral-500">{f.observaciones}</p>
+            <p className="mt-3 pt-3 border-t border-neutral-100 text-xs text-neutral-600">{f.observaciones}</p>
           )}
         </div>
 
         {/* Ítems */}
-        <div className="bg-white rounded-2xl border border-neutral-200 overflow-hidden">
+        <div className="bg-white rounded-xl border border-neutral-200 shadow-sm overflow-hidden">
           <table className="w-full text-sm">
             <thead className="border-b border-neutral-100">
               <tr>
-                <th className="px-4 py-3 text-left text-xs font-semibold text-neutral-400 uppercase tracking-wide">Descripción</th>
-                <th className="px-4 py-3 text-right text-xs font-semibold text-neutral-400 uppercase tracking-wide">Cant.</th>
-                <th className="px-4 py-3 text-right text-xs font-semibold text-neutral-400 uppercase tracking-wide">Precio unit.</th>
-                <th className="px-4 py-3 text-right text-xs font-semibold text-neutral-400 uppercase tracking-wide">IVA</th>
-                <th className="px-4 py-3 text-right text-xs font-semibold text-neutral-400 uppercase tracking-wide">Subtotal</th>
-                <th className="px-4 py-3 text-right text-xs font-semibold text-neutral-400 uppercase tracking-wide">Total</th>
+                <th className="px-4 py-3 text-left text-xs font-semibold text-neutral-600">Descripción</th>
+                <th className="px-4 py-3 text-right text-xs font-semibold text-neutral-600">Cant.</th>
+                <th className="px-4 py-3 text-right text-xs font-semibold text-neutral-600">Precio unit.</th>
+                <th className="px-4 py-3 text-right text-xs font-semibold text-neutral-600">IVA</th>
+                <th className="px-4 py-3 text-right text-xs font-semibold text-neutral-600">Subtotal</th>
+                <th className="px-4 py-3 text-right text-xs font-semibold text-neutral-600">Total</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-neutral-50">
@@ -180,7 +180,7 @@ export default async function FacturaDetailPage({
                   <td className="px-4 py-3 text-neutral-900">{it.descripcion}</td>
                   <td className="px-4 py-3 text-right text-neutral-600 tabular-nums">{it.cantidad} {it.unidad}</td>
                   <td className="px-4 py-3 text-right text-neutral-600 tabular-nums">{fmt(Number(it.precio_unitario))}</td>
-                  <td className="px-4 py-3 text-right text-neutral-500 tabular-nums">{it.alicuota_iva}%</td>
+                  <td className="px-4 py-3 text-right text-neutral-600 tabular-nums">{it.alicuota_iva}%</td>
                   <td className="px-4 py-3 text-right text-neutral-600 tabular-nums">{fmt(Number(it.subtotal))}</td>
                   <td className="px-4 py-3 text-right font-semibold text-neutral-900 tabular-nums">{fmt(Number(it.total))}</td>
                 </tr>
@@ -190,7 +190,7 @@ export default async function FacturaDetailPage({
         </div>
 
         {/* Totales IVA */}
-        <div className="bg-white rounded-2xl border border-neutral-200 p-5">
+        <div className="bg-white rounded-xl border border-neutral-200 shadow-sm p-5">
           <div className="max-w-xs ml-auto space-y-2 text-sm">
             {Number(f.neto_gravado_21) > 0 && <>
               <div className="flex justify-between text-neutral-600"><span>Neto gravado 21%</span><span className="tabular-nums">{fmt(Number(f.neto_gravado_21))}</span></div>

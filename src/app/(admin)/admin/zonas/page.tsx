@@ -45,10 +45,10 @@ export default async function AdminZonasPage() {
   }));
 
   return (
-    <div className="p-4 md:p-8">
+    <div className="p-4 md:px-10 md:py-8 md:pb-16">
       <div className="mb-6">
         <h1 className="text-2xl font-semibold font-display text-neutral-900">Zonas — Fletes y destinos</h1>
-        <p className="text-sm text-neutral-500 mt-1">
+        <p className="text-sm text-neutral-600 mt-1">
           El flete va incluido en el precio de la mercadería: un % sobre el precio de lista s/IVA de cada zona. 0% = sin flete.
         </p>
       </div>

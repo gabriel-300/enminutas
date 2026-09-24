@@ -59,14 +59,14 @@ export default async function PreciosClienteDetailPage({
     .order("name");
 
   return (
-    <div className="p-4 md:p-8 max-w-4xl">
+    <div className="p-4 md:px-10 md:py-8 md:pb-16">
       <div className="mb-6 flex items-center gap-3">
-        <Link href="/admin/precios-cliente" className="p-1.5 rounded-lg text-neutral-400 hover:bg-neutral-100 transition-colors">
+        <Link href="/admin/precios-cliente" className="p-1.5 rounded-lg text-neutral-600 hover:bg-neutral-100 transition-colors">
           <ChevronLeft className="size-5" />
         </Link>
         <div>
           <h1 className="text-xl font-semibold font-display text-neutral-900">{cuenta.business_name}</h1>
-          <p className="text-sm text-neutral-400 mt-0.5">CUIT: {cuenta.cuit} · {overrides.length} precio{overrides.length !== 1 ? "s" : ""} especial{overrides.length !== 1 ? "es" : ""}</p>
+          <p className="text-sm text-neutral-600 mt-0.5">CUIT: {cuenta.cuit} · {overrides.length} precio{overrides.length !== 1 ? "s" : ""} especial{overrides.length !== 1 ? "es" : ""}</p>
         </div>
       </div>
 

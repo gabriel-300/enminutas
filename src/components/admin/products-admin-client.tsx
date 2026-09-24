@@ -1,9 +1,10 @@
 "use client";
 
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
+import { Pencil, Search, Trash2 } from "lucide-react";
 import { toggleProductActive, toggleProductMuestra, eliminarProducto } from "@/app/(admin)/admin/productos/actions";
+import { ButtonLink, IconButton, StatusBadge, Switch } from "@/components/ui";
 
 type Product = {
   id:                 string;
@@ -24,7 +25,7 @@ type Product = {
   linea:              { nombre: string } | null;
 };
 
-function Toggle({ id, initial, onToggle }: { id: string; initial: boolean; onToggle: (id: string, next: boolean) => Promise<void> }) {
+function Toggle({ id, initial, label, onToggle }: { id: string; initial: boolean; label: string; onToggle: (id: string, next: boolean) => Promise<void> }) {
   const [active, setActive]          = useState(initial);
   const [isPending, startTransition] = useTransition();
 
@@ -36,32 +37,20 @@ function Toggle({ id, initial, onToggle }: { id: string; initial: boolean; onTog
     });
   }
 
-  return (
-    <button onClick={handleToggle} disabled={isPending}
-      className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors disabled:opacity-50 ${active ? "bg-success" : "bg-neutral-300"}`}>
-      <span className={`inline-block size-3.5 rounded-full bg-white shadow transition-transform ${active ? "translate-x-4" : "translate-x-0.5"}`} />
-    </button>
-  );
+  return <Switch checked={active} onCheckedChange={handleToggle} disabled={isPending} label={label} />;
 }
 
 const ActiveToggle  = ({ id, initial }: { id: string; initial: boolean }) =>
-  <Toggle id={id} initial={initial} onToggle={toggleProductActive} />;
+  <Toggle id={id} initial={initial} label="Activo" onToggle={toggleProductActive} />;
 
 const MuestraToggle = ({ id, initial }: { id: string; initial: boolean }) =>
-  <Toggle id={id} initial={initial} onToggle={toggleProductMuestra} />;
+  <Toggle id={id} initial={initial} label="Muestra" onToggle={toggleProductMuestra} />;
 
 // ── CategoriaBadge ────────────────────────────────────────────────────────────
 
 function CategoriaBadge({ cat }: { cat: string | null }) {
-  if (!cat) return <span className="text-neutral-300">—</span>;
-  const cls = cat === "Premium"
-    ? "bg-amber-50 text-amber-700"
-    : "bg-neutral-100 text-neutral-600";
-  return (
-    <span className={`inline-block text-xs px-1.5 py-0.5 rounded font-medium whitespace-nowrap ${cls}`}>
-      {cat}
-    </span>
-  );
+  if (!cat) return <span className="text-neutral-500">—</span>;
+  return <StatusBadge tone={cat === "Premium" ? "warning" : "neutral"}>{cat}</StatusBadge>;
 }
 
 // ── Mobile card ───────────────────────────────────────────────────────────────
@@ -76,21 +65,21 @@ function ProductMobileCard({ p }: { p: Product }) {
   }
 
   return (
-    <div className={`bg-white rounded-2xl border border-neutral-200 p-4 ${!p.is_active ? "opacity-50" : ""}`}>
+    <div className={`bg-white rounded-xl border border-neutral-200 shadow-sm p-4 ${!p.is_active ? "opacity-50" : ""}`}>
       <div className="flex items-start justify-between gap-2 mb-2">
         <div className="min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
             {p.codigo != null && (
-              <span className="text-xs font-mono font-semibold text-tierra-700 bg-tierra-50 px-1.5 py-0.5 rounded">
+              <span className="text-[13px] font-mono font-semibold text-n-800 bg-n-100 px-1.5 py-0.5 rounded">
                 {p.codigo}
               </span>
             )}
             <p className="font-medium text-neutral-900 leading-snug">{p.name}</p>
           </div>
-          <p className="text-xs text-neutral-400 font-mono mt-0.5">{p.sku}</p>
+          <p className="text-xs text-neutral-600 font-mono mt-0.5">{p.sku}</p>
           <div className="flex items-center gap-2 mt-1 flex-wrap">
-            {p.linea && <span className="text-xs text-neutral-500">{p.linea.nombre}</span>}
-            {p.presentacion && <span className="text-xs text-neutral-400">· {p.presentacion}</span>}
+            {p.linea && <span className="text-xs text-neutral-600">{p.linea.nombre}</span>}
+            {p.presentacion && <span className="text-xs text-neutral-600">· {p.presentacion}</span>}
             <CategoriaBadge cat={p.categoria} />
           </div>
         </div>
@@ -104,7 +93,7 @@ function ProductMobileCard({ p }: { p: Product }) {
           { label: "Pkg B", val: p.pkg_bulto },
         ].map(({ label, val }) => (
           <div key={label} className="bg-neutral-50 rounded-lg p-2 text-center">
-            <p className="text-neutral-400 text-[10px] mb-0.5">{label}</p>
+            <p className="text-neutral-600 text-xs mb-0.5">{label}</p>
             <p className="text-xs font-medium text-neutral-700 tabular-nums">
               {val != null ? `$ ${Number(val).toLocaleString("es-AR")}` : "—"}
             </p>
@@ -113,7 +102,7 @@ function ProductMobileCard({ p }: { p: Product }) {
       </div>
 
       <div className="flex items-center justify-between mt-3">
-        <div className="flex gap-3 text-xs text-neutral-500 flex-wrap">
+        <div className="flex gap-3 text-xs text-neutral-600 flex-wrap">
           {p.u_bolsa != null && <span>{p.u_bolsa} u/bolsa</span>}
           {p.bolsas_caja != null && <span>{p.bolsas_caja} bols/caja</span>}
           {p.kg_caja != null && <span>{p.kg_caja} kg/caja</span>}
@@ -121,9 +110,9 @@ function ProductMobileCard({ p }: { p: Product }) {
             <span>Act. {new Date(p.updated_at).toLocaleDateString("es-AR")}</span>
           )}
         </div>
-        <div className="flex items-center gap-3">
-          <Link href={`/admin/productos/${p.id}/editar`} className="text-xs text-tierra-700 hover:underline">Editar</Link>
-          <button onClick={handleDelete} disabled={isPending} className="text-xs text-danger hover:underline disabled:opacity-40">Eliminar</button>
+        <div className="flex items-center gap-1.5">
+          <ButtonLink href={`/admin/productos/${p.id}/editar`} variant="secondary" size="sm"><Pencil />Editar</ButtonLink>
+          <IconButton label="Eliminar" variant="danger-soft" onClick={handleDelete} disabled={isPending}><Trash2 /></IconButton>
         </div>
       </div>
     </div>
@@ -143,55 +132,55 @@ function ProductRow({ p }: { p: Product }) {
 
   const money = (n: number | null) =>
     n != null
-      ? <span className="font-medium text-neutral-700">$ {Number(n).toLocaleString("es-AR")}</span>
-      : <span className="text-neutral-300">—</span>;
+      ? <>$ {Number(n).toLocaleString("es-AR")}</>
+      : <span className="text-neutral-500">—</span>;
 
   const num = (n: number | null) =>
-    n != null ? n : <span className="text-neutral-300">—</span>;
+    n != null ? n : <span className="text-neutral-500">—</span>;
 
   return (
-    <tr className={`hover:bg-neutral-50 transition-colors ${!p.is_active ? "opacity-50" : ""}`}>
-      <td className="px-2 py-2 text-center whitespace-nowrap">
+    <tr className={`transition-colors hover:bg-brand-50 ${!p.is_active ? "opacity-50" : ""}`}>
+      <td className="px-3 py-[11px] whitespace-nowrap">
         {p.codigo != null
-          ? <span className="text-xs font-mono font-semibold text-tierra-700">{p.codigo}</span>
-          : <span className="text-neutral-300">—</span>}
+          ? <span className="font-mono text-[13px] font-semibold text-n-800">{p.codigo}</span>
+          : <span className="text-neutral-500">—</span>}
       </td>
-      <td className="px-2 py-2 max-w-[180px]">
-        <p className="font-medium text-neutral-900 text-xs leading-snug truncate">{p.name}</p>
-        <p className="text-[10px] text-neutral-400 font-mono">{p.sku}</p>
+      <td className="px-3 py-[11px] max-w-[260px]">
+        <p className="truncate text-sm font-medium text-n-900" title={p.name}>{p.name}</p>
+        <p className="font-mono text-xs text-n-600">{p.sku}</p>
       </td>
-      <td className="px-2 py-2 text-xs text-neutral-500 whitespace-nowrap">
-        {p.linea?.nombre ?? <span className="text-neutral-300">—</span>}
+      <td className="px-3 py-[11px] text-sm text-n-700 whitespace-nowrap">
+        {p.linea?.nombre ?? <span className="text-neutral-500">—</span>}
       </td>
-      <td className="px-2 py-2 text-xs text-neutral-500 whitespace-nowrap">
-        {p.presentacion ?? <span className="text-neutral-300">—</span>}
+      <td className="px-3 py-[11px] text-sm text-n-700 whitespace-nowrap">
+        {p.presentacion ?? <span className="text-neutral-500">—</span>}
       </td>
-      <td className="px-2 py-2 text-center text-xs tabular-nums text-neutral-600">{num(p.u_bolsa)}</td>
-      <td className="px-2 py-2 text-center text-xs tabular-nums text-neutral-600">{num(p.bolsas_caja)}</td>
-      <td className="px-2 py-2 text-center text-xs tabular-nums text-neutral-600">{num(p.kg_caja)}</td>
-      <td className="px-2 py-2 text-right text-xs tabular-nums whitespace-nowrap">{money(p.costo)}</td>
-      <td className="px-2 py-2 text-right text-xs tabular-nums whitespace-nowrap">{money(p.pkg_unitario)}</td>
-      <td className="px-2 py-2 text-right text-xs tabular-nums whitespace-nowrap">{money(p.pkg_bulto)}</td>
-      <td className="px-2 py-2 text-center"><CategoriaBadge cat={p.categoria} /></td>
-      <td className="px-2 py-2 text-center text-xs text-neutral-500 whitespace-nowrap">
+      <td className="px-3 py-[11px] text-right tabular-nums text-n-700">{num(p.u_bolsa)}</td>
+      <td className="px-3 py-[11px] text-right tabular-nums text-n-700">{num(p.bolsas_caja)}</td>
+      <td className="px-3 py-[11px] text-right tabular-nums text-n-700">{num(p.kg_caja)}</td>
+      <td className="px-3 py-[11px] text-right tabular-nums whitespace-nowrap font-semibold text-n-900">{money(p.costo)}</td>
+      <td className="px-3 py-[11px] text-right tabular-nums whitespace-nowrap text-n-700">{money(p.pkg_unitario)}</td>
+      <td className="px-3 py-[11px] text-right tabular-nums whitespace-nowrap text-n-700">{money(p.pkg_bulto)}</td>
+      <td className="px-3 py-[11px]"><CategoriaBadge cat={p.categoria} /></td>
+      <td className="px-3 py-[11px] text-sm text-n-700 tabular-nums whitespace-nowrap">
         {p.updated_at
           ? new Date(p.updated_at).toLocaleDateString("es-AR")
-          : <span className="text-neutral-300">—</span>}
+          : <span className="text-neutral-500">—</span>}
       </td>
-      <td className="px-2 py-2">
+      <td className="px-3 py-[11px]">
         <div className="flex justify-center">
           <ActiveToggle id={p.id} initial={p.is_active} />
         </div>
       </td>
-      <td className="px-2 py-2" title="Habilitar para pedidos de muestra">
+      <td className="px-3 py-[11px]" title="Habilitar para pedidos de muestra">
         <div className="flex justify-center">
           <MuestraToggle id={p.id} initial={p.es_muestra ?? false} />
         </div>
       </td>
-      <td className="px-2 py-2 whitespace-nowrap">
-        <div className="flex items-center gap-3">
-          <Link href={`/admin/productos/${p.id}/editar`} className="text-xs text-tierra-700 hover:underline">Editar</Link>
-          <button onClick={handleDelete} disabled={isPending} className="text-xs text-danger hover:underline disabled:opacity-40">Eliminar</button>
+      <td className="px-3 py-[11px] whitespace-nowrap">
+        <div className="flex items-center justify-end gap-1.5">
+          <ButtonLink href={`/admin/productos/${p.id}/editar`} variant="secondary" size="sm"><Pencil />Editar</ButtonLink>
+          <IconButton label="Eliminar" variant="danger-soft" onClick={handleDelete} disabled={isPending}><Trash2 /></IconButton>
         </div>
       </td>
     </tr>
@@ -218,50 +207,51 @@ export function ProductsAdminClient({ products }: { products: Product[] }) {
 
   return (
     <>
-      <div className="mb-4">
+      <div className="relative mb-5 max-w-[420px]">
+        <Search aria-hidden className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-n-500" />
         <input
           type="search"
           placeholder="Buscar por nombre, SKU, código o línea…"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="w-full sm:w-80 px-4 py-2 rounded-xl border border-neutral-200 text-sm bg-white placeholder:text-neutral-400 focus:outline-none focus:ring-2 focus:ring-tierra-700/20 focus:border-tierra-700"
+          className="h-10 w-full rounded-lg border border-neutral-400 bg-white pl-9 pr-3 text-sm focus:outline-none focus:ring-[3px] focus:ring-brand-500/30 focus:border-brand-700"
         />
       </div>
 
       {/* Mobile */}
       <div className="md:hidden space-y-3">
         {filtered.length === 0
-          ? <p className="text-sm text-neutral-400 text-center py-10">Sin resultados.</p>
+          ? <p className="text-sm text-neutral-600 text-center py-10">Sin resultados.</p>
           : filtered.map((p) => <ProductMobileCard key={p.id} p={p} />)}
       </div>
 
       {/* Desktop */}
-      <div className="hidden md:block bg-white rounded-2xl border border-neutral-200 overflow-hidden">
+      <div className="hidden md:block bg-white rounded-xl border border-neutral-200 shadow-sm overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-sm min-w-[1200px]">
             <thead>
-              <tr className="border-b border-neutral-200 bg-neutral-50/50 text-left">
-                <th className="px-2 py-3 font-medium text-neutral-500 text-center text-xs whitespace-nowrap">Cód.</th>
-                <th className="px-2 py-3 font-medium text-neutral-500 text-xs">Producto</th>
-                <th className="px-2 py-3 font-medium text-neutral-500 text-xs whitespace-nowrap">Línea</th>
-                <th className="px-2 py-3 font-medium text-neutral-500 text-xs whitespace-nowrap">Presentación</th>
-                <th className="px-2 py-3 font-medium text-neutral-500 text-center text-xs whitespace-nowrap">U/Bolsa</th>
-                <th className="px-2 py-3 font-medium text-neutral-500 text-center text-xs whitespace-nowrap">Bols/Caja</th>
-                <th className="px-2 py-3 font-medium text-neutral-500 text-center text-xs whitespace-nowrap">Kg/Caja</th>
-                <th className="px-2 py-3 font-medium text-neutral-500 text-right text-xs whitespace-nowrap">Costo $</th>
-                <th className="px-2 py-3 font-medium text-neutral-500 text-right text-xs whitespace-nowrap">Pkg U $</th>
-                <th className="px-2 py-3 font-medium text-neutral-500 text-right text-xs whitespace-nowrap">Pkg B $</th>
-                <th className="px-2 py-3 font-medium text-neutral-500 text-center text-xs">Categoría</th>
-                <th className="px-2 py-3 font-medium text-neutral-500 text-center text-xs whitespace-nowrap">Última act.</th>
-                <th className="px-2 py-3 font-medium text-neutral-500 text-center text-xs">Activo</th>
-                <th className="px-2 py-3 font-medium text-neutral-500 text-center text-xs">Muestra</th>
-                <th className="px-2 py-3 w-24"></th>
+              <tr className="border-b border-neutral-200 text-left">
+                <th className="px-3 py-2.5 text-left text-xs font-semibold text-n-600 whitespace-nowrap sticky top-0">Cód.</th>
+                <th className="px-3 py-2.5 text-left text-xs font-semibold text-n-600 whitespace-nowrap sticky top-0">Producto</th>
+                <th className="px-3 py-2.5 text-left text-xs font-semibold text-n-600 whitespace-nowrap sticky top-0">Línea</th>
+                <th className="px-3 py-2.5 text-left text-xs font-semibold text-n-600 whitespace-nowrap sticky top-0">Presentación</th>
+                <th className="px-3 py-2.5 text-right text-xs font-semibold text-n-600 whitespace-nowrap sticky top-0">U/Bolsa</th>
+                <th className="px-3 py-2.5 text-right text-xs font-semibold text-n-600 whitespace-nowrap sticky top-0">Bols/Caja</th>
+                <th className="px-3 py-2.5 text-right text-xs font-semibold text-n-600 whitespace-nowrap sticky top-0">Kg/Caja</th>
+                <th className="px-3 py-2.5 text-right text-xs font-semibold text-n-600 whitespace-nowrap sticky top-0">Costo $</th>
+                <th className="px-3 py-2.5 text-right text-xs font-semibold text-n-600 whitespace-nowrap sticky top-0">Pkg U $</th>
+                <th className="px-3 py-2.5 text-right text-xs font-semibold text-n-600 whitespace-nowrap sticky top-0">Pkg B $</th>
+                <th className="px-3 py-2.5 text-left text-xs font-semibold text-n-600 whitespace-nowrap sticky top-0">Categoría</th>
+                <th className="px-3 py-2.5 text-left text-xs font-semibold text-n-600 whitespace-nowrap sticky top-0">Última act.</th>
+                <th className="px-3 py-2.5 text-center text-xs font-semibold text-n-600 whitespace-nowrap sticky top-0">Activo</th>
+                <th className="px-3 py-2.5 text-center text-xs font-semibold text-n-600 whitespace-nowrap sticky top-0">Muestra</th>
+                <th className="px-3 py-2.5 w-28"></th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-neutral-100">
+            <tbody>
               {filtered.length === 0 && (
                 <tr>
-                  <td colSpan={14} className="px-4 py-10 text-center text-neutral-400">Sin resultados.</td>
+                  <td colSpan={14} className="px-4 py-10 text-center text-neutral-600">Sin resultados.</td>
                 </tr>
               )}
               {filtered.map((p) => <ProductRow key={p.id} p={p} />)}

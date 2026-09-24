@@ -27,7 +27,7 @@ const FORM_VACIO = {
 
 const num = (s: string) => parseFloat(s.replace(",", "."));
 
-const inputCls = "w-full px-3 py-2 text-sm border border-neutral-200 rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-tierra-700/20 disabled:opacity-50";
+const inputCls = "w-full px-3 py-2 text-sm border border-neutral-400 rounded-lg bg-white focus:outline-none focus:ring-[3px] focus:ring-brand-500/30 focus:border-brand-700 disabled:opacity-50";
 
 export function PresentacionesReceta({
   baseId, baseName, baseKgCaja, baseLineaId, lineas, puedeCrear, vinculadas, candidatos,
@@ -105,22 +105,22 @@ export function PresentacionesReceta({
   }
 
   return (
-    <div className="bg-white rounded-2xl border border-neutral-200 overflow-hidden mt-6">
+    <div className="bg-white rounded-xl border border-neutral-200 shadow-sm overflow-hidden mt-6">
       <div className="px-5 py-4 border-b border-neutral-100">
         <p className="text-sm font-semibold text-neutral-700">Presentaciones que usan esta receta</p>
-        <p className="text-xs text-neutral-400 mt-0.5">
+        <p className="text-xs text-neutral-600 mt-0.5">
           Al producir podés elegir en cuál sale el lote. Las cajas se calculan por peso (kg por caja de cada producto).
         </p>
       </div>
 
       {!(baseKgCaja && baseKgCaja > 0) && (
-        <p className="px-5 py-3 text-xs text-amber-700 bg-amber-50 border-b border-amber-100">
+        <p className="px-5 py-3 text-xs text-warning bg-warning-bg border-b border-warning-border">
           Este producto no tiene kg por caja cargado: sin ese dato no se pueden calcular las equivalencias. Cargalo en Productos.
         </p>
       )}
 
       {vinculadas.length === 0 ? (
-        <p className="px-5 py-4 text-sm text-neutral-400">
+        <p className="px-5 py-4 text-sm text-neutral-600">
           Todavía no hay otras presentaciones vinculadas. Se produce solo el producto de esta receta.
         </p>
       ) : (
@@ -129,13 +129,13 @@ export function PresentacionesReceta({
             <div key={p.id} className="px-5 py-3 flex items-center gap-3">
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-medium text-neutral-800 truncate">{p.name}</p>
-                <p className="text-xs text-neutral-400">
+                <p className="text-xs text-neutral-600">
                   {p.sku && <span className="font-mono mr-2">{p.sku}</span>}
                   {p.unit_label}
                   {p.kg_caja ? ` · ${fmt(p.kg_caja)} kg/caja` : ""}
                 </p>
               </div>
-              <p className="text-xs text-neutral-500 tabular-nums shrink-0">
+              <p className="text-xs text-neutral-600 tabular-nums shrink-0">
                 {p.cajasPorLote !== null ? `1 lote = ${fmt(p.cajasPorLote)} cajas` : "falta kg/caja"}
               </p>
               <button type="button" onClick={() => desvincular(p.id, p.name)} disabled={isPending}
@@ -150,7 +150,7 @@ export function PresentacionesReceta({
       <div className="px-5 py-4 border-t border-neutral-100 space-y-2">
         <div className="flex items-center gap-2">
           <select value={elegido} onChange={e => setElegido(e.target.value)} disabled={isPending}
-            className="flex-1 min-w-0 truncate px-3 py-2 text-sm border border-neutral-200 rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-tierra-700/20 disabled:opacity-50">
+            className="flex-1 min-w-0 truncate px-3 py-2 text-sm border border-neutral-400 rounded-lg bg-white focus:outline-none focus:ring-[3px] focus:ring-brand-500/30 focus:border-brand-700 disabled:opacity-50">
             <option value="">— Agregar presentación (producto sin receta propia) —</option>
             {relacionados.length > 0 && (
               <optgroup label={`Relacionados con ${baseName}`}>
@@ -169,7 +169,7 @@ export function PresentacionesReceta({
           </button>
         </div>
         {relacionados.length === 0 && (
-          <p className="text-xs text-amber-700">
+          <p className="text-xs text-warning">
             No hay productos sin receta relacionados con «{baseName}».
           </p>
         )}
@@ -179,7 +179,7 @@ export function PresentacionesReceta({
       {/* Crear una presentación que todavía no existe como producto */}
       <div className="px-5 py-4 border-t border-neutral-100 space-y-3">
         {creadoId && (
-          <p className="text-sm text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-xl px-4 py-3">
+          <p className="text-sm text-success bg-success-bg border border-success-border rounded-xl px-4 py-3">
             ✓ Presentación creada y vinculada a esta receta. Quedó <strong>inactiva</strong>: revisá precios y activala en{" "}
             <Link href={`/admin/productos/${creadoId}/editar`} className="underline font-medium">Productos</Link>{" "}
             para poder producirla y venderla.
@@ -189,10 +189,10 @@ export function PresentacionesReceta({
         {!creando ? (
           <div className="flex items-center gap-3 flex-wrap">
             <button type="button" onClick={() => { setCreando(true); setCreadoId(null); }} disabled={!puedeCrear || isPending}
-              className="px-4 py-2 rounded-xl bg-tierra-700 text-white text-sm font-semibold hover:bg-tierra-800 disabled:opacity-40 transition-colors">
+              className="px-4 py-2 rounded-lg bg-tierra-700 text-white text-sm font-semibold hover:bg-tierra-800 disabled:opacity-40 transition-colors">
               + Nueva presentación
             </button>
-            <p className="text-xs text-neutral-400">
+            <p className="text-xs text-neutral-600">
               {puedeCrear
                 ? "¿No existe el producto (ej. caja de 500 g o empanada x32)? Crealo desde acá, ya vinculado a esta receta."
                 : "Solo un administrador puede crear productos."}
@@ -203,60 +203,60 @@ export function PresentacionesReceta({
             <p className="text-sm font-semibold text-neutral-700">Nueva presentación de {baseName}</p>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <label className="block sm:col-span-2">
-                <span className="block text-xs font-medium text-neutral-500 mb-1">Nombre *</span>
+                <span className="block text-xs font-medium text-neutral-600 mb-1">Nombre *</span>
                 <input className={inputCls} value={form.name} onChange={e => setCampo("name", e.target.value)} disabled={isPending} />
               </label>
               <label className="block">
-                <span className="block text-xs font-medium text-neutral-500 mb-1">SKU *</span>
+                <span className="block text-xs font-medium text-neutral-600 mb-1">SKU *</span>
                 <input className={inputCls} placeholder="ej. BOC-MAND-500" value={form.sku} onChange={e => setCampo("sku", e.target.value)} disabled={isPending} />
               </label>
               <label className="block">
-                <span className="block text-xs font-medium text-neutral-500 mb-1">Unidad de venta *</span>
+                <span className="block text-xs font-medium text-neutral-600 mb-1">Unidad de venta *</span>
                 <input className={inputCls} placeholder="ej. caja 10 cajitas x 500g" value={form.unit_label} onChange={e => setCampo("unit_label", e.target.value)} disabled={isPending} />
               </label>
               <label className="block">
-                <span className="block text-xs font-medium text-neutral-500 mb-1">Presentación (texto corto)</span>
+                <span className="block text-xs font-medium text-neutral-600 mb-1">Presentación (texto corto)</span>
                 <input className={inputCls} placeholder="ej. 10 caja x 500g" value={form.presentacion} onChange={e => setCampo("presentacion", e.target.value)} disabled={isPending} />
               </label>
               <label className="block">
-                <span className="block text-xs font-medium text-neutral-500 mb-1">Línea</span>
+                <span className="block text-xs font-medium text-neutral-600 mb-1">Línea</span>
                 <select className={inputCls} value={form.linea_id} onChange={e => setCampo("linea_id", e.target.value)} disabled={isPending}>
                   <option value="">— la misma que el producto base —</option>
                   {lineas.map(l => <option key={l.id} value={l.id}>{l.nombre}</option>)}
                 </select>
               </label>
               <label className="block">
-                <span className="block text-xs font-medium text-neutral-500 mb-1">Kg por caja *</span>
+                <span className="block text-xs font-medium text-neutral-600 mb-1">Kg por caja *</span>
                 <input className={inputCls} inputMode="decimal" placeholder="ej. 5,6" value={form.kg_caja} onChange={e => setCampo("kg_caja", e.target.value)} disabled={isPending} />
               </label>
               <label className="block">
-                <span className="block text-xs font-medium text-neutral-500 mb-1">Bolsas / cajitas por caja *</span>
+                <span className="block text-xs font-medium text-neutral-600 mb-1">Bolsas / cajitas por caja *</span>
                 <input className={inputCls} inputMode="numeric" placeholder="ej. 10" value={form.bolsas_caja} onChange={e => setCampo("bolsas_caja", e.target.value)} disabled={isPending} />
               </label>
               <label className="block">
-                <span className="block text-xs font-medium text-neutral-500 mb-1">Unidades por bolsa / cajita *</span>
+                <span className="block text-xs font-medium text-neutral-600 mb-1">Unidades por bolsa / cajita *</span>
                 <input className={inputCls} inputMode="numeric" placeholder="ej. 20" value={form.u_bolsa} onChange={e => setCampo("u_bolsa", e.target.value)} disabled={isPending} />
               </label>
               <label className="block">
-                <span className="block text-xs font-medium text-neutral-500 mb-1">Envase por bolsa / cajita ($)</span>
+                <span className="block text-xs font-medium text-neutral-600 mb-1">Envase por bolsa / cajita ($)</span>
                 <input className={inputCls} inputMode="decimal" placeholder="ej. 750" value={form.pkg_unitario} onChange={e => setCampo("pkg_unitario", e.target.value)} disabled={isPending} />
               </label>
               <label className="block">
-                <span className="block text-xs font-medium text-neutral-500 mb-1">Envase por caja ($)</span>
+                <span className="block text-xs font-medium text-neutral-600 mb-1">Envase por caja ($)</span>
                 <input className={inputCls} inputMode="decimal" placeholder="ej. 900" value={form.pkg_bulto} onChange={e => setCampo("pkg_bulto", e.target.value)} disabled={isPending} />
               </label>
               <label className="block sm:col-span-2">
-                <span className="block text-xs font-medium text-neutral-500 mb-1">Costo por bolsa / cajita ($)</span>
+                <span className="block text-xs font-medium text-neutral-600 mb-1">Costo por bolsa / cajita ($)</span>
                 <input className={inputCls} inputMode="decimal" placeholder="vacío = se calcula desde la receta por peso" value={form.costo} onChange={e => setCampo("costo", e.target.value)} disabled={isPending} />
               </label>
             </div>
-            <p className="text-xs text-neutral-400">
+            <p className="text-xs text-neutral-600">
               Se hereda del producto base: categoría, descripción e imagen. Se crea <strong>inactivo</strong> y sin precios de tienda; se activa desde Productos.
             </p>
             {errorCrear && <p className="text-sm text-danger">{errorCrear}</p>}
             <div className="flex items-center gap-2">
               <button type="button" onClick={crear} disabled={isPending}
-                className="px-4 py-2 rounded-xl bg-tierra-700 text-white text-sm font-semibold hover:bg-tierra-800 disabled:opacity-50 transition-colors">
+                className="px-4 py-2 rounded-lg bg-tierra-700 text-white text-sm font-semibold hover:bg-tierra-800 disabled:opacity-50 transition-colors">
                 {isPending ? "Creando…" : "Crear y vincular"}
               </button>
               <button type="button" onClick={() => { setCreando(false); setErrorCrear(null); }} disabled={isPending}

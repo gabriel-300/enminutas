@@ -79,7 +79,7 @@ export function OrdenarRutaClient({ paradas: init }: { paradas: Parada[] }) {
 
   if (paradas.length === 0) {
     return (
-      <div className="bg-white rounded-2xl border border-neutral-200 p-10 text-center text-sm text-neutral-400">
+      <div className="bg-white rounded-xl border border-neutral-200 shadow-sm p-10 text-center text-sm text-neutral-600">
         No hay pedidos despachados pendientes.
       </div>
     );
@@ -93,7 +93,7 @@ export function OrdenarRutaClient({ paradas: init }: { paradas: Parada[] }) {
           <button
             onClick={guardar}
             disabled={pending}
-            className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#16233f] text-white text-sm font-medium hover:bg-[#1e2f52] transition-colors disabled:opacity-50"
+            className="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-brand-700 text-white text-sm font-medium hover:bg-brand-800 transition-colors disabled:opacity-50"
           >
             <Check className="size-4" />
             {pending ? "Guardando..." : "Guardar orden"}
@@ -101,21 +101,21 @@ export function OrdenarRutaClient({ paradas: init }: { paradas: Parada[] }) {
           <button
             onClick={limpiar}
             disabled={pending}
-            className="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-neutral-200 text-neutral-500 text-sm hover:bg-neutral-50 transition-colors disabled:opacity-50"
+            className="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-neutral-200 text-neutral-600 text-sm hover:bg-neutral-50 transition-colors disabled:opacity-50"
           >
             <RotateCcw className="size-3.5" /> Limpiar
           </button>
         </div>
         <div className="flex gap-2 items-center">
           {guardado && (
-            <span className="text-xs text-emerald-600 font-medium flex items-center gap-1">
+            <span className="text-xs text-success font-medium flex items-center gap-1">
               <Check className="size-3.5" /> Orden guardado
             </span>
           )}
           {tieneAddresses && (
             <button
               onClick={abrirMaps}
-              className="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-blue-200 text-blue-700 text-sm font-medium hover:bg-blue-50 transition-colors"
+              className="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-info-border text-info text-sm font-medium hover:bg-info-bg transition-colors"
             >
               <ExternalLink className="size-3.5" /> Abrir en Maps
             </button>
@@ -123,14 +123,14 @@ export function OrdenarRutaClient({ paradas: init }: { paradas: Parada[] }) {
           <a
             href="/admin/distribucion/hoja-de-ruta"
             target="_blank"
-            className="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-neutral-200 text-neutral-600 text-sm font-medium hover:bg-neutral-50 transition-colors"
+            className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-n-btn text-neutral-800 text-sm font-medium hover:bg-neutral-50 transition-colors"
           >
             Ver hoja de ruta →
           </a>
         </div>
       </div>
 
-      {error && <p className="text-xs text-red-600">{error}</p>}
+      {error && <p className="text-xs text-danger">{error}</p>}
 
       {/* Lista draggable */}
       <div className="space-y-2">
@@ -141,12 +141,12 @@ export function OrdenarRutaClient({ paradas: init }: { paradas: Parada[] }) {
             onDragStart={() => onDragStart(i)}
             onDragOver={e => onDragOver(e, i)}
             onDrop={onDrop}
-            className="bg-white rounded-2xl border border-neutral-200 p-4 flex items-start gap-3 cursor-grab active:cursor-grabbing select-none hover:border-neutral-300 transition-colors"
+            className="bg-white rounded-xl border border-neutral-200 shadow-sm p-4 flex items-start gap-3 cursor-grab active:cursor-grabbing select-none hover:border-neutral-300 transition-colors"
           >
             {/* Número de parada */}
             <div className="flex items-center gap-2 shrink-0">
-              <GripVertical className="size-4 text-neutral-300" />
-              <span className="size-7 flex items-center justify-center rounded-full bg-[#16233f] text-white text-xs font-bold">
+              <GripVertical className="size-4 text-neutral-500" />
+              <span className="size-7 flex items-center justify-center rounded-lg bg-brand-700 text-white text-xs font-bold">
                 {i + 1}
               </span>
             </div>
@@ -154,10 +154,10 @@ export function OrdenarRutaClient({ paradas: init }: { paradas: Parada[] }) {
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2 flex-wrap mb-1">
                 <span className="font-semibold text-sm text-neutral-900">{p.cliente}</span>
-                <span className="text-xs font-mono text-neutral-400">{p.order_number}</span>
-                {p.zona && <span className="text-xs text-neutral-400">· {p.zona}</span>}
+                <span className="text-xs font-mono text-neutral-600">{p.order_number}</span>
+                {p.zona && <span className="text-xs text-neutral-600">· {p.zona}</span>}
               </div>
-              <div className="flex flex-wrap gap-x-4 gap-y-0.5 text-xs text-neutral-500 mb-1.5">
+              <div className="flex flex-wrap gap-x-4 gap-y-0.5 text-xs text-neutral-600 mb-1.5">
                 {p.address && (
                   <span className="flex items-center gap-1">
                     <MapPin className="size-3 shrink-0" />{p.address}
@@ -169,7 +169,7 @@ export function OrdenarRutaClient({ paradas: init }: { paradas: Parada[] }) {
                   </span>
                 )}
               </div>
-              <div className="flex flex-wrap gap-x-3 text-xs text-neutral-400">
+              <div className="flex flex-wrap gap-x-3 text-xs text-neutral-600">
                 {p.lineas.map((l, j) => (
                   <span key={j}>{l.qty}× {l.name}</span>
                 ))}
@@ -179,7 +179,7 @@ export function OrdenarRutaClient({ paradas: init }: { paradas: Parada[] }) {
         ))}
       </div>
 
-      <p className="text-xs text-neutral-400 text-center">
+      <p className="text-xs text-neutral-600 text-center">
         Arrastrá las tarjetas para cambiar el orden · Hacé clic en "Guardar orden" para confirmar
       </p>
     </div>

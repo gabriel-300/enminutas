@@ -208,18 +208,18 @@ export default async function PreventistaPage() {
   const mesNombreDisplay = new Date(mes + "-01").toLocaleDateString("es-AR", { month: "long", year: "numeric" });
 
   return (
-    <div className="p-4 md:p-8 max-w-5xl space-y-5 md:space-y-6">
+    <div className="p-4 md:px-10 md:py-8 md:pb-16 space-y-5 md:space-y-6">
       <div className="flex items-start justify-between flex-wrap gap-3">
         <div>
           <h1 className="text-xl md:text-2xl font-semibold font-display text-neutral-900">Preventista</h1>
-          <p className="text-sm text-neutral-500 mt-1">
+          <p className="text-sm text-neutral-600 mt-1">
             {esVendedor ? "Tus clientes asignados" : "Todos los clientes B2B activos"} — ordenados por inactividad
           </p>
         </div>
         <div className="flex items-center gap-2">
           <Link
             href="/admin/dashboard"
-            className="flex items-center gap-1.5 px-3 py-1.5 border border-[#16233f] text-[#16233f] rounded-xl text-sm font-medium hover:bg-[#16233f] hover:text-white transition-colors"
+            className="flex items-center gap-1.5 px-3 py-1.5 border border-brand-700 text-brand-700 rounded-lg text-sm font-medium hover:bg-brand-700 hover:text-white transition-colors"
             title="Abrí este link desde el celular y usá 'Agregar a pantalla de inicio' para instalarlo como app"
           >
             <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -229,7 +229,7 @@ export default async function PreventistaPage() {
           </Link>
           <Link
             href="/admin/preventista/lista-precios"
-            className="flex items-center gap-1.5 px-3 py-1.5 border border-neutral-200 rounded-xl text-sm font-medium text-neutral-600 hover:bg-neutral-50 transition-colors"
+            className="flex items-center gap-1.5 px-3 py-1.5 border border-n-btn rounded-lg text-sm font-medium text-neutral-800 hover:bg-neutral-50 transition-colors"
           >
             <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
@@ -238,7 +238,7 @@ export default async function PreventistaPage() {
           </Link>
           <Link
             href="/admin/preventista/simulador"
-            className="flex items-center gap-1.5 px-3 py-1.5 bg-tierra-700 text-white rounded-xl text-sm font-medium hover:bg-tierra-800 transition-colors"
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-tierra-700 text-white rounded-lg text-sm font-medium hover:bg-tierra-800 transition-colors"
           >
             <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
@@ -250,29 +250,29 @@ export default async function PreventistaPage() {
 
       {/* Card de comisión propia — solo para vendedor */}
       {esVendedor && (
-        <div className="bg-white rounded-2xl border border-neutral-200 p-5">
-          <p className="text-xs font-semibold text-neutral-400 uppercase tracking-wide mb-3 capitalize">
+        <div className="bg-white rounded-xl border border-neutral-200 shadow-sm p-5">
+          <p className="text-xs font-semibold text-neutral-600 mb-3 capitalize">
             Tu comisión · {mesNombreDisplay}
           </p>
           {comisionPropiaConfig == null ? (
-            <p className="text-sm text-neutral-400">Aún no tenés comisión asignada. Consultá con el administrador.</p>
+            <p className="text-sm text-neutral-600">Aún no tenés comisión asignada. Consultá con el administrador.</p>
           ) : (
             <div className="flex flex-wrap gap-6">
               <div>
-                <p className="text-xs text-neutral-400 mb-0.5">Ventas del mes</p>
+                <p className="text-xs text-neutral-600 mb-0.5">Ventas del mes</p>
                 <p className="text-xl font-semibold font-display tabular-nums text-neutral-900">
                   {fmtARS(ventasPropias)}
                 </p>
               </div>
               <div>
-                <p className="text-xs text-neutral-400 mb-0.5">Tu % de comisión</p>
+                <p className="text-xs text-neutral-600 mb-0.5">Tu % de comisión</p>
                 <p className="text-xl font-semibold font-display tabular-nums text-info">
                   {Math.round(comisionPropiaConfig * 100)}%
                 </p>
               </div>
               <div>
-                <p className="text-xs text-neutral-400 mb-0.5">Tu comisión del mes <span className="text-neutral-300">· sobre pedidos entregados</span></p>
-                <p className={`text-xl font-semibold font-display tabular-nums ${comisionPropiaAmt ? "text-tierra-700" : "text-neutral-400"}`}>
+                <p className="text-xs text-neutral-600 mb-0.5">Tu comisión del mes <span className="text-neutral-500">· sobre pedidos entregados</span></p>
+                <p className={`text-xl font-semibold font-display tabular-nums ${comisionPropiaAmt ? "text-tierra-700" : "text-neutral-600"}`}>
                   {comisionPropiaAmt != null ? fmtARS(comisionPropiaAmt) : "—"}
                 </p>
               </div>
@@ -284,7 +284,7 @@ export default async function PreventistaPage() {
       {/* Metas del mes */}
       {vendedoresMeta.length > 0 && (
         <div>
-          <p className="text-xs font-semibold text-neutral-400 uppercase tracking-wide mb-3">
+          <p className="text-xs font-semibold text-neutral-600 mb-3">
             Metas del mes · {new Date(mes + "-01").toLocaleDateString("es-AR", { month: "long", year: "numeric" })}
           </p>
           <div className={`grid gap-3 md:gap-4 ${vendedoresMeta.length === 1 ? "grid-cols-1 max-w-sm" : "grid-cols-1 sm:grid-cols-2"}`}>

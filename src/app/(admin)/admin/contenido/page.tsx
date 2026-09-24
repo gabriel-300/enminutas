@@ -13,23 +13,21 @@ export default async function ContenidoPage() {
 
   if (error) {
     return (
-      <div className="p-8 text-red-400">
+      <div className="p-8 text-danger">
         Error al cargar contenido: {error.message}
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen" style={{ background: "#0f1623" }}>
-      <div className="px-6 py-8 max-w-4xl mx-auto">
-        <div className="mb-8">
-          <h1 className="text-xl font-semibold text-white">Contenido del sitio web</h1>
-          <p className="text-sm mt-1" style={{ color: "#5a7a9e" }}>
-            Editá los textos e imágenes que aparecen en enminutas.com.ar
-          </p>
-        </div>
-        <ContenidoClient contenido={data ?? []} />
+    <div className="p-4 md:px-10 md:py-8 md:pb-16">
+      <div className="mb-8">
+        <h1 className="text-neutral-900">Contenido del sitio web</h1>
+        <p className="text-sm mt-1 text-neutral-600">
+          Editá los textos e imágenes que aparecen en enminutas.com.ar
+        </p>
       </div>
+      <ContenidoClient contenido={data ?? []} />
     </div>
   );
 }

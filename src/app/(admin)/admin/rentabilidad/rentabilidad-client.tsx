@@ -19,7 +19,7 @@ function pct(contribucion: number, ingresos: number) {
 
 function MargenBar({ valor, max }: { valor: number; max: number }) {
   const w = max > 0 ? Math.max(0, Math.min(100, (valor / max) * 100)) : 0;
-  const color = w >= 50 ? "bg-emerald-400" : w >= 30 ? "bg-amber-400" : "bg-red-400";
+  const color = w >= 50 ? "bg-success-solid" : w >= 30 ? "bg-warning-solid" : "bg-danger-solid";
   return (
     <div className="h-1.5 bg-neutral-100 rounded-full overflow-hidden w-full">
       <div className={`h-full rounded-full ${color} transition-all`} style={{ width: `${w}%` }} />
@@ -54,8 +54,8 @@ export function RentabilidadClient({
             onClick={() => setTab(t)}
             className={`px-4 py-2 text-sm font-medium border-b-2 -mb-px transition-colors ${
               tab === t
-                ? "border-[#16233f] text-[#16233f]"
-                : "border-transparent text-neutral-500 hover:text-neutral-700"
+                ? "border-brand-700 text-brand-700"
+                : "border-transparent text-neutral-600 hover:text-neutral-700"
             }`}
           >
             {t === "canal" ? "Por canal" : "Por producto"}
@@ -65,19 +65,19 @@ export function RentabilidadClient({
 
       {tab === "canal" ? (
         /* ── Vista por canal ─────────────────────────────────────── */
-        <div className="bg-white rounded-2xl border border-neutral-200 overflow-hidden">
+        <div className="bg-white rounded-xl border border-neutral-200 shadow-sm overflow-hidden">
           {filasCanal.length === 0 ? (
-            <p className="px-5 py-10 text-center text-sm text-neutral-400">Sin datos en el período seleccionado.</p>
+            <p className="px-5 py-10 text-center text-sm text-neutral-600">Sin datos en el período seleccionado.</p>
           ) : (
             <table className="w-full text-sm">
               <thead className="border-b border-neutral-100">
                 <tr>
-                  <th className="px-5 py-3 text-left text-xs font-semibold text-neutral-400 uppercase tracking-wide">Canal</th>
-                  <th className="px-4 py-3 text-right text-xs font-semibold text-neutral-400 uppercase tracking-wide">Pedidos</th>
-                  <th className="px-4 py-3 text-right text-xs font-semibold text-neutral-400 uppercase tracking-wide">Ingresos</th>
-                  <th className="px-4 py-3 text-right text-xs font-semibold text-neutral-400 uppercase tracking-wide">Costo MP</th>
-                  <th className="px-4 py-3 text-right text-xs font-semibold text-neutral-400 uppercase tracking-wide">Contribución</th>
-                  <th className="px-4 py-3 text-right text-xs font-semibold text-neutral-400 uppercase tracking-wide">Margen</th>
+                  <th className="px-5 py-3 text-left text-xs font-semibold text-neutral-600">Canal</th>
+                  <th className="px-4 py-3 text-right text-xs font-semibold text-neutral-600">Pedidos</th>
+                  <th className="px-4 py-3 text-right text-xs font-semibold text-neutral-600">Ingresos</th>
+                  <th className="px-4 py-3 text-right text-xs font-semibold text-neutral-600">Costo MP</th>
+                  <th className="px-4 py-3 text-right text-xs font-semibold text-neutral-600">Contribución</th>
+                  <th className="px-4 py-3 text-right text-xs font-semibold text-neutral-600">Margen</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-neutral-50">
@@ -89,12 +89,12 @@ export function RentabilidadClient({
                         <p className="font-semibold text-neutral-900">{f.label}</p>
                         <MargenBar valor={f.contribucion} max={maxContribCanal} />
                       </td>
-                      <td className="px-4 py-4 text-right text-neutral-500 tabular-nums">{f.pedidos}</td>
+                      <td className="px-4 py-4 text-right text-neutral-600 tabular-nums">{f.pedidos}</td>
                       <td className="px-4 py-4 text-right text-neutral-700 tabular-nums">{fmt(f.ingresos)}</td>
-                      <td className="px-4 py-4 text-right text-neutral-500 tabular-nums">{fmt(f.costoMP)}</td>
-                      <td className="px-4 py-4 text-right font-semibold text-emerald-700 tabular-nums">{fmt(f.contribucion)}</td>
+                      <td className="px-4 py-4 text-right text-neutral-600 tabular-nums">{fmt(f.costoMP)}</td>
+                      <td className="px-4 py-4 text-right font-semibold text-success tabular-nums">{fmt(f.contribucion)}</td>
                       <td className="px-4 py-4 text-right">
-                        <span className={`text-sm font-bold tabular-nums ${m >= 50 ? "text-emerald-700" : m >= 30 ? "text-amber-700" : "text-red-700"}`}>
+                        <span className={`text-sm font-bold tabular-nums ${m >= 50 ? "text-success" : m >= 30 ? "text-warning" : "text-danger"}`}>
                           {m}%
                         </span>
                       </td>
@@ -113,21 +113,21 @@ export function RentabilidadClient({
             value={busqueda}
             onChange={e => setBusqueda(e.target.value)}
             placeholder="Buscar producto o línea..."
-            className="rounded-xl border border-neutral-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#16233f]/20 focus:border-[#16233f] w-64"
+            className="rounded-lg border border-neutral-400 px-3 py-2 text-sm focus:outline-none focus:ring-[3px] focus:ring-brand-500/30 focus:border-brand-700 w-64"
           />
-          <div className="bg-white rounded-2xl border border-neutral-200 overflow-hidden">
+          <div className="bg-white rounded-xl border border-neutral-200 shadow-sm overflow-hidden">
             {filtradosProducto.length === 0 ? (
-              <p className="px-5 py-10 text-center text-sm text-neutral-400">Sin datos.</p>
+              <p className="px-5 py-10 text-center text-sm text-neutral-600">Sin datos.</p>
             ) : (
               <table className="w-full text-sm">
                 <thead className="border-b border-neutral-100">
                   <tr>
-                    <th className="px-5 py-3 text-left text-xs font-semibold text-neutral-400 uppercase tracking-wide">Producto</th>
-                    <th className="px-4 py-3 text-right text-xs font-semibold text-neutral-400 uppercase tracking-wide">Cajas</th>
-                    <th className="px-4 py-3 text-right text-xs font-semibold text-neutral-400 uppercase tracking-wide">Ingresos</th>
-                    <th className="px-4 py-3 text-right text-xs font-semibold text-neutral-400 uppercase tracking-wide">Costo MP</th>
-                    <th className="px-4 py-3 text-right text-xs font-semibold text-neutral-400 uppercase tracking-wide">Contribución</th>
-                    <th className="px-4 py-3 text-right text-xs font-semibold text-neutral-400 uppercase tracking-wide">Margen</th>
+                    <th className="px-5 py-3 text-left text-xs font-semibold text-neutral-600">Producto</th>
+                    <th className="px-4 py-3 text-right text-xs font-semibold text-neutral-600">Cajas</th>
+                    <th className="px-4 py-3 text-right text-xs font-semibold text-neutral-600">Ingresos</th>
+                    <th className="px-4 py-3 text-right text-xs font-semibold text-neutral-600">Costo MP</th>
+                    <th className="px-4 py-3 text-right text-xs font-semibold text-neutral-600">Contribución</th>
+                    <th className="px-4 py-3 text-right text-xs font-semibold text-neutral-600">Margen</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-neutral-50">
@@ -138,16 +138,16 @@ export function RentabilidadClient({
                         <td className="px-5 py-3.5">
                           <p className="font-medium text-neutral-900">{f.nombre}</p>
                           <div className="flex items-center gap-2 mt-0.5">
-                            <p className="text-xs text-neutral-400">{f.linea}</p>
+                            <p className="text-xs text-neutral-600">{f.linea}</p>
                             <MargenBar valor={f.contribucion} max={maxContribProd} />
                           </div>
                         </td>
-                        <td className="px-4 py-3.5 text-right text-neutral-500 tabular-nums">{f.unidades.toLocaleString("es-AR")}</td>
+                        <td className="px-4 py-3.5 text-right text-neutral-600 tabular-nums">{f.unidades.toLocaleString("es-AR")}</td>
                         <td className="px-4 py-3.5 text-right text-neutral-700 tabular-nums">{fmt(f.ingresos)}</td>
-                        <td className="px-4 py-3.5 text-right text-neutral-500 tabular-nums">{fmt(f.costoMP)}</td>
-                        <td className="px-4 py-3.5 text-right font-semibold text-emerald-700 tabular-nums">{fmt(f.contribucion)}</td>
+                        <td className="px-4 py-3.5 text-right text-neutral-600 tabular-nums">{fmt(f.costoMP)}</td>
+                        <td className="px-4 py-3.5 text-right font-semibold text-success tabular-nums">{fmt(f.contribucion)}</td>
                         <td className="px-4 py-3.5 text-right">
-                          <span className={`text-sm font-bold tabular-nums ${m >= 50 ? "text-emerald-700" : m >= 30 ? "text-amber-700" : "text-red-700"}`}>
+                          <span className={`text-sm font-bold tabular-nums ${m >= 50 ? "text-success" : m >= 30 ? "text-warning" : "text-danger"}`}>
                             {m}%
                           </span>
                         </td>
@@ -158,7 +158,7 @@ export function RentabilidadClient({
               </table>
             )}
           </div>
-          <p className="text-xs text-neutral-400 text-center">
+          <p className="text-xs text-neutral-600 text-center">
             Costo MP = costo de materia prima por caja × cantidad vendida · no incluye mano de obra ni gastos fijos
           </p>
         </div>

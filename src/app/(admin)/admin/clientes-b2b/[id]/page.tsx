@@ -3,7 +3,7 @@ import type { Metadata } from "next";
 import { createClient, createAdminClient } from "@/lib/supabase/server";
 import { redirect, notFound } from "next/navigation";
 import Link from "next/link";
-import { OrderStatusBadge } from "@/components/ui/badge";
+import { PedidoStatusBadge } from "@/components/ui";
 import { fmtFechaLarga, fmtFechaSolo } from "@/lib/fecha";
 import { DireccionesClient } from "./direcciones-client";
 import { PagosClient, type Pago, type OrdenResumen } from "./pagos-client";
@@ -117,10 +117,10 @@ export default async function ClienteB2BDetailPage({
   const saldoPendiente     = totalFacturado - totalPagado;
 
   return (
-    <div className="p-4 md:p-8 max-w-4xl">
+    <div className="p-4 md:px-10 md:py-8 md:pb-16">
       <Link
         href="/admin/clientes-b2b"
-        className="text-sm text-neutral-400 hover:text-neutral-700 transition-colors mb-4 inline-block"
+        className="text-sm text-neutral-600 hover:text-neutral-700 transition-colors mb-4 inline-block"
       >
         ← Clientes B2B
       </Link>
@@ -131,30 +131,30 @@ export default async function ClienteB2BDetailPage({
 
       {/* Datos + Métricas */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 md:gap-4 mb-5 md:mb-6">
-        <div className="bg-white rounded-2xl border border-neutral-200 p-5 space-y-3">
-          <p className="text-xs font-semibold text-neutral-400 uppercase tracking-wide">Datos</p>
+        <div className="bg-white rounded-xl border border-neutral-200 shadow-sm p-5 space-y-3">
+          <p className="text-xs font-semibold text-neutral-600">Datos</p>
           <div>
-            <p className="text-xs text-neutral-400">Email</p>
+            <p className="text-xs text-neutral-600">Email</p>
             <p className="text-sm text-neutral-900">{authUser?.email ?? "—"}</p>
           </div>
           {profile.phone && (
             <div>
-              <p className="text-xs text-neutral-400">Teléfono</p>
+              <p className="text-xs text-neutral-600">Teléfono</p>
               <p className="text-sm text-neutral-900">{profile.phone}</p>
             </div>
           )}
           {profile.document_number && (
             <div>
-              <p className="text-xs text-neutral-400">CUIT</p>
+              <p className="text-xs text-neutral-600">CUIT</p>
               <p className="text-sm text-neutral-900 font-mono">{profile.document_number}</p>
             </div>
           )}
           <div>
-            <p className="text-xs text-neutral-400">Canal</p>
+            <p className="text-xs text-neutral-600">Canal</p>
             <p className="text-sm font-medium text-neutral-900">
               {canal?.nombre ?? "—"}
               {canal?.descuento_pct != null && canal.descuento_pct > 0 && (
-                <span className="text-neutral-400 ml-1 font-normal">· −{canal.descuento_pct}%</span>
+                <span className="text-neutral-600 ml-1 font-normal">· −{canal.descuento_pct}%</span>
               )}
               {profile.descuento_extra_pct > 0 && (
                 <span className="text-success ml-1 font-normal">+{profile.descuento_extra_pct}% extra</span>
@@ -163,7 +163,7 @@ export default async function ClienteB2BDetailPage({
           </div>
           {role === "admin" && (
             <div>
-              <p className="text-xs text-neutral-400">Comisión</p>
+              <p className="text-xs text-neutral-600">Comisión</p>
               <ComisionEdit
                 clienteId={id}
                 comisionOverride={profile.comision_pct_override != null ? Number(profile.comision_pct_override) : null}
@@ -172,30 +172,30 @@ export default async function ClienteB2BDetailPage({
             </div>
           )}
           <div>
-            <p className="text-xs text-neutral-400">Estado</p>
+            <p className="text-xs text-neutral-600">Estado</p>
             <p className="text-sm font-medium text-neutral-900">
               {STATUS_LABEL[profile.b2b_status] ?? profile.b2b_status}
             </p>
           </div>
           <div>
-            <p className="text-xs text-neutral-400">Cliente desde</p>
+            <p className="text-xs text-neutral-600">Cliente desde</p>
             <p className="text-sm text-neutral-900">{fmtFechaLarga(profile.created_at)}</p>
           </div>
         </div>
 
-        <div className="bg-white rounded-2xl border border-neutral-200 p-5 space-y-4">
-          <p className="text-xs font-semibold text-neutral-400 uppercase tracking-wide">Resumen</p>
+        <div className="bg-white rounded-xl border border-neutral-200 shadow-sm p-5 space-y-4">
+          <p className="text-xs font-semibold text-neutral-600">Resumen</p>
           <div>
-            <p className="text-xs text-neutral-400">Total pedidos</p>
+            <p className="text-xs text-neutral-600">Total pedidos</p>
             <p className="text-2xl font-semibold font-display text-neutral-900">{orders.length}</p>
           </div>
           <div>
-            <p className="text-xs text-neutral-400">Total pagado</p>
-            <p className="text-2xl font-semibold font-display text-emerald-600">{fmt(totalPagado)}</p>
+            <p className="text-xs text-neutral-600">Total pagado</p>
+            <p className="text-2xl font-semibold font-display text-success">{fmt(totalPagado)}</p>
           </div>
           <div>
-            <p className="text-xs text-neutral-400">Saldo pendiente</p>
-            <p className={`text-2xl font-semibold font-display ${saldoPendiente > 0 ? "text-red-600" : "text-emerald-600"}`}>
+            <p className="text-xs text-neutral-600">Saldo pendiente</p>
+            <p className={`text-2xl font-semibold font-display ${saldoPendiente > 0 ? "text-danger" : "text-success"}`}>
               {saldoPendiente <= 0 ? `${fmt(Math.abs(saldoPendiente))} a favor` : fmt(saldoPendiente)}
             </p>
           </div>
@@ -222,12 +222,12 @@ export default async function ClienteB2BDetailPage({
       </div>
 
       {/* Historial de pedidos */}
-      <div className="bg-white rounded-2xl border border-neutral-200 overflow-hidden">
+      <div className="bg-white rounded-xl border border-neutral-200 shadow-sm overflow-hidden">
         <div className="px-5 py-4 border-b border-neutral-100">
           <p className="text-sm font-medium text-neutral-700">Historial de pedidos</p>
         </div>
         {orders.length === 0 ? (
-          <p className="text-sm text-neutral-400 text-center py-12">Este cliente no tiene pedidos aún.</p>
+          <p className="text-sm text-neutral-600 text-center py-12">Este cliente no tiene pedidos aún.</p>
         ) : (
           <>
             {/* Mobile */}
@@ -240,10 +240,10 @@ export default async function ClienteB2BDetailPage({
                       {o.order_number}
                     </Link>
                     <div className="flex items-center gap-2 mt-1">
-                      <OrderStatusBadge status={o.status} />
-                      <span className="text-xs text-neutral-400">Pedido: {fmtFechaSolo(o.created_at)}</span>
+                      <PedidoStatusBadge status={o.status} />
+                      <span className="text-xs text-neutral-600">Pedido: {fmtFechaSolo(o.created_at)}</span>
                       {o.entregado_at && (
-                        <span className="text-xs text-neutral-400">· Entrega: {fmtFechaSolo(o.entregado_at)}</span>
+                        <span className="text-xs text-neutral-600">· Entrega: {fmtFechaSolo(o.entregado_at)}</span>
                       )}
                     </div>
                   </div>
@@ -258,11 +258,11 @@ export default async function ClienteB2BDetailPage({
             <table className="hidden md:table w-full text-sm">
               <thead>
                 <tr className="text-left border-b border-neutral-100">
-                  <th className="px-5 py-3 text-xs font-medium text-neutral-400">Nro.</th>
-                  <th className="px-5 py-3 text-xs font-medium text-neutral-400">Fecha pedido</th>
-                  <th className="px-5 py-3 text-xs font-medium text-neutral-400">Fecha entrega</th>
-                  <th className="px-5 py-3 text-xs font-medium text-neutral-400">Estado</th>
-                  <th className="px-5 py-3 text-xs font-medium text-neutral-400 text-right">Total</th>
+                  <th className="px-5 py-3 text-xs font-semibold text-neutral-600">Nro.</th>
+                  <th className="px-5 py-3 text-xs font-semibold text-neutral-600">Fecha pedido</th>
+                  <th className="px-5 py-3 text-xs font-semibold text-neutral-600">Fecha entrega</th>
+                  <th className="px-5 py-3 text-xs font-semibold text-neutral-600">Estado</th>
+                  <th className="px-5 py-3 text-xs font-semibold text-neutral-600 text-right">Total</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-neutral-50">
@@ -274,9 +274,9 @@ export default async function ClienteB2BDetailPage({
                         {o.order_number}
                       </Link>
                     </td>
-                    <td className="px-5 py-3 text-neutral-500 text-xs">{fmtFechaSolo(o.created_at)}</td>
-                    <td className="px-5 py-3 text-neutral-500 text-xs">{o.entregado_at ? fmtFechaSolo(o.entregado_at) : "—"}</td>
-                    <td className="px-5 py-3"><OrderStatusBadge status={o.status} /></td>
+                    <td className="px-5 py-3 text-neutral-600 text-xs">{fmtFechaSolo(o.created_at)}</td>
+                    <td className="px-5 py-3 text-neutral-600 text-xs">{o.entregado_at ? fmtFechaSolo(o.entregado_at) : "—"}</td>
+                    <td className="px-5 py-3"><PedidoStatusBadge status={o.status} /></td>
                     <td className="px-5 py-3 text-right font-medium text-neutral-900 tabular-nums">
                       {fmt(Number(o.total))}
                     </td>

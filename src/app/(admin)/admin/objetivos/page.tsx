@@ -99,29 +99,29 @@ export default async function ObjetivosPage() {
     : null;
 
   return (
-    <div className="p-4 md:p-8 max-w-4xl">
+    <div className="p-4 md:px-10 md:py-8 md:pb-16">
       <div className="mb-6">
         <h1 className="text-2xl font-bold font-display text-neutral-900">Objetivos de ventas</h1>
-        <p className="text-sm text-neutral-400 mt-1">Real vs meta — últimos 6 meses</p>
+        <p className="text-sm text-neutral-600 mt-1">Real vs meta — últimos 6 meses</p>
       </div>
 
       {/* KPIs resumen */}
       <div className="grid grid-cols-3 gap-4 mb-8">
-        <div className="bg-white rounded-2xl border border-neutral-200 p-5">
-          <p className="text-xs text-neutral-400 uppercase tracking-wide mb-1">Este mes (real)</p>
+        <div className="bg-white rounded-xl border border-neutral-200 shadow-sm p-5">
+          <p className="text-xs text-neutral-600 mb-1">Este mes (real)</p>
           <p className="text-2xl font-bold text-neutral-900 tabular-nums">
             {new Intl.NumberFormat("es-AR", { style: "currency", currency: "ARS", maximumFractionDigits: 0 }).format(actual.totalReal)}
           </p>
         </div>
-        <div className={`rounded-2xl border p-5 ${actual.totalPct >= 100 ? "bg-emerald-50 border-emerald-200" : actual.totalPct >= 70 ? "bg-amber-50 border-amber-200" : "bg-white border-neutral-200"}`}>
-          <p className="text-xs text-neutral-400 uppercase tracking-wide mb-1">% de la meta</p>
-          <p className={`text-2xl font-bold tabular-nums ${actual.totalPct >= 100 ? "text-emerald-600" : actual.totalPct >= 70 ? "text-amber-600" : actual.totalMeta > 0 ? "text-red-600" : "text-neutral-400"}`}>
+        <div className={`rounded-xl border p-5 ${actual.totalPct >= 100 ? "bg-success-bg border-success-border" : actual.totalPct >= 70 ? "bg-warning-bg border-warning-border" : "bg-white border-neutral-200"}`}>
+          <p className="text-xs text-neutral-600 mb-1">% de la meta</p>
+          <p className={`text-2xl font-bold tabular-nums ${actual.totalPct >= 100 ? "text-success" : actual.totalPct >= 70 ? "text-warning" : actual.totalMeta > 0 ? "text-danger" : "text-neutral-600"}`}>
             {actual.totalMeta > 0 ? `${Math.round(actual.totalPct)}%` : "Sin meta"}
           </p>
         </div>
-        <div className="bg-white rounded-2xl border border-neutral-200 p-5">
-          <p className="text-xs text-neutral-400 uppercase tracking-wide mb-1">vs mes anterior</p>
-          <p className={`text-2xl font-bold tabular-nums ${varPct === null ? "text-neutral-400" : varPct >= 0 ? "text-emerald-600" : "text-red-600"}`}>
+        <div className="bg-white rounded-xl border border-neutral-200 shadow-sm p-5">
+          <p className="text-xs text-neutral-600 mb-1">vs mes anterior</p>
+          <p className={`text-2xl font-bold tabular-nums ${varPct === null ? "text-neutral-600" : varPct >= 0 ? "text-success" : "text-danger"}`}>
             {varPct === null ? "—" : `${varPct > 0 ? "+" : ""}${varPct}%`}
           </p>
         </div>

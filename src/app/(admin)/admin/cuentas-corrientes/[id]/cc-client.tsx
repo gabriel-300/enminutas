@@ -37,7 +37,7 @@ function PagarPedidoForm({ pedido, clienteId, onDone }: {
   const [error, setError]   = useState<string | null>(null);
   const [pending, start]    = useTransition();
 
-  const inputCls = "w-full rounded-xl border border-neutral-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#16233f]/20 focus:border-[#16233f]";
+  const inputCls = "w-full rounded-lg border border-neutral-400 px-3 py-2 text-sm focus:outline-none focus:ring-[3px] focus:ring-brand-500/30 focus:border-brand-700";
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -63,25 +63,25 @@ function PagarPedidoForm({ pedido, clienteId, onDone }: {
     <form onSubmit={handleSubmit} className="mt-3 pt-3 border-t border-neutral-100 space-y-3">
       <div className="grid grid-cols-3 gap-2">
         <div>
-          <label className="block text-xs font-medium text-neutral-400 mb-1">Monto a pagar</label>
+          <label className="block text-[13px] font-medium text-neutral-800 mb-1.5">Monto a pagar</label>
           <input type="number" min="0.01" step="0.01" value={monto}
             onChange={e => setMonto(e.target.value)} required className={inputCls} disabled={pending} />
         </div>
         <div>
-          <label className="block text-xs font-medium text-neutral-400 mb-1">Referencia</label>
+          <label className="block text-[13px] font-medium text-neutral-800 mb-1.5">Referencia</label>
           <input type="text" placeholder="Transf., cheque…" value={ref}
             onChange={e => setRef(e.target.value)} className={inputCls} disabled={pending} />
         </div>
         <div>
-          <label className="block text-xs font-medium text-neutral-400 mb-1">Fecha</label>
+          <label className="block text-[13px] font-medium text-neutral-800 mb-1.5">Fecha</label>
           <input type="date" value={fecha} onChange={e => setFecha(e.target.value)}
             required className={inputCls} disabled={pending} />
         </div>
       </div>
-      {error && <p className="text-xs text-red-600">{error}</p>}
+      {error && <p className="text-xs text-danger">{error}</p>}
       <div className="flex gap-2">
         <button type="submit" disabled={pending}
-          className="px-4 py-2 rounded-xl bg-emerald-600 text-white text-xs font-medium hover:bg-emerald-700 disabled:opacity-50 transition-colors">
+          className="px-4 py-2 rounded-xl bg-success text-white text-xs font-medium hover:bg-success disabled:opacity-50 transition-colors">
           {pending ? "Registrando…" : "Confirmar pago"}
         </button>
         <button type="button" onClick={onDone} disabled={pending}
@@ -103,13 +103,13 @@ function PedidosPendientesSection({ pedidos, clienteId }: {
   const totalPendiente = pedidos.reduce((s, p) => s + p.saldo, 0);
 
   return (
-    <div className="bg-white rounded-2xl border border-orange-200 overflow-hidden">
-      <div className="px-5 py-4 border-b border-orange-100 flex items-center justify-between bg-orange-50">
+    <div className="bg-white rounded-xl border border-warning-border overflow-hidden">
+      <div className="px-5 py-4 border-b border-warning-border flex items-center justify-between bg-warning-bg">
         <div>
-          <h2 className="text-sm font-semibold text-orange-800">Pedidos pendientes de pago</h2>
-          <p className="text-xs text-orange-600 mt-0.5">{pedidos.length} pedido{pedidos.length !== 1 ? "s" : ""} con saldo</p>
+          <h2 className="text-sm font-semibold text-warning">Pedidos pendientes de pago</h2>
+          <p className="text-xs text-warning mt-0.5">{pedidos.length} pedido{pedidos.length !== 1 ? "s" : ""} con saldo</p>
         </div>
-        <span className="text-base font-bold text-orange-700 tabular-nums">
+        <span className="text-base font-bold text-warning tabular-nums">
           {fmt(totalPendiente)}
         </span>
       </div>
@@ -125,30 +125,30 @@ function PedidosPendientesSection({ pedidos, clienteId }: {
                   <div className="flex items-center gap-2 flex-wrap">
                     <span className="font-mono text-sm font-semibold text-neutral-800">{p.order_number}</span>
                     {isParcial && (
-                      <span className="text-xs px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 font-medium">
+                      <span className="text-xs px-2 py-0.5 rounded-full bg-warning-bg text-warning font-medium">
                         Pago parcial {pctPagado}%
                       </span>
                     )}
                   </div>
-                  <p className="text-xs text-neutral-400 mt-0.5">
+                  <p className="text-xs text-neutral-600 mt-0.5">
                     {new Date(p.created_at).toLocaleDateString("es-AR", { day:"2-digit", month:"2-digit", year:"2-digit" })}
                     {isParcial && ` · Pagado: ${fmt(p.pagado)} · Pendiente: `}
                     {!isParcial && " · Total: "}
                   </p>
                   {isParcial && (
                     <div className="mt-1.5 w-48 h-1.5 bg-neutral-100 rounded-full overflow-hidden">
-                      <div className="h-full bg-amber-400 rounded-full" style={{ width: `${pctPagado}%` }} />
+                      <div className="h-full bg-warning-solid rounded-full" style={{ width: `${pctPagado}%` }} />
                     </div>
                   )}
                 </div>
                 <div className="flex items-center gap-3 shrink-0">
                   <div className="text-right">
-                    <p className="text-xs text-neutral-400">Saldo</p>
-                    <p className="text-base font-bold text-red-600 tabular-nums">{fmt(p.saldo)}</p>
+                    <p className="text-xs text-neutral-600">Saldo</p>
+                    <p className="text-base font-bold text-danger tabular-nums">{fmt(p.saldo)}</p>
                   </div>
                   <button
                     onClick={() => setOpenId(isOpen ? null : p.id)}
-                    className="px-3 py-1.5 rounded-xl bg-emerald-600 text-white text-xs font-medium hover:bg-emerald-700 transition-colors"
+                    className="px-3 py-1.5 rounded-xl bg-success text-white text-xs font-medium hover:bg-success transition-colors"
                   >
                     {isOpen ? "Cancelar" : "Registrar pago"}
                   </button>
@@ -170,10 +170,10 @@ function PedidosPendientesSection({ pedidos, clienteId }: {
 }
 
 const TIPO_CFG: Record<string, { label: string; bg: string; text: string }> = {
-  cargo:        { label: "Cargo",        bg: "#fef2f2", text: "#dc2626" },
-  pago:         { label: "Pago",         bg: "#ecfdf5", text: "#059669" },
-  nota_credito: { label: "Nota crédito", bg: "#eff6ff", text: "#2563eb" },
-  ajuste:       { label: "Ajuste",       bg: "#f5f5f5", text: "#737373" },
+  cargo:        { label: "Cargo",        bg: "#fdecea", text: "#b42318" },
+  pago:         { label: "Pago",         bg: "#eaf6ee", text: "#1d6b3a" },
+  nota_credito: { label: "Nota crédito", bg: "#e9f1fc", text: "#1f5bb5" },
+  ajuste:       { label: "Ajuste",       bg: "#f5f5f5", text: "#737069" },
 };
 
 export function CcClient({
@@ -240,8 +240,8 @@ export function CcClient({
     });
   }
 
-  const labelClass = "block text-xs font-medium text-neutral-500 mb-1";
-  const inputClass = "w-full rounded-xl border border-neutral-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#16233f]/20 focus:border-[#16233f]";
+  const labelClass = "block text-xs font-medium text-neutral-600 mb-1";
+  const inputClass = "w-full rounded-lg border border-neutral-400 px-3 py-2 text-sm focus:outline-none focus:ring-[3px] focus:ring-brand-500/30 focus:border-brand-700";
 
   return (
     <div className="space-y-6">
@@ -249,9 +249,9 @@ export function CcClient({
       <PedidosPendientesSection pedidos={pedidosPendientes} clienteId={clienteId} />
 
       {/* Límite de crédito */}
-      <div className="bg-white rounded-2xl border border-neutral-200 p-5 flex items-center justify-between gap-4">
+      <div className="bg-white rounded-xl border border-neutral-200 shadow-sm p-5 flex items-center justify-between gap-4">
         <div>
-          <p className="text-xs text-neutral-400 uppercase tracking-wide mb-0.5">Límite de crédito</p>
+          <p className="text-xs text-neutral-600 mb-0.5">Límite de crédito</p>
           {editingLimite ? (
             <div className="flex items-center gap-2 mt-1">
               <input
@@ -260,29 +260,29 @@ export function CcClient({
                 step="1000"
                 value={limiteVal}
                 onChange={e => setLimiteVal(e.target.value)}
-                className="w-40 rounded-xl border border-neutral-200 px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#16233f]/20"
+                className="w-40 rounded-lg border border-neutral-400 px-3 py-1.5 text-sm focus:outline-none focus:ring-[3px] focus:ring-brand-500/30 focus:border-brand-700"
               />
               <button
                 onClick={handleLimiteSave}
                 disabled={limPending}
-                className="px-3 py-1.5 rounded-xl bg-[#16233f] text-white text-xs font-medium disabled:opacity-50"
+                className="px-3 py-1.5 rounded-lg bg-brand-700 text-white text-xs font-medium disabled:opacity-50"
               >
                 Guardar
               </button>
-              <button onClick={() => setEditingLimite(false)} className="text-xs text-neutral-400 hover:text-neutral-700">
+              <button onClick={() => setEditingLimite(false)} className="text-xs text-neutral-600 hover:text-neutral-700">
                 Cancelar
               </button>
             </div>
           ) : (
             <p className="text-lg font-bold text-neutral-900 tabular-nums">
-              {limite > 0 ? fmt(limite) : <span className="text-neutral-400 font-normal text-sm">Sin límite definido</span>}
+              {limite > 0 ? fmt(limite) : <span className="text-neutral-600 font-normal text-sm">Sin límite definido</span>}
             </p>
           )}
         </div>
         {!editingLimite && (
           <button
             onClick={() => setEditingLimite(true)}
-            className="text-xs text-[#16233f] hover:underline font-medium"
+            className="text-xs text-brand-700 hover:underline font-medium"
           >
             Editar
           </button>
@@ -290,7 +290,7 @@ export function CcClient({
       </div>
 
       {/* Formulario nuevo movimiento */}
-      <div className="bg-white rounded-2xl border border-neutral-200 p-5">
+      <div className="bg-white rounded-xl border border-neutral-200 shadow-sm p-5">
         <h2 className="text-sm font-semibold text-neutral-900 mb-4">Registrar movimiento</h2>
         <form onSubmit={handleSubmit} className="space-y-4">
           {/* Tipo */}
@@ -302,7 +302,7 @@ export function CcClient({
                 onClick={() => setTipo(t)}
                 className={`flex-1 py-2 rounded-xl text-xs font-medium border transition-colors ${
                   tipo === t
-                    ? "bg-[#16233f] text-white border-[#16233f]"
+                    ? "bg-brand-700 text-white border-brand-700"
                     : "bg-white text-neutral-600 border-neutral-200 hover:bg-neutral-50"
                 }`}
               >
@@ -364,12 +364,12 @@ export function CcClient({
             />
           </div>
 
-          {error && <p className="text-xs text-red-600">{error}</p>}
+          {error && <p className="text-xs text-danger">{error}</p>}
 
           <button
             type="submit"
             disabled={pending}
-            className="w-full py-2.5 rounded-xl bg-[#16233f] text-white text-sm font-medium hover:bg-[#1e2f52] transition-colors disabled:opacity-50"
+            className="w-full py-2.5 rounded-lg bg-brand-700 text-white text-sm font-medium hover:bg-brand-800 transition-colors disabled:opacity-50"
           >
             {pending ? "Registrando..." : "Registrar movimiento"}
           </button>
@@ -377,22 +377,22 @@ export function CcClient({
       </div>
 
       {/* Tabla de movimientos */}
-      <div className="bg-white rounded-2xl border border-neutral-200 overflow-hidden">
+      <div className="bg-white rounded-xl border border-neutral-200 shadow-sm overflow-hidden">
         <div className="px-5 py-4 border-b border-neutral-100 flex items-center justify-between">
           <h2 className="text-sm font-semibold text-neutral-900">Movimientos</h2>
-          <span className="text-xs text-neutral-400">{movimientos.length} registros</span>
+          <span className="text-xs text-neutral-600">{movimientos.length} registros</span>
         </div>
         {movimientos.length === 0 ? (
-          <p className="px-5 py-10 text-center text-sm text-neutral-400">Sin movimientos registrados.</p>
+          <p className="px-5 py-10 text-center text-sm text-neutral-600">Sin movimientos registrados.</p>
         ) : (
           <table className="w-full text-sm">
             <thead className="border-b border-neutral-100">
               <tr>
-                <th className="px-5 py-3 text-left text-xs font-semibold text-neutral-400 uppercase tracking-wide">Fecha</th>
-                <th className="px-5 py-3 text-left text-xs font-semibold text-neutral-400 uppercase tracking-wide">Tipo</th>
-                <th className="px-5 py-3 text-left text-xs font-semibold text-neutral-400 uppercase tracking-wide">Descripción</th>
-                <th className="px-5 py-3 text-right text-xs font-semibold text-neutral-400 uppercase tracking-wide">Monto</th>
-                <th className="px-5 py-3 text-right text-xs font-semibold text-neutral-400 uppercase tracking-wide">Saldo parcial</th>
+                <th className="px-5 py-3 text-left text-xs font-semibold text-neutral-600">Fecha</th>
+                <th className="px-5 py-3 text-left text-xs font-semibold text-neutral-600">Tipo</th>
+                <th className="px-5 py-3 text-left text-xs font-semibold text-neutral-600">Descripción</th>
+                <th className="px-5 py-3 text-right text-xs font-semibold text-neutral-600">Monto</th>
+                <th className="px-5 py-3 text-right text-xs font-semibold text-neutral-600">Saldo parcial</th>
                 <th className="px-5 py-3"></th>
               </tr>
             </thead>
@@ -410,7 +410,7 @@ export function CcClient({
                   const esPositivo = Number(m.monto) > 0;
                   return (
                     <tr key={m.id} className="hover:bg-neutral-50">
-                      <td className="px-5 py-3 text-neutral-500 tabular-nums whitespace-nowrap">
+                      <td className="px-5 py-3 text-neutral-600 tabular-nums whitespace-nowrap">
                         {new Date(m.fecha + "T12:00:00").toLocaleDateString("es-AR")}
                       </td>
                       <td className="px-5 py-3">
@@ -421,15 +421,15 @@ export function CcClient({
                       </td>
                       <td className="px-5 py-3 text-neutral-700">
                         {m.descripcion}
-                        {m.referencia && <span className="text-neutral-400 text-xs ml-1">({m.referencia})</span>}
+                        {m.referencia && <span className="text-neutral-600 text-xs ml-1">({m.referencia})</span>}
                         {m.order_id && (
                           <a href={`/admin/pedidos/${m.order_id}`} target="_blank"
-                            className="ml-2 text-xs text-[#16233f] hover:underline opacity-60">
+                            className="ml-2 text-xs text-brand-700 hover:underline opacity-60">
                             ver pedido ↗
                           </a>
                         )}
                       </td>
-                      <td className={`px-5 py-3 text-right font-semibold tabular-nums ${esPositivo ? "text-red-600" : "text-emerald-600"}`}>
+                      <td className={`px-5 py-3 text-right font-semibold tabular-nums ${esPositivo ? "text-danger" : "text-success"}`}>
                         {esPositivo ? "+" : ""}{fmt(Number(m.monto))}
                       </td>
                       <td className="px-5 py-3 text-right text-neutral-600 tabular-nums text-xs">
@@ -439,7 +439,7 @@ export function CcClient({
                         <button
                           onClick={() => handleDelete(m.id)}
                           disabled={pending}
-                          className="p-1.5 rounded-lg text-neutral-300 hover:text-red-500 hover:bg-red-50 transition-colors disabled:opacity-30"
+                          className="p-1.5 rounded-lg text-neutral-500 hover:text-danger hover:bg-danger-bg transition-colors disabled:opacity-30"
                           title="Eliminar"
                         >
                           <Trash2 className="size-3.5" />
@@ -453,7 +453,7 @@ export function CcClient({
             <tfoot className="border-t-2 border-neutral-200">
               <tr>
                 <td colSpan={3} className="px-5 py-3 text-sm font-semibold text-neutral-900">Saldo actual</td>
-                <td colSpan={3} className={`px-5 py-3 text-right text-base font-bold tabular-nums ${saldo > 0 ? "text-red-600" : "text-emerald-600"}`}>
+                <td colSpan={3} className={`px-5 py-3 text-right text-base font-bold tabular-nums ${saldo > 0 ? "text-danger" : "text-success"}`}>
                   {fmt(saldo)}
                 </td>
               </tr>

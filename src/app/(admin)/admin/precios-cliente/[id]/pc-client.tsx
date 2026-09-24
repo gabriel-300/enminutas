@@ -82,8 +82,8 @@ export function PcClient({
     });
   }
 
-  const labelClass = "block text-xs font-medium text-neutral-500 mb-1";
-  const inputClass = "w-full rounded-xl border border-neutral-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#16233f]/20 focus:border-[#16233f]";
+  const labelClass = "block text-xs font-medium text-neutral-600 mb-1";
+  const inputClass = "w-full rounded-lg border border-neutral-400 px-3 py-2 text-sm focus:outline-none focus:ring-[3px] focus:ring-brand-500/30 focus:border-brand-700";
 
   return (
     <div className="space-y-5">
@@ -91,7 +91,7 @@ export function PcClient({
       <div className="flex justify-end">
         <button
           onClick={() => { setShowForm(v => !v); if (showForm) resetForm(); }}
-          className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#16233f] text-white text-sm font-medium hover:bg-[#1e2f52] transition-colors"
+          className="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-brand-700 text-white text-sm font-medium hover:bg-brand-800 transition-colors"
         >
           {showForm ? <X className="size-4" /> : <Plus className="size-4" />}
           {showForm ? "Cancelar" : "Agregar precio especial"}
@@ -100,7 +100,7 @@ export function PcClient({
 
       {/* Formulario */}
       {showForm && (
-        <div className="bg-white rounded-2xl border border-neutral-200 p-5">
+        <div className="bg-white rounded-xl border border-neutral-200 shadow-sm p-5">
           <h2 className="text-sm font-semibold text-neutral-900 mb-4">Nuevo precio especial</h2>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
@@ -122,7 +122,7 @@ export function PcClient({
                 ))}
               </select>
               {productosSinOverride.length === 0 && overrides.length > 0 && (
-                <p className="text-xs text-neutral-400 mt-1">Todos los productos activos ya tienen precio especial para este cliente.</p>
+                <p className="text-xs text-neutral-600 mt-1">Todos los productos activos ya tienen precio especial para este cliente.</p>
               )}
             </div>
 
@@ -134,7 +134,7 @@ export function PcClient({
                   type="button"
                   onClick={() => setTipo(t)}
                   className={`flex-1 py-2 rounded-xl text-xs font-medium border transition-colors ${
-                    tipo === t ? "bg-[#16233f] text-white border-[#16233f]" : "bg-white text-neutral-600 border-neutral-200 hover:bg-neutral-50"
+                    tipo === t ? "bg-brand-700 text-white border-brand-700" : "bg-white text-neutral-600 border-neutral-200 hover:bg-neutral-50"
                   }`}
                 >
                   {t === "precio_fijo" ? "Precio fijo (c/IVA)" : "Descuento %"}
@@ -175,9 +175,9 @@ export function PcClient({
                 value={notas} onChange={e => setNotas(e.target.value)} className={inputClass} />
             </div>
 
-            {error && <p className="text-xs text-red-600">{error}</p>}
+            {error && <p className="text-xs text-danger">{error}</p>}
             <button type="submit" disabled={pending}
-              className="w-full py-2.5 rounded-xl bg-[#16233f] text-white text-sm font-medium hover:bg-[#1e2f52] transition-colors disabled:opacity-50">
+              className="w-full py-2.5 rounded-lg bg-brand-700 text-white text-sm font-medium hover:bg-brand-800 transition-colors disabled:opacity-50">
               {pending ? "Guardando..." : "Guardar precio especial"}
             </button>
           </form>
@@ -185,20 +185,20 @@ export function PcClient({
       )}
 
       {/* Tabla de overrides */}
-      <div className="bg-white rounded-2xl border border-neutral-200 overflow-hidden">
+      <div className="bg-white rounded-xl border border-neutral-200 shadow-sm overflow-hidden">
         {overrides.length === 0 ? (
-          <p className="px-5 py-10 text-center text-sm text-neutral-400">
+          <p className="px-5 py-10 text-center text-sm text-neutral-600">
             Este cliente usa precios estándar. Agregá un precio especial arriba.
           </p>
         ) : (
           <table className="w-full text-sm">
             <thead className="border-b border-neutral-100">
               <tr>
-                <th className="px-5 py-3 text-left text-xs font-semibold text-neutral-400 uppercase tracking-wide">Producto</th>
-                <th className="px-5 py-3 text-right text-xs font-semibold text-neutral-400 uppercase tracking-wide">Precio std.</th>
-                <th className="px-5 py-3 text-right text-xs font-semibold text-neutral-400 uppercase tracking-wide">Precio especial</th>
-                <th className="px-5 py-3 text-right text-xs font-semibold text-neutral-400 uppercase tracking-wide">Diferencia</th>
-                <th className="px-5 py-3 text-right text-xs font-semibold text-neutral-400 uppercase tracking-wide">Vigencia</th>
+                <th className="px-5 py-3 text-left text-xs font-semibold text-neutral-600">Producto</th>
+                <th className="px-5 py-3 text-right text-xs font-semibold text-neutral-600">Precio std.</th>
+                <th className="px-5 py-3 text-right text-xs font-semibold text-neutral-600">Precio especial</th>
+                <th className="px-5 py-3 text-right text-xs font-semibold text-neutral-600">Diferencia</th>
+                <th className="px-5 py-3 text-right text-xs font-semibold text-neutral-600">Vigencia</th>
                 <th className="px-5 py-3"></th>
               </tr>
             </thead>
@@ -213,28 +213,28 @@ export function PcClient({
                   <tr key={o.id} className="hover:bg-neutral-50 transition-colors">
                     <td className="px-5 py-3.5">
                       <p className="font-medium text-neutral-900">{o.producto_nombre}</p>
-                      {o.notas && <p className="text-xs text-neutral-400 mt-0.5 italic">{o.notas}</p>}
+                      {o.notas && <p className="text-xs text-neutral-600 mt-0.5 italic">{o.notas}</p>}
                     </td>
-                    <td className="px-5 py-3.5 text-right text-neutral-500 tabular-nums">{fmt(o.precio_b2b_std)}</td>
+                    <td className="px-5 py-3.5 text-right text-neutral-600 tabular-nums">{fmt(o.precio_b2b_std)}</td>
                     <td className="px-5 py-3.5 text-right font-semibold text-neutral-900 tabular-nums">
                       {fmt(precioEsp)}
                       {o.tipo === "descuento_pct" && (
-                        <span className="block text-xs font-normal text-neutral-400">−{o.descuento_pct}%</span>
+                        <span className="block text-xs font-normal text-neutral-600">−{o.descuento_pct}%</span>
                       )}
                     </td>
                     <td className="px-5 py-3.5 text-right tabular-nums">
-                      <span className={`text-xs font-semibold ${diff < 0 ? "text-emerald-600" : diff > 0 ? "text-red-600" : "text-neutral-400"}`}>
+                      <span className={`text-xs font-semibold ${diff < 0 ? "text-success" : diff > 0 ? "text-danger" : "text-neutral-600"}`}>
                         {diff !== 0 ? `${diffPct > 0 ? "+" : ""}${diffPct}%` : "igual"}
                       </span>
                     </td>
-                    <td className="px-5 py-3.5 text-right text-xs text-neutral-500 tabular-nums whitespace-nowrap">
+                    <td className="px-5 py-3.5 text-right text-xs text-neutral-600 tabular-nums whitespace-nowrap">
                       {new Date(o.vigente_desde + "T12:00:00").toLocaleDateString("es-AR")}
                       {o.vigente_hasta && ` → ${new Date(o.vigente_hasta + "T12:00:00").toLocaleDateString("es-AR")}`}
                       {!o.vigente_hasta && " → ∞"}
                     </td>
                     <td className="px-5 py-3.5 text-right">
                       <button onClick={() => handleDelete(o.id)} disabled={pending}
-                        className="p-1.5 rounded-lg text-neutral-300 hover:text-red-500 hover:bg-red-50 transition-colors disabled:opacity-30" title="Eliminar">
+                        className="p-1.5 rounded-lg text-neutral-500 hover:text-danger hover:bg-danger-bg transition-colors disabled:opacity-30" title="Eliminar">
                         <Trash2 className="size-3.5" />
                       </button>
                     </td>

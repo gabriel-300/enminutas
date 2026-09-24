@@ -107,12 +107,12 @@ export default async function ComisionesPage({
   const mesLabel = new Date(selYear, Number(mesSel.split("-")[1]) - 1).toLocaleDateString("es-AR", { month: "long", year: "numeric" });
 
   return (
-    <div className="p-4 md:p-8 max-w-6xl space-y-5 md:space-y-6">
+    <div className="p-4 md:px-10 md:py-8 md:pb-16 space-y-5 md:space-y-6">
       {/* Header */}
       <div className="flex items-start justify-between flex-wrap gap-3">
         <div>
           <h1 className="text-xl md:text-2xl font-semibold font-display text-neutral-900">Comisiones</h1>
-          <p className="text-sm text-neutral-500 mt-1">
+          <p className="text-sm text-neutral-600 mt-1">
             Comisión de preventistas y comercializadora, por cliente, mes y año — lo que hay que pagarles.
             Se cuenta cuando el pedido se entrega, en el mes de la entrega (en una entrega parcial, solo lo entregado).
           </p>
@@ -120,13 +120,13 @@ export default async function ComisionesPage({
         <div className="flex items-center gap-2">
           <a
             href={`/api/admin/export/comisiones?mes=${mesSel}`}
-            className="flex items-center gap-1.5 px-3 py-1.5 border border-neutral-200 rounded-xl text-sm font-medium text-neutral-600 hover:bg-neutral-50 transition-colors"
+            className="flex items-center gap-1.5 px-3 py-1.5 border border-n-btn rounded-lg text-sm font-medium text-neutral-800 hover:bg-neutral-50 transition-colors"
           >
             Exportar mes (CSV)
           </a>
           <a
             href={`/api/admin/export/comisiones?anio=${selYear}`}
-            className="flex items-center gap-1.5 px-3 py-1.5 border border-neutral-200 rounded-xl text-sm font-medium text-neutral-600 hover:bg-neutral-50 transition-colors"
+            className="flex items-center gap-1.5 px-3 py-1.5 border border-n-btn rounded-lg text-sm font-medium text-neutral-800 hover:bg-neutral-50 transition-colors"
           >
             Exportar año (CSV)
           </a>
@@ -134,7 +134,7 @@ export default async function ComisionesPage({
       </div>
 
       {!comercializadoraId && (
-        <div className="px-4 py-3 rounded-xl bg-amber-50 border border-amber-200 text-xs text-amber-700">
+        <div className="px-4 py-3 rounded-xl bg-warning-bg border border-warning-border text-xs text-warning">
           No hay ningún vendedor marcado como "comercializadora" — el resto de la comisión de cada cliente
           (lo que no se lleva el preventista asignado) no se le está atribuyendo a nadie.
         </div>
@@ -145,42 +145,42 @@ export default async function ComisionesPage({
 
       {/* KPIs del mes */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
-        <div className="bg-white rounded-2xl border border-neutral-200 p-5">
-          <p className="text-xs font-medium text-neutral-400 uppercase tracking-wide mb-1">Comisión total · {mesLabel}</p>
+        <div className="bg-white rounded-xl border border-neutral-200 shadow-sm p-5">
+          <p className="text-xs font-medium text-neutral-600 mb-1">Comisión total · {mesLabel}</p>
           <p className="text-2xl font-semibold font-display tabular-nums text-neutral-900">{fmtK(totalMesComision)}</p>
         </div>
-        <div className={`rounded-2xl border p-5 ${totalMesPendiente > 0 ? "bg-amber-50 border-amber-200" : "bg-white border-neutral-200"}`}>
-          <p className="text-xs font-medium text-neutral-400 uppercase tracking-wide mb-1">Pendiente de pagar</p>
-          <p className={`text-2xl font-semibold font-display tabular-nums ${totalMesPendiente > 0 ? "text-amber-700" : "text-neutral-900"}`}>{fmtK(totalMesPendiente)}</p>
+        <div className={`rounded-xl border p-5 ${totalMesPendiente > 0 ? "bg-warning-bg border-warning-border" : "bg-white border-neutral-200"}`}>
+          <p className="text-xs font-medium text-neutral-600 mb-1">Pendiente de pagar</p>
+          <p className={`text-2xl font-semibold font-display tabular-nums ${totalMesPendiente > 0 ? "text-warning" : "text-neutral-900"}`}>{fmtK(totalMesPendiente)}</p>
         </div>
-        <div className="bg-white rounded-2xl border border-neutral-200 p-5">
-          <p className="text-xs font-medium text-neutral-400 uppercase tracking-wide mb-1">Comisión total · {selYear}</p>
+        <div className="bg-white rounded-xl border border-neutral-200 shadow-sm p-5">
+          <p className="text-xs font-medium text-neutral-600 mb-1">Comisión total · {selYear}</p>
           <p className="text-2xl font-semibold font-display tabular-nums text-neutral-900">{fmtK(totalAnioComision)}</p>
         </div>
-        <div className={`rounded-2xl border p-5 ${totalAnioPendiente > 0 ? "bg-amber-50 border-amber-200" : "bg-white border-neutral-200"}`}>
-          <p className="text-xs font-medium text-neutral-400 uppercase tracking-wide mb-1">Pendiente del año</p>
-          <p className={`text-2xl font-semibold font-display tabular-nums ${totalAnioPendiente > 0 ? "text-amber-700" : "text-neutral-900"}`}>{fmtK(totalAnioPendiente)}</p>
+        <div className={`rounded-xl border p-5 ${totalAnioPendiente > 0 ? "bg-warning-bg border-warning-border" : "bg-white border-neutral-200"}`}>
+          <p className="text-xs font-medium text-neutral-600 mb-1">Pendiente del año</p>
+          <p className={`text-2xl font-semibold font-display tabular-nums ${totalAnioPendiente > 0 ? "text-warning" : "text-neutral-900"}`}>{fmtK(totalAnioPendiente)}</p>
         </div>
       </div>
 
       {/* Detalle por vendedor — mes seleccionado */}
       <div className="space-y-3">
         {filas.length === 0 && (
-          <p className="text-sm text-neutral-400 text-center py-8">No hay preventistas cargados.</p>
+          <p className="text-sm text-neutral-600 text-center py-8">No hay preventistas cargados.</p>
         )}
         {filas.map((f) => (
-          <div key={f.id} className={`bg-white rounded-2xl border overflow-hidden ${f.esComercializadora ? "border-tierra-300" : "border-neutral-200"}`}>
+          <div key={f.id} className={`bg-white rounded-xl border overflow-hidden ${f.esComercializadora ? "border-tierra-300" : "border-neutral-200"}`}>
             <div className="px-5 py-4 flex items-center justify-between gap-4 flex-wrap">
               <div className="min-w-0">
                 <p className="text-sm font-semibold text-neutral-800 flex items-center gap-2">
                   {f.nombre}
                   {f.esComercializadora && (
-                    <span className="text-[10px] font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded bg-tierra-50 text-tierra-700">
+                    <span className="text-xs font-semibold px-1.5 py-0.5 rounded bg-tierra-50 text-tierra-700">
                       Comercializadora
                     </span>
                   )}
                 </p>
-                <p className="text-xs text-neutral-400 mt-0.5">
+                <p className="text-xs text-neutral-600 mt-0.5">
                   Entregado {mesLabel}: {fmt(f.mesSelData.ventas)}
                   {" · "}
                   {f.esComercializadora ? (
@@ -188,14 +188,14 @@ export default async function ComisionesPage({
                   ) : f.pctConfigurado ? (
                     `${Math.round(f.pct * 100)}% comisión (tope: el % de cada cliente)`
                   ) : (
-                    <span className="text-neutral-300">sin comisión asignada</span>
+                    <span className="text-neutral-500">sin comisión asignada</span>
                   )}
                 </p>
               </div>
               <div className="flex items-center gap-2">
                 <p className="text-xl font-semibold font-display tabular-nums text-neutral-900">{fmt(f.mesSelData.comision)}</p>
                 {f.mesSelData.pagada && f.mesSelData.comision > 0 && (
-                  <span className="text-[10px] font-medium text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded">✓ Todo pagado</span>
+                  <span className="text-xs font-medium text-success bg-success-bg px-1.5 py-0.5 rounded">✓ Todo pagado</span>
                 )}
               </div>
             </div>
@@ -214,19 +214,19 @@ export default async function ComisionesPage({
 
       {/* Resumen anual */}
       {filas.length > 0 && (
-        <div className="bg-white rounded-2xl border border-neutral-200 overflow-hidden">
+        <div className="bg-white rounded-xl border border-neutral-200 shadow-sm overflow-hidden">
           <div className="px-5 py-3.5 border-b border-neutral-100">
-            <p className="text-xs font-semibold text-neutral-400 uppercase tracking-wider">Resumen {selYear}</p>
+            <p className="text-xs font-semibold text-neutral-600">Resumen {selYear}</p>
           </div>
           <div className="overflow-x-auto">
             <table className="w-full text-xs">
               <thead>
                 <tr className="border-b border-neutral-100">
-                  <th className="text-left px-4 py-2.5 text-neutral-400 font-medium sticky left-0 bg-white">Vendedor</th>
+                  <th className="text-xs text-left px-4 py-2.5 text-neutral-600 font-semibold sticky left-0 bg-white">Vendedor</th>
                   {MESES_LABEL.map((m) => (
-                    <th key={m} className="text-right px-3 py-2.5 text-neutral-400 font-medium whitespace-nowrap">{m}</th>
+                    <th key={m} className="text-right px-3 py-2.5 text-neutral-600 font-medium whitespace-nowrap">{m}</th>
                   ))}
-                  <th className="text-right px-4 py-2.5 text-neutral-500 font-semibold whitespace-nowrap">Total</th>
+                  <th className="text-xs text-right px-4 py-2.5 text-neutral-600 font-semibold whitespace-nowrap">Total</th>
                 </tr>
               </thead>
               <tbody>
@@ -238,11 +238,11 @@ export default async function ComisionesPage({
                     {f.meses.map((m) => (
                       <td key={m.mes} className="text-right px-3 py-2.5 tabular-nums whitespace-nowrap">
                         {m.comision > 0 ? (
-                          <span className={m.pagada ? "text-emerald-600" : "text-neutral-700"}>
+                          <span className={m.pagada ? "text-success" : "text-neutral-700"}>
                             {fmtK(m.comision)}{m.pagada && " ✓"}
                           </span>
                         ) : (
-                          <span className="text-neutral-300">—</span>
+                          <span className="text-neutral-500">—</span>
                         )}
                       </td>
                     ))}
@@ -252,7 +252,7 @@ export default async function ComisionesPage({
               </tbody>
             </table>
           </div>
-          <p className="px-5 py-2.5 text-[11px] text-neutral-400 border-t border-neutral-50">✓ = comisión marcada como pagada · ★ = comercializadora</p>
+          <p className="px-5 py-2.5 text-xs text-neutral-600 border-t border-neutral-50">✓ = comisión marcada como pagada · ★ = comercializadora</p>
         </div>
       )}
     </div>

@@ -33,13 +33,13 @@ export default async function InsumosPage() {
   })) as Insumo[];
 
   return (
-    <div className="p-4 md:p-8">
+    <div className="p-4 md:px-10 md:py-8 md:pb-16">
       <div className="mb-6">
-        <Link href="/admin/cocina" className="text-sm text-neutral-400 hover:text-neutral-700 mb-2 inline-block">
+        <Link href="/admin/cocina" className="text-sm text-neutral-600 hover:text-neutral-700 mb-2 inline-block">
           ← Cocina
         </Link>
         <h1 className="text-2xl font-semibold font-display text-neutral-900">Insumos</h1>
-        <p className="text-sm text-neutral-500 mt-1">
+        <p className="text-sm text-neutral-600 mt-1">
           Catálogo de materias primas con precios. Las recetas los referencian — actualizá un precio acá y se recalcula en todas las recetas.
         </p>
       </div>

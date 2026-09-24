@@ -123,26 +123,26 @@ export function NuevaFacturaClient({ clientes, productos }: { clientes: Cliente[
     });
   }
 
-  const inputCls = "w-full border border-neutral-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#16233f]/20 focus:border-[#16233f] transition-colors bg-white";
+  const inputCls = "w-full border border-neutral-400 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-[3px] focus:ring-brand-500/30 focus:border-brand-700 transition-colors bg-white";
   const labelCls = "block text-xs font-medium text-neutral-600 mb-1";
 
   return (
-    <div className="p-4 md:p-8 max-w-4xl">
+    <div className="p-4 md:px-10 md:py-8 md:pb-16">
       {/* Header */}
       <div className="mb-6 flex items-center gap-3">
-        <Link href="/admin/facturacion" className="p-1.5 rounded-lg text-neutral-400 hover:bg-neutral-100 transition-colors">
+        <Link href="/admin/facturacion" className="p-1.5 rounded-lg text-neutral-600 hover:bg-neutral-100 transition-colors">
           <ChevronLeft className="size-5" />
         </Link>
         <div>
           <h1 className="text-xl font-semibold font-display text-neutral-900">Nueva factura</h1>
-          <p className="text-sm text-neutral-400 mt-0.5">Completá los datos del comprobante</p>
+          <p className="text-sm text-neutral-600 mt-0.5">Completá los datos del comprobante</p>
         </div>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-5">
 
         {/* ── Receptor ── */}
-        <section className="bg-white rounded-2xl border border-neutral-200 p-5">
+        <section className="bg-white rounded-xl border border-neutral-200 shadow-sm p-5">
           <h2 className="text-sm font-semibold text-neutral-700 mb-4">Datos del receptor</h2>
           <div className="grid sm:grid-cols-2 gap-4">
 
@@ -187,7 +187,7 @@ export function NuevaFacturaClient({ clientes, productos }: { clientes: Cliente[
         </section>
 
         {/* ── Comprobante ── */}
-        <section className="bg-white rounded-2xl border border-neutral-200 p-5">
+        <section className="bg-white rounded-xl border border-neutral-200 shadow-sm p-5">
           <h2 className="text-sm font-semibold text-neutral-700 mb-4">Datos del comprobante</h2>
           <div className="grid sm:grid-cols-4 gap-4">
             <div>
@@ -225,17 +225,17 @@ export function NuevaFacturaClient({ clientes, productos }: { clientes: Cliente[
         </section>
 
         {/* ── Ítems ── */}
-        <section className="bg-white rounded-2xl border border-neutral-200 p-5">
+        <section className="bg-white rounded-xl border border-neutral-200 shadow-sm p-5">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-sm font-semibold text-neutral-700">Ítems</h2>
-            <button type="button" onClick={addItem} className="flex items-center gap-1 text-xs text-[#16233f] font-medium hover:underline">
+            <button type="button" onClick={addItem} className="flex items-center gap-1 text-xs text-brand-700 font-medium hover:underline">
               <Plus className="size-3.5" /> Agregar ítem
             </button>
           </div>
 
           <div className="space-y-2">
             {/* Header */}
-            <div className="grid grid-cols-[2fr_1fr_1fr_1.5fr_1fr_auto] gap-2 text-[10px] font-semibold uppercase tracking-wide text-neutral-400 px-1">
+            <div className="grid grid-cols-[2fr_1fr_1fr_1.5fr_1fr_auto] gap-2 text-xs font-semibold text-neutral-600 px-1">
               <span>Descripción</span><span>Cantidad</span><span>Unidad</span><span>Precio unit. (s/IVA)</span><span>IVA</span><span></span>
             </div>
 
@@ -265,7 +265,7 @@ export function NuevaFacturaClient({ clientes, productos }: { clientes: Cliente[
                 <select className={inputCls} value={it.alicuota_iva} onChange={e => updateItem(i, "alicuota_iva", e.target.value)}>
                   {IVA_OPS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
                 </select>
-                <button type="button" onClick={() => removeItem(i)} disabled={items.length === 1} className="p-1.5 rounded-lg text-neutral-300 hover:text-red-500 hover:bg-red-50 transition-colors disabled:opacity-30">
+                <button type="button" onClick={() => removeItem(i)} disabled={items.length === 1} className="p-1.5 rounded-lg text-neutral-500 hover:text-danger hover:bg-danger-bg transition-colors disabled:opacity-30">
                   <Trash2 className="size-4" />
                 </button>
               </div>
@@ -274,7 +274,7 @@ export function NuevaFacturaClient({ clientes, productos }: { clientes: Cliente[
         </section>
 
         {/* ── Totales ── */}
-        <section className="bg-white rounded-2xl border border-neutral-200 p-5">
+        <section className="bg-white rounded-xl border border-neutral-200 shadow-sm p-5">
           <h2 className="text-sm font-semibold text-neutral-700 mb-3">Resumen IVA</h2>
           <div className="max-w-xs ml-auto space-y-1.5 text-sm">
             {tots.ng21 > 0 && <>
@@ -296,7 +296,7 @@ export function NuevaFacturaClient({ clientes, productos }: { clientes: Cliente[
 
         {/* Error */}
         {error && (
-          <div className="bg-red-50 border border-red-200 rounded-xl px-4 py-3 text-sm text-red-700">{error}</div>
+          <div className="bg-danger-bg border border-danger-border rounded-xl px-4 py-3 text-sm text-danger">{error}</div>
         )}
 
         {/* Acciones */}
@@ -307,7 +307,7 @@ export function NuevaFacturaClient({ clientes, productos }: { clientes: Cliente[
           <button
             type="submit"
             disabled={pending}
-            className="px-5 py-2 rounded-xl bg-[#16233f] text-white text-sm font-medium hover:bg-[#1e2f52] transition-colors disabled:opacity-50"
+            className="px-5 py-2 rounded-lg bg-brand-700 text-white text-sm font-medium hover:bg-brand-800 transition-colors disabled:opacity-50"
           >
             {pending ? "Guardando..." : "Guardar borrador"}
           </button>

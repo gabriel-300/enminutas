@@ -69,7 +69,7 @@ export function ChatWidget() {
 
       {/* Panel de chat */}
       {open && (
-        <div className="w-80 sm:w-96 bg-white rounded-2xl shadow-2xl border border-neutral-200 flex flex-col overflow-hidden"
+        <div className="w-80 sm:w-96 bg-white rounded-xl shadow-2xl border border-neutral-200 flex flex-col overflow-hidden"
           style={{ maxHeight: "min(500px, calc(100vh - 120px))" }}>
 
           {/* Header */}
@@ -97,7 +97,7 @@ export function ChatWidget() {
           <div className="flex-1 overflow-y-auto p-4 space-y-3 min-h-0">
             {msgs.length === 0 ? (
               <div className="space-y-2">
-                <p className="text-xs text-neutral-500 text-center mb-3">
+                <p className="text-xs text-neutral-600 text-center mb-3">
                   Podés preguntarme sobre precios, pedidos o el estado de producción.
                 </p>
                 {SUGERENCIAS.map((s, i) => (
@@ -110,7 +110,7 @@ export function ChatWidget() {
             ) : (
               msgs.map((m, i) => (
                 <div key={i} className={`flex ${m.role === "user" ? "justify-end" : "justify-start"}`}>
-                  <div className={`max-w-[85%] px-3 py-2 rounded-2xl text-sm whitespace-pre-wrap leading-relaxed ${
+                  <div className={`max-w-[85%] px-3 py-2 rounded-xl text-sm whitespace-pre-wrap leading-relaxed ${
                     m.role === "user"
                       ? "bg-tierra-700 text-white rounded-br-sm"
                       : "bg-neutral-100 text-neutral-800 rounded-bl-sm"
@@ -124,7 +124,7 @@ export function ChatWidget() {
             {/* Indicador de carga */}
             {loading && (
               <div className="flex justify-start">
-                <div className="bg-neutral-100 px-4 py-3 rounded-2xl rounded-bl-sm">
+                <div className="bg-neutral-100 px-4 py-3 rounded-xl rounded-bl-sm">
                   <span className="flex gap-1.5 items-center">
                     {[0, 150, 300].map((d) => (
                       <span key={d}
@@ -147,12 +147,12 @@ export function ChatWidget() {
               onKeyDown={handleKey}
               placeholder="Escribí tu consulta…"
               disabled={loading}
-              className="flex-1 text-sm px-3 py-2 rounded-xl border border-neutral-200 focus:outline-none focus:ring-2 focus:ring-tierra-700/20 disabled:opacity-50 bg-white"
+              className="flex-1 text-sm px-3 py-2 rounded-lg border border-neutral-400 focus:outline-none focus:ring-[3px] focus:ring-brand-500/30 focus:border-brand-700 disabled:opacity-50 bg-white"
             />
             <button
               onClick={() => send()}
               disabled={loading || !input.trim()}
-              className="px-3 py-2 rounded-xl bg-tierra-700 text-white text-sm font-medium hover:bg-tierra-800 disabled:opacity-40 transition-colors"
+              className="px-3 py-2 rounded-lg bg-tierra-700 text-white text-sm font-medium hover:bg-tierra-800 disabled:opacity-40 transition-colors"
             >
               <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
@@ -165,7 +165,7 @@ export function ChatWidget() {
       {/* Botón flotante */}
       <button
         onClick={() => setOpen((o) => !o)}
-        className="size-12 rounded-full bg-tierra-700 text-white shadow-lg hover:bg-tierra-800 transition-all hover:scale-105 flex items-center justify-center"
+        className="size-11 rounded-full bg-brand-950 text-white shadow-[0_6px_16px_rgba(23,21,58,0.3)] hover:bg-brand-900 transition-all hover:scale-105 flex items-center justify-center"
         aria-label={open ? "Cerrar asistente" : "Abrir asistente"}
       >
         {open ? (

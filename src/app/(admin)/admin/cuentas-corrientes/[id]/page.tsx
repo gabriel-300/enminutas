@@ -101,24 +101,24 @@ export default async function CcDetailPage({
     .filter((p: { saldo: number }) => p.saldo > 0.5);
 
   return (
-    <div className="p-4 md:p-8 max-w-4xl">
+    <div className="p-4 md:px-10 md:py-8 md:pb-16">
       {/* Header */}
       <div className="mb-6 flex items-start gap-3">
-        <Link href="/admin/cuentas-corrientes" className="p-1.5 rounded-lg text-neutral-400 hover:bg-neutral-100 transition-colors mt-0.5">
+        <Link href="/admin/cuentas-corrientes" className="p-1.5 rounded-lg text-neutral-600 hover:bg-neutral-100 transition-colors mt-0.5">
           <ChevronLeft className="size-5" />
         </Link>
         <div className="flex-1">
           <h1 className="text-xl font-semibold font-display text-neutral-900">{cuenta.business_name}</h1>
-          <p className="text-sm text-neutral-400 mt-0.5">CUIT: {cuenta.cuit}</p>
+          <p className="text-sm text-neutral-600 mt-0.5">CUIT: {cuenta.cuit}</p>
         </div>
         {/* Saldo en header */}
         <div className="text-right">
-          <p className="text-xs text-neutral-400 mb-0.5">Saldo actual</p>
-          <p className={`text-2xl font-bold tabular-nums ${saldo > 0 ? "text-red-600" : "text-emerald-600"}`}>
+          <p className="text-xs text-neutral-600 mb-0.5">Saldo actual</p>
+          <p className={`text-2xl font-bold tabular-nums ${saldo > 0 ? "text-danger" : "text-success"}`}>
             {fmt(saldo)}
           </p>
           {limite > 0 && (
-            <p className="text-xs text-neutral-400 mt-0.5">
+            <p className="text-xs text-neutral-600 mt-0.5">
               Límite: {fmt(limite)} ({Math.round((saldo / limite) * 100)}% usado)
             </p>
           )}
@@ -127,8 +127,8 @@ export default async function CcDetailPage({
 
       {/* Aging */}
       {saldo > 0 && (
-        <div className="bg-white rounded-2xl border border-neutral-200 p-5 mb-6">
-          <p className="text-xs font-semibold uppercase tracking-wide text-neutral-400 mb-3">Aging de deuda (cargos)</p>
+        <div className="bg-white rounded-xl border border-neutral-200 shadow-sm p-5 mb-6">
+          <p className="text-xs font-semibold text-neutral-600 mb-3">Aging de deuda (cargos)</p>
           <div className="grid grid-cols-4 gap-3 text-center">
             {[
               { label: "0–30 días", val: ag.d30,    ok: true  },
@@ -136,9 +136,9 @@ export default async function CcDetailPage({
               { label: "61–90 días", val: ag.d90,   ok: ag.d90 === 0  },
               { label: "+90 días",   val: ag.d90mas, ok: ag.d90mas === 0 },
             ].map(b => (
-              <div key={b.label} className={`rounded-xl p-3 ${b.val > 0 && !b.ok ? "bg-red-50" : "bg-neutral-50"}`}>
-                <p className="text-xs text-neutral-400 mb-1">{b.label}</p>
-                <p className={`text-sm font-bold tabular-nums ${b.val > 0 && !b.ok ? "text-red-600" : "text-neutral-700"}`}>
+              <div key={b.label} className={`rounded-xl p-3 ${b.val > 0 && !b.ok ? "bg-danger-bg" : "bg-neutral-50"}`}>
+                <p className="text-xs text-neutral-600 mb-1">{b.label}</p>
+                <p className={`text-sm font-bold tabular-nums ${b.val > 0 && !b.ok ? "text-danger" : "text-neutral-700"}`}>
                   {fmt(b.val)}
                 </p>
               </div>

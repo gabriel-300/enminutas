@@ -83,28 +83,28 @@ export default async function ChequesPage({
     .order("full_name");
 
   return (
-    <div className="p-4 md:p-8 max-w-5xl">
+    <div className="p-4 md:px-10 md:py-8 md:pb-16">
       <div className="mb-6">
         <h1 className="text-2xl font-bold font-display text-neutral-900">Cheques diferidos</h1>
-        <p className="text-sm text-neutral-400 mt-1">Cartera de cheques recibidos de clientes B2B</p>
+        <p className="text-sm text-neutral-600 mt-1">Cartera de cheques recibidos de clientes B2B</p>
       </div>
 
       {/* KPIs */}
       <div className="grid grid-cols-3 gap-4 mb-6">
-        <div className="bg-white rounded-2xl border border-neutral-200 p-5">
-          <p className="text-xs text-neutral-400 uppercase tracking-wide mb-1">En cartera</p>
+        <div className="bg-white rounded-xl border border-neutral-200 shadow-sm p-5">
+          <p className="text-xs text-neutral-600 mb-1">En cartera</p>
           <p className="text-2xl font-bold text-neutral-900 tabular-nums">{fmt(montoCartera)}</p>
-          <p className="text-xs text-neutral-400 mt-0.5">{enCartera.length} cheque{enCartera.length !== 1 ? "s" : ""}</p>
+          <p className="text-xs text-neutral-600 mt-0.5">{enCartera.length} cheque{enCartera.length !== 1 ? "s" : ""}</p>
         </div>
-        <div className={`rounded-2xl border p-5 ${vencenHoy7 > 0 ? "bg-amber-50 border-amber-200" : "bg-white border-neutral-200"}`}>
-          <p className="text-xs text-neutral-400 uppercase tracking-wide mb-1">Acreditan en 7 días</p>
-          <p className={`text-2xl font-bold ${vencenHoy7 > 0 ? "text-amber-700" : "text-neutral-900"}`}>{vencenHoy7}</p>
-          <p className="text-xs text-neutral-400 mt-0.5">cheques próximos</p>
+        <div className={`rounded-xl border p-5 ${vencenHoy7 > 0 ? "bg-warning-bg border-warning-border" : "bg-white border-neutral-200"}`}>
+          <p className="text-xs text-neutral-600 mb-1">Acreditan en 7 días</p>
+          <p className={`text-2xl font-bold ${vencenHoy7 > 0 ? "text-warning" : "text-neutral-900"}`}>{vencenHoy7}</p>
+          <p className="text-xs text-neutral-600 mt-0.5">cheques próximos</p>
         </div>
-        <div className={`rounded-2xl border p-5 ${rechazados > 0 ? "bg-red-50 border-red-200" : "bg-white border-neutral-200"}`}>
-          <p className="text-xs text-neutral-400 uppercase tracking-wide mb-1">Rechazados</p>
-          <p className={`text-2xl font-bold ${rechazados > 0 ? "text-red-600" : "text-neutral-900"}`}>{rechazados}</p>
-          <p className="text-xs text-neutral-400 mt-0.5">este mes</p>
+        <div className={`rounded-xl border p-5 ${rechazados > 0 ? "bg-danger-bg border-danger-border" : "bg-white border-neutral-200"}`}>
+          <p className="text-xs text-neutral-600 mb-1">Rechazados</p>
+          <p className={`text-2xl font-bold ${rechazados > 0 ? "text-danger" : "text-neutral-900"}`}>{rechazados}</p>
+          <p className="text-xs text-neutral-600 mt-0.5">este mes</p>
         </div>
       </div>
 
@@ -116,7 +116,7 @@ export default async function ChequesPage({
             href={t === "todos" ? "/admin/cheques" : `/admin/cheques?estado=${t}`}
             className={`px-3 py-1.5 rounded-xl text-xs font-medium transition-colors ${
               filtro === t
-                ? "bg-[#16233f] text-white"
+                ? "bg-brand-700 text-white"
                 : "bg-white border border-neutral-200 text-neutral-600 hover:bg-neutral-50"
             }`}
           >

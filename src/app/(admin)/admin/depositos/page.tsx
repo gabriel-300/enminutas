@@ -41,16 +41,16 @@ export default async function DepositosPage() {
   }));
 
   return (
-    <div className="p-4 md:p-8 max-w-2xl">
+    <div className="p-4 md:px-10 md:py-8 md:pb-16 max-w-2xl">
       <div className="mb-6">
         <Link
           href="/admin/configuracion"
-          className="inline-flex items-center gap-1 text-sm text-neutral-400 hover:text-neutral-600 mb-3"
+          className="inline-flex items-center gap-1 text-sm text-neutral-600 hover:text-neutral-600 mb-3"
         >
           <ChevronLeft className="size-4" /> Configuración
         </Link>
         <h1 className="text-2xl font-bold font-display text-neutral-900">Depósitos</h1>
-        <p className="text-sm text-neutral-400 mt-1">
+        <p className="text-sm text-neutral-600 mt-1">
           Ubicaciones físicas de almacenamiento. Los lotes de stock se asignan a un depósito.
         </p>
       </div>

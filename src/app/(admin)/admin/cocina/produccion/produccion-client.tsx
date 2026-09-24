@@ -106,16 +106,16 @@ export function ProduccionClient({ productos, historial }: Props) {
     });
   }
 
-  const inputCls = "w-full px-3 py-2 text-sm border border-neutral-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#16233f]/20 disabled:opacity-50";
+  const inputCls = "w-full px-3 py-2 text-sm border border-neutral-400 rounded-lg focus:outline-none focus:ring-[3px] focus:ring-brand-500/30 focus:border-brand-700 disabled:opacity-50";
 
   return (
     <div className="space-y-6">
 
       {/* Formulario */}
-      <div className="bg-white rounded-2xl border border-neutral-200 overflow-hidden">
+      <div className="bg-white rounded-xl border border-neutral-200 shadow-sm overflow-hidden">
         <div className="px-5 py-4 border-b border-neutral-100">
           <p className="text-sm font-semibold text-neutral-800">Registrar producción</p>
-          <p className="text-xs text-neutral-400 mt-0.5">
+          <p className="text-xs text-neutral-600 mt-0.5">
             Al confirmar se descuentan los insumos y se crea el lote automáticamente.
           </p>
         </div>
@@ -125,7 +125,7 @@ export function ProduccionClient({ productos, historial }: Props) {
           {/* Producto + lotes */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="md:col-span-2">
-              <label className="block text-xs font-medium text-neutral-500 mb-1">Producto *</label>
+              <label className="block text-[13px] font-medium text-neutral-800 mb-1.5">Producto *</label>
               <select
                 value={productoId}
                 onChange={e => handleProductoChange(e.target.value)}
@@ -140,7 +140,7 @@ export function ProduccionClient({ productos, historial }: Props) {
             </div>
 
             <div>
-              <label className="block text-xs font-medium text-neutral-500 mb-1">Lotes a producir *</label>
+              <label className="block text-[13px] font-medium text-neutral-800 mb-1.5">Lotes a producir *</label>
               <input
                 type="text" inputMode="decimal" placeholder="1"
                 value={cantLotes}
@@ -153,7 +153,7 @@ export function ProduccionClient({ productos, historial }: Props) {
           {producto && (
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="md:col-span-2">
-                <label className="block text-xs font-medium text-neutral-500 mb-1">Presentación *</label>
+                <label className="block text-[13px] font-medium text-neutral-800 mb-1.5">Presentación *</label>
                 <select
                   value={presentacionId}
                   onChange={e => { setPresentacionId(e.target.value); setCajasManual(""); setResultado(null); }}
@@ -166,20 +166,20 @@ export function ProduccionClient({ productos, historial }: Props) {
                   ))}
                 </select>
                 {producto.sugerida_id && (
-                  <p className="text-xs text-neutral-400 mt-1">
+                  <p className="text-xs text-neutral-600 mt-1">
                     Sugerida según pedidos pendientes y stock mínimo. Podés elegir otra.
                   </p>
                 )}
               </div>
               <div>
-                <label className="block text-xs font-medium text-neutral-500 mb-1">Cajas obtenidas</label>
+                <label className="block text-[13px] font-medium text-neutral-800 mb-1.5">Cajas obtenidas</label>
                 <input
                   type="text" inputMode="decimal"
                   placeholder={cajasCalculadas > 0 ? fmt(cajasCalculadas) : "—"}
                   value={cajasManual}
                   onChange={e => { setCajasManual(e.target.value); setResultado(null); }}
                   className={inputCls} disabled={isPending} />
-                <p className="text-xs text-neutral-400 mt-1">
+                <p className="text-xs text-neutral-600 mt-1">
                   {cajasPorLote === null
                     ? "Falta kg por caja: ingresalas a mano."
                     : "Se calcula por peso; corregilo si salió distinto."}
@@ -190,7 +190,7 @@ export function ProduccionClient({ productos, historial }: Props) {
 
           {/* Info de rendimiento */}
           {producto && presentacion && (
-            <div className="text-xs text-neutral-400 bg-neutral-50 rounded-xl px-4 py-3 flex flex-wrap gap-x-6 gap-y-1">
+            <div className="text-xs text-neutral-600 bg-neutral-50 rounded-xl px-4 py-3 flex flex-wrap gap-x-6 gap-y-1">
               <span>
                 Receta: 1 lote{producto.receta.kg_lote !== null ? <> ≈ <strong className="text-neutral-700">{fmt(producto.receta.kg_lote)} kg</strong></> : ""}
                 {cajasPorLote !== null && <> = <strong className="text-neutral-700">{fmt(cajasPorLote)} cajas</strong> de esta presentación</>}
@@ -214,17 +214,17 @@ export function ProduccionClient({ productos, historial }: Props) {
           {preview.length > 0 && (
             <div className="border border-neutral-200 rounded-xl overflow-hidden">
               <div className="px-4 py-2 bg-neutral-50 border-b border-neutral-100">
-                <p className="text-xs font-semibold text-neutral-600 uppercase tracking-wide">
+                <p className="text-xs font-semibold text-neutral-600">
                   Insumos a descontar ({lotes} lote{lotes !== 1 ? "s" : ""})
                 </p>
               </div>
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b border-neutral-50 text-left">
-                    <th className="px-4 py-2 text-xs font-medium text-neutral-400">Insumo</th>
-                    <th className="px-4 py-2 text-xs font-medium text-neutral-400 text-right">A descontar</th>
-                    <th className="px-4 py-2 text-xs font-medium text-neutral-400 text-right">Stock actual</th>
-                    <th className="px-4 py-2 text-xs font-medium text-neutral-400 text-right">Tras producción</th>
+                    <th className="px-4 py-2 text-xs font-semibold text-neutral-600">Insumo</th>
+                    <th className="px-4 py-2 text-xs font-semibold text-neutral-600 text-right">A descontar</th>
+                    <th className="px-4 py-2 text-xs font-semibold text-neutral-600 text-right">Stock actual</th>
+                    <th className="px-4 py-2 text-xs font-semibold text-neutral-600 text-right">Tras producción</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-neutral-50">
@@ -232,20 +232,20 @@ export function ProduccionClient({ productos, historial }: Props) {
                     const unidad    = ing.insumo?.unidad ?? "";
                     const stockTras = (ing.insumo?.stock_actual ?? 0) - ing.a_descontar;
                     return (
-                      <tr key={ing.insumo_id} className={ing.suficiente ? "" : "bg-red-50"}>
+                      <tr key={ing.insumo_id} className={ing.suficiente ? "" : "bg-danger-bg"}>
                         <td className="px-4 py-2 font-medium text-neutral-800">
                           {ing.insumo?.nombre ?? ing.insumo_id}
                           {!ing.suficiente && (
-                            <span className="ml-2 text-xs text-red-600 font-normal">⚠ stock insuficiente</span>
+                            <span className="ml-2 text-xs text-danger font-normal">⚠ stock insuficiente</span>
                           )}
                         </td>
                         <td className="px-4 py-2 text-right tabular-nums text-neutral-700">
                           {fmt(ing.a_descontar)} {unidad}
                         </td>
-                        <td className="px-4 py-2 text-right tabular-nums text-neutral-400">
+                        <td className="px-4 py-2 text-right tabular-nums text-neutral-600">
                           {ing.insumo ? `${fmt(ing.insumo.stock_actual)} ${unidad}` : "—"}
                         </td>
-                        <td className={`px-4 py-2 text-right tabular-nums font-semibold ${stockTras < 0 ? "text-red-600" : "text-neutral-700"}`}>
+                        <td className={`px-4 py-2 text-right tabular-nums font-semibold ${stockTras < 0 ? "text-danger" : "text-neutral-700"}`}>
                           {ing.insumo ? `${fmt(stockTras)} ${unidad}` : "—"}
                         </td>
                       </tr>
@@ -259,18 +259,18 @@ export function ProduccionClient({ productos, historial }: Props) {
           {/* Fecha + vida útil + notas */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
-              <label className="block text-xs font-medium text-neutral-500 mb-1">Fecha de producción</label>
+              <label className="block text-[13px] font-medium text-neutral-800 mb-1.5">Fecha de producción</label>
               <input type="date" value={fecha} onChange={e => setFecha(e.target.value)}
                 className={inputCls} disabled={isPending} />
             </div>
             <div>
-              <label className="block text-xs font-medium text-neutral-500 mb-1">Vida útil (días)</label>
+              <label className="block text-[13px] font-medium text-neutral-800 mb-1.5">Vida útil (días)</label>
               <input type="number" min="1" value={vidaUtil}
                 onChange={e => setVidaUtil(parseInt(e.target.value) || 180)}
                 className={inputCls} disabled={isPending} />
             </div>
             <div>
-              <label className="block text-xs font-medium text-neutral-500 mb-1">Notas (opcional)</label>
+              <label className="block text-[13px] font-medium text-neutral-800 mb-1.5">Notas (opcional)</label>
               <input type="text" placeholder="Observaciones…"
                 value={notas} onChange={e => setNotas(e.target.value)}
                 className={inputCls} disabled={isPending} />
@@ -278,23 +278,23 @@ export function ProduccionClient({ productos, historial }: Props) {
           </div>
 
           {lotes > 0 && lotes !== Math.floor(lotes) && (
-            <p className="text-sm text-sky-700 bg-sky-50 border border-sky-200 rounded-xl px-4 py-3">
+            <p className="text-sm text-info bg-info-bg border border-info-border rounded-xl px-4 py-3">
               ℹ Producción parcial ({lotes} lotes → {fmt(cajas)} cajas). Se registra exactamente lo producido. La próxima producción se ingresa por separado con su propia cantidad.
             </p>
           )}
 
           {stockInsuficiente && (
-            <p className="text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3">
+            <p className="text-sm text-warning bg-warning-bg border border-warning-border rounded-xl px-4 py-3">
               ⚠ Uno o más insumos no tienen stock suficiente. El sistema igual registrará la producción y el stock quedará negativo.
             </p>
           )}
 
           {error && (
-            <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-xl px-4 py-3">{error}</p>
+            <p className="text-sm text-danger bg-danger-bg border border-danger-border rounded-xl px-4 py-3">{error}</p>
           )}
 
           {resultado && (
-            <div className="text-sm text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-xl px-4 py-3 space-y-0.5">
+            <div className="text-sm text-success bg-success-bg border border-success-border rounded-xl px-4 py-3 space-y-0.5">
               <p className="font-semibold">✓ Producción registrada</p>
               <p>Lote: <span className="font-mono font-semibold">{resultado.numero_lote}</span> — {fmt(resultado.cajas)} cajas</p>
               {fechaVenc && <p>Vence: {fmtFecha(fechaVenc)}</p>}
@@ -302,7 +302,7 @@ export function ProduccionClient({ productos, historial }: Props) {
           )}
 
           <button type="submit" disabled={isPending || !productoId || lotes <= 0}
-            className="px-6 py-2.5 bg-[#16233f] text-white text-sm font-medium rounded-xl hover:bg-[#253760] disabled:opacity-40 transition-colors">
+            className="px-6 py-2.5 bg-brand-700 text-white text-sm font-medium rounded-lg hover:bg-brand-800 disabled:opacity-40 transition-colors">
             {isPending ? "Registrando…" : "Confirmar producción"}
           </button>
         </form>
@@ -310,32 +310,32 @@ export function ProduccionClient({ productos, historial }: Props) {
 
       {/* Historial */}
       {historial.length > 0 && (
-        <div className="bg-white rounded-2xl border border-neutral-200 overflow-hidden">
+        <div className="bg-white rounded-xl border border-neutral-200 shadow-sm overflow-hidden">
           <div className="px-5 py-4 border-b border-neutral-100">
             <p className="text-sm font-semibold text-neutral-800">Historial de producción</p>
           </div>
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-neutral-100 text-left">
-                <th className="px-5 py-3 text-xs font-medium text-neutral-400">Fecha</th>
-                <th className="px-5 py-3 text-xs font-medium text-neutral-400">Producto</th>
-                <th className="px-5 py-3 text-xs font-medium text-neutral-400 text-right">Cajas</th>
-                <th className="px-5 py-3 text-xs font-medium text-neutral-400">Notas</th>
+                <th className="px-5 py-3 text-xs font-semibold text-neutral-600">Fecha</th>
+                <th className="px-5 py-3 text-xs font-semibold text-neutral-600">Producto</th>
+                <th className="px-5 py-3 text-xs font-semibold text-neutral-600 text-right">Cajas</th>
+                <th className="px-5 py-3 text-xs font-semibold text-neutral-600">Notas</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-neutral-50">
               {historial.map(h => (
                 <tr key={h.id} className="hover:bg-neutral-50">
-                  <td className="px-5 py-3 text-neutral-500 text-xs">{fmtFecha(h.fecha)}</td>
+                  <td className="px-5 py-3 text-neutral-600 text-xs">{fmtFecha(h.fecha)}</td>
                   <td className="px-5 py-3 font-medium text-neutral-800">
                     {h.producto?.name ?? "—"}
-                    {h.producto?.sku && <span className="text-neutral-400 font-mono text-xs ml-1">{h.producto.sku}</span>}
-                    {h.producto?.unit_label && <span className="block text-xs text-neutral-400 font-normal">{h.producto.unit_label}</span>}
+                    {h.producto?.sku && <span className="text-neutral-600 font-mono text-xs ml-1">{h.producto.sku}</span>}
+                    {h.producto?.unit_label && <span className="block text-xs text-neutral-600 font-normal">{h.producto.unit_label}</span>}
                   </td>
                   <td className="px-5 py-3 text-right tabular-nums font-semibold text-neutral-800">
                     {fmt(h.cantidad_cajas)}
                   </td>
-                  <td className="px-5 py-3 text-neutral-400 text-xs">{h.notas ?? "—"}</td>
+                  <td className="px-5 py-3 text-neutral-600 text-xs">{h.notas ?? "—"}</td>
                 </tr>
               ))}
             </tbody>

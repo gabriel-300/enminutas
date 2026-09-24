@@ -92,18 +92,18 @@ export function ComisionAcciones({ vendedorId, mes, clientes }: Props) {
               <span className="size-3.5 shrink-0" />
             )}
             <span className="text-xs text-neutral-600 truncate flex-1 min-w-0">{c.nombre}</span>
-            <span className="text-xs tabular-nums text-neutral-500 shrink-0">
+            <span className="text-xs tabular-nums text-neutral-600 shrink-0">
               {fmt(c.ventas)} venta · <span className="font-medium text-neutral-700">{fmt(c.comision)} comisión</span>
             </span>
             {c.pagado ? (
               <span className="flex items-center gap-2 shrink-0">
-                <span className="text-[10px] font-medium text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded">
+                <span className="text-xs font-medium text-success bg-success-bg px-1.5 py-0.5 rounded">
                   ✓ {c.fechaPago ? new Date(c.fechaPago + "T12:00:00").toLocaleDateString("es-AR") : "Pagada"}
                 </span>
                 <button
                   type="button" disabled={isPending}
                   onClick={() => handleRevertir(c.id)}
-                  className="text-[10px] text-neutral-300 hover:text-red-500 disabled:opacity-40"
+                  className="text-xs text-neutral-500 hover:text-danger disabled:opacity-40"
                 >
                   Revertir
                 </button>
@@ -143,17 +143,17 @@ export function ComisionAcciones({ vendedorId, mes, clientes }: Props) {
               <div className="flex items-center gap-2 flex-wrap">
                 <input
                   type="date" value={fecha} onChange={(e) => setFecha(e.target.value)}
-                  className="px-2 py-1.5 text-xs border border-neutral-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-tierra-700/20"
+                  className="px-2 py-1.5 text-xs border border-neutral-400 rounded-lg focus:outline-none focus:ring-[3px] focus:ring-brand-500/30 focus:border-brand-700"
                 />
                 <input
                   type="text" placeholder="Notas (opcional)" value={nota}
                   onChange={(e) => setNota(e.target.value)}
-                  className="flex-1 min-w-[140px] px-2 py-1.5 text-xs border border-neutral-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-tierra-700/20"
+                  className="flex-1 min-w-[140px] px-2 py-1.5 text-xs border border-neutral-400 rounded-lg focus:outline-none focus:ring-[3px] focus:ring-brand-500/30 focus:border-brand-700"
                 />
                 <button
                   type="button" disabled={isPending}
                   onClick={() => setModo("idle")}
-                  className="text-xs text-neutral-400 hover:text-neutral-700 disabled:opacity-40"
+                  className="text-xs text-neutral-600 hover:text-neutral-700 disabled:opacity-40"
                 >
                   Cancelar
                 </button>
@@ -167,7 +167,7 @@ export function ComisionAcciones({ vendedorId, mes, clientes }: Props) {
               </div>
             </div>
           )}
-          {error && <p className="text-xs text-red-600 mt-1.5">{error}</p>}
+          {error && <p className="text-xs text-danger mt-1.5">{error}</p>}
         </li>
       )}
     </ul>

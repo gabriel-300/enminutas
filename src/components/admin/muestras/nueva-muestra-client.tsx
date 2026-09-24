@@ -26,9 +26,9 @@ export type Contacto = {
   zonaId:         string;
 };
 
-const inputCls = "w-full px-3 py-2 text-sm border border-neutral-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-tierra-700/20 disabled:opacity-50";
+const inputCls = "w-full px-3 py-2 text-sm border border-neutral-400 rounded-lg focus:outline-none focus:ring-[3px] focus:ring-brand-500/30 focus:border-brand-700 disabled:opacity-50";
 const textareaCls = `${inputCls} resize-none`;
-const labelCls = "block text-xs font-medium text-neutral-500 mb-1";
+const labelCls = "block text-xs font-medium text-neutral-600 mb-1";
 
 export function NuevaMuestraClient({
   productos,
@@ -124,7 +124,7 @@ export function NuevaMuestraClient({
     <form onSubmit={handleSubmit} className="space-y-6 max-w-3xl">
 
       {/* ── Posible cliente ── */}
-      <div className="bg-white rounded-2xl border border-neutral-200 p-5 space-y-4">
+      <div className="bg-white rounded-xl border border-neutral-200 shadow-sm p-5 space-y-4">
         <h2 className="text-sm font-semibold text-neutral-800">A quién se le envía</h2>
 
         <div>
@@ -156,9 +156,9 @@ export function NuevaMuestraClient({
                   >
                     <span className="text-sm text-neutral-800 font-medium truncate">
                       {c.nombre}
-                      {c.contactoNombre && <span className="font-normal text-neutral-400"> · {c.contactoNombre}</span>}
+                      {c.contactoNombre && <span className="font-normal text-neutral-600"> · {c.contactoNombre}</span>}
                     </span>
-                    <span className="text-[10px] text-neutral-500 bg-neutral-100 px-1.5 py-0.5 rounded-full shrink-0">
+                    <span className="text-xs text-neutral-600 bg-neutral-100 px-1.5 py-0.5 rounded-full shrink-0">
                       {c.tipo === "prospecto" ? "prospecto" : "cliente"}
                     </span>
                   </button>
@@ -206,7 +206,7 @@ export function NuevaMuestraClient({
             />
             <span>
               Guardar como prospecto en el Pipeline
-              <span className="block text-xs text-neutral-400">Para hacerle seguimiento y ver si la muestra termina en un cliente.</span>
+              <span className="block text-xs text-neutral-600">Para hacerle seguimiento y ver si la muestra termina en un cliente.</span>
             </span>
           </label>
         )}
@@ -237,11 +237,11 @@ export function NuevaMuestraClient({
       </div>
 
       {/* ── Productos de muestra ── */}
-      <div className="bg-white rounded-2xl border border-neutral-200 p-5 space-y-3">
+      <div className="bg-white rounded-xl border border-neutral-200 shadow-sm p-5 space-y-3">
         <div className="flex items-center justify-between">
           <h2 className="text-sm font-semibold text-neutral-800">Muestras a enviar</h2>
           {totalItems > 0 && (
-            <span className="text-xs text-neutral-500 bg-neutral-100 px-2.5 py-1 rounded-full">
+            <span className="text-xs text-neutral-600 bg-neutral-100 px-2.5 py-1 rounded-full">
               {totalItems} unidad{totalItems !== 1 ? "es" : ""}
             </span>
           )}
@@ -249,8 +249,8 @@ export function NuevaMuestraClient({
 
         {productos.length === 0 ? (
           <div className="py-8 text-center">
-            <p className="text-sm text-neutral-500">Todavía no hay presentaciones de muestra.</p>
-            <p className="text-xs text-neutral-400 mt-1">
+            <p className="text-sm text-neutral-600">Todavía no hay presentaciones de muestra.</p>
+            <p className="text-xs text-neutral-600 mt-1">
               {esAdmin
                 ? <>Creá la presentación desde la receta y marcala como muestra en <a href="/admin/productos" className="text-tierra-700 hover:underline">Productos → columna Muestra</a>. Después se produce como cualquier lote.</>
                 : "Pedile al admin que cargue las presentaciones de muestra."}
@@ -264,7 +264,7 @@ export function NuevaMuestraClient({
                 <div key={p.id} className="flex items-center gap-3 py-2.5">
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium text-neutral-800 truncate">{p.name}</p>
-                    <p className={`text-xs ${p.disponible > 0 ? "text-neutral-400" : "text-danger"}`}>
+                    <p className={`text-xs ${p.disponible > 0 ? "text-neutral-600" : "text-danger"}`}>
                       {p.disponible > 0 ? `${p.disponible} ${p.unit_label ?? "u."} en stock` : "Sin stock — hay que producirla"}
                     </p>
                   </div>
@@ -273,11 +273,11 @@ export function NuevaMuestraClient({
                       type="button"
                       onClick={() => setQty(p.id, qty - 1)}
                       disabled={qty === 0 || isPending}
-                      className="w-7 h-7 rounded-full border border-neutral-200 text-neutral-500 flex items-center justify-center text-sm hover:bg-neutral-50 disabled:opacity-30 transition-colors"
+                      className="w-7 h-7 rounded-full border border-neutral-200 text-neutral-600 flex items-center justify-center text-sm hover:bg-neutral-50 disabled:opacity-30 transition-colors"
                     >
                       −
                     </button>
-                    <span className={`w-8 text-center text-sm font-medium ${qty > 0 ? "text-neutral-900" : "text-neutral-300"}`}>
+                    <span className={`w-8 text-center text-sm font-medium ${qty > 0 ? "text-neutral-900" : "text-neutral-500"}`}>
                       {qty || "—"}
                     </span>
                     <button
@@ -303,18 +303,18 @@ export function NuevaMuestraClient({
       </div>
 
       {error && (
-        <p className="text-sm text-danger bg-danger-bg border border-danger/20 rounded-xl px-4 py-3">{error}</p>
+        <p className="text-sm text-danger bg-danger-bg border border-danger-border rounded-xl px-4 py-3">{error}</p>
       )}
 
       <div className="flex items-center gap-3">
         <button
           type="submit"
           disabled={isPending || seleccionados.length === 0 || !nombre.trim() || !direccion.trim()}
-          className="px-5 py-2.5 rounded-xl bg-tierra-700 text-white text-sm font-medium hover:bg-tierra-800 disabled:opacity-50 transition-colors"
+          className="px-5 py-2.5 rounded-lg bg-tierra-700 text-white text-sm font-medium hover:bg-tierra-800 disabled:opacity-50 transition-colors"
         >
           {isPending ? "Enviando…" : esAdmin ? "Crear muestra" : "Solicitar muestra"}
         </button>
-        <a href="/admin/muestras" className="text-sm text-neutral-500 hover:text-neutral-700">Cancelar</a>
+        <a href="/admin/muestras" className="text-sm text-neutral-600 hover:text-neutral-700">Cancelar</a>
       </div>
     </form>
   );

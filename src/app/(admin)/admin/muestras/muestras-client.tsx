@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { OrderStatusBadge } from "@/components/ui/badge";
+import { PedidoStatusBadge } from "@/components/ui";
 
 type Muestra = {
   id:                    string;
@@ -22,21 +22,21 @@ type Muestra = {
 
 export function MuestrasClient({ muestras }: { muestras: Muestra[] }) {
   return (
-    <div className="max-w-5xl">
-      <div className="bg-white rounded-2xl border border-neutral-200 overflow-hidden">
+    <div>
+      <div className="bg-white rounded-xl border border-neutral-200 shadow-sm overflow-hidden">
         {muestras.length === 0 ? (
-          <div className="py-16 text-center text-neutral-400 text-sm">
+          <div className="py-16 text-center text-neutral-600 text-sm">
             No hay muestras registradas.
           </div>
         ) : (
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-neutral-200 text-left">
-                <th className="px-4 py-3 font-medium text-neutral-500 text-xs">N°</th>
-                <th className="px-4 py-3 font-medium text-neutral-500 text-xs">Destinatario</th>
-                <th className="px-4 py-3 font-medium text-neutral-500 text-xs">Productos</th>
-                <th className="px-4 py-3 font-medium text-neutral-500 text-xs">Estado</th>
-                <th className="px-4 py-3 font-medium text-neutral-500 text-xs">Fecha</th>
+                <th className="px-4 py-3 font-semibold text-neutral-600 text-xs">N°</th>
+                <th className="px-4 py-3 font-semibold text-neutral-600 text-xs">Destinatario</th>
+                <th className="px-4 py-3 font-semibold text-neutral-600 text-xs">Productos</th>
+                <th className="px-4 py-3 font-semibold text-neutral-600 text-xs">Estado</th>
+                <th className="px-4 py-3 font-semibold text-neutral-600 text-xs">Fecha</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-neutral-100">
@@ -56,27 +56,27 @@ export function MuestrasClient({ muestras }: { muestras: Muestra[] }) {
                           {m.muestra_destinatario ?? m.customer?.full_name ?? "—"}
                         </p>
                         {m.customer && (
-                          <span className="text-[10px] bg-success-bg text-success px-1.5 py-0.5 rounded-full font-medium">cliente</span>
+                          <span className="text-xs bg-success-bg text-success px-1.5 py-0.5 rounded-full font-medium">cliente</span>
                         )}
                       </div>
-                      {m.muestra_contacto && <p className="text-xs text-neutral-500">Contacto: {m.muestra_contacto}</p>}
-                      {m.guest_phone && <p className="text-xs text-neutral-400">{m.guest_phone}</p>}
-                      {m.guest_email && <p className="text-xs text-neutral-400">{m.guest_email}</p>}
+                      {m.muestra_contacto && <p className="text-xs text-neutral-600">Contacto: {m.muestra_contacto}</p>}
+                      {m.guest_phone && <p className="text-xs text-neutral-600">{m.guest_phone}</p>}
+                      {m.guest_email && <p className="text-xs text-neutral-600">{m.guest_email}</p>}
                       {m.shipping_snapshot?.street && (
-                        <p className="text-xs text-neutral-400">
+                        <p className="text-xs text-neutral-600">
                           {[m.shipping_snapshot.street, m.shipping_snapshot.number, m.shipping_snapshot.city].filter(Boolean).join(", ")}
                         </p>
                       )}
                       {m.muestra_observacion && (
-                        <p className="text-xs text-neutral-500 mt-0.5">{m.muestra_observacion}</p>
+                        <p className="text-xs text-neutral-600 mt-0.5">{m.muestra_observacion}</p>
                       )}
                     </td>
                     <td className="px-4 py-3 text-xs text-neutral-600 max-w-xs">
                       <span className="line-clamp-2">{productosResumen || "—"}</span>
-                      {m.notes && <p className="text-neutral-400 mt-0.5 italic">{m.notes}</p>}
+                      {m.notes && <p className="text-neutral-600 mt-0.5 italic">{m.notes}</p>}
                     </td>
-                    <td className="px-4 py-3"><OrderStatusBadge status={m.status} /></td>
-                    <td className="px-4 py-3 text-xs text-neutral-400">
+                    <td className="px-4 py-3"><PedidoStatusBadge status={m.status} /></td>
+                    <td className="px-4 py-3 text-xs text-neutral-600">
                       {new Date(m.created_at).toLocaleDateString("es-AR", { day: "2-digit", month: "2-digit", year: "2-digit" })}
                     </td>
                   </tr>

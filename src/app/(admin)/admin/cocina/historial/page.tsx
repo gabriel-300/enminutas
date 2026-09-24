@@ -78,20 +78,20 @@ export default async function HistorialProduccionPage({
   const next = nextMes();
 
   return (
-    <div className="p-8 max-w-4xl">
+    <div className="p-4 md:px-10 md:py-8 md:pb-16">
       <div className="mb-6 flex items-center justify-between">
         <div>
-          <Link href="/admin/cocina" className="text-sm text-neutral-400 hover:text-neutral-700 mb-2 inline-block">
+          <Link href="/admin/cocina" className="text-sm text-neutral-600 hover:text-neutral-700 mb-2 inline-block">
             ← Cocina
           </Link>
           <h1 className="text-2xl font-semibold font-display text-neutral-900">Historial de producción</h1>
-          <p className="text-sm text-neutral-500 mt-1">Lotes producidos registrados en el stock</p>
+          <p className="text-sm text-neutral-600 mt-1">Lotes producidos registrados en el stock</p>
         </div>
 
         {/* Selector de mes */}
         <div className="flex items-center gap-1 bg-white border border-neutral-200 rounded-xl px-1 py-1">
           <Link href={`?mes=${prevMes()}`}
-            className="size-7 flex items-center justify-center rounded-lg text-neutral-400 hover:bg-neutral-100 text-sm !no-underline">
+            className="size-7 flex items-center justify-center rounded-lg text-neutral-600 hover:bg-neutral-100 text-sm !no-underline">
             ‹
           </Link>
           <span className="px-3 text-sm font-medium text-neutral-800 min-w-[130px] text-center">
@@ -99,7 +99,7 @@ export default async function HistorialProduccionPage({
           </span>
           {next ? (
             <Link href={`?mes=${next}`}
-              className="size-7 flex items-center justify-center rounded-lg text-neutral-400 hover:bg-neutral-100 text-sm !no-underline">
+              className="size-7 flex items-center justify-center rounded-lg text-neutral-600 hover:bg-neutral-100 text-sm !no-underline">
               ›
             </Link>
           ) : (
@@ -109,39 +109,39 @@ export default async function HistorialProduccionPage({
       </div>
 
       {movs.length === 0 ? (
-        <div className="bg-white rounded-2xl border border-neutral-200 p-12 text-center">
-          <p className="text-neutral-400 text-sm">Sin producción registrada en {fmtMes(mesParam)}.</p>
-          <p className="text-xs text-neutral-300 mt-1">Los lotes se registran desde Cocina / Stock → Registrar lote.</p>
+        <div className="bg-white rounded-xl border border-neutral-200 shadow-sm p-12 text-center">
+          <p className="text-neutral-600 text-sm">Sin producción registrada en {fmtMes(mesParam)}.</p>
+          <p className="text-xs text-neutral-500 mt-1">Los lotes se registran desde Cocina / Stock → Registrar lote.</p>
         </div>
       ) : (
         <div className="space-y-4">
           {/* KPIs */}
           <div className="grid grid-cols-3 gap-4">
-            <div className="bg-white rounded-2xl border border-neutral-200 p-4 text-center">
+            <div className="bg-white rounded-xl border border-neutral-200 shadow-sm p-4 text-center">
               <p className="text-2xl font-semibold font-display text-neutral-900">{fmt(totalCajasMes)}</p>
-              <p className="text-xs text-neutral-400 mt-1">Cajas producidas</p>
+              <p className="text-xs text-neutral-600 mt-1">Cajas producidas</p>
             </div>
-            <div className="bg-white rounded-2xl border border-neutral-200 p-4 text-center">
+            <div className="bg-white rounded-xl border border-neutral-200 shadow-sm p-4 text-center">
               <p className="text-2xl font-semibold font-display text-neutral-900">{movs.length}</p>
-              <p className="text-xs text-neutral-400 mt-1">Lotes registrados</p>
+              <p className="text-xs text-neutral-600 mt-1">Lotes registrados</p>
             </div>
-            <div className="bg-white rounded-2xl border border-neutral-200 p-4 text-center">
+            <div className="bg-white rounded-xl border border-neutral-200 shadow-sm p-4 text-center">
               <p className="text-2xl font-semibold font-display text-neutral-900">{resumen.length}</p>
-              <p className="text-xs text-neutral-400 mt-1">Productos distintos</p>
+              <p className="text-xs text-neutral-600 mt-1">Productos distintos</p>
             </div>
           </div>
 
           {/* Resumen por producto */}
-          <div className="bg-white rounded-2xl border border-neutral-200 overflow-hidden">
+          <div className="bg-white rounded-xl border border-neutral-200 shadow-sm overflow-hidden">
             <div className="px-5 py-4 border-b border-neutral-100">
               <p className="text-sm font-semibold text-neutral-700">Por producto</p>
             </div>
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-neutral-100 text-left">
-                  <th className="px-5 py-3 text-xs font-medium text-neutral-400">Producto</th>
-                  <th className="px-5 py-3 text-xs font-medium text-neutral-400 text-center">Lotes</th>
-                  <th className="px-5 py-3 text-xs font-medium text-neutral-400 text-right">Cajas totales</th>
+                  <th className="px-5 py-3 text-xs font-semibold text-neutral-600">Producto</th>
+                  <th className="px-5 py-3 text-xs font-semibold text-neutral-600 text-center">Lotes</th>
+                  <th className="px-5 py-3 text-xs font-semibold text-neutral-600 text-right">Cajas totales</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-neutral-50">
@@ -149,16 +149,16 @@ export default async function HistorialProduccionPage({
                   <tr key={r.sku} className="hover:bg-neutral-50">
                     <td className="px-5 py-3">
                       <p className="font-medium text-neutral-900">{r.name}</p>
-                      <p className="text-xs text-neutral-400 font-mono">{r.sku}</p>
+                      <p className="text-xs text-neutral-600 font-mono">{r.sku}</p>
                     </td>
-                    <td className="px-5 py-3 text-center text-neutral-500">{r.lotes}</td>
+                    <td className="px-5 py-3 text-center text-neutral-600">{r.lotes}</td>
                     <td className="px-5 py-3 text-right font-semibold text-neutral-900 tabular-nums">{fmt(r.totalCajas)}</td>
                   </tr>
                 ))}
               </tbody>
               <tfoot>
                 <tr className="border-t-2 border-neutral-200 bg-neutral-50">
-                  <td colSpan={2} className="px-5 py-3 text-xs font-semibold text-neutral-500 text-right">Total</td>
+                  <td colSpan={2} className="px-5 py-3 text-xs font-semibold text-neutral-600 text-right">Total</td>
                   <td className="px-5 py-3 text-right font-bold text-neutral-900 tabular-nums">{fmt(totalCajasMes)}</td>
                 </tr>
               </tfoot>
@@ -166,33 +166,33 @@ export default async function HistorialProduccionPage({
           </div>
 
           {/* Detalle cronológico */}
-          <div className="bg-white rounded-2xl border border-neutral-200 overflow-hidden">
+          <div className="bg-white rounded-xl border border-neutral-200 shadow-sm overflow-hidden">
             <div className="px-5 py-4 border-b border-neutral-100">
               <p className="text-sm font-semibold text-neutral-700">Detalle cronológico</p>
             </div>
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-neutral-100 text-left">
-                  <th className="px-5 py-3 text-xs font-medium text-neutral-400">Fecha</th>
-                  <th className="px-5 py-3 text-xs font-medium text-neutral-400">Producto</th>
-                  <th className="px-5 py-3 text-xs font-medium text-neutral-400 text-right">Cajas</th>
-                  <th className="px-5 py-3 text-xs font-medium text-neutral-400">Notas</th>
+                  <th className="px-5 py-3 text-xs font-semibold text-neutral-600">Fecha</th>
+                  <th className="px-5 py-3 text-xs font-semibold text-neutral-600">Producto</th>
+                  <th className="px-5 py-3 text-xs font-semibold text-neutral-600 text-right">Cajas</th>
+                  <th className="px-5 py-3 text-xs font-semibold text-neutral-600">Notas</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-neutral-50">
                 {movs.map((m) => (
                   <tr key={m.id} className="hover:bg-neutral-50">
-                    <td className="px-5 py-3 text-xs text-neutral-400 tabular-nums whitespace-nowrap">
+                    <td className="px-5 py-3 text-xs text-neutral-600 tabular-nums whitespace-nowrap">
                       {fmtFecha(m.created_at)}
                     </td>
                     <td className="px-5 py-3">
                       <p className="font-medium text-neutral-800">{m.product?.name ?? "—"}</p>
-                      <p className="text-xs text-neutral-400 font-mono">{m.product?.sku ?? "—"}</p>
+                      <p className="text-xs text-neutral-600 font-mono">{m.product?.sku ?? "—"}</p>
                     </td>
                     <td className="px-5 py-3 text-right font-semibold text-neutral-900 tabular-nums">
                       {fmt(Math.abs(Number(m.qty)))}
                     </td>
-                    <td className="px-5 py-3 text-xs text-neutral-500">{m.notes ?? "—"}</td>
+                    <td className="px-5 py-3 text-xs text-neutral-600">{m.notes ?? "—"}</td>
                   </tr>
                 ))}
               </tbody>

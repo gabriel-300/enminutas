@@ -42,7 +42,7 @@ function ZonaRow({ zona }: { zona: Zona }) {
     startTransition(() => eliminarZona(zona.id));
   }
 
-  const inp = "px-2 py-1 text-sm border border-tierra-700/60 rounded-lg focus:outline-none focus:border-tierra-700";
+  const inp = "px-2 py-1 text-sm border border-tierra-700/60 rounded-lg focus:outline-none";
   const pct = pctDeFraccion(zona.flete_pct);
 
   if (editing) {
@@ -65,7 +65,7 @@ function ZonaRow({ zona }: { zona: Zona }) {
             <input type="number" step="0.01" min="0" max="99.99" value={flete}
               onChange={(e) => setFlete(e.target.value)}
               placeholder="0" className={`${inp} w-20`} disabled={isPending} />
-            <span className="text-sm text-neutral-500">%</span>
+            <span className="text-sm text-neutral-600">%</span>
           </div>
         </td>
         <td className="px-3 py-3" colSpan={3}>
@@ -74,7 +74,7 @@ function ZonaRow({ zona }: { zona: Zona }) {
               className="text-xs text-success font-medium hover:underline disabled:opacity-50">
               Guardar
             </button>
-            <button onClick={handleCancel} className="text-xs text-neutral-400 hover:underline">
+            <button onClick={handleCancel} className="text-xs text-neutral-600 hover:underline">
               Cancelar
             </button>
           </div>
@@ -86,18 +86,18 @@ function ZonaRow({ zona }: { zona: Zona }) {
   return (
     <tr className="hover:bg-neutral-50 transition-colors">
       <td className="px-3 py-3">
-        <span className="text-xs font-mono font-semibold text-neutral-500 bg-neutral-100 px-1.5 py-0.5 rounded">
+        <span className="text-xs font-mono font-semibold text-neutral-600 bg-neutral-100 px-1.5 py-0.5 rounded">
           {zona.codigo || "—"}
         </span>
       </td>
       <td className="px-3 py-3 font-medium text-neutral-900">{zona.name}</td>
       <td className="px-3 py-3 tabular-nums text-neutral-600 text-sm">
-        {zona.km === 0 ? <span className="text-neutral-300">—</span> : `${zona.km} km`}
+        {zona.km === 0 ? <span className="text-neutral-500">—</span> : `${zona.km} km`}
       </td>
       <td className="px-3 py-3 tabular-nums font-semibold text-neutral-800 text-sm">
         {pct > 0
           ? `${pct.toLocaleString("es-AR")}%`
-          : <span className="font-normal text-neutral-300">Sin flete</span>}
+          : <span className="font-normal text-neutral-500">Sin flete</span>}
       </td>
       <td className="px-3 py-3 text-sm">
         <span className="inline-flex items-center gap-1 text-success text-xs font-medium">
@@ -105,10 +105,10 @@ function ZonaRow({ zona }: { zona: Zona }) {
           Activo
         </span>
       </td>
-      <td className="px-3 py-3 text-xs text-neutral-500 whitespace-nowrap">
+      <td className="px-3 py-3 text-xs text-neutral-600 whitespace-nowrap">
         {zona.updated_at
           ? new Date(zona.updated_at).toLocaleDateString("es-AR")
-          : <span className="text-neutral-300">—</span>}
+          : <span className="text-neutral-500">—</span>}
       </td>
       <td className="px-3 py-3">
         <div className="flex gap-3">
@@ -140,23 +140,23 @@ export function ZonasClient({ zonas }: { zonas: Zona[] }) {
   return (
     <div className="space-y-6">
       {/* Tabla */}
-      <div className="bg-white rounded-2xl border border-neutral-200 overflow-x-auto">
+      <div className="bg-white rounded-xl border border-neutral-200 shadow-sm overflow-x-auto">
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-neutral-200 text-left bg-neutral-50">
-              <th className="px-3 py-3 font-medium text-neutral-500 w-16">Cód.</th>
-              <th className="px-3 py-3 font-medium text-neutral-500">Zona</th>
-              <th className="px-3 py-3 font-medium text-neutral-500">km desde Posadas</th>
-              <th className="px-3 py-3 font-medium text-neutral-500">Flete incluido</th>
-              <th className="px-3 py-3 font-medium text-neutral-500">Estado</th>
-              <th className="px-3 py-3 font-medium text-neutral-500 whitespace-nowrap">Última act.</th>
+              <th className="text-xs px-3 py-3 font-semibold text-neutral-600 w-16">Cód.</th>
+              <th className="text-xs px-3 py-3 font-semibold text-neutral-600">Zona</th>
+              <th className="text-xs px-3 py-3 font-semibold text-neutral-600">km desde Posadas</th>
+              <th className="text-xs px-3 py-3 font-semibold text-neutral-600">Flete incluido</th>
+              <th className="text-xs px-3 py-3 font-semibold text-neutral-600">Estado</th>
+              <th className="text-xs px-3 py-3 font-semibold text-neutral-600 whitespace-nowrap">Última act.</th>
               <th className="px-3 py-3 w-28"></th>
             </tr>
           </thead>
           <tbody className="divide-y divide-neutral-100">
             {zonas.length === 0 && (
               <tr>
-                <td colSpan={7} className="px-4 py-10 text-center text-neutral-400">
+                <td colSpan={7} className="px-4 py-10 text-center text-neutral-600">
                   No hay zonas configuradas.
                 </td>
               </tr>
@@ -167,40 +167,40 @@ export function ZonasClient({ zonas }: { zonas: Zona[] }) {
       </div>
 
       {/* Formulario nueva zona */}
-      <details className="bg-white rounded-2xl border border-neutral-200 overflow-hidden">
+      <details className="bg-white rounded-xl border border-neutral-200 shadow-sm overflow-hidden">
         <summary className="px-5 py-4 text-sm font-medium text-neutral-700 cursor-pointer hover:bg-neutral-50 transition-colors select-none">
           + Agregar zona
         </summary>
         <form onSubmit={handleCreate} className="px-5 pb-5 pt-3 space-y-4 border-t border-neutral-100">
           <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
             <div>
-              <label className="block text-xs font-medium text-neutral-500 mb-1">Código * <span className="font-normal">(ej: ROS)</span></label>
+              <label className="block text-[13px] font-medium text-neutral-800 mb-1.5">Código * <span className="font-normal">(ej: ROS)</span></label>
               <input name="codigo" placeholder="ROS" required maxLength={6} disabled={isPending}
-                className="w-full px-3 py-2 text-sm border border-neutral-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-tierra-700/20 font-mono uppercase" />
+                className="w-full px-3 py-2 text-sm border border-neutral-400 rounded-lg focus:outline-none focus:ring-[3px] focus:ring-brand-500/30 focus:border-brand-700 font-mono" />
             </div>
             <div className="md:col-span-2">
-              <label className="block text-xs font-medium text-neutral-500 mb-1">Nombre *</label>
+              <label className="block text-[13px] font-medium text-neutral-800 mb-1.5">Nombre *</label>
               <input name="name" placeholder="Rosario" required disabled={isPending}
-                className="w-full px-3 py-2 text-sm border border-neutral-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-tierra-700/20" />
+                className="w-full px-3 py-2 text-sm border border-neutral-400 rounded-lg focus:outline-none focus:ring-[3px] focus:ring-brand-500/30 focus:border-brand-700" />
             </div>
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs font-medium text-neutral-500 mb-1">km desde Posadas</label>
+              <label className="block text-[13px] font-medium text-neutral-800 mb-1.5">km desde Posadas</label>
               <input name="km" type="number" placeholder="1000" min="0" disabled={isPending}
-                className="w-full px-3 py-2 text-sm border border-neutral-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-tierra-700/20" />
+                className="w-full px-3 py-2 text-sm border border-neutral-400 rounded-lg focus:outline-none focus:ring-[3px] focus:ring-brand-500/30 focus:border-brand-700" />
             </div>
             <div>
-              <label className="block text-xs font-medium text-neutral-500 mb-1">Flete incluido (%)</label>
+              <label className="block text-[13px] font-medium text-neutral-800 mb-1.5">Flete incluido (%)</label>
               <input name="flete_pct" type="number" step="0.01" min="0" max="99.99" placeholder="0" disabled={isPending}
-                className="w-full px-3 py-2 text-sm border border-neutral-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-tierra-700/20" />
+                className="w-full px-3 py-2 text-sm border border-neutral-400 rounded-lg focus:outline-none focus:ring-[3px] focus:ring-brand-500/30 focus:border-brand-700" />
             </div>
           </div>
-          <p className="text-xs text-neutral-400">
+          <p className="text-xs text-neutral-600">
             El flete se suma al precio de la mercadería: % sobre el precio de lista s/IVA, más IVA. 0 = sin flete (Posadas/NEA).
           </p>
           <button type="submit" disabled={isPending}
-            className="px-5 py-2 rounded-xl bg-tierra-700 text-white text-sm font-medium hover:bg-tierra-800 disabled:opacity-50 transition-colors">
+            className="px-5 py-2 rounded-lg bg-tierra-700 text-white text-sm font-medium hover:bg-tierra-800 disabled:opacity-50 transition-colors">
             {isPending ? "Guardando…" : "Agregar zona"}
           </button>
         </form>

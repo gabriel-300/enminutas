@@ -1,6 +1,7 @@
 import { listAllUsers } from "@/lib/supabase/users";
 import type { Metadata } from "next";
-import Link from "next/link";
+import { Plus } from "lucide-react";
+import { ButtonLink, PageHeader } from "@/components/ui";
 import { createClient, createAdminClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { PedidosClient } from "@/components/admin/pedidos-client";
@@ -111,19 +112,13 @@ export default async function AdminPedidosPage() {
   }));
 
   return (
-    <div className="p-4 md:p-8">
-      <div className="mb-5 md:mb-6 flex items-center justify-between gap-3">
-        <div>
-          <h1 className="text-xl md:text-2xl font-semibold font-display text-neutral-900">Pedidos</h1>
-          <p className="text-sm text-neutral-500 mt-0.5">{orders.length} pedido{orders.length !== 1 ? "s" : ""} en total</p>
-        </div>
-        <Link
-          href="/admin/pedidos/nuevo"
-          className="shrink-0 inline-flex items-center gap-1.5 px-3 md:px-4 py-2 rounded-xl bg-tierra-700 !text-white text-sm font-medium hover:bg-tierra-800 transition-colors"
-        >
-          + Nuevo pedido
-        </Link>
-      </div>
+    <div className="p-4 md:px-10 md:py-8 md:pb-16">
+      <PageHeader
+        className="mb-5"
+        title="Pedidos"
+        subtitle={`${orders.length} pedido${orders.length !== 1 ? "s" : ""} en total`}
+        actions={<ButtonLink href="/admin/pedidos/nuevo"><Plus />Nuevo pedido</ButtonLink>}
+      />
 
       <PedidosClient orders={orders} esAdmin={esAdmin} />
     </div>

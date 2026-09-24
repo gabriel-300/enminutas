@@ -19,25 +19,25 @@ export default function Error({
       <h2 className="text-lg font-semibold text-neutral-900 mb-2">
         Error al cargar el pedido
       </h2>
-      <p className="text-sm text-neutral-500 mb-4">
+      <p className="text-sm text-neutral-600 mb-4">
         No se pudo mostrar el detalle. Por favor reintentá o volvé a la lista.
       </p>
       <div className="flex gap-3 flex-wrap">
         <button
           onClick={() => unstable_retry()}
-          className="px-4 py-2 bg-tierra-700 text-white rounded-xl text-sm font-medium hover:bg-tierra-800 transition-colors"
+          className="px-4 py-2 bg-tierra-700 text-white rounded-lg text-sm font-medium hover:bg-tierra-800 transition-colors"
         >
           Reintentar
         </button>
         <Link
           href="/admin/pedidos"
-          className="px-4 py-2 border border-neutral-200 text-neutral-700 rounded-xl text-sm font-medium hover:bg-neutral-50 transition-colors"
+          className="px-4 py-2 border border-n-btn text-neutral-800 rounded-lg text-sm font-medium hover:bg-neutral-50 transition-colors"
         >
           Volver a pedidos
         </Link>
       </div>
       {error.digest && (
-        <p className="text-xs text-neutral-400 mt-4 font-mono">ID: {error.digest}</p>
+        <p className="text-xs text-neutral-600 mt-4 font-mono">ID: {error.digest}</p>
       )}
     </div>
   );

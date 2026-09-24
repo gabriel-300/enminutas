@@ -22,10 +22,10 @@ type Cheque = {
 type Cliente = { id: string; full_name: string };
 
 const ESTADO_CFG: Record<string, { label: string; bg: string; text: string }> = {
-  en_cartera: { label: "En cartera",  bg: "#eff6ff", text: "#2563eb" },
-  depositado: { label: "Depositado",  bg: "#fffbeb", text: "#b45309" },
-  acreditado: { label: "Acreditado", bg: "#ecfdf5", text: "#059669" },
-  rechazado:  { label: "Rechazado",  bg: "#fef2f2", text: "#dc2626" },
+  en_cartera: { label: "En cartera",  bg: "#e9f1fc", text: "#1f5bb5" },
+  depositado: { label: "Depositado",  bg: "#fdf4e0", text: "#8a5a00" },
+  acreditado: { label: "Acreditado", bg: "#eaf6ee", text: "#1d6b3a" },
+  rechazado:  { label: "Rechazado",  bg: "#fdecea", text: "#b42318" },
 };
 
 const today = () => new Date().toISOString().slice(0, 10);
@@ -85,8 +85,8 @@ export function ChequesClient({
     });
   }
 
-  const labelClass = "block text-xs font-medium text-neutral-500 mb-1";
-  const inputClass = "w-full rounded-xl border border-neutral-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#16233f]/20 focus:border-[#16233f]";
+  const labelClass = "block text-xs font-medium text-neutral-600 mb-1";
+  const inputClass = "w-full rounded-lg border border-neutral-400 px-3 py-2 text-sm focus:outline-none focus:ring-[3px] focus:ring-brand-500/30 focus:border-brand-700";
 
   return (
     <div className="space-y-5">
@@ -94,7 +94,7 @@ export function ChequesClient({
       <div className="flex justify-end">
         <button
           onClick={() => { setShowForm(v => !v); if (showForm) resetForm(); }}
-          className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#16233f] text-white text-sm font-medium hover:bg-[#1e2f52] transition-colors"
+          className="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-brand-700 text-white text-sm font-medium hover:bg-brand-800 transition-colors"
         >
           {showForm ? <X className="size-4" /> : <Plus className="size-4" />}
           {showForm ? "Cancelar" : "Registrar cheque"}
@@ -103,7 +103,7 @@ export function ChequesClient({
 
       {/* Formulario */}
       {showForm && (
-        <div className="bg-white rounded-2xl border border-neutral-200 p-5">
+        <div className="bg-white rounded-xl border border-neutral-200 shadow-sm p-5">
           <h2 className="text-sm font-semibold text-neutral-900 mb-4">Nuevo cheque</h2>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="grid grid-cols-2 gap-3">
@@ -147,8 +147,8 @@ export function ChequesClient({
               <label htmlFor={`${formId}-obs`} className={labelClass}>Observaciones</label>
               <input id={`${formId}-obs`} type="text" placeholder="Notas..." value={obs} onChange={e => setObs(e.target.value)} className={inputClass} />
             </div>
-            {error && <p className="text-xs text-red-600">{error}</p>}
-            <button type="submit" disabled={pending} className="w-full py-2.5 rounded-xl bg-[#16233f] text-white text-sm font-medium hover:bg-[#1e2f52] transition-colors disabled:opacity-50">
+            {error && <p className="text-xs text-danger">{error}</p>}
+            <button type="submit" disabled={pending} className="w-full py-2.5 rounded-lg bg-brand-700 text-white text-sm font-medium hover:bg-brand-800 transition-colors disabled:opacity-50">
               {pending ? "Guardando..." : "Registrar cheque"}
             </button>
           </form>
@@ -156,21 +156,21 @@ export function ChequesClient({
       )}
 
       {/* Tabla */}
-      <div className="bg-white rounded-2xl border border-neutral-200 overflow-hidden">
+      <div className="bg-white rounded-xl border border-neutral-200 shadow-sm overflow-hidden">
         {cheques.length === 0 ? (
-          <p className="px-5 py-10 text-center text-sm text-neutral-400">
+          <p className="px-5 py-10 text-center text-sm text-neutral-600">
             {filtro === "todos" ? "No hay cheques registrados." : "No hay cheques en este estado."}
           </p>
         ) : (
           <table className="w-full text-sm">
             <thead className="border-b border-neutral-100">
               <tr>
-                <th className="px-5 py-3 text-left text-xs font-semibold text-neutral-400 uppercase tracking-wide">Cliente / Banco</th>
-                <th className="px-5 py-3 text-left text-xs font-semibold text-neutral-400 uppercase tracking-wide">N° Cheque</th>
-                <th className="px-5 py-3 text-center text-xs font-semibold text-neutral-400 uppercase tracking-wide">Estado</th>
-                <th className="px-5 py-3 text-right text-xs font-semibold text-neutral-400 uppercase tracking-wide">Acreditación</th>
-                <th className="px-5 py-3 text-right text-xs font-semibold text-neutral-400 uppercase tracking-wide">Monto</th>
-                <th className="px-5 py-3 text-right text-xs font-semibold text-neutral-400 uppercase tracking-wide">Acciones</th>
+                <th className="px-5 py-3 text-left text-xs font-semibold text-neutral-600">Cliente / Banco</th>
+                <th className="px-5 py-3 text-left text-xs font-semibold text-neutral-600">N° Cheque</th>
+                <th className="px-5 py-3 text-center text-xs font-semibold text-neutral-600">Estado</th>
+                <th className="px-5 py-3 text-right text-xs font-semibold text-neutral-600">Acreditación</th>
+                <th className="px-5 py-3 text-right text-xs font-semibold text-neutral-600">Monto</th>
+                <th className="px-5 py-3 text-right text-xs font-semibold text-neutral-600">Acciones</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-neutral-50">
@@ -179,10 +179,10 @@ export function ChequesClient({
                 const urgente  = ch.dias_para_acreditar >= 0 && ch.dias_para_acreditar <= 3 && ch.estado !== "acreditado";
                 const vencido  = ch.dias_para_acreditar < 0 && ch.estado === "en_cartera";
                 return (
-                  <tr key={ch.id} className={`hover:bg-neutral-50 transition-colors ${urgente || vencido ? "bg-amber-50/40" : ""}`}>
+                  <tr key={ch.id} className={`hover:bg-neutral-50 transition-colors ${urgente || vencido ? "bg-warning-bg/40" : ""}`}>
                     <td className="px-5 py-3.5">
                       <p className="font-medium text-neutral-900">{ch.cliente_nombre}</p>
-                      <p className="text-xs text-neutral-400 mt-0.5">{ch.banco}{ch.librador ? ` · ${ch.librador}` : ""}</p>
+                      <p className="text-xs text-neutral-600 mt-0.5">{ch.banco}{ch.librador ? ` · ${ch.librador}` : ""}</p>
                     </td>
                     <td className="px-5 py-3.5 font-mono text-sm text-neutral-700">{ch.numero_cheque}</td>
                     <td className="px-5 py-3.5 text-center">
@@ -195,7 +195,7 @@ export function ChequesClient({
                         {new Date(ch.fecha_acreditacion + "T12:00:00").toLocaleDateString("es-AR")}
                       </p>
                       {ch.estado !== "acreditado" && ch.estado !== "rechazado" && (
-                        <p className={`text-xs mt-0.5 ${urgente ? "text-orange-600 font-semibold" : vencido ? "text-red-600 font-semibold" : "text-neutral-400"}`}>
+                        <p className={`text-xs mt-0.5 ${urgente ? "text-warning font-semibold" : vencido ? "text-danger font-semibold" : "text-neutral-600"}`}>
                           {ch.dias_para_acreditar < 0
                             ? `vencido hace ${Math.abs(ch.dias_para_acreditar)}d`
                             : ch.dias_para_acreditar === 0
@@ -211,27 +211,27 @@ export function ChequesClient({
                       <div className="flex items-center justify-end gap-1.5">
                         {ch.estado === "en_cartera" && (
                           <button onClick={() => runAction(ch.id, () => depositarCheque(ch.id))} disabled={pending}
-                            className="px-2.5 py-1 rounded-lg bg-amber-100 text-amber-700 text-xs font-medium hover:bg-amber-200 transition-colors disabled:opacity-50">
+                            className="px-2.5 py-1 rounded-lg bg-warning-bg text-warning text-xs font-medium hover:bg-warning-bg transition-colors disabled:opacity-50">
                             Depositar
                           </button>
                         )}
                         {(ch.estado === "en_cartera" || ch.estado === "depositado") && (
                           <>
                             <button onClick={() => runAction(ch.id, () => acreditarCheque(ch.id))} disabled={pending}
-                              className="px-2.5 py-1 rounded-lg bg-emerald-100 text-emerald-700 text-xs font-medium hover:bg-emerald-200 transition-colors disabled:opacity-50">
+                              className="px-2.5 py-1 rounded-lg bg-success-bg text-success text-xs font-medium hover:bg-success-bg transition-colors disabled:opacity-50">
                               Acreditar
                             </button>
                             <button onClick={() => {
                               if (!confirm("¿Marcar cheque como rechazado?")) return;
                               runAction(ch.id, () => rechazarCheque(ch.id));
                             }} disabled={pending}
-                              className="px-2.5 py-1 rounded-lg bg-red-100 text-red-700 text-xs font-medium hover:bg-red-200 transition-colors disabled:opacity-50">
+                              className="px-2.5 py-1 rounded-lg bg-danger-bg text-danger text-xs font-medium hover:bg-danger-bg transition-colors disabled:opacity-50">
                               Rechazar
                             </button>
                           </>
                         )}
                       </div>
-                      {actionError[ch.id] && <p className="text-xs text-red-600 mt-1">{actionError[ch.id]}</p>}
+                      {actionError[ch.id] && <p className="text-xs text-danger mt-1">{actionError[ch.id]}</p>}
                     </td>
                   </tr>
                 );

@@ -22,7 +22,7 @@ type Direccion = {
   zona:         { name: string; flete_kg: number } | null;
 };
 
-const inputCls = "w-full px-3 py-2 text-sm border border-neutral-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-tierra-700/20 disabled:opacity-50";
+const inputCls = "w-full px-3 py-2 text-sm border border-neutral-400 rounded-lg focus:outline-none focus:ring-[3px] focus:ring-brand-500/30 focus:border-brand-700 disabled:opacity-50";
 
 function DireccionForm({
   profileId,
@@ -46,11 +46,11 @@ function DireccionForm({
     >
       <div className="grid grid-cols-2 gap-3">
         <div>
-          <label className="block text-xs font-medium text-neutral-500 mb-1">Nombre / Alias *</label>
+          <label className="block text-[13px] font-medium text-neutral-800 mb-1.5">Nombre / Alias *</label>
           <input name="alias" defaultValue={defaults?.alias ?? ""} required placeholder="Ej: Sucursal Centro" className={inputCls} disabled={isPending} />
         </div>
         <div>
-          <label className="block text-xs font-medium text-neutral-500 mb-1">Zona de entrega</label>
+          <label className="block text-[13px] font-medium text-neutral-800 mb-1.5">Zona de entrega</label>
           <select name="zona_id" defaultValue={defaults?.zona_id ?? ""} className={`${inputCls} bg-white`} disabled={isPending}>
             <option value="">Sin zona</option>
             {zonas.map((z) => (
@@ -77,7 +77,7 @@ function DireccionForm({
       </div>
       <div className="flex gap-2 pt-1">
         <button type="submit" disabled={isPending}
-          className="px-4 py-2 rounded-xl bg-tierra-700 text-white text-sm font-medium hover:bg-tierra-800 disabled:opacity-50">
+          className="px-4 py-2 rounded-lg bg-tierra-700 text-white text-sm font-medium hover:bg-tierra-800 disabled:opacity-50">
           {isPending ? "Guardando…" : "Guardar"}
         </button>
         <button type="button" onClick={onCancel} disabled={isPending}
@@ -126,11 +126,11 @@ export function DireccionesClient({
   }
 
   return (
-    <div className="bg-white rounded-2xl border border-neutral-200 overflow-hidden">
+    <div className="bg-white rounded-xl border border-neutral-200 shadow-sm overflow-hidden">
       <div className="px-5 py-4 border-b border-neutral-100 flex items-center justify-between">
         <p className="text-sm font-medium text-neutral-700">
           Direcciones de entrega
-          <span className="ml-2 text-xs text-neutral-400 font-normal">{direcciones.length} registrada{direcciones.length !== 1 ? "s" : ""}</span>
+          <span className="ml-2 text-xs text-neutral-600 font-normal">{direcciones.length} registrada{direcciones.length !== 1 ? "s" : ""}</span>
         </p>
         {!showAdd && (
           <button onClick={() => setShowAdd(true)} disabled={isPending}
@@ -142,7 +142,7 @@ export function DireccionesClient({
 
       <div className="divide-y divide-neutral-100">
         {direcciones.length === 0 && !showAdd && (
-          <p className="px-5 py-8 text-sm text-neutral-400 text-center">
+          <p className="px-5 py-8 text-sm text-neutral-600 text-center">
             Sin direcciones registradas.
           </p>
         )}
@@ -168,23 +168,23 @@ export function DireccionesClient({
                     )}
                   </div>
                   {(d.calle || d.ciudad) && (
-                    <p className="text-xs text-neutral-500">
+                    <p className="text-xs text-neutral-600">
                       {[d.calle, d.numero, d.piso, d.ciudad].filter(Boolean).join(", ")}
                     </p>
                   )}
                   {d.zona ? (
-                    <p className="text-xs text-neutral-400">
+                    <p className="text-xs text-neutral-600">
                       {d.zona.name}
                       {d.zona.flete_kg > 0 && ` · flete ${fmt(d.zona.flete_kg)}/kg`}
                     </p>
                   ) : (
-                    <p className="text-xs text-neutral-300">Sin zona asignada</p>
+                    <p className="text-xs text-neutral-500">Sin zona asignada</p>
                   )}
                 </div>
                 <div className="flex items-center gap-3 shrink-0">
                   {!d.es_principal && (
                     <button onClick={() => handlePrincipal(d.id)} disabled={isPending}
-                      className="text-xs text-neutral-400 hover:text-tierra-700 disabled:opacity-50">
+                      className="text-xs text-neutral-600 hover:text-tierra-700 disabled:opacity-50">
                       Marcar principal
                     </button>
                   )}
@@ -204,7 +204,7 @@ export function DireccionesClient({
 
         {showAdd && (
           <div className="px-5 py-4 bg-neutral-50">
-            <p className="text-xs font-medium text-neutral-500 mb-1">Nueva dirección</p>
+            <p className="text-xs font-medium text-neutral-600 mb-1">Nueva dirección</p>
             <DireccionForm
               profileId={profileId}
               zonas={zonas}

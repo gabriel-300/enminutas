@@ -13,8 +13,8 @@ type Deposito = {
   lotes_count: number;
 };
 
-const inputClass = "w-full rounded-xl border border-neutral-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#16233f]/20 focus:border-[#16233f]";
-const labelClass = "block text-xs font-medium text-neutral-500 mb-1";
+const inputClass = "w-full rounded-lg border border-neutral-400 px-3 py-2 text-sm focus:outline-none focus:ring-[3px] focus:ring-brand-500/30 focus:border-brand-700";
+const labelClass = "block text-xs font-medium text-neutral-600 mb-1";
 
 function DepositoForm({
   initial,
@@ -32,7 +32,7 @@ function DepositoForm({
   const [dir, setDir]             = useState(initial?.direccion ?? "");
 
   return (
-    <div className="bg-white rounded-2xl border border-neutral-200 p-5 space-y-4">
+    <div className="bg-white rounded-xl border border-neutral-200 shadow-sm p-5 space-y-4">
       <h3 className="text-sm font-semibold text-neutral-900">
         {initial ? "Editar depósito" : "Nuevo depósito"}
       </h3>
@@ -78,7 +78,7 @@ function DepositoForm({
         <button
           onClick={() => { if (nombre.trim()) onSave({ nombre, descripcion: desc || undefined, direccion: dir || undefined }); }}
           disabled={pending || !nombre.trim()}
-          className="flex-1 py-2 rounded-xl bg-[#16233f] text-white text-sm font-medium hover:bg-[#1e2f52] disabled:opacity-50"
+          className="flex-1 py-2 rounded-lg bg-brand-700 text-white text-sm font-medium hover:bg-brand-800 disabled:opacity-50"
         >
           {pending ? "Guardando…" : "Guardar"}
         </button>
@@ -121,13 +121,13 @@ export function DepositosClient({ depositos }: { depositos: Deposito[] }) {
   return (
     <div className="space-y-5">
       {error && (
-        <div className="bg-red-50 border border-red-200 rounded-xl px-4 py-3 text-sm text-red-700">{error}</div>
+        <div className="bg-danger-bg border border-danger-border rounded-xl px-4 py-3 text-sm text-danger">{error}</div>
       )}
 
       <div className="flex justify-end">
         <button
           onClick={() => { setShowForm(v => !v); setEditingId(null); }}
-          className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#16233f] text-white text-sm font-medium hover:bg-[#1e2f52] transition-colors"
+          className="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-brand-700 text-white text-sm font-medium hover:bg-brand-800 transition-colors"
         >
           {showForm ? <X className="size-4" /> : <Plus className="size-4" />}
           {showForm ? "Cancelar" : "Nuevo depósito"}
@@ -153,28 +153,28 @@ export function DepositosClient({ depositos }: { depositos: Deposito[] }) {
                 pending={pending}
               />
             ) : (
-              <div className={`bg-white rounded-2xl border p-5 flex items-start gap-4 ${!d.activo ? "opacity-50" : "border-neutral-200"}`}>
+              <div className={`bg-white rounded-xl border p-5 flex items-start gap-4 ${!d.activo ? "opacity-50" : "border-neutral-200"}`}>
                 <div className="size-10 rounded-xl bg-neutral-100 flex items-center justify-center shrink-0">
-                  <Warehouse className="size-5 text-neutral-400" />
+                  <Warehouse className="size-5 text-neutral-600" />
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
                     <p className="font-semibold text-neutral-900">{d.nombre}</p>
                     {!d.activo && (
-                      <span className="text-xs px-2 py-0.5 rounded-full bg-neutral-100 text-neutral-400">Inactivo</span>
+                      <span className="text-xs px-2 py-0.5 rounded-full bg-neutral-100 text-neutral-600">Inactivo</span>
                     )}
-                    <span className="text-xs text-neutral-400">
+                    <span className="text-xs text-neutral-600">
                       {d.lotes_count} lote{d.lotes_count !== 1 ? "s" : ""} asignado{d.lotes_count !== 1 ? "s" : ""}
                     </span>
                   </div>
-                  {d.descripcion && <p className="text-sm text-neutral-500 mt-0.5">{d.descripcion}</p>}
-                  {d.direccion  && <p className="text-xs text-neutral-400 mt-0.5">{d.direccion}</p>}
+                  {d.descripcion && <p className="text-sm text-neutral-600 mt-0.5">{d.descripcion}</p>}
+                  {d.direccion  && <p className="text-xs text-neutral-600 mt-0.5">{d.direccion}</p>}
                 </div>
                 <div className="flex items-center gap-2 shrink-0">
                   <button
                     onClick={() => setEditingId(d.id)}
                     disabled={pending}
-                    className="p-2 rounded-lg text-neutral-400 hover:text-neutral-700 hover:bg-neutral-100 transition-colors disabled:opacity-30"
+                    className="p-2 rounded-lg text-neutral-600 hover:text-neutral-700 hover:bg-neutral-100 transition-colors disabled:opacity-30"
                     title="Editar"
                   >
                     <Edit2 className="size-4" />
@@ -184,8 +184,8 @@ export function DepositosClient({ depositos }: { depositos: Deposito[] }) {
                     disabled={pending}
                     className={`p-2 rounded-lg transition-colors disabled:opacity-30 ${
                       d.activo
-                        ? "text-neutral-400 hover:text-red-500 hover:bg-red-50"
-                        : "text-neutral-400 hover:text-emerald-600 hover:bg-emerald-50"
+                        ? "text-neutral-600 hover:text-danger hover:bg-danger-bg"
+                        : "text-neutral-600 hover:text-success hover:bg-success-bg"
                     }`}
                     title={d.activo ? "Desactivar" : "Activar"}
                   >

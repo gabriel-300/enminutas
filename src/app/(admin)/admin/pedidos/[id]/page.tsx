@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { createClient, createAdminClient } from "@/lib/supabase/server";
 import { redirect, notFound } from "next/navigation";
 import Link from "next/link";
-import { OrderStatusBadge } from "@/components/ui/badge";
+import { PedidoStatusBadge } from "@/components/ui";
 import { OrderStatusSelect } from "@/components/admin/order-status-select";
 import { AprobarPedidoButton } from "@/components/admin/aprobar-pedido-button";
 import { NotasPedidoForm } from "@/components/admin/notas-pedido-form";
@@ -166,25 +166,25 @@ export default async function AdminPedidoDetailPage({
   }
 
   return (
-    <div className="p-4 md:p-8 max-w-4xl">
+    <div className="p-4 md:px-10 md:py-8 md:pb-16">
       {/* Header */}
       <div className="mb-5 md:mb-6 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <Link
             href="/admin/pedidos"
-            className="text-sm text-neutral-400 hover:text-neutral-700 transition-colors mb-2 inline-block"
+            className="text-sm text-neutral-600 hover:text-neutral-700 transition-colors mb-2 inline-block"
           >
             ← Volver a pedidos
           </Link>
           <h1 className="text-xl md:text-2xl font-semibold font-display font-mono text-neutral-900">
             {o.order_number}
           </h1>
-          <p className="text-sm text-neutral-500 mt-1">
+          <p className="text-sm text-neutral-600 mt-1">
             {fmtFechaHora(o.created_at)}
           </p>
         </div>
         <div className="flex items-center gap-2 flex-wrap">
-          <OrderStatusBadge status={o.status} />
+          <PedidoStatusBadge status={o.status} />
           {o.status !== "pending_payment" && (
             <Link
               href={`/remito/${id}`}
@@ -209,7 +209,7 @@ export default async function AdminPedidoDetailPage({
       </div>
 
       {pedidoOrigen && (
-        <div className="mb-5 rounded-xl bg-warning-bg border border-warning/20 px-4 py-3 text-sm text-neutral-700">
+        <div className="mb-5 rounded-xl bg-warning-bg border border-warning-border px-4 py-3 text-sm text-neutral-700">
           Faltante del pedido{" "}
           <Link href={`/admin/pedidos/${pedidoOrigen.id}`} className="font-mono font-medium underline">{pedidoOrigen.order_number}</Link>
           {o.fecha_compromiso && <> · compromiso de entrega: <span className="font-medium">{fmtFechaSolo(o.fecha_compromiso)}</span></>}
@@ -218,33 +218,33 @@ export default async function AdminPedidoDetailPage({
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 md:gap-4 mb-5 md:mb-6">
         {/* Cliente */}
-        <div className="bg-white rounded-2xl border border-neutral-200 p-5">
-          <p className="text-xs font-medium text-neutral-400 uppercase tracking-wide mb-3">Cliente</p>
+        <div className="bg-white rounded-xl border border-neutral-200 shadow-sm p-5">
+          <p className="text-xs font-medium text-neutral-600 mb-3">Cliente</p>
           <p className="text-sm font-medium text-neutral-900">{customerName}</p>
-          {esMuestra && o.muestra_contacto && <p className="text-sm text-neutral-500 mt-1">Contacto: {o.muestra_contacto}</p>}
-          {customerEmail && <p className="text-sm text-neutral-500 mt-1">{customerEmail}</p>}
-          {customerPhone && <p className="text-sm text-neutral-500 mt-1">{customerPhone}</p>}
+          {esMuestra && o.muestra_contacto && <p className="text-sm text-neutral-600 mt-1">Contacto: {o.muestra_contacto}</p>}
+          {customerEmail && <p className="text-sm text-neutral-600 mt-1">{customerEmail}</p>}
+          {customerPhone && <p className="text-sm text-neutral-600 mt-1">{customerPhone}</p>}
           {esMuestra && (
-            <p className="text-xs text-neutral-400 mt-2 pt-2 border-t border-neutral-100">
+            <p className="text-xs text-neutral-600 mt-2 pt-2 border-t border-neutral-100">
               {o.muestra_prospecto_id ? "Prospecto del Pipeline" : o.customer ? "Cliente registrado" : "Contacto suelto"}
               {solicitanteNombre && <> · solicitó <span className="font-medium text-neutral-600">{solicitanteNombre}</span></>}
             </p>
           )}
           {vendedorNombre && (
-            <p className="text-xs text-neutral-400 mt-2 pt-2 border-t border-neutral-100">
+            <p className="text-xs text-neutral-600 mt-2 pt-2 border-t border-neutral-100">
               Vendedor: <span className="font-medium text-neutral-600">{vendedorNombre}</span>
             </p>
           )}
         </div>
 
         {/* Pago */}
-        <div className="bg-white rounded-2xl border border-neutral-200 p-5">
-          <p className="text-xs font-medium text-neutral-400 uppercase tracking-wide mb-3">Pago</p>
+        <div className="bg-white rounded-xl border border-neutral-200 shadow-sm p-5">
+          <p className="text-xs font-medium text-neutral-600 mb-3">Pago</p>
           <p className="text-sm font-medium text-neutral-900">
             {esMuestra ? "Muestra sin cargo" : (paymentLabel[o.payment_method] ?? o.payment_method)}
           </p>
           {o.payment_declared_at && (
-            <p className="text-xs text-neutral-500 mt-1">
+            <p className="text-xs text-neutral-600 mt-1">
               Declarado:{" "}
               {fmtFecha(o.payment_declared_at, { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" })}
             </p>
@@ -256,18 +256,18 @@ export default async function AdminPedidoDetailPage({
             </p>
           )}
           {!o.payment_declared_at && !o.payment_confirmed_at && (
-            <p className="text-xs text-neutral-400 mt-1">Sin confirmar</p>
+            <p className="text-xs text-neutral-600 mt-1">Sin confirmar</p>
           )}
         </div>
 
         {/* Envío */}
-        <div className="bg-white rounded-2xl border border-neutral-200 p-5">
-          <p className="text-xs font-medium text-neutral-400 uppercase tracking-wide mb-3">Envío</p>
+        <div className="bg-white rounded-xl border border-neutral-200 shadow-sm p-5">
+          <p className="text-xs font-medium text-neutral-600 mb-3">Envío</p>
           <p className="text-sm font-medium text-neutral-900">
             {shippingLabel[o.shipping_method] ?? o.shipping_method}
           </p>
           {o.shipping_snapshot && (
-            <p className="text-xs text-neutral-500 mt-1">
+            <p className="text-xs text-neutral-600 mt-1">
               {[
                 o.shipping_snapshot.street,
                 o.shipping_snapshot.number,
@@ -281,7 +281,7 @@ export default async function AdminPedidoDetailPage({
       </div>
 
       {/* Líneas del pedido */}
-      <div className="bg-white rounded-2xl border border-neutral-200 overflow-hidden mb-4">
+      <div className="bg-white rounded-xl border border-neutral-200 shadow-sm overflow-hidden mb-4">
         <div className="px-5 py-4 border-b border-neutral-100 flex items-center justify-between gap-3">
           <p className="text-sm font-medium text-neutral-700">Productos</p>
           {esAdmin && !esMuestra && (
@@ -310,10 +310,10 @@ export default async function AdminPedidoDetailPage({
                   {line.product_snapshot?.name ?? "Producto"}
                 </p>
                 {line.product_snapshot?.sku && (
-                  <p className="text-xs text-neutral-400 font-mono">{line.product_snapshot.sku}</p>
+                  <p className="text-xs text-neutral-600 font-mono">{line.product_snapshot.sku}</p>
                 )}
                 {!esMuestra && (
-                  <p className="text-xs text-neutral-400 mt-0.5">
+                  <p className="text-xs text-neutral-600 mt-0.5">
                     {line.quantity} × $ {Number(line.unit_price).toLocaleString("es-AR")}
                   </p>
                 )}
@@ -329,10 +329,10 @@ export default async function AdminPedidoDetailPage({
         <table className="hidden md:table w-full text-sm">
           <thead>
             <tr className="text-left border-b border-neutral-100">
-              <th className="px-5 py-3 text-xs font-medium text-neutral-400">Producto</th>
-              {!esMuestra && <th className="px-5 py-3 text-xs font-medium text-neutral-400 text-right">Precio u.</th>}
-              <th className="px-5 py-3 text-xs font-medium text-neutral-400 text-right w-20">Cant.</th>
-              {!esMuestra && <th className="px-5 py-3 text-xs font-medium text-neutral-400 text-right">Subtotal</th>}
+              <th className="px-5 py-3 text-xs font-semibold text-neutral-600">Producto</th>
+              {!esMuestra && <th className="px-5 py-3 text-xs font-semibold text-neutral-600 text-right">Precio u.</th>}
+              <th className="px-5 py-3 text-xs font-semibold text-neutral-600 text-right w-20">Cant.</th>
+              {!esMuestra && <th className="px-5 py-3 text-xs font-semibold text-neutral-600 text-right">Subtotal</th>}
             </tr>
           </thead>
           <tbody className="divide-y divide-neutral-50">
@@ -341,7 +341,7 @@ export default async function AdminPedidoDetailPage({
                 <td className="px-5 py-3 text-neutral-800">
                   {line.product_snapshot?.name ?? "Producto"}
                   {line.product_snapshot?.sku && (
-                    <span className="ml-2 text-xs text-neutral-400 font-mono">
+                    <span className="ml-2 text-xs text-neutral-600 font-mono">
                       {line.product_snapshot.sku}
                     </span>
                   )}
@@ -365,9 +365,9 @@ export default async function AdminPedidoDetailPage({
 
       {/* Detalle entrega parcial */}
       {o.delivered_snapshot?.lineas && (
-        <div className="bg-warning-bg border border-warning/20 rounded-2xl p-5 mb-4">
+        <div className="bg-warning-bg border border-warning-border rounded-xl p-5 mb-4">
           <p className="text-sm font-medium text-warning mb-1">Entrega parcial — faltante cerrado</p>
-          <p className="text-xs text-neutral-500 mb-3">
+          <p className="text-xs text-neutral-600 mb-3">
             El pedido y la cuenta corriente quedaron solo con lo entregado. Lo que no se entregó no queda pendiente.
           </p>
           <div className="space-y-2">
@@ -394,7 +394,7 @@ export default async function AdminPedidoDetailPage({
             <p className="text-sm text-neutral-700 mt-3">
               Faltante reprogramado en{" "}
               <Link href={`/admin/pedidos/${pedidoReprogramado.id}`} className="font-mono font-medium underline">{pedidoReprogramado.order_number}</Link>
-              {" "}<OrderStatusBadge status={pedidoReprogramado.status} />
+              {" "}<PedidoStatusBadge status={pedidoReprogramado.status} />
             </p>
           ) : esAdmin && faltantes.length > 0 ? (
             <ReprogramarFaltanteButton
@@ -404,7 +404,7 @@ export default async function AdminPedidoDetailPage({
             />
           ) : null}
           {o.delivered_snapshot.timestamp && (
-            <p className="text-xs text-neutral-400 mt-1">
+            <p className="text-xs text-neutral-600 mt-1">
               Registrado: {new Date(o.delivered_snapshot.timestamp).toLocaleString("es-AR")}
             </p>
           )}
@@ -412,15 +412,15 @@ export default async function AdminPedidoDetailPage({
       )}
 
       {esMuestra && o.muestra_observacion && (
-        <div className="mb-4 bg-white rounded-2xl border border-neutral-200 p-5 text-sm">
-          <p className="text-xs font-medium text-neutral-400 uppercase tracking-wide mb-1">Motivo de la muestra</p>
+        <div className="mb-4 bg-white rounded-xl border border-neutral-200 shadow-sm p-5 text-sm">
+          <p className="text-xs font-medium text-neutral-600 mb-1">Motivo de la muestra</p>
           <p className="text-neutral-700">{o.muestra_observacion}</p>
         </div>
       )}
 
       {/* Totales (las muestras no tienen precio) */}
       {!esMuestra && (
-      <div className="bg-white rounded-2xl border border-neutral-200 p-5 sm:max-w-xs sm:ml-auto">
+      <div className="bg-white rounded-xl border border-neutral-200 shadow-sm p-5 sm:max-w-xs sm:ml-auto">
         {(() => {
           const total   = Number(o.total);
           const neto    = Math.round(total / 1.21);
@@ -465,7 +465,7 @@ export default async function AdminPedidoDetailPage({
                 <span>{fmt(total)}</span>
               </div>
               {o.delivered_snapshot?.lineas && (
-                <p className="text-xs text-neutral-400 pt-1">
+                <p className="text-xs text-neutral-600 pt-1">
                   Total según lo efectivamente entregado.
                 </p>
               )}
@@ -481,8 +481,8 @@ export default async function AdminPedidoDetailPage({
         const sinFactura = pagosPedido.some((x) => x.sin_factura);
         const saldo = Number(o.total) - pagado;
         return (
-          <div className="mt-4 bg-white rounded-2xl border border-neutral-200 p-5 sm:max-w-xs sm:ml-auto text-sm space-y-2">
-            <p className="text-xs font-medium text-neutral-400 uppercase tracking-wide">Cobranza</p>
+          <div className="mt-4 bg-white rounded-xl border border-neutral-200 shadow-sm p-5 sm:max-w-xs sm:ml-auto text-sm space-y-2">
+            <p className="text-xs font-medium text-neutral-600">Cobranza</p>
             <div className="flex justify-between text-neutral-600"><span>Total del pedido</span><span>{fmtMonto(Number(o.total))}</span></div>
             <div className="flex justify-between text-neutral-600"><span>Pagado</span><span>{fmtMonto(pagado)}</span></div>
             <div className={`flex justify-between font-semibold pt-2 border-t border-neutral-100 ${saldo > 0.5 && !sinFactura ? "text-danger" : "text-success"}`}>
@@ -490,7 +490,7 @@ export default async function AdminPedidoDetailPage({
               <span>{sinFactura ? fmtMonto(pagado) : fmtMonto(Math.abs(saldo))}</span>
             </div>
             {!sinFactura && saldo < -0.5 && (
-              <p className="text-xs text-neutral-400">
+              <p className="text-xs text-neutral-600">
                 Pagó de más (por ejemplo, pagó antes y luego hubo entrega parcial). Se descuenta del saldo general del cliente.
               </p>
             )}
@@ -500,7 +500,7 @@ export default async function AdminPedidoDetailPage({
 
       {/* Pago confirmado */}
       {o.payment_confirmed_at && (
-        <div className="mt-4 bg-success-bg rounded-2xl border border-success/20 p-4">
+        <div className="mt-4 bg-success-bg rounded-xl border border-success-border p-4">
           <p className="text-xs font-medium text-success">
             Pago confirmado el{" "}
             {fmtFecha(o.payment_confirmed_at, { day: "2-digit", month: "2-digit", year: "2-digit", hour: "2-digit", minute: "2-digit" })}
@@ -510,7 +510,7 @@ export default async function AdminPedidoDetailPage({
 
       {/* Pago declarado por el cliente */}
       {o.payment_declared_at && !o.payment_confirmed_at && (
-        <div className="mt-4 bg-warning-bg rounded-2xl border border-warning/20 p-4">
+        <div className="mt-4 bg-warning-bg rounded-xl border border-warning-border p-4">
           <p className="text-xs font-medium text-warning">
             El cliente declaró el pago el{" "}
             {fmtFecha(o.payment_declared_at, { day: "2-digit", month: "2-digit", year: "2-digit", hour: "2-digit", minute: "2-digit" })}

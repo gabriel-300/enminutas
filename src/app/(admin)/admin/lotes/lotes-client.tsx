@@ -25,10 +25,10 @@ type Producto  = { id: string; name: string; unit_label: string };
 type Deposito  = { id: string; nombre: string };
 
 const ESTADO_CFG = {
-  vencido: { label: "Vencido",       bg: "#fef2f2", text: "#dc2626", dot: "bg-red-500" },
-  critico: { label: "Vence pronto",  bg: "#fff7ed", text: "#c2410c", dot: "bg-orange-500" },
-  proximo: { label: "Próximo a vencer", bg: "#fffbeb", text: "#b45309", dot: "bg-amber-400" },
-  vigente: { label: "Vigente",       bg: "#ecfdf5", text: "#059669", dot: "bg-emerald-500" },
+  vencido: { label: "Vencido",       bg: "#fdecea", text: "#b42318", dot: "bg-danger-solid" },
+  critico: { label: "Vence pronto",  bg: "#fff7ed", text: "#c2410c", dot: "bg-warning-solid" },
+  proximo: { label: "Próximo a vencer", bg: "#fdf4e0", text: "#8a5a00", dot: "bg-warning-solid" },
+  vigente: { label: "Vigente",       bg: "#eaf6ee", text: "#1d6b3a", dot: "bg-success-solid" },
 };
 
 const today = () => new Date().toISOString().slice(0, 10);
@@ -153,15 +153,15 @@ export function LotesClient({
     });
   }
 
-  const inputClass = "w-full rounded-xl border border-neutral-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#16233f]/20 focus:border-[#16233f]";
+  const inputClass = "w-full rounded-lg border border-neutral-400 px-3 py-2 text-sm focus:outline-none focus:ring-[3px] focus:ring-brand-500/30 focus:border-brand-700";
 
   return (
     <div className="space-y-5">
       {/* Alertas */}
       {(vencidos > 0 || criticos > 0) && (
-        <div className="bg-red-50 border border-red-200 rounded-2xl px-5 py-4 flex items-start gap-3">
-          <AlertTriangle className="size-5 text-red-500 flex-shrink-0 mt-0.5" />
-          <div className="text-sm text-red-800">
+        <div className="bg-danger-bg border border-danger-border rounded-xl px-5 py-4 flex items-start gap-3">
+          <AlertTriangle className="size-5 text-danger flex-shrink-0 mt-0.5" />
+          <div className="text-sm text-danger">
             {vencidos > 0 && <span className="font-semibold">{vencidos} lote{vencidos > 1 ? "s" : ""} vencido{vencidos > 1 ? "s" : ""}. </span>}
             {criticos > 0 && <span>{criticos} lote{criticos > 1 ? "s" : ""} vence{criticos > 1 ? "n" : ""} en menos de 7 días. </span>}
             Revisá y dá de baja los que correspondan.
@@ -172,13 +172,13 @@ export function LotesClient({
       {/* Header acciones */}
       <div className="flex flex-col gap-3">
         <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-neutral-300" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-neutral-500" />
           <input
             type="text"
             value={busqueda}
             onChange={e => setBusqueda(e.target.value)}
             placeholder="Buscar por producto, número de lote o proveedor..."
-            className="w-full rounded-xl border border-neutral-200 pl-9 pr-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#16233f]/20 focus:border-[#16233f]"
+            className="w-full rounded-lg border border-neutral-400 pl-9 pr-3 py-2 text-sm focus:outline-none focus:ring-[3px] focus:ring-brand-500/30 focus:border-brand-700"
           />
         </div>
         <div className="flex items-center justify-between gap-4">
@@ -190,7 +190,7 @@ export function LotesClient({
                 onClick={() => setFiltro(f)}
                 className={`px-3 py-1.5 rounded-xl text-xs font-medium transition-colors ${
                   filtro === f
-                    ? "bg-[#16233f] text-white"
+                    ? "bg-brand-700 text-white"
                     : "bg-white border border-neutral-200 text-neutral-600 hover:bg-neutral-50"
                 }`}
               >
@@ -203,7 +203,7 @@ export function LotesClient({
           </div>
           <button
             onClick={abrirModal}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium bg-[#16233f] text-white hover:bg-[#1e2f54] transition-colors shrink-0"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-brand-700 text-white hover:bg-brand-800 transition-colors shrink-0"
           >
             <Plus className="size-3.5" />
             Nuevo lote
@@ -214,7 +214,7 @@ export function LotesClient({
           <div className="flex gap-1.5 flex-wrap">
             <button
               onClick={() => setFiltroDeposito("todos")}
-              className={`px-3 py-1 rounded-xl text-xs font-medium transition-colors ${filtroDeposito === "todos" ? "bg-neutral-800 text-white" : "bg-white border border-neutral-200 text-neutral-600 hover:bg-neutral-50"}`}
+              className={`px-3 py-1 rounded-lg text-xs font-medium transition-colors ${filtroDeposito === "todos" ? "bg-neutral-800 text-white" : "bg-white border border-n-btn text-neutral-800 hover:bg-neutral-50"}`}
             >
               Todos los depósitos
             </button>
@@ -222,14 +222,14 @@ export function LotesClient({
               <button
                 key={d.id}
                 onClick={() => setFiltroDeposito(d.id)}
-                className={`px-3 py-1 rounded-xl text-xs font-medium transition-colors ${filtroDeposito === d.id ? "bg-neutral-800 text-white" : "bg-white border border-neutral-200 text-neutral-600 hover:bg-neutral-50"}`}
+                className={`px-3 py-1 rounded-lg text-xs font-medium transition-colors ${filtroDeposito === d.id ? "bg-neutral-800 text-white" : "bg-white border border-n-btn text-neutral-800 hover:bg-neutral-50"}`}
               >
                 {d.nombre}
               </button>
             ))}
             <button
               onClick={() => setFiltroDeposito("__sin__")}
-              className={`px-3 py-1 rounded-xl text-xs font-medium transition-colors ${filtroDeposito === "__sin__" ? "bg-neutral-800 text-white" : "bg-white border border-neutral-200 text-neutral-400 hover:bg-neutral-50"}`}
+              className={`px-3 py-1 rounded-lg text-xs font-medium transition-colors ${filtroDeposito === "__sin__" ? "bg-neutral-800 text-white" : "bg-white border border-n-btn text-neutral-800 hover:bg-neutral-50"}`}
             >
               Sin asignar
             </button>
@@ -238,9 +238,9 @@ export function LotesClient({
       </div>
 
       {/* Tabla */}
-      <div className="bg-white rounded-2xl border border-neutral-200 overflow-hidden">
+      <div className="bg-white rounded-xl border border-neutral-200 shadow-sm overflow-hidden">
         {lotesFiltrados.length === 0 ? (
-          <p className="px-5 py-10 text-center text-sm text-neutral-400">
+          <p className="px-5 py-10 text-center text-sm text-neutral-600">
             {busquedaNorm ? "No hay lotes que coincidan con la búsqueda."
               : filtro === "todos" ? "No hay lotes registrados aún." : "No hay lotes en esta categoría."}
           </p>
@@ -248,12 +248,12 @@ export function LotesClient({
           <table className="w-full text-sm">
             <thead className="border-b border-neutral-100">
               <tr>
-                <th className="px-5 py-3 text-left text-xs font-semibold text-neutral-400 uppercase tracking-wide">Producto / Lote</th>
-                <th className="px-5 py-3 text-left text-xs font-semibold text-neutral-400 uppercase tracking-wide">Estado</th>
-                <th className="px-4 py-3 text-left text-xs font-semibold text-neutral-400 uppercase tracking-wide">Depósito</th>
-                <th className="px-5 py-3 text-right text-xs font-semibold text-neutral-400 uppercase tracking-wide">Vencimiento</th>
-                <th className="px-5 py-3 text-right text-xs font-semibold text-neutral-400 uppercase tracking-wide">Stock actual</th>
-                <th className="px-5 py-3 text-right text-xs font-semibold text-neutral-400 uppercase tracking-wide">Ingreso</th>
+                <th className="px-5 py-3 text-left text-xs font-semibold text-neutral-600">Producto / Lote</th>
+                <th className="px-5 py-3 text-left text-xs font-semibold text-neutral-600">Estado</th>
+                <th className="px-4 py-3 text-left text-xs font-semibold text-neutral-600">Depósito</th>
+                <th className="px-5 py-3 text-right text-xs font-semibold text-neutral-600">Vencimiento</th>
+                <th className="px-5 py-3 text-right text-xs font-semibold text-neutral-600">Stock actual</th>
+                <th className="px-5 py-3 text-right text-xs font-semibold text-neutral-600">Ingreso</th>
                 <th className="px-5 py-3"></th>
               </tr>
             </thead>
@@ -271,13 +271,13 @@ export function LotesClient({
                       <div className="flex items-center gap-2">
                         <div>
                           <p className="font-medium text-neutral-900">{lote.producto_nombre}</p>
-                          <p className="text-xs text-neutral-400 mt-0.5">
+                          <p className="text-xs text-neutral-600 mt-0.5">
                             Lote: {lote.numero_lote}
                             {lote.proveedor && ` · ${lote.proveedor}`}
                           </p>
                         </div>
                         {esFefo && (
-                          <span className="ml-1 inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold bg-[#16233f] text-white shrink-0">
+                          <span className="ml-1 inline-flex items-center px-1.5 py-0.5 rounded text-xs font-bold bg-brand-700 text-white shrink-0">
                             FEFO
                           </span>
                         )}
@@ -295,8 +295,8 @@ export function LotesClient({
                           : ` (${Math.abs(lote.dias_restantes)}d)`}
                       </span>
                     </td>
-                    <td className="px-4 py-3.5 text-xs text-neutral-500 whitespace-nowrap">
-                      {lote.deposito_nombre ?? <span className="text-neutral-300">—</span>}
+                    <td className="px-4 py-3.5 text-xs text-neutral-600 whitespace-nowrap">
+                      {lote.deposito_nombre ?? <span className="text-neutral-500">—</span>}
                     </td>
                     <td className="px-5 py-3.5 text-right text-neutral-600 tabular-nums whitespace-nowrap">
                       {new Date(lote.fecha_vencimiento + "T12:00:00").toLocaleDateString("es-AR")}
@@ -310,13 +310,13 @@ export function LotesClient({
                             step="0.001"
                             value={nuevaCant}
                             onChange={e => setNuevaCant(e.target.value)}
-                            className="w-20 rounded-lg border border-neutral-200 px-2 py-1 text-xs text-right focus:outline-none focus:ring-1 focus:ring-[#16233f]/30"
+                            className="w-20 rounded-lg border border-neutral-400 px-2 py-1 text-xs text-right focus:outline-none focus:ring-1 focus:ring-brand-500/30"
                             autoFocus
                           />
                           <button onClick={() => handleAjuste(lote.id)} disabled={pending}
-                            className="px-2 py-1 rounded-lg bg-[#16233f] text-white text-xs disabled:opacity-50">✓</button>
+                            className="px-2 py-1 rounded-lg bg-brand-700 text-white text-xs disabled:opacity-50">✓</button>
                           <button onClick={() => { setAjustando(null); setNuevaCant(""); }}
-                            className="px-2 py-1 rounded-lg border text-xs text-neutral-500">✕</button>
+                            className="px-2 py-1 rounded-lg border text-xs text-neutral-600">✕</button>
                         </div>
                       ) : (
                         <button
@@ -333,18 +333,18 @@ export function LotesClient({
                               style={{ width: `${pctUso}%` }}
                             />
                           </div>
-                          <p className="text-[10px] text-neutral-400">{pctUso}% consumido</p>
+                          <p className="text-xs text-neutral-600">{pctUso}% consumido</p>
                         </button>
                       )}
                     </td>
-                    <td className="px-5 py-3.5 text-right text-neutral-400 text-xs tabular-nums whitespace-nowrap">
+                    <td className="px-5 py-3.5 text-right text-neutral-600 text-xs tabular-nums whitespace-nowrap">
                       {new Date(lote.fecha_ingreso + "T12:00:00").toLocaleDateString("es-AR")}
                     </td>
                     <td className="px-5 py-3.5 text-right">
                       <button
                         onClick={() => handleBaja(lote.id, lote.numero_lote)}
                         disabled={pending}
-                        className="p-1.5 rounded-lg text-neutral-300 hover:text-red-500 hover:bg-red-50 transition-colors disabled:opacity-30"
+                        className="p-1.5 rounded-lg text-neutral-500 hover:text-danger hover:bg-danger-bg transition-colors disabled:opacity-30"
                         title="Dar de baja"
                       >
                         <PackageX className="size-4" />
@@ -361,17 +361,17 @@ export function LotesClient({
       {/* Modal nuevo lote */}
       {modalAbierto && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
-          <div className="bg-white rounded-2xl border border-neutral-200 w-full max-w-md max-h-[90vh] overflow-y-auto p-6">
+          <div className="bg-white rounded-xl border border-neutral-200 shadow-sm w-full max-w-md max-h-[90vh] overflow-y-auto p-6">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-lg font-bold font-display text-neutral-900">Nuevo lote</h2>
-              <button onClick={() => setModalAbierto(false)} className="p-1 rounded-lg text-neutral-400 hover:bg-neutral-100">
+              <button onClick={() => setModalAbierto(false)} className="p-1 rounded-lg text-neutral-600 hover:bg-neutral-100">
                 <X className="size-4" />
               </button>
             </div>
 
             <div className="space-y-3">
               <div>
-                <label className="block text-xs font-medium text-neutral-500 mb-1">Producto *</label>
+                <label className="block text-[13px] font-medium text-neutral-800 mb-1.5">Producto *</label>
                 <select
                   value={nuevo.productoId}
                   onChange={e => handleProductoChange(e.target.value)}
@@ -386,7 +386,7 @@ export function LotesClient({
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-medium text-neutral-500 mb-1">Cantidad *</label>
+                  <label className="block text-[13px] font-medium text-neutral-800 mb-1.5">Cantidad *</label>
                   <input
                     type="number" min="0" step="0.001"
                     value={nuevo.cantidadInicial}
@@ -395,21 +395,21 @@ export function LotesClient({
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-neutral-500 mb-1">Unidad</label>
+                  <label className="block text-[13px] font-medium text-neutral-800 mb-1.5">Unidad</label>
                   <input
                     type="text"
                     value={nuevo.unidad}
                     readOnly
                     disabled
                     placeholder="Elegí un producto"
-                    className={`${inputClass} bg-neutral-50 text-neutral-500 cursor-not-allowed`}
+                    className={`${inputClass} bg-neutral-50 text-neutral-600 cursor-not-allowed`}
                   />
                 </div>
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-medium text-neutral-500 mb-1">Fecha ingreso</label>
+                  <label className="block text-[13px] font-medium text-neutral-800 mb-1.5">Fecha ingreso</label>
                   <input
                     type="date"
                     value={nuevo.fechaIngreso}
@@ -418,7 +418,7 @@ export function LotesClient({
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-neutral-500 mb-1">Vencimiento *</label>
+                  <label className="block text-[13px] font-medium text-neutral-800 mb-1.5">Vencimiento *</label>
                   <input
                     type="date"
                     value={nuevo.fechaVencimiento}
@@ -430,7 +430,7 @@ export function LotesClient({
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-medium text-neutral-500 mb-1">Número de lote</label>
+                  <label className="block text-[13px] font-medium text-neutral-800 mb-1.5">Número de lote</label>
                   <input
                     type="text"
                     value={nuevo.numeroLote}
@@ -440,7 +440,7 @@ export function LotesClient({
                 </div>
                 {depositos.length > 0 && (
                   <div>
-                    <label className="block text-xs font-medium text-neutral-500 mb-1">Depósito</label>
+                    <label className="block text-[13px] font-medium text-neutral-800 mb-1.5">Depósito</label>
                     <select
                       value={nuevo.depositoId}
                       onChange={e => setNuevo(n => ({ ...n, depositoId: e.target.value }))}
@@ -456,7 +456,7 @@ export function LotesClient({
               </div>
 
               <div>
-                <label className="block text-xs font-medium text-neutral-500 mb-1">Observaciones</label>
+                <label className="block text-[13px] font-medium text-neutral-800 mb-1.5">Observaciones</label>
                 <input
                   type="text"
                   value={nuevo.observaciones}
@@ -467,20 +467,20 @@ export function LotesClient({
               </div>
 
               {errorNuevo && (
-                <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-xl px-3 py-2">{errorNuevo}</p>
+                <p className="text-sm text-danger bg-danger-bg border border-danger-border rounded-xl px-3 py-2">{errorNuevo}</p>
               )}
 
               <div className="flex gap-2 pt-2">
                 <button
                   onClick={() => setModalAbierto(false)}
-                  className="flex-1 px-4 py-2 rounded-xl border border-neutral-200 text-sm font-medium text-neutral-600 hover:bg-neutral-50"
+                  className="flex-1 px-4 py-2 rounded-lg border border-n-btn text-sm font-medium text-neutral-800 hover:bg-neutral-50"
                 >
                   Cancelar
                 </button>
                 <button
                   onClick={handleCrearLote}
                   disabled={pending}
-                  className="flex-1 px-4 py-2 rounded-xl bg-[#16233f] text-white text-sm font-medium hover:bg-[#1e2f54] disabled:opacity-50"
+                  className="flex-1 px-4 py-2 rounded-lg bg-brand-700 text-white text-sm font-medium hover:bg-brand-800 disabled:opacity-50"
                 >
                   {pending ? "Guardando..." : "Crear lote"}
                 </button>

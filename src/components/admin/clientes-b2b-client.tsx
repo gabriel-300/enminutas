@@ -14,6 +14,8 @@ import {
   setPasswordCliente,
   cambiarEmailCliente,
 } from "@/app/(admin)/admin/clientes-b2b/actions";
+import { Pencil, Trash2 } from "lucide-react";
+import { Button, IconButton, StatusBadge, type Tone } from "@/components/ui";
 
 type Cliente = {
   id:                  string;
@@ -40,13 +42,13 @@ type Zona     = { id: string; name: string };
 type Vendedor = { id: string; full_name: string };
 type Canal    = { id: string; slug: string; nombre: string; descuento_pct: number };
 
-const STATUS_STYLE: Record<string, string> = {
-  pendiente: "bg-warning-bg text-warning",
-  activo:    "bg-success-bg text-success",
-  inactivo:  "bg-danger-bg text-danger",
+const STATUS_TONE: Record<string, Tone> = {
+  pendiente: "warning",
+  activo:    "success",
+  inactivo:  "neutral",
 };
 
-const inputCls = "w-full px-3 py-2 text-sm border border-neutral-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-tierra-700/20 disabled:opacity-50";
+const inputCls = "w-full px-3 py-2 text-sm border border-neutral-400 rounded-lg focus:outline-none focus:ring-[3px] focus:ring-brand-500/30 focus:border-brand-700 disabled:opacity-50";
 
 // ── Shared edit form ──────────────────────────────────────────────────────────
 
@@ -73,65 +75,65 @@ function EditForm({
       <input type="hidden" name="id" value={cliente.id} />
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
         <div>
-          <label className="block text-xs font-medium text-neutral-500 mb-1">Nombre / Empresa</label>
+          <label className="block text-[13px] font-medium text-neutral-800 mb-1.5">Nombre / Empresa</label>
           <input name="name" defaultValue={cliente.full_name ?? ""} className={inputCls} disabled={isPending} />
         </div>
         <div>
-          <label className="block text-xs font-medium text-neutral-500 mb-1">Canal</label>
+          <label className="block text-[13px] font-medium text-neutral-800 mb-1.5">Canal</label>
           <select name="canal_id" defaultValue={cliente.canal_id ?? ""} className={`${inputCls} bg-white`} disabled={isPending}>
             <option value="">Sin especificar</option>
             {canales.map((c) => <option key={c.id} value={c.id}>{c.nombre}</option>)}
           </select>
         </div>
         <div>
-          <label className="block text-xs font-medium text-neutral-500 mb-1">Zona</label>
+          <label className="block text-[13px] font-medium text-neutral-800 mb-1.5">Zona</label>
           <select name="zona_id" defaultValue={cliente.zona_id ?? ""} className={`${inputCls} bg-white`} disabled={isPending}>
             <option value="">Sin zona</option>
             {zonas.map((z) => <option key={z.id} value={z.id}>{z.name}</option>)}
           </select>
         </div>
         <div>
-          <label className="block text-xs font-medium text-neutral-500 mb-1">Vendedor</label>
+          <label className="block text-[13px] font-medium text-neutral-800 mb-1.5">Vendedor</label>
           <select name="vendedor_id" defaultValue={cliente.vendedor_id ?? ""} className={`${inputCls} bg-white`} disabled={isPending}>
             <option value="">Sin asignar</option>
             {vendedores.map((v) => <option key={v.id} value={v.id}>{v.full_name}</option>)}
           </select>
         </div>
         <div>
-          <label className="block text-xs font-medium text-neutral-500 mb-1">Teléfono</label>
+          <label className="block text-[13px] font-medium text-neutral-800 mb-1.5">Teléfono</label>
           <input name="phone" defaultValue={cliente.phone ?? ""} placeholder="+54 9 376…" className={inputCls} disabled={isPending} />
         </div>
         <div>
-          <label className="block text-xs font-medium text-neutral-500 mb-1">CUIT</label>
+          <label className="block text-[13px] font-medium text-neutral-800 mb-1.5">CUIT</label>
           <input name="cuit" defaultValue={cliente.document_number ?? ""} placeholder="20-12345678-9" className={`${inputCls} font-mono`} disabled={isPending} />
         </div>
       </div>
-      <div className="flex items-center gap-2 px-3 py-2 bg-neutral-50 border border-neutral-200 rounded-xl text-xs text-neutral-500">
+      <div className="flex items-center gap-2 px-3 py-2 bg-neutral-50 border border-neutral-200 rounded-xl text-xs text-neutral-600">
         Las direcciones de entrega se gestionan desde el perfil del cliente.
         <a href={`/admin/clientes-b2b/${cliente.id}`} className="text-tierra-700 hover:underline shrink-0">Ver →</a>
       </div>
       <div>
-        <label className="block text-xs font-medium text-neutral-500 mb-1">Notas internas</label>
+        <label className="block text-[13px] font-medium text-neutral-800 mb-1.5">Notas internas</label>
         <textarea name="notas_internas" defaultValue={cliente.notas_internas ?? ""}
           rows={2} placeholder="Observaciones internas (no visible al cliente)"
           className={`${inputCls} resize-none`} disabled={isPending} />
       </div>
       {esAdmin && (
-        <div className="flex items-center gap-4 px-3 py-2 bg-amber-50 border border-amber-200 rounded-xl">
+        <div className="flex items-center gap-4 px-3 py-2 bg-warning-bg border border-warning-border rounded-xl">
           <div>
-            <label className="block text-xs font-medium text-amber-700 mb-1">Descuento extra (%)</label>
+            <label className="block text-xs font-medium text-warning mb-1">Descuento extra (%)</label>
             <input name="descuento_extra_pct" type="number"
               defaultValue={cliente.descuento_extra_pct ?? 0}
               min="0" max="99" step="0.01"
-              className="w-24 px-3 py-1.5 text-sm border border-amber-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-300"
+              className="w-24 px-3 py-1.5 text-sm border border-warning-border rounded-lg focus:outline-none focus:ring-2 focus:ring-warning-border"
               disabled={isPending} />
           </div>
-          <p className="text-xs text-amber-600">Solo admin. Se acumula sobre el descuento del canal.</p>
+          <p className="text-xs text-warning">Solo admin. Se acumula sobre el descuento del canal.</p>
         </div>
       )}
       <div className="flex items-center gap-3">
         <button type="button" onClick={handleSubmit} disabled={isPending}
-          className="px-4 py-2 rounded-xl bg-tierra-700 text-white text-sm font-medium hover:bg-tierra-800 disabled:opacity-50">
+          className="px-4 py-2 rounded-lg bg-tierra-700 text-white text-sm font-medium hover:bg-tierra-800 disabled:opacity-50">
           {isPending ? "Guardando…" : "Guardar"}
         </button>
         {editError && <p className="text-xs text-danger">{editError}</p>}
@@ -164,7 +166,7 @@ function EmailPanel({ clienteId, emailActual }: { clienteId: string; emailActual
 
   return (
     <div className="mt-3 px-3 py-3 border border-neutral-200 rounded-xl bg-neutral-50 space-y-2">
-      <p className="text-xs font-medium text-neutral-500">Email de acceso</p>
+      <p className="text-xs font-medium text-neutral-600">Email de acceso</p>
       {!editing ? (
         <div className="flex flex-wrap items-center gap-2">
           <span className="text-sm text-neutral-700">{emailActual ?? "—"}</span>
@@ -178,7 +180,7 @@ function EmailPanel({ clienteId, emailActual }: { clienteId: string; emailActual
           <input
             type="email" value={email} onChange={e => setEmail(e.target.value)}
             placeholder="nuevo@email.com"
-            className="flex-1 px-3 py-1.5 text-sm border border-neutral-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-tierra-700/20"
+            className="flex-1 px-3 py-1.5 text-sm border border-neutral-400 rounded-lg focus:outline-none focus:ring-[3px] focus:ring-brand-500/30 focus:border-brand-700"
             disabled={isPending}
           />
           <button type="button" onClick={handleSave} disabled={isPending || !email.trim()}
@@ -186,7 +188,7 @@ function EmailPanel({ clienteId, emailActual }: { clienteId: string; emailActual
             {isPending ? "Guardando…" : "Guardar"}
           </button>
           <button type="button" onClick={() => { setEditing(false); setErr(null); }} disabled={isPending}
-            className="px-3 py-1.5 text-xs font-medium rounded-lg border border-neutral-200 text-neutral-500 hover:bg-neutral-100">
+            className="px-3 py-1.5 text-xs font-medium rounded-lg border border-neutral-200 text-neutral-600 hover:bg-neutral-100">
             Cancelar
           </button>
         </div>
@@ -234,7 +236,7 @@ function PasswordPanel({ clienteId }: { clienteId: string }) {
 
   return (
     <div className="mt-3 px-3 py-3 border border-neutral-200 rounded-xl bg-neutral-50 space-y-2">
-      <p className="text-xs font-medium text-neutral-500">Contraseña de acceso</p>
+      <p className="text-xs font-medium text-neutral-600">Contraseña de acceso</p>
       {mode === "idle" && (
         <div className="flex flex-wrap gap-2">
           <button type="button" onClick={() => { setMode("set"); setMsg(null); setErr(null); }} disabled={isPending}
@@ -252,7 +254,7 @@ function PasswordPanel({ clienteId }: { clienteId: string }) {
           <input
             type="password" value={pwd} onChange={e => setPwd(e.target.value)}
             placeholder="Nueva contraseña (mín. 8 caracteres)"
-            className="flex-1 px-3 py-1.5 text-sm border border-neutral-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-tierra-700/20"
+            className="flex-1 px-3 py-1.5 text-sm border border-neutral-400 rounded-lg focus:outline-none focus:ring-[3px] focus:ring-brand-500/30 focus:border-brand-700"
             disabled={isPending}
           />
           <button type="button" onClick={handleSet} disabled={isPending || pwd.length < 8}
@@ -260,7 +262,7 @@ function PasswordPanel({ clienteId }: { clienteId: string }) {
             {isPending ? "Guardando…" : "Guardar"}
           </button>
           <button type="button" onClick={() => { setMode("idle"); setPwd(""); setErr(null); }} disabled={isPending}
-            className="px-3 py-1.5 text-xs font-medium rounded-lg border border-neutral-200 text-neutral-500 hover:bg-neutral-100">
+            className="px-3 py-1.5 text-xs font-medium rounded-lg border border-neutral-200 text-neutral-600 hover:bg-neutral-100">
             Cancelar
           </button>
         </div>
@@ -309,20 +311,18 @@ function ClienteMobileCard({ cliente, zonas, vendedores, canales, esAdmin }: {
   const phoneClean = cliente.phone?.replace(/\s/g, "") ?? "";
 
   return (
-    <div className="bg-white rounded-2xl border border-neutral-200 p-4">
+    <div className="bg-white rounded-xl border border-neutral-200 shadow-sm p-4">
       {/* Nombre + estado */}
       <div className="flex items-start justify-between gap-2 mb-1">
         <Link href={`/admin/clientes-b2b/${cliente.id}`}
           className="font-medium text-neutral-900 hover:text-tierra-700 transition-colors">
           {cliente.full_name ?? "—"}
         </Link>
-        <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium uppercase tracking-wide shrink-0 ${STATUS_STYLE[status ?? ""] ?? "bg-neutral-100 text-neutral-500"}`}>
-          {status ?? "—"}
-        </span>
+        <StatusBadge tone={STATUS_TONE[status ?? ""] ?? "neutral"} className="shrink-0 capitalize">{status ?? "—"}</StatusBadge>
       </div>
 
       {/* Info secundaria */}
-      <div className="text-xs text-neutral-400 space-y-0.5 mb-3">
+      <div className="text-xs text-neutral-600 space-y-0.5 mb-3">
         {cliente.email && <p>{cliente.email}</p>}
         <p className="flex items-center gap-2">
           {cliente.canal_nombre && <span>{cliente.canal_nombre}</span>}
@@ -339,37 +339,31 @@ function ClienteMobileCard({ cliente, zonas, vendedores, canales, esAdmin }: {
       <div className="flex flex-wrap gap-2">
         {esAdmin && status === "pendiente" && (
           <>
-            <button onClick={() => startTransition(() => aprobarCliente(cliente.id))} disabled={isPending}
-              className="flex-1 px-3 py-1.5 text-xs font-medium rounded-lg bg-success text-white hover:opacity-90 disabled:opacity-50">
+            <Button size="sm" onClick={() => startTransition(() => aprobarCliente(cliente.id))} disabled={isPending} className="flex-1">
               Aprobar
-            </button>
-            <button onClick={() => startTransition(() => rechazarCliente(cliente.id))} disabled={isPending}
-              className="px-3 py-1.5 text-xs font-medium rounded-lg border border-danger text-danger hover:bg-danger-bg disabled:opacity-50">
+            </Button>
+            <Button size="sm" variant="danger-soft" onClick={() => startTransition(() => rechazarCliente(cliente.id))} disabled={isPending}>
               Rechazar
-            </button>
+            </Button>
           </>
         )}
         {esAdmin && status === "activo" && (
-          <button onClick={() => startTransition(() => cambiarEstadoCliente(cliente.id, "inactivo"))} disabled={isPending}
-            className="px-3 py-1.5 text-xs font-medium rounded-lg border border-neutral-200 text-neutral-500 hover:bg-neutral-50 disabled:opacity-50">
+          <Button size="sm" variant="secondary" onClick={() => startTransition(() => cambiarEstadoCliente(cliente.id, "inactivo"))} disabled={isPending}>
             Desactivar
-          </button>
+          </Button>
         )}
         {esAdmin && status === "inactivo" && (
-          <button onClick={() => startTransition(() => cambiarEstadoCliente(cliente.id, "activo"))} disabled={isPending}
-            className="px-3 py-1.5 text-xs font-medium rounded-lg border border-neutral-200 text-neutral-500 hover:bg-neutral-50 disabled:opacity-50">
+          <Button size="sm" variant="secondary" onClick={() => startTransition(() => cambiarEstadoCliente(cliente.id, "activo"))} disabled={isPending}>
             Reactivar
-          </button>
+          </Button>
         )}
-        <button onClick={() => { setEditOpen(!editOpen); setEditError(null); }} disabled={isPending}
-          className="px-3 py-1.5 text-xs font-medium rounded-lg border border-neutral-200 text-neutral-600 hover:bg-neutral-50 disabled:opacity-50">
-          {editOpen ? "Cancelar" : "Editar"}
-        </button>
+        <Button size="sm" variant="secondary" onClick={() => { setEditOpen(!editOpen); setEditError(null); }} disabled={isPending}>
+          {!editOpen && <Pencil />}{editOpen ? "Cancelar" : "Editar"}
+        </Button>
         {esAdmin && (
-          <button onClick={handleEliminar} disabled={isPending}
-            className="px-2 py-1.5 text-xs font-medium rounded-lg border border-danger/30 text-danger hover:bg-danger-bg disabled:opacity-50">
-            ✕
-          </button>
+          <IconButton label="Eliminar cliente" variant="danger-soft" onClick={handleEliminar} disabled={isPending}>
+            <Trash2 />
+          </IconButton>
         )}
       </div>
 
@@ -432,7 +426,7 @@ function ClienteRow({ cliente, zonas, vendedores, canales, esAdmin }: {
             {cliente.full_name ?? "—"}
           </Link>
         </td>
-        <td className="px-4 py-3 text-neutral-500 text-xs">{cliente.email ?? "—"}</td>
+        <td className="px-4 py-3 text-neutral-600 text-xs">{cliente.email ?? "—"}</td>
         <td className="px-4 py-3 text-neutral-600">
           {cliente.canal_nombre ?? "—"}
           {cliente.descuento_extra_pct > 0 && (
@@ -441,37 +435,32 @@ function ClienteRow({ cliente, zonas, vendedores, canales, esAdmin }: {
         </td>
         <td className="px-4 py-3 text-neutral-600">{cliente.zona?.name ?? "—"}</td>
         <td className="px-4 py-3">
-          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium uppercase tracking-wide ${STATUS_STYLE[status ?? ""] ?? "bg-neutral-100 text-neutral-500"}`}>
-            {status ?? "—"}
-          </span>
+          <StatusBadge tone={STATUS_TONE[status ?? ""] ?? "neutral"} className="capitalize">{status ?? "—"}</StatusBadge>
         </td>
-        <td className="px-4 py-3 text-neutral-400 text-xs">
+        <td className="px-4 py-3 text-neutral-600 text-xs">
           {new Date(cliente.created_at).toLocaleDateString("es-AR", { day: "2-digit", month: "2-digit", year: "2-digit" })}
         </td>
         <td className="px-4 py-3">
-          <div className="flex items-center gap-2 flex-wrap">
+          <div className="flex items-center justify-end gap-1.5 flex-wrap">
             {esAdmin && status === "pendiente" && (
               <>
-                <button onClick={() => startTransition(() => aprobarCliente(cliente.id))} disabled={isPending} className="px-3 py-1.5 text-xs font-medium rounded-lg bg-success text-white hover:opacity-90 disabled:opacity-50">Aprobar</button>
-                <button onClick={() => startTransition(() => rechazarCliente(cliente.id))} disabled={isPending} className="px-3 py-1.5 text-xs font-medium rounded-lg border border-danger text-danger hover:bg-danger-bg disabled:opacity-50">Rechazar</button>
+                <Button size="sm" onClick={() => startTransition(() => aprobarCliente(cliente.id))} disabled={isPending}>Aprobar</Button>
+                <Button size="sm" variant="danger-soft" onClick={() => startTransition(() => rechazarCliente(cliente.id))} disabled={isPending}>Rechazar</Button>
               </>
             )}
             {esAdmin && status === "activo" && (
-              <button onClick={() => startTransition(() => cambiarEstadoCliente(cliente.id, "inactivo"))} disabled={isPending} className="px-3 py-1.5 text-xs font-medium rounded-lg border border-neutral-200 text-neutral-500 hover:bg-neutral-50 disabled:opacity-50">Desactivar</button>
+              <Button size="sm" variant="secondary" onClick={() => startTransition(() => cambiarEstadoCliente(cliente.id, "inactivo"))} disabled={isPending}>Desactivar</Button>
             )}
             {esAdmin && status === "inactivo" && (
-              <button onClick={() => startTransition(() => cambiarEstadoCliente(cliente.id, "activo"))} disabled={isPending} className="px-3 py-1.5 text-xs font-medium rounded-lg border border-neutral-200 text-neutral-500 hover:bg-neutral-50 disabled:opacity-50">Reactivar</button>
+              <Button size="sm" variant="secondary" onClick={() => startTransition(() => cambiarEstadoCliente(cliente.id, "activo"))} disabled={isPending}>Reactivar</Button>
             )}
-            <button onClick={() => { setEditOpen(!editOpen); setEditError(null); }} disabled={isPending}
-              className="px-3 py-1.5 text-xs font-medium rounded-lg border border-neutral-200 text-neutral-600 hover:bg-neutral-50 disabled:opacity-50">
-              {editOpen ? "Cancelar" : "Editar"}
-            </button>
+            <Button size="sm" variant="secondary" onClick={() => { setEditOpen(!editOpen); setEditError(null); }} disabled={isPending}>
+              {!editOpen && <Pencil />}{editOpen ? "Cancelar" : "Editar"}
+            </Button>
             {esAdmin && (
-              <button onClick={handleEliminar} disabled={isPending}
-                className="px-2 py-1.5 text-xs font-medium rounded-lg border border-danger/30 text-danger hover:bg-danger-bg disabled:opacity-50 transition-colors"
-                title="Eliminar cliente">
-                ✕
-              </button>
+              <IconButton label="Eliminar cliente" variant="danger-soft" onClick={handleEliminar} disabled={isPending}>
+                <Trash2 />
+              </IconButton>
             )}
           </div>
         </td>
@@ -539,7 +528,7 @@ function CrearClienteB2BForm({ zonas, canales }: { zonas: Zona[]; canales: Canal
   }
 
   return (
-    <div className="bg-white rounded-2xl border border-neutral-200 p-5 md:p-6">
+    <div className="bg-white rounded-xl border border-neutral-200 shadow-sm p-5 md:p-6">
       <div className="flex items-center justify-between mb-1">
         <h2 className="text-sm font-semibold text-neutral-800">Agregar cliente B2B</h2>
         <button onClick={() => { setOpen(!open); setError(null); setSuccess(null); }}
@@ -549,7 +538,7 @@ function CrearClienteB2BForm({ zonas, canales }: { zonas: Zona[]; canales: Canal
       </div>
 
       {!open && (
-        <p className="text-xs text-neutral-400">
+        <p className="text-xs text-neutral-600">
           Creá una cuenta B2B directamente o enviá una invitación por email.
         </p>
       )}
@@ -558,11 +547,11 @@ function CrearClienteB2BForm({ zonas, canales }: { zonas: Zona[]; canales: Canal
         <>
           <div className="flex gap-1 mt-4 mb-5 bg-neutral-100 rounded-lg p-1 w-fit">
             <button type="button" onClick={() => setMode("password")}
-              className={`px-3 py-1.5 text-xs rounded-md font-medium transition-colors ${mode === "password" ? "bg-tierra-700 text-white" : "text-neutral-500 hover:text-neutral-700"}`}>
+              className={`px-3 py-1.5 text-xs rounded-md font-medium transition-colors ${mode === "password" ? "bg-tierra-700 text-white" : "text-neutral-600 hover:text-neutral-700"}`}>
               Con contraseña
             </button>
             <button type="button" onClick={() => setMode("invite")}
-              className={`px-3 py-1.5 text-xs rounded-md font-medium transition-colors ${mode === "invite" ? "bg-tierra-700 text-white" : "text-neutral-500 hover:text-neutral-700"}`}>
+              className={`px-3 py-1.5 text-xs rounded-md font-medium transition-colors ${mode === "invite" ? "bg-tierra-700 text-white" : "text-neutral-600 hover:text-neutral-700"}`}>
               Invitar por email
             </button>
           </div>
@@ -570,40 +559,40 @@ function CrearClienteB2BForm({ zonas, canales }: { zonas: Zona[]; canales: Canal
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <div>
-                <label className="block text-xs font-medium text-neutral-500 mb-1">Nombre / Empresa</label>
+                <label className="block text-[13px] font-medium text-neutral-800 mb-1.5">Nombre / Empresa</label>
                 <input name="name" placeholder="Restaurant El Ejemplo" className={inputCls} disabled={isPending} />
               </div>
               <div>
-                <label className="block text-xs font-medium text-neutral-500 mb-1">Email *</label>
+                <label className="block text-[13px] font-medium text-neutral-800 mb-1.5">Email *</label>
                 <input name="email" type="email" required placeholder="cliente@empresa.com" className={inputCls} disabled={isPending} />
               </div>
               <div>
-                <label className="block text-xs font-medium text-neutral-500 mb-1">Teléfono</label>
+                <label className="block text-[13px] font-medium text-neutral-800 mb-1.5">Teléfono</label>
                 <input name="phone" type="tel" placeholder="+54 9 376…" className={inputCls} disabled={isPending} />
               </div>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <div>
-                <label className="block text-xs font-medium text-neutral-500 mb-1">Canal</label>
+                <label className="block text-[13px] font-medium text-neutral-800 mb-1.5">Canal</label>
                 <select name="canal_id" className={`${inputCls} bg-white`} disabled={isPending}>
                   <option value="">Sin especificar</option>
                   {canales.map((c) => <option key={c.id} value={c.id}>{c.nombre}</option>)}
                 </select>
               </div>
               <div>
-                <label className="block text-xs font-medium text-neutral-500 mb-1">Zona de delivery</label>
+                <label className="block text-[13px] font-medium text-neutral-800 mb-1.5">Zona de delivery</label>
                 <select name="zona_id" className={`${inputCls} bg-white`} disabled={isPending}>
                   <option value="">Sin zona</option>
                   {zonas.map((z) => <option key={z.id} value={z.id}>{z.name}</option>)}
                 </select>
               </div>
               <div>
-                <label className="block text-xs font-medium text-neutral-500 mb-1">CUIT</label>
+                <label className="block text-[13px] font-medium text-neutral-800 mb-1.5">CUIT</label>
                 <input name="cuit" placeholder="20-12345678-9" className={`${inputCls} font-mono`} disabled={isPending} />
               </div>
             </div>
             <div>
-              <label className="block text-xs font-medium text-neutral-500 mb-1">Dirección fiscal</label>
+              <label className="block text-[13px] font-medium text-neutral-800 mb-1.5">Dirección fiscal</label>
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                 <input name="direccion_calle"  placeholder="Calle"     className={`${inputCls} col-span-2`} disabled={isPending} />
                 <input name="direccion_numero" placeholder="Número"    className={inputCls} disabled={isPending} />
@@ -614,24 +603,24 @@ function CrearClienteB2BForm({ zonas, canales }: { zonas: Zona[]; canales: Canal
             {mode === "password" && (
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-medium text-neutral-500 mb-1">Contraseña *</label>
+                  <label className="block text-[13px] font-medium text-neutral-800 mb-1.5">Contraseña *</label>
                   <input name="password" type="password" required minLength={8} placeholder="Mínimo 8 caracteres" className={inputCls} disabled={isPending} />
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-neutral-500 mb-1">Confirmar *</label>
+                  <label className="block text-[13px] font-medium text-neutral-800 mb-1.5">Confirmar *</label>
                   <input name="password_confirm" type="password" required minLength={8} placeholder="Repetir" className={inputCls} disabled={isPending} />
                 </div>
               </div>
             )}
             {mode === "invite" && (
-              <p className="text-xs text-neutral-400 bg-neutral-50 border border-neutral-200 rounded-xl px-4 py-3">
+              <p className="text-xs text-neutral-600 bg-neutral-50 border border-neutral-200 rounded-xl px-4 py-3">
                 Se enviará un email de invitación con un link para que el cliente configure su contraseña.
               </p>
             )}
             {error   && <p className="text-sm text-danger">{error}</p>}
             {success && <p className="text-sm text-success">{success}</p>}
             <button type="submit" disabled={isPending}
-              className="w-full sm:w-auto px-4 py-2 rounded-xl bg-tierra-700 text-white text-sm font-medium hover:bg-tierra-800 disabled:opacity-50 transition-colors">
+              className="w-full sm:w-auto px-4 py-2 rounded-lg bg-tierra-700 text-white text-sm font-medium hover:bg-tierra-800 disabled:opacity-50 transition-colors">
               {isPending
                 ? (mode === "password" ? "Creando…" : "Enviando…")
                 : (mode === "password" ? "Crear cliente" : "Enviar invitación")}
@@ -671,9 +660,9 @@ export function ClientesBb2Client({
     : clientes;
 
   return (
-    <div className="space-y-5 md:space-y-6 max-w-5xl">
+    <div className="space-y-5 md:space-y-6">
       {pendingCount > 0 && (
-        <div className="px-4 py-3 bg-warning-bg border border-warning/30 rounded-xl text-sm text-warning font-medium">
+        <div className="px-4 py-3 bg-warning-bg border border-warning-border rounded-xl text-sm text-warning font-medium">
           {pendingCount} solicitud{pendingCount !== 1 ? "es" : ""} pendiente{pendingCount !== 1 ? "s" : ""} de aprobación
         </div>
       )}
@@ -682,7 +671,7 @@ export function ClientesBb2Client({
 
       {/* ── Buscador ─────────────────────────────────────────────────────── */}
       <div className="relative">
-        <svg className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400 pointer-events-none" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <svg className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-600 pointer-events-none" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
           <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
         </svg>
         <input
@@ -690,15 +679,15 @@ export function ClientesBb2Client({
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           placeholder="Buscar por nombre, email, canal o zona…"
-          className="w-full pl-9 pr-4 py-2.5 text-sm border border-neutral-200 rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-tierra-700/20"
+          className="w-full pl-9 pr-4 py-2.5 text-sm border border-neutral-400 rounded-lg bg-white focus:outline-none focus:ring-[3px] focus:ring-brand-500/30 focus:border-brand-700"
         />
         {query && (
-          <button onClick={() => setQuery("")} className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-neutral-600 text-lg leading-none">×</button>
+          <button onClick={() => setQuery("")} className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-600 hover:text-neutral-600 text-lg leading-none">×</button>
         )}
       </div>
 
       {query && (
-        <p className="text-xs text-neutral-400 -mt-3">
+        <p className="text-xs text-neutral-600 -mt-3">
           {filtrados.length} resultado{filtrados.length !== 1 ? "s" : ""} para &ldquo;{query}&rdquo;
         </p>
       )}
@@ -706,7 +695,7 @@ export function ClientesBb2Client({
       {/* ── Mobile: cards ────────────────────────────────────────────────── */}
       <div className="md:hidden space-y-3">
         {filtrados.length === 0 ? (
-          <p className="text-sm text-neutral-400 text-center py-10">
+          <p className="text-sm text-neutral-600 text-center py-10">
             {query ? "Sin resultados para esa búsqueda." : "No hay clientes B2B registrados todavía."}
           </p>
         ) : (
@@ -718,23 +707,23 @@ export function ClientesBb2Client({
       </div>
 
       {/* ── Desktop: tabla ───────────────────────────────────────────────── */}
-      <div className="hidden md:block bg-white rounded-2xl border border-neutral-200 overflow-hidden">
+      <div className="hidden md:block bg-white rounded-xl border border-neutral-200 shadow-sm overflow-hidden">
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-neutral-200 text-left">
-              <th className="px-4 py-3 font-medium text-neutral-500">Empresa</th>
-              <th className="px-4 py-3 font-medium text-neutral-500">Email</th>
-              <th className="px-4 py-3 font-medium text-neutral-500">Canal</th>
-              <th className="px-4 py-3 font-medium text-neutral-500">Zona</th>
-              <th className="px-4 py-3 font-medium text-neutral-500">Estado</th>
-              <th className="px-4 py-3 font-medium text-neutral-500">Fecha</th>
-              <th className="px-4 py-3 font-medium text-neutral-500">Acciones</th>
+              <th className="text-xs px-4 py-3 font-semibold text-neutral-600">Empresa</th>
+              <th className="text-xs px-4 py-3 font-semibold text-neutral-600">Email</th>
+              <th className="text-xs px-4 py-3 font-semibold text-neutral-600">Canal</th>
+              <th className="text-xs px-4 py-3 font-semibold text-neutral-600">Zona</th>
+              <th className="text-xs px-4 py-3 font-semibold text-neutral-600">Estado</th>
+              <th className="text-xs px-4 py-3 font-semibold text-neutral-600">Fecha</th>
+              <th className="text-xs px-4 py-3 font-semibold text-neutral-600">Acciones</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-neutral-100">
             {filtrados.length === 0 && (
               <tr>
-                <td colSpan={7} className="px-4 py-12 text-center text-neutral-400">
+                <td colSpan={7} className="px-4 py-12 text-center text-neutral-600">
                   {query ? "Sin resultados para esa búsqueda." : "No hay clientes B2B registrados todavía."}
                 </td>
               </tr>

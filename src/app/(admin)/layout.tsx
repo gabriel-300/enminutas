@@ -3,6 +3,12 @@ import { AdminNav } from "@/components/admin/admin-nav";
 import { ChatWidget } from "@/components/admin/chat-widget";
 import { getAlertasCount } from "@/lib/alertas-count";
 import { redirect } from "next/navigation";
+import { Geist, Geist_Mono } from "next/font/google";
+
+// Tipografía del panel (tema Índigo). Se carga acá, no en el layout raíz, para
+// que el sitio público y la tienda no descarguen estas fuentes.
+const geistSans = Geist({ subsets: ["latin"], variable: "--font-geist-sans", display: "swap" });
+const geistMono = Geist_Mono({ subsets: ["latin"], variable: "--font-geist-mono", display: "swap" });
 
 const STAFF_ROLES = ["admin", "vendedor", "produccion", "distribucion"];
 
@@ -25,9 +31,9 @@ export default async function AdminLayout({
   const alertasCount = role === "admin" ? await getAlertasCount() : 0;
 
   return (
-    <div className="flex min-h-screen bg-neutral-50">
+    <div className={`admin-panel ${geistSans.variable} ${geistMono.variable} flex min-h-screen bg-neutral-50`}>
       <AdminNav role={role} email={email} name={name} alertasCount={alertasCount} />
-      <main className="flex-1 overflow-auto">{children}</main>
+      <main className="min-w-0 flex-1 overflow-auto">{children}</main>
       <ChatWidget />
     </div>
   );

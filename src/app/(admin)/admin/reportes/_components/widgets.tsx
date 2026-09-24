@@ -1,8 +1,8 @@
 export const CHANNEL_CFG: Record<string, { label: string; bg: string; color: string; bar: string }> = {
-  b2b_mayorista: { label: "B2B",         bg: "#eef2f7", color: "#16233f", bar: "#16233f" },
-  b2c_nacional:  { label: "Online",      bg: "#e8f0fb", color: "#2f5fd0", bar: "#2f5fd0" },
-  distribucion:  { label: "Distribución",bg: "#e6f3ef", color: "#1f7a52", bar: "#1f7a52" },
-  gastronomia:   { label: "Gastronomía", bg: "#fbf1e4", color: "#b25e09", bar: "#b25e09" },
+  b2b_mayorista: { label: "B2B",         bg: "#f0f1fe", color: "#1c1b18", bar: "#3f37b3" },
+  b2c_nacional:  { label: "Online",      bg: "#e9f1fc", color: "#1f5bb5", bar: "#1f5bb5" },
+  distribucion:  { label: "Distribución",bg: "#eaf6ee", color: "#1d6b3a", bar: "#1d6b3a" },
+  gastronomia:   { label: "Gastronomía", bg: "#fdf4e0", color: "#8a5a00", bar: "#8a5a00" },
 };
 
 export const STATUS_LABELS: Record<string, string> = {
@@ -46,22 +46,22 @@ export function DailySalesChart({
     <svg viewBox={`0 0 ${W} ${H}`} className="w-full" style={{ height: H }} aria-hidden>
       <defs>
         <linearGradient id="rpt-grad" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="#16233f" stopOpacity="0.12" />
-          <stop offset="100%" stopColor="#16233f" stopOpacity="0" />
+          <stop offset="0%" stopColor="#3f37b3" stopOpacity="0.12" />
+          <stop offset="100%" stopColor="#3f37b3" stopOpacity="0" />
         </linearGradient>
       </defs>
       <polygon points={mkArea(curSeries)} fill="url(#rpt-grad)" />
       <polyline
         points={mkPts(prevSeries)}
         fill="none"
-        stroke="#cbd5e1"
+        stroke="#cfcdc8"
         strokeWidth="1.5"
         strokeDasharray="4 3"
       />
       <polyline
         points={mkPts(curSeries)}
         fill="none"
-        stroke="#16233f"
+        stroke="#3f37b3"
         strokeWidth="2"
         strokeLinecap="round"
         strokeLinejoin="round"
@@ -73,7 +73,7 @@ export function DailySalesChart({
 // ── Channel pill ─────────────────────────────────────────────────────────────
 
 export function ChannelPill({ channel }: { channel: string }) {
-  const c = CHANNEL_CFG[channel] ?? { label: channel, bg: "#f3f4f6", color: "#374151" };
+  const c = CHANNEL_CFG[channel] ?? { label: channel, bg: "#efeeeb", color: "#44413c" };
   return (
     <span
       className="inline-block px-2 py-0.5 rounded-full text-xs font-medium leading-tight whitespace-nowrap"
@@ -90,7 +90,7 @@ export function Delta({ cur, prev }: { cur: number; prev: number }) {
   if (prev === 0) return null;
   const d = Math.round(((cur - prev) / prev) * 100);
   return (
-    <span className={`text-xs font-medium ${d >= 0 ? "text-emerald-600" : "text-red-500"}`}>
+    <span className={`text-xs font-medium ${d >= 0 ? "text-success" : "text-danger"}`}>
       {d >= 0 ? "▲" : "▼"} {Math.abs(d)}%
     </span>
   );

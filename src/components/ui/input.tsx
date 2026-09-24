@@ -1,5 +1,30 @@
 import { forwardRef } from "react";
+import { AlertCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
+
+// Las clases `admin:` aplican solo dentro del panel (ver globals.css): label
+// 13/500 siempre visible, campo de 40px con borde de 3.3:1 y halo de foco.
+const labelCls =
+  "text-xs font-medium tracking-wide uppercase text-neutral-500 " +
+  "admin:text-[13px] admin:leading-4 admin:normal-case admin:tracking-normal admin:text-n-800";
+
+const fieldCls =
+  "transition-all duration-150 " +
+  "focus:outline-none focus:border-tierra-700 focus:ring-2 focus:ring-tierra-700/20 " +
+  "admin:border-n-400 admin:rounded-lg admin:text-sm admin:placeholder:text-n-500 " +
+  "admin:focus:border-brand-700 admin:focus:ring-[3px] admin:focus:ring-brand-500/30 " +
+  "admin:disabled:bg-n-50 admin:disabled:border-n-200 admin:disabled:text-n-500 admin:disabled:cursor-not-allowed";
+
+const errorFieldCls = "border-danger focus:border-danger focus:ring-danger/20 admin:border-danger admin:focus:border-danger admin:focus:ring-danger/25";
+
+function FieldError({ message }: { message: string }) {
+  return (
+    <p className="text-xs text-danger admin:flex admin:items-center admin:gap-1">
+      <AlertCircle aria-hidden className="hidden admin:block size-3.5 shrink-0" />
+      {message}
+    </p>
+  );
+}
 
 interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
   label?: string;
@@ -14,10 +39,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
     return (
       <div className="flex flex-col gap-1.5">
         {label && (
-          <label
-            htmlFor={inputId}
-            className="text-xs font-medium tracking-wide uppercase text-neutral-500"
-          >
+          <label htmlFor={inputId} className={labelCls}>
             {label}
           </label>
         )}
@@ -27,15 +49,15 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
           className={cn(
             "h-11 w-full rounded-lg border border-neutral-300 bg-white px-3.5 text-sm text-neutral-900",
             "placeholder:text-neutral-400",
-            "transition-all duration-150",
-            "focus:outline-none focus:border-tierra-700 focus:ring-2 focus:ring-tierra-700/20",
-            error && "border-danger focus:border-danger focus:ring-danger/20",
+            "admin:h-10 admin:px-3",
+            fieldCls,
+            error && errorFieldCls,
             className
           )}
           {...props}
         />
-        {error && <p className="text-xs text-danger">{error}</p>}
-        {hint && !error && <p className="text-xs text-neutral-400">{hint}</p>}
+        {error && <FieldError message={error} />}
+        {hint && !error && <p className="text-xs text-neutral-400 admin:text-n-600">{hint}</p>}
       </div>
     );
   }
@@ -56,10 +78,7 @@ export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(
     return (
       <div className="flex flex-col gap-1.5">
         {label && (
-          <label
-            htmlFor={inputId}
-            className="text-xs font-medium tracking-wide uppercase text-neutral-500"
-          >
+          <label htmlFor={inputId} className={labelCls}>
             {label}
           </label>
         )}
@@ -69,15 +88,15 @@ export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(
           className={cn(
             "w-full rounded-lg border border-neutral-300 bg-white px-3.5 py-3 text-sm text-neutral-900",
             "placeholder:text-neutral-400 resize-y min-h-24",
-            "transition-all duration-150",
-            "focus:outline-none focus:border-tierra-700 focus:ring-2 focus:ring-tierra-700/20",
-            error && "border-danger focus:border-danger focus:ring-danger/20",
+            "admin:px-3 admin:py-2.5 admin:min-h-20",
+            fieldCls,
+            error && errorFieldCls,
             className
           )}
           {...props}
         />
-        {error && <p className="text-xs text-danger">{error}</p>}
-        {hint && !error && <p className="text-xs text-neutral-400">{hint}</p>}
+        {error && <FieldError message={error} />}
+        {hint && !error && <p className="text-xs text-neutral-400 admin:text-n-600">{hint}</p>}
       </div>
     );
   }
@@ -98,10 +117,7 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(
     return (
       <div className="flex flex-col gap-1.5">
         {label && (
-          <label
-            htmlFor={inputId}
-            className="text-xs font-medium tracking-wide uppercase text-neutral-500"
-          >
+          <label htmlFor={inputId} className={labelCls}>
             {label}
           </label>
         )}
@@ -109,10 +125,10 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(
           ref={ref}
           id={inputId}
           className={cn(
-            "h-11 w-full rounded-lg border border-neutral-300 bg-white px-3.5 text-sm text-neutral-900",
-            "transition-all duration-150 cursor-pointer",
-            "focus:outline-none focus:border-tierra-700 focus:ring-2 focus:ring-tierra-700/20",
-            error && "border-danger",
+            "h-11 w-full rounded-lg border border-neutral-300 bg-white px-3.5 text-sm text-neutral-900 cursor-pointer",
+            "admin:h-10 admin:px-3",
+            fieldCls,
+            error && errorFieldCls,
             className
           )}
           {...props}
@@ -123,7 +139,7 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(
             </option>
           ))}
         </select>
-        {error && <p className="text-xs text-danger">{error}</p>}
+        {error && <FieldError message={error} />}
       </div>
     );
   }

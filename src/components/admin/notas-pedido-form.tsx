@@ -27,14 +27,14 @@ export function NotasPedidoForm({
   }
 
   return (
-    <form onSubmit={handleSubmit} className="bg-white rounded-2xl border border-neutral-200 p-5">
-      <p className="text-xs font-medium text-neutral-400 uppercase tracking-wide mb-3">Notas</p>
+    <form onSubmit={handleSubmit} className="bg-white rounded-xl border border-neutral-200 shadow-sm p-5">
+      <p className="text-xs font-medium text-neutral-600 mb-3">Notas</p>
       <textarea
         value={nota}
         onChange={(e) => { setNota(e.target.value); setSaved(false); }}
         placeholder="Tracking, instrucciones de despacho, observaciones…"
         rows={3}
-        className="w-full px-3 py-2 text-sm border border-neutral-200 rounded-xl resize-none focus:outline-none focus:ring-2 focus:ring-tierra-700/20"
+        className="w-full px-3 py-2 text-sm border border-neutral-400 rounded-lg resize-none focus:outline-none focus:ring-[3px] focus:ring-brand-500/30 focus:border-brand-700"
         disabled={isPending}
       />
       <label className="flex items-center gap-2 mt-3 text-xs text-neutral-600 cursor-pointer">

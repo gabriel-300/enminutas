@@ -35,12 +35,12 @@ export default async function LiquidacionesPage() {
   const totalPendienteComision   = pedidos.reduce((s: number, o: any) => s + Number(o.ideia_commission_amount), 0);
 
   return (
-    <div className="p-4 md:p-8 max-w-5xl">
+    <div className="p-4 md:px-10 md:py-8 md:pb-16">
       <div className="mb-6">
         <h1 className="text-xl md:text-2xl font-semibold font-display text-neutral-900">
           Liquidaciones IDEIA
         </h1>
-        <p className="text-sm text-neutral-500 mt-0.5">
+        <p className="text-sm text-neutral-600 mt-0.5">
           Registro de períodos liquidados y comisiones pagadas a IDEIA.
         </p>
       </div>
@@ -53,10 +53,10 @@ export default async function LiquidacionesPage() {
             { label: "GMV acumulado",       value: fmt(totalPendienteGMV),       sub: "todos los pedidos liquidados" },
             { label: "Comisión acumulada",  value: fmt(totalPendienteComision),  sub: "a pagar / ya pagada a IDEIA" },
           ].map(({ label, value, sub }) => (
-            <div key={label} className="bg-white rounded-2xl border border-neutral-200 p-4">
-              <p className="text-xs text-neutral-400 mb-1">{label}</p>
+            <div key={label} className="bg-white rounded-xl border border-neutral-200 shadow-sm p-4">
+              <p className="text-xs text-neutral-600 mb-1">{label}</p>
               <p className="text-xl font-semibold font-display text-neutral-900">{value}</p>
-              <p className="text-xs text-neutral-400 mt-0.5">{sub}</p>
+              <p className="text-xs text-neutral-600 mt-0.5">{sub}</p>
             </div>
           ))}
         </div>

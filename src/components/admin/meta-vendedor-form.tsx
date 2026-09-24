@@ -51,17 +51,17 @@ export function MetaVendedorCard({
   }
 
   return (
-    <div className="bg-white rounded-2xl border border-neutral-200 p-5">
+    <div className="bg-white rounded-xl border border-neutral-200 shadow-sm p-5">
       <div className="flex items-start justify-between mb-3">
         <div>
           <p className="text-sm font-semibold text-neutral-800">{vendedorNombre}</p>
-          <p className="text-xs text-neutral-400 mt-0.5 capitalize">
+          <p className="text-xs text-neutral-600 mt-0.5 capitalize">
             {new Date(mes + "-01").toLocaleDateString("es-AR", { month: "long", year: "numeric" })}
           </p>
         </div>
         {esAdmin && (
           <button onClick={() => { setEditando(!editando); setError(null); }}
-            className="text-xs text-neutral-400 hover:text-tierra-700 transition-colors">
+            className="text-xs text-neutral-600 hover:text-tierra-700 transition-colors">
             {editando ? "Cancelar" : "Editar meta"}
           </button>
         )}
@@ -73,17 +73,17 @@ export function MetaVendedorCard({
           <input type="hidden" name="mes" value={mes} />
           <div className="flex gap-2">
             <div className="relative flex-1">
-              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-neutral-400">$</span>
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-neutral-600">$</span>
               <input
                 type="number" name="objetivo" min={0} step={1000}
                 defaultValue={objetivo || ""}
                 placeholder="500000"
-                className="w-full pl-6 pr-3 py-2 text-sm border border-neutral-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-tierra-700/20"
+                className="w-full pl-6 pr-3 py-2 text-sm border border-neutral-400 rounded-lg focus:outline-none focus:ring-[3px] focus:ring-brand-500/30 focus:border-brand-700"
                 disabled={isPending}
               />
             </div>
             <button type="submit" disabled={isPending}
-              className="px-4 py-2 text-xs font-medium rounded-xl bg-tierra-700 text-white hover:bg-tierra-800 disabled:opacity-50">
+              className="px-4 py-2 text-xs font-medium rounded-lg bg-tierra-700 text-white hover:bg-tierra-800 disabled:opacity-50">
               {isPending ? "…" : "Guardar"}
             </button>
           </div>
@@ -95,10 +95,10 @@ export function MetaVendedorCard({
             <div>
               <p className="text-2xl font-semibold font-display text-neutral-900">{fmt(ventasMes)}</p>
               {objetivo > 0 && (
-                <p className="text-xs text-neutral-400 mt-0.5">de {fmt(objetivo)} objetivo</p>
+                <p className="text-xs text-neutral-600 mt-0.5">de {fmt(objetivo)} objetivo</p>
               )}
               {objetivo === 0 && (
-                <p className="text-xs text-neutral-300 mt-0.5">Sin meta definida</p>
+                <p className="text-xs text-neutral-500 mt-0.5">Sin meta definida</p>
               )}
             </div>
             {pct !== null && (
@@ -107,7 +107,7 @@ export function MetaVendedorCard({
                   {pct}%
                 </p>
                 {falta !== null && falta > 0 && (
-                  <p className="text-xs text-neutral-400">Faltan {fmt(falta)}</p>
+                  <p className="text-xs text-neutral-600">Faltan {fmt(falta)}</p>
                 )}
                 {falta === 0 && (
                   <p className="text-xs text-success">¡Meta alcanzada!</p>

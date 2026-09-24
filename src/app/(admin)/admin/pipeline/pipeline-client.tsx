@@ -5,6 +5,7 @@ import { useState, useTransition, useId } from "react";
 import { crearProspecto, avanzarEstado, eliminarProspecto } from "./actions";
 import { ESTADOS, FLUJO, type EstadoKey } from "./constants";
 import { Plus, X, ChevronRight, Phone, Mail, Calendar, Trash2, TrendingUp } from "lucide-react";
+import { Button, FilterChip, IconButton, PIPELINE_TONE, StatusBadge } from "@/components/ui";
 
 type Prospecto = {
   id: string;
@@ -98,8 +99,8 @@ export function PipelineClient({
     ? prospectos
     : prospectos.filter(p => p.estado === filtroEstado);
 
-  const labelClass = "block text-xs font-medium text-neutral-500 mb-1";
-  const inputClass = "w-full rounded-xl border border-neutral-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#16233f]/20 focus:border-[#16233f]";
+  const labelClass = "block text-xs font-medium text-neutral-600 mb-1";
+  const inputClass = "w-full rounded-lg border border-neutral-400 px-3 py-2 text-sm focus:outline-none focus:ring-[3px] focus:ring-brand-500/30 focus:border-brand-700";
 
   return (
     <div className="space-y-5">
@@ -107,42 +108,36 @@ export function PipelineClient({
       <div className="flex flex-wrap items-center gap-2 justify-between">
         {/* Filtros por estado */}
         <div className="flex flex-wrap gap-1.5">
-          <button
-            onClick={() => setFiltroEstado("todos")}
-            className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
-              filtroEstado === "todos" ? "bg-[#16233f] text-white" : "bg-white border border-neutral-200 text-neutral-600 hover:bg-neutral-50"
-            }`}
-          >
+          <FilterChip active={filtroEstado === "todos"} onClick={() => setFiltroEstado("todos")}>
             Todos ({prospectos.length})
-          </button>
+          </FilterChip>
           {ESTADOS.map(e => {
             const count = prospectos.filter(p => p.estado === e.key).length;
             return (
-              <button
+              <FilterChip
                 key={e.key}
+                tone={PIPELINE_TONE[e.key]}
+                active={filtroEstado === e.key}
                 onClick={() => setFiltroEstado(e.key)}
-                className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
-                  filtroEstado === e.key ? "bg-[#16233f] text-white" : `${e.color} hover:opacity-80`
-                }`}
               >
                 {e.label} ({count})
-              </button>
+              </FilterChip>
             );
           })}
         </div>
-        <button
+        <Button
           onClick={() => { setShowForm(v => !v); if (showForm) resetForm(); }}
-          className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#16233f] text-white text-sm font-medium hover:bg-[#1e2f52] transition-colors shrink-0"
+          className="shrink-0"
         >
-          {showForm ? <X className="size-4" /> : <Plus className="size-4" />}
+          {showForm ? <X /> : <Plus />}
           {showForm ? "Cancelar" : "Nuevo prospecto"}
-        </button>
+        </Button>
       </div>
 
       {/* Formulario nuevo prospecto */}
       {showForm && (
-        <div className="bg-white rounded-2xl border border-neutral-200 p-5">
-          <h2 className="text-sm font-semibold text-neutral-900 mb-4">Nuevo prospecto</h2>
+        <div className="bg-white rounded-xl border border-neutral-200 shadow-sm p-5">
+          <h2 className="text-base font-semibold text-neutral-900 mb-4">Nuevo prospecto</h2>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
@@ -194,11 +189,10 @@ export function PipelineClient({
                 onChange={e => setNotas(e.target.value)} className={inputClass}
                 placeholder="Contexto del prospecto, interés detectado, etc." />
             </div>
-            {error && <p className="text-xs text-red-600">{error}</p>}
-            <button type="submit" disabled={pending}
-              className="w-full py-2.5 rounded-xl bg-[#16233f] text-white text-sm font-medium hover:bg-[#1e2f52] transition-colors disabled:opacity-50">
+            {error && <p className="text-xs text-danger">{error}</p>}
+            <Button type="submit" disabled={pending} className="w-full">
               {pending ? "Guardando..." : "Crear prospecto"}
-            </button>
+            </Button>
           </form>
         </div>
       )}
@@ -206,9 +200,9 @@ export function PipelineClient({
       {/* Modal motivo pérdida */}
       {perdidoId && (
         <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl p-6 w-full max-w-sm shadow-xl">
+          <div className="bg-white rounded-xl p-6 w-full max-w-sm shadow-xl">
             <h3 className="font-semibold text-neutral-900 mb-3">Marcar como perdido</h3>
-            <p className="text-sm text-neutral-500 mb-4">¿Cuál fue el motivo de la pérdida?</p>
+            <p className="text-sm text-neutral-600 mb-4">¿Cuál fue el motivo de la pérdida?</p>
             <textarea
               rows={3}
               value={motivoPerdida}
@@ -217,14 +211,12 @@ export function PipelineClient({
               className={`${inputClass} mb-4`}
             />
             <div className="flex gap-2">
-              <button onClick={() => { setPerdidoId(null); setMotivoPerdida(""); }}
-                className="flex-1 py-2 rounded-xl border border-neutral-200 text-sm text-neutral-600 hover:bg-neutral-50">
+              <Button variant="secondary" onClick={() => { setPerdidoId(null); setMotivoPerdida(""); }} className="flex-1">
                 Cancelar
-              </button>
-              <button onClick={handlePerdido} disabled={pending}
-                className="flex-1 py-2 rounded-xl bg-red-600 text-white text-sm font-medium hover:bg-red-700 disabled:opacity-50">
+              </Button>
+              <Button variant="danger" onClick={handlePerdido} disabled={pending} className="flex-1">
                 Confirmar pérdida
-              </button>
+              </Button>
             </div>
           </div>
         </div>
@@ -232,8 +224,8 @@ export function PipelineClient({
 
       {/* Lista de prospectos */}
       {filtrados.length === 0 ? (
-        <div className="bg-white rounded-2xl border border-neutral-200 p-10 text-center">
-          <p className="text-sm text-neutral-400">No hay prospectos{filtroEstado !== "todos" ? ` en estado "${ESTADOS.find(e=>e.key===filtroEstado)?.label}"` : ""}.</p>
+        <div className="bg-white rounded-xl border border-neutral-200 shadow-sm p-10 text-center">
+          <p className="text-sm text-neutral-600">No hay prospectos{filtroEstado !== "todos" ? ` en estado "${ESTADOS.find(e=>e.key===filtroEstado)?.label}"` : ""}.</p>
         </div>
       ) : (
         <div className="space-y-2">
@@ -248,44 +240,42 @@ export function PipelineClient({
 
             return (
               <div key={p.id}
-                className={`bg-white rounded-2xl border p-4 transition-colors ${esUrgente ? "border-amber-300" : "border-neutral-200"}`}>
+                className={`bg-white rounded-xl border shadow-sm p-4 transition-colors ${esUrgente ? "border-warning-border" : "border-neutral-200"}`}>
                 <div className="flex items-start gap-3">
                   <div className="flex-1 min-w-0">
                     {/* Header */}
                     <div className="flex items-center gap-2 flex-wrap mb-1.5">
                       <p className="font-semibold text-neutral-900">{p.empresa}</p>
-                      <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${estado.color}`}>
-                        {estado.label}
-                      </span>
+                      <StatusBadge tone={PIPELINE_TONE[p.estado]}>{estado.label}</StatusBadge>
                       {p.zona && (
-                        <span className="text-xs text-neutral-400">{p.zona}</span>
+                        <span className="text-xs text-neutral-600">{p.zona}</span>
                       )}
                     </div>
                     {/* Info línea */}
-                    <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-neutral-500">
+                    <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-neutral-600">
                       {p.contacto_nombre && <span>{p.contacto_nombre}</span>}
                       {p.contacto_telefono && (
-                        <a href={`tel:${p.contacto_telefono}`} className="flex items-center gap-1 hover:text-[#16233f]">
+                        <a href={`tel:${p.contacto_telefono}`} className="flex items-center gap-1 hover:text-brand-700">
                           <Phone className="size-3" />{p.contacto_telefono}
                         </a>
                       )}
                       {p.contacto_email && (
-                        <a href={`mailto:${p.contacto_email}`} className="flex items-center gap-1 hover:text-[#16233f]">
+                        <a href={`mailto:${p.contacto_email}`} className="flex items-center gap-1 hover:text-brand-700">
                           <Mail className="size-3" />{p.contacto_email}
                         </a>
                       )}
                       {p.valor_estimado !== null && (
-                        <span className="flex items-center gap-1 font-medium text-emerald-700">
+                        <span className="flex items-center gap-1 font-medium text-success">
                           <TrendingUp className="size-3" />{fmt(p.valor_estimado)}/mes
                         </span>
                       )}
                       {p.profiles?.full_name && (
-                        <span className="text-neutral-400">→ {p.profiles.full_name}</span>
+                        <span className="text-neutral-600">→ {p.profiles.full_name}</span>
                       )}
                     </div>
                     {/* Próximo contacto */}
                     {proxDate && (
-                      <div className={`flex items-center gap-1 mt-1.5 text-xs font-medium ${esUrgente ? "text-amber-700" : diasRestantes !== null && diasRestantes <= 3 ? "text-amber-600" : "text-neutral-400"}`}>
+                      <div className={`flex items-center gap-1 mt-1.5 text-xs font-medium ${esUrgente || (diasRestantes !== null && diasRestantes <= 3) ? "text-warning" : "text-neutral-600"}`}>
                         <Calendar className="size-3" />
                         {esUrgente
                           ? `Contacto vencido (${proxDate.toLocaleDateString("es-AR")})`
@@ -293,42 +283,29 @@ export function PipelineClient({
                       </div>
                     )}
                     {p.notas && (
-                      <p className="mt-1.5 text-xs text-neutral-400 italic line-clamp-1">{p.notas}</p>
+                      <p className="mt-1.5 text-xs text-neutral-600 italic line-clamp-1">{p.notas}</p>
                     )}
                     {p.estado === "perdido" && p.motivo_perdida && (
-                      <p className="mt-1.5 text-xs text-red-500">Motivo: {p.motivo_perdida}</p>
+                      <p className="mt-1.5 text-xs text-danger">Motivo: {p.motivo_perdida}</p>
                     )}
                   </div>
 
                   {/* Acciones */}
                   <div className="flex items-center gap-1.5 shrink-0">
                     {siguiente && (
-                      <button
-                        onClick={() => handleAvanzar(p.id, siguiente)}
-                        disabled={pending}
-                        className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-[#16233f] text-white text-xs font-medium hover:bg-[#1e2f52] transition-colors disabled:opacity-40"
-                      >
-                        {sigLabel} <ChevronRight className="size-3" />
-                      </button>
+                      <Button size="sm" onClick={() => handleAvanzar(p.id, siguiente)} disabled={pending}>
+                        {sigLabel} <ChevronRight />
+                      </Button>
                     )}
                     {p.estado !== "perdido" && p.estado !== "ganado" && (
-                      <button
-                        onClick={() => setPerdidoId(p.id)}
-                        disabled={pending}
-                        className="px-2.5 py-1.5 rounded-lg border border-red-200 text-red-500 text-xs font-medium hover:bg-red-50 transition-colors disabled:opacity-40"
-                      >
+                      <Button variant="danger-soft" size="sm" onClick={() => setPerdidoId(p.id)} disabled={pending}>
                         Perdido
-                      </button>
+                      </Button>
                     )}
                     {userRole === "admin" && (
-                      <button
-                        onClick={() => handleEliminar(p.id, p.empresa)}
-                        disabled={pending}
-                        className="p-1.5 rounded-lg text-neutral-300 hover:text-red-500 hover:bg-red-50 transition-colors disabled:opacity-30"
-                        title="Eliminar"
-                      >
-                        <Trash2 className="size-3.5" />
-                      </button>
+                      <IconButton label="Eliminar" variant="danger-soft" onClick={() => handleEliminar(p.id, p.empresa)} disabled={pending}>
+                        <Trash2 />
+                      </IconButton>
                     )}
                   </div>
                 </div>

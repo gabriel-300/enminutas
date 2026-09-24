@@ -20,17 +20,17 @@ type Factura = {
 };
 
 const ESTADO_CFG: Record<string, { label: string; bg: string; color: string }> = {
-  borrador: { label: "Borrador", bg: "#f5f5f5",   color: "#737373" },
-  emitida:  { label: "Emitida",  bg: "#e8f0fb",   color: "#2f5fd0" },
-  cobrada:  { label: "Cobrada",  bg: "#ecfdf5",   color: "#059669" },
-  anulada:  { label: "Anulada",  bg: "#fef2f2",   color: "#dc2626" },
+  borrador: { label: "Borrador", bg: "#f5f5f5",   color: "#737069" },
+  emitida:  { label: "Emitida",  bg: "#e9f1fc",   color: "#1f5bb5" },
+  cobrada:  { label: "Cobrada",  bg: "#eaf6ee",   color: "#1d6b3a" },
+  anulada:  { label: "Anulada",  bg: "#fdecea",   color: "#b42318" },
 };
 
 const TIPO_CFG: Record<string, { bg: string; color: string }> = {
-  A:  { bg: "#eef2f7", color: "#16233f" },
-  B:  { bg: "#fefce8", color: "#854d0e" },
-  C:  { bg: "#f0fdf4", color: "#166534" },
-  NC: { bg: "#fef2f2", color: "#991b1b" },
+  A:  { bg: "#f0f1fe", color: "#1c1b18" },
+  B:  { bg: "#fefce8", color: "#8a5a00" },
+  C:  { bg: "#f0fdf4", color: "#1d6b3a" },
+  NC: { bg: "#fdecea", color: "#b42318" },
 };
 
 const PAGO_LABEL: Record<string, string> = {
@@ -82,7 +82,7 @@ export function FacturacionClient({
   const esMesActual = y === now.getFullYear() && m === now.getMonth() + 1;
 
   return (
-    <div className="bg-white rounded-2xl border border-neutral-200">
+    <div className="bg-white rounded-xl border border-neutral-200 shadow-sm">
       {/* Toolbar */}
       <div className="p-4 border-b border-neutral-100 flex flex-wrap items-center justify-between gap-3">
         {/* Filtro estado */}
@@ -93,8 +93,8 @@ export function FacturacionClient({
               onClick={() => setEstado(e)}
               className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors capitalize ${
                 estadoFiltro === e
-                  ? "bg-[#16233f] text-white"
-                  : "text-neutral-500 hover:bg-neutral-100"
+                  ? "bg-brand-700 text-white"
+                  : "text-neutral-600 hover:bg-neutral-100"
               }`}
             >
               {e === "todas" ? "Todas" : ESTADO_CFG[e]?.label ?? e}
@@ -104,17 +104,17 @@ export function FacturacionClient({
 
         {/* Selector de mes */}
         <div className="flex items-center gap-1 border border-neutral-200 rounded-xl px-1 py-1">
-          <button onClick={() => setMes(-1)} className="size-7 flex items-center justify-center rounded-lg text-neutral-400 hover:bg-neutral-100 text-sm">‹</button>
+          <button onClick={() => setMes(-1)} className="size-7 flex items-center justify-center rounded-lg text-neutral-600 hover:bg-neutral-100 text-sm">‹</button>
           <span className="px-3 text-sm font-medium text-neutral-800 min-w-[140px] text-center">
             {MESES[m - 1]} {y}
           </span>
-          <button onClick={() => setMes(1)} disabled={esMesActual} className="size-7 flex items-center justify-center rounded-lg text-neutral-400 hover:bg-neutral-100 disabled:opacity-30 text-sm">›</button>
+          <button onClick={() => setMes(1)} disabled={esMesActual} className="size-7 flex items-center justify-center rounded-lg text-neutral-600 hover:bg-neutral-100 disabled:opacity-30 text-sm">›</button>
         </div>
       </div>
 
       {/* Tabla */}
       {facturas.length === 0 ? (
-        <div className="py-16 text-center text-sm text-neutral-400">
+        <div className="py-16 text-center text-sm text-neutral-600">
           No hay comprobantes en este período
         </div>
       ) : (
@@ -122,7 +122,7 @@ export function FacturacionClient({
           <thead>
             <tr className="border-b border-neutral-100">
               {["Número", "Fecha", "Cliente", "CUIT", "Condición", "Total", "Estado", ""].map(h => (
-                <th key={h} className="px-4 py-3 text-left text-xs font-semibold text-neutral-400 uppercase tracking-wide whitespace-nowrap">
+                <th key={h} className="px-4 py-3 text-left text-xs font-semibold text-neutral-600 whitespace-nowrap">
                   {h}
                 </th>
               ))}
@@ -149,8 +149,8 @@ export function FacturacionClient({
                   </td>
                   <td className="px-4 py-3 text-neutral-600 whitespace-nowrap">{fecha}</td>
                   <td className="px-4 py-3 font-medium text-neutral-900 max-w-[180px] truncate">{f.razon_social}</td>
-                  <td className="px-4 py-3 text-neutral-500 font-mono text-xs whitespace-nowrap">{f.cuit}</td>
-                  <td className="px-4 py-3 text-neutral-500 whitespace-nowrap">{PAGO_LABEL[f.condicion_pago] ?? f.condicion_pago}</td>
+                  <td className="px-4 py-3 text-neutral-600 font-mono text-xs whitespace-nowrap">{f.cuit}</td>
+                  <td className="px-4 py-3 text-neutral-600 whitespace-nowrap">{PAGO_LABEL[f.condicion_pago] ?? f.condicion_pago}</td>
                   <td className="px-4 py-3 text-right font-semibold tabular-nums text-neutral-900 whitespace-nowrap">
                     {fmt(Number(f.total))}
                   </td>
@@ -166,7 +166,7 @@ export function FacturacionClient({
                     <div className="flex items-center gap-2 justify-end">
                       <Link
                         href={`/admin/facturacion/${f.id}`}
-                        className="text-xs text-neutral-500 hover:text-neutral-800 transition-colors"
+                        className="text-xs text-neutral-600 hover:text-neutral-800 transition-colors"
                       >
                         Ver
                       </Link>
@@ -174,7 +174,7 @@ export function FacturacionClient({
                         <Link
                           href={`/admin/facturacion/${f.id}/pdf`}
                           target="_blank"
-                          className="p-1 rounded-lg text-neutral-400 hover:bg-neutral-100 hover:text-neutral-700 transition-colors"
+                          className="p-1 rounded-lg text-neutral-600 hover:bg-neutral-100 hover:text-neutral-700 transition-colors"
                           title="Ver PDF"
                         >
                           <FileText className="size-3.5" />

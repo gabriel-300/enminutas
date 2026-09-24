@@ -171,18 +171,19 @@ export function AdminNav({
       alignItems:     "center",
       gap:            collapsed ? 0 : 10,
       justifyContent: collapsed ? "center" : "flex-start",
-      padding:        collapsed ? "9px 0" : "7px 10px",
+      height:         34,
+      padding:        collapsed ? "0" : "0 10px",
       borderRadius:   7,
       cursor:         "pointer",
       userSelect:     "none",
-      background:     active ? "rgba(13,180,195,0.1)" : isHovered ? "rgba(255,255,255,0.04)" : "transparent",
-      color:          active ? "#daeeff" : isHovered ? "#b8d4ea" : "#8fb0cc",
+      background:     active ? "rgba(158,163,244,0.16)" : isHovered ? "rgba(255,255,255,0.06)" : "transparent",
+      color:          active || isHovered ? "#ffffff" : "#d4d4f0",
       fontWeight:     active ? 500 : 400,
-      borderLeft:     active ? "2px solid #0db4c3" : "2px solid transparent",
+      boxShadow:      active ? "inset 2px 0 0 #9ea3f4" : "none",
       width:          "100%",
       transition:     "background 0.1s, color 0.1s",
       textDecoration: "none",
-      fontSize:       13,
+      fontSize:       14,
       whiteSpace:     "nowrap",
       minWidth:       0,
     };
@@ -190,7 +191,7 @@ export function AdminNav({
 
   const userInitial = ((name || email || "U")[0] ?? "U").toUpperCase();
   const roleLabel   = ROLE_LABEL[role ?? ""] ?? "Panel admin";
-  const W = collapsed ? 60 : 220;
+  const W = collapsed ? 60 : 248;
   const transition = ready ? "width 0.22s cubic-bezier(.4,0,.2,1), min-width 0.22s cubic-bezier(.4,0,.2,1)" : "none";
 
   return (
@@ -200,7 +201,7 @@ export function AdminNav({
           width:         W,
           minWidth:      W,
           height:        "100vh",
-          background:    "#141c2e",
+          background:    "#17153a",
           display:       "flex",
           flexDirection: "column",
           overflow:      "hidden",
@@ -211,20 +212,20 @@ export function AdminNav({
         }}
       >
         {/* ── Marca ── */}
-        <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "16px 14px", borderBottom: "1px solid rgba(255,255,255,0.05)", minHeight: 60, overflow: "hidden", flexShrink: 0 }}>
-          <div style={{ width: 32, height: 32, minWidth: 32, background: "#0db4c3", borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, fontWeight: 700, color: "#fff", letterSpacing: "0.03em", flexShrink: 0 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "16px 14px", borderBottom: "1px solid rgba(255,255,255,0.08)", minHeight: 62, overflow: "hidden", flexShrink: 0 }}>
+          <div style={{ width: 32, height: 32, minWidth: 32, background: "#e8672e", borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13, fontWeight: 700, color: "#fff", flexShrink: 0 }}>
             EM
           </div>
           {!collapsed && (
             <div style={{ minWidth: 0, overflow: "hidden" }}>
-              <div style={{ fontSize: 13.5, fontWeight: 600, color: "#dce8f5", whiteSpace: "nowrap" }}>En Minutas</div>
-              <div style={{ fontSize: 11, color: "#334a63", marginTop: 1, whiteSpace: "nowrap" }}>{roleLabel}</div>
+              <div style={{ fontSize: 14, fontWeight: 600, color: "#ffffff", whiteSpace: "nowrap" }}>En Minutas</div>
+              <div style={{ fontSize: 12, color: "#9a9ad0", whiteSpace: "nowrap" }}>{roleLabel}</div>
             </div>
           )}
         </div>
 
         {/* ── Navegación ── */}
-        <nav style={{ flex: 1, overflowY: "auto", overflowX: "hidden", padding: "8px 6px" }}>
+        <nav style={{ flex: 1, overflowY: "auto", overflowX: "hidden", padding: "10px 12px" }}>
           {SECTIONS.map((section, si) => {
             const items = section.items.filter(i => i.roles.includes(role ?? ""));
             if (!items.length) return null;
@@ -238,12 +239,12 @@ export function AdminNav({
                 {section.label && !collapsed && (
                   <div
                     onClick={() => toggleSection(key)}
-                    style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "14px 8px 5px", cursor: "pointer", userSelect: "none" }}
+                    style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "8px 10px 4px", marginTop: 10, cursor: "pointer", userSelect: "none" }}
                   >
-                    <span style={{ fontSize: 9.5, fontWeight: 600, letterSpacing: "0.1em", color: "#4d6f8a", textTransform: "uppercase", whiteSpace: "nowrap" }}>
+                    <span style={{ fontSize: 12, fontWeight: 600, letterSpacing: "0.06em", color: "#9a9ad0", textTransform: "uppercase", whiteSpace: "nowrap" }}>
                       {section.label}
                     </span>
-                    <ChevronDown style={{ width: 10, height: 10, color: "#4d6f8a", opacity: 0.9, flexShrink: 0, transform: isExpanded ? "rotate(0deg)" : "rotate(-90deg)", transition: "transform 0.15s" }} />
+                    <ChevronDown style={{ width: 12, height: 12, color: "#9a9ad0", flexShrink: 0, transform: isExpanded ? "rotate(0deg)" : "rotate(-90deg)", transition: "transform 0.15s" }} />
                   </div>
                 )}
 
@@ -259,14 +260,14 @@ export function AdminNav({
                       onMouseEnter={() => setHovered(item.href)}
                       onMouseLeave={() => setHovered(null)}
                     >
-                      <Icon style={{ width: 16, height: 16, minWidth: 16, flexShrink: 0, strokeWidth: 1.75 }} />
+                      <Icon style={{ width: 16, height: 16, minWidth: 16, flexShrink: 0, strokeWidth: 1.8 }} />
                       {!collapsed && (
                         <>
-                          <span style={{ flex: 1, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", fontSize: 13 }}>
+                          <span style={{ flex: 1, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis" }}>
                             {item.label}
                           </span>
                           {item.badge && alertasCount > 0 && (
-                            <span style={{ background: "#dc2626", color: "#fff", fontSize: 10, fontWeight: 600, padding: "1px 6px", borderRadius: 10, whiteSpace: "nowrap", flexShrink: 0 }}>
+                            <span style={{ background: "#c8321f", color: "#fff", fontSize: 12, fontWeight: 600, padding: "0 7px", lineHeight: "18px", borderRadius: 999, whiteSpace: "nowrap", flexShrink: 0 }}>
                               {alertasCount}
                             </span>
                           )}
@@ -281,7 +282,7 @@ export function AdminNav({
         </nav>
 
         {/* ── Configuración + Ayuda (fijos abajo) ── */}
-        <div style={{ padding: 6, borderTop: "1px solid rgba(255,255,255,0.05)", display: "flex", flexDirection: "column", flexShrink: 0 }}>
+        <div style={{ padding: "8px 12px", borderTop: "1px solid rgba(255,255,255,0.08)", display: "flex", flexDirection: "column", gap: 1, flexShrink: 0 }}>
           {BOTTOM_ITEMS.filter(i => i.roles.includes(role ?? "")).map(item => {
             const active = isActive(item.href);
             const Icon   = item.icon;
@@ -294,9 +295,9 @@ export function AdminNav({
                 onMouseEnter={() => setHovered(item.href)}
                 onMouseLeave={() => setHovered(null)}
               >
-                <Icon style={{ width: 16, height: 16, minWidth: 16, flexShrink: 0, strokeWidth: 1.75 }} />
+                <Icon style={{ width: 16, height: 16, minWidth: 16, flexShrink: 0, strokeWidth: 1.8 }} />
                 {!collapsed && (
-                  <span style={{ fontSize: 13, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                  <span style={{ whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
                     {item.label}
                   </span>
                 )}
@@ -307,20 +308,20 @@ export function AdminNav({
 
         {/* ── Footer de usuario ── */}
         <div
-          style={{ padding: "10px 12px", borderTop: "1px solid rgba(255,255,255,0.05)", display: "flex", alignItems: "center", gap: 10, overflow: "hidden", minHeight: 52, flexShrink: 0 }}
+          style={{ padding: "12px 16px 16px", borderTop: "1px solid rgba(255,255,255,0.08)", display: "flex", alignItems: "center", gap: 10, overflow: "hidden", minHeight: 62, flexShrink: 0 }}
           title={collapsed ? (email || undefined) : undefined}
         >
-          <div style={{ width: 28, height: 28, minWidth: 28, background: "#1c2e45", borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, fontWeight: 600, color: "#5a7a9e", flexShrink: 0 }}>
+          <div style={{ width: 30, height: 30, minWidth: 30, background: "#342e8f", borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12, fontWeight: 600, color: "#e0e3fc", flexShrink: 0 }}>
             {userInitial}
           </div>
           {!collapsed && (
             <div style={{ flex: 1, minWidth: 0, overflow: "hidden" }}>
-              <div style={{ fontSize: 11, color: "#7a9ab8", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+              <div style={{ fontSize: 12, color: "#d4d4f0", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
                 {email || name || "—"}
               </div>
               <button
                 onClick={handleSignOut}
-                style={{ fontSize: 11, color: "#e05252", cursor: "pointer", marginTop: 2, whiteSpace: "nowrap", background: "none", border: "none", padding: 0 }}
+                style={{ fontSize: 12, fontWeight: 500, color: "#f7a699", cursor: "pointer", marginTop: 2, whiteSpace: "nowrap", background: "none", border: "none", padding: 0 }}
               >
                 Cerrar sesión
               </button>
@@ -339,8 +340,8 @@ export function AdminNav({
           top:          18,
           width:        22,
           height:       22,
-          background:   "#1e2d45",
-          border:       "1px solid rgba(255,255,255,0.12)",
+          background:   "#342e8f",
+          border:       "1px solid rgba(255,255,255,0.16)",
           borderRadius: "50%",
           display:      "flex",
           alignItems:   "center",
@@ -354,8 +355,8 @@ export function AdminNav({
         }}
       >
         {collapsed
-          ? <ChevronRight style={{ width: 10, height: 10, color: "#6b8aad", strokeWidth: 2.5 }} />
-          : <ChevronLeft  style={{ width: 10, height: 10, color: "#6b8aad", strokeWidth: 2.5 }} />
+          ? <ChevronRight style={{ width: 10, height: 10, color: "#e0e3fc", strokeWidth: 2.5 }} />
+          : <ChevronLeft  style={{ width: 10, height: 10, color: "#e0e3fc", strokeWidth: 2.5 }} />
         }
       </button>
     </div>

@@ -1,232 +1,225 @@
 import { fmtK } from "@/lib/format";
 import Link from "next/link";
+import { AlertCircle, AlertTriangle, ArrowRight, BarChart3, Building2, CheckCircle2, ClipboardList, Info } from "lucide-react";
+import { Card, CardHeader, KpiCard, PageHeader, TONE_STYLES, type Tone } from "@/components/ui";
+import { cn } from "@/lib/utils";
 import { loadAdminDashboard } from "../_data/admin";
+
+// El loader entrega clases de color por grupo; de ahí se deduce el tono.
+function toneFromDot(dotClass: string): Tone {
+  if (dotClass.includes("danger")) return "danger";
+  if (dotClass.includes("warning")) return "warning";
+  if (dotClass.includes("success")) return "success";
+  return "neutral";
+}
+
+const TONE_ICON: Record<Tone, React.ElementType> = {
+  danger: AlertCircle, warning: AlertTriangle, success: CheckCircle2, neutral: Info, info: Info, brand: Info,
+};
+
+const BAR_MAX_PX = 170;
 
 export async function AdminDashboard() {
   const { now, b2bUsers, pendingClients, activeClients, revenueTotal, revPct, ordersThisMonth, ordersPrevMonth, totalAlerts, topProducts, maxProduct, monthlyEvol, maxMonth, mesNombre, IVA_DIV, preventistasRanking, alertGroups } = await loadAdminDashboard();
 
+  const prevMonthName = new Date(now.getFullYear(), now.getMonth() - 1).toLocaleDateString("es-AR", { month: "long" });
+
   return (
-    <div className="p-4 md:p-8 max-w-6xl">
-      {/* Header */}
-      <div className="mb-5 md:mb-6">
-        <h1 className="text-xl md:text-2xl font-semibold font-display text-neutral-900">Dashboard</h1>
-        <p className="text-sm text-neutral-400 mt-0.5 capitalize">
-          {now.toLocaleDateString("es-AR", { weekday: "long", day: "numeric", month: "long", year: "numeric" })}
-        </p>
-      </div>
+    <div className="flex flex-col gap-6 p-4 md:px-10 md:py-8 md:pb-16">
+      <PageHeader
+        title="Dashboard"
+        subtitle={<span className="capitalize">{now.toLocaleDateString("es-AR", { weekday: "long", day: "numeric", month: "long", year: "numeric" })}</span>}
+      />
 
       {/* KPIs */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4 mb-5 md:mb-6">
-        {/* Ventas */}
-        <Link href="/admin/reportes" className="bg-white rounded-2xl border border-neutral-200 p-5 shadow-sm hover:shadow-md hover:border-neutral-300 transition-all duration-200 group">
-          <div className="flex items-start justify-between mb-3">
-            <p className="text-xs font-medium text-neutral-400 uppercase tracking-wide">Ventas {mesNombre}</p>
-            <span className="size-8 rounded-lg bg-tierra-50 text-tierra-700 flex items-center justify-center shrink-0 group-hover:bg-tierra-100 transition-colors">
-              <svg className="size-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 013 19.875v-6.75zM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V8.625zM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V4.125z" /></svg>
-            </span>
-          </div>
-          <p className="text-3xl font-semibold font-display tabular-nums text-neutral-900">{fmtK(revenueTotal)}</p>
-          {revPct !== null && (
-            <p className={`text-xs mt-1.5 font-medium ${revPct >= 0 ? "text-success" : "text-danger"}`}>
-              {revPct >= 0 ? "↑" : "↓"} {Math.abs(revPct)}% vs {new Date(now.getFullYear(), now.getMonth() - 1).toLocaleDateString("es-AR", { month: "long" })}
-            </p>
-          )}
-        </Link>
-
-        {/* Pedidos este mes */}
-        <Link href="/admin/pedidos" className="bg-white rounded-2xl border border-neutral-200 p-5 shadow-sm hover:shadow-md hover:border-neutral-300 transition-all duration-200 group">
-          <div className="flex items-start justify-between mb-3">
-            <p className="text-xs font-medium text-neutral-400 uppercase tracking-wide">Pedidos {mesNombre}</p>
-            <span className="size-8 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center shrink-0 group-hover:bg-blue-100 transition-colors">
-              <svg className="size-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M9 12h3.75M9 15h3.75M9 18h3.75m3 .75H18a2.25 2.25 0 002.25-2.25V6.108c0-1.135-.845-2.098-1.976-2.192a48.424 48.424 0 00-1.123-.08m-5.801 0c-.065.21-.1.433-.1.664 0 .414.336.75.75.75h4.5a.75.75 0 00.75-.75 2.25 2.25 0 00-.1-.664m-5.8 0A2.251 2.251 0 0113.5 2.25H15c1.012 0 1.867.668 2.15 1.586m-5.8 0c-.376.023-.75.05-1.124.08C9.095 4.01 8.25 4.973 8.25 6.108V8.25m0 0H4.875c-.621 0-1.125.504-1.125 1.125v11.25c0 .621.504 1.125 1.125 1.125h9.75c.621 0 1.125-.504 1.125-1.125V9.375c0-.621-.504-1.125-1.125-1.125H8.25z" /></svg>
-            </span>
-          </div>
-          <p className="text-3xl font-semibold font-display tabular-nums text-neutral-900">{ordersThisMonth}</p>
-          <p className="text-xs mt-1.5 text-neutral-400">{ordersPrevMonth} el mes anterior</p>
-        </Link>
-
-        {/* Alertas */}
-        <div className={`rounded-2xl border p-5 shadow-sm ${totalAlerts > 0 ? "bg-amber-50 border-amber-200" : "bg-white border-neutral-200"}`}>
-          <div className="flex items-start justify-between mb-3">
-            <p className="text-xs font-medium text-neutral-400 uppercase tracking-wide">Alertas activas</p>
-            <span className={`size-8 rounded-lg flex items-center justify-center shrink-0 ${totalAlerts > 0 ? "bg-amber-100 text-amber-600" : "bg-neutral-100 text-neutral-400"}`}>
-              <svg className="size-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" /></svg>
-            </span>
-          </div>
-          <p className={`text-3xl font-semibold font-display tabular-nums ${totalAlerts > 0 ? "text-amber-700" : "text-neutral-900"}`}>
-            {totalAlerts}
-          </p>
-          <p className="text-xs mt-1.5 text-neutral-400">
-            {totalAlerts === 0 ? "Todo en orden" : `${alertGroups.length} grupo${alertGroups.length !== 1 ? "s" : ""} activo${alertGroups.length !== 1 ? "s" : ""}`}
-          </p>
-        </div>
-
-        {/* Clientes */}
-        <Link href="/admin/clientes-b2b" className="bg-white rounded-2xl border border-neutral-200 p-5 shadow-sm hover:shadow-md hover:border-neutral-300 transition-all duration-200 group">
-          <div className="flex items-start justify-between mb-3">
-            <p className="text-xs font-medium text-neutral-400 uppercase tracking-wide">Clientes activos</p>
-            <span className="size-8 rounded-lg bg-green-50 text-green-600 flex items-center justify-center shrink-0 group-hover:bg-green-100 transition-colors">
-              <svg className="size-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M3.75 21h16.5M4.5 3h15M5.25 3v18m13.5-18v18M9 6.75h1.5m-1.5 3h1.5m-1.5 3h1.5m3-6H15m-1.5 3H15m-1.5 3H15M9 21v-3.375c0-.621.504-1.125 1.125-1.125h3.75c.621 0 1.125.504 1.125 1.125V21" /></svg>
-            </span>
-          </div>
-          <p className="text-3xl font-semibold font-display tabular-nums text-neutral-900">{activeClients}</p>
-          <p className="text-xs mt-1.5 text-neutral-400">
-            {b2bUsers.length} totales{pendingClients > 0 ? ` · ${pendingClients} pendientes` : ""}
-          </p>
-        </Link>
+      <div className="grid grid-cols-[repeat(auto-fit,minmax(220px,1fr))] gap-4">
+        <KpiCard
+          href="/admin/reportes"
+          label={`Ventas ${mesNombre}`}
+          value={fmtK(revenueTotal)}
+          icon={<BarChart3 />}
+          pill={revPct !== null ? { text: `${revPct >= 0 ? "↑" : "↓"} ${Math.abs(revPct)}%`, tone: revPct >= 0 ? "success" : "danger" } : undefined}
+          footer={revPct !== null ? `vs ${prevMonthName}` : undefined}
+        />
+        <KpiCard
+          href="/admin/pedidos"
+          label={`Pedidos ${mesNombre}`}
+          value={ordersThisMonth}
+          icon={<ClipboardList />}
+          footer={`${ordersPrevMonth} el mes anterior`}
+        />
+        <KpiCard
+          label="Alertas activas"
+          value={totalAlerts}
+          icon={<AlertTriangle />}
+          tone={totalAlerts > 0 ? "warning" : "default"}
+          footer={totalAlerts === 0 ? "Todo en orden" : `${alertGroups.length} grupo${alertGroups.length !== 1 ? "s" : ""} activo${alertGroups.length !== 1 ? "s" : ""}`}
+        />
+        <KpiCard
+          href="/admin/clientes-b2b"
+          label="Clientes activos"
+          value={activeClients}
+          icon={<Building2 />}
+          footer={`${b2bUsers.length} totales${pendingClients > 0 ? ` · ${pendingClients} pendientes` : ""}`}
+        />
       </div>
 
       {/* Cuerpo — dos columnas */}
-      <div className="grid grid-cols-1 lg:grid-cols-[1.65fr_1fr] gap-4">
+      <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-[minmax(0,2fr)_minmax(320px,1fr)]">
 
         {/* Columna izquierda */}
-        <div className="space-y-4">
+        <div className="flex flex-col gap-4">
 
           {/* Evolución de ventas — gráfico de barras verticales */}
-          <div className="bg-white rounded-2xl border border-neutral-200 overflow-hidden">
-            <div className="px-5 py-3.5 border-b border-neutral-100">
-              <p className="text-xs font-semibold text-neutral-400 uppercase tracking-wider">Evolución de ventas</p>
+          <Card>
+            <CardHeader title="Evolución de ventas" />
+            <div
+              className="grid items-end gap-4 px-6 pb-4 pt-5"
+              style={{ gridTemplateColumns: `repeat(${monthlyEvol.length || 1}, minmax(0, 1fr))`, height: 260 }}
+            >
+              {monthlyEvol.map((m) => {
+                const pxH = maxMonth > 0 ? Math.round((m.total / maxMonth) * BAR_MAX_PX) : 0;
+                return (
+                  <div key={m.key} className="flex h-full flex-col items-stretch justify-end gap-1.5">
+                    <span className={cn(
+                      "text-center text-xs tabular-nums",
+                      m.current ? "font-semibold text-brand-700" : "text-n-600",
+                      m.total === 0 && "invisible"
+                    )}>
+                      {fmtK(m.total)}
+                    </span>
+                    <div
+                      className={cn("rounded-t-md rounded-b-sm", m.total === 0 ? "bg-n-200" : m.current ? "bg-brand-700" : "bg-brand-300")}
+                      style={{ height: m.total === 0 ? 3 : Math.max(pxH, 4) }}
+                    />
+                    <span className={cn(
+                      "border-t border-n-200 pt-1 text-center text-xs capitalize",
+                      m.current ? "font-semibold text-brand-700" : "text-n-600"
+                    )}>
+                      {m.label}
+                    </span>
+                  </div>
+                );
+              })}
             </div>
-            <div className="px-5 pt-4 pb-4">
-              <div className="flex gap-1.5">
-                {monthlyEvol.map((m) => {
-                  const pxH = maxMonth > 0
-                    ? Math.max(Math.round((m.total / maxMonth) * 80), m.total > 0 ? 4 : 0)
-                    : 0;
-                  return (
-                    <div key={m.key} className="flex-1 flex flex-col items-center gap-1">
-                      <span className={`text-[10px] tabular-nums font-medium h-4 flex items-end justify-center ${m.current ? "text-tierra-700" : "text-neutral-400"} ${m.total === 0 ? "invisible" : ""}`}>
-                        {fmtK(m.total)}
-                      </span>
-                      <div className="w-full flex items-end" style={{ height: "80px" }}>
-                        <div
-                          className={`w-full rounded-t-sm ${m.current ? "bg-tierra-700" : "bg-tierra-200"}`}
-                          style={{ height: `${pxH}px` }}
-                        />
-                      </div>
-                      <span className={`text-[10px] capitalize leading-none mt-0.5 ${m.current ? "text-tierra-700 font-semibold" : "text-neutral-400"}`}>
-                        {m.label}
-                      </span>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          </div>
+          </Card>
 
           {/* Productos más vendidos */}
-          <div className="bg-white rounded-2xl border border-neutral-200 overflow-hidden">
-            <div className="px-5 py-3.5 border-b border-neutral-100">
-              <p className="text-xs font-semibold text-neutral-400 uppercase tracking-wider">Productos más vendidos</p>
-            </div>
-            <div className="px-5 py-4 space-y-3">
+          <Card>
+            <CardHeader title="Productos más vendidos" />
+            <div className="flex flex-col px-5 pb-4 pt-2">
               {topProducts.length === 0 ? (
-                <p className="text-xs text-neutral-400 text-center py-4">Sin datos este mes</p>
+                <p className="py-4 text-center text-sm text-n-600">Sin datos este mes</p>
               ) : topProducts.map(([name, total], i) => (
-                <div key={name} className="flex items-center gap-3">
-                  <span className="text-xs font-semibold text-neutral-300 tabular-nums w-4 shrink-0 text-center">{i + 1}</span>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center justify-between mb-1">
-                      <span className="text-xs text-neutral-700 truncate max-w-[160px]" title={name}>{name}</span>
-                      <span className="text-xs font-semibold text-neutral-900 tabular-nums ml-2">{fmtK(total)}</span>
-                    </div>
-                    <div className="h-1.5 bg-neutral-100 rounded-full overflow-hidden">
+                <div key={name} className="grid grid-cols-[20px_minmax(0,1fr)_auto] items-center gap-3 border-b border-n-100 py-2.5 last:border-b-0">
+                  <span className="text-[13px] tabular-nums text-n-600">{i + 1}</span>
+                  <div className="flex min-w-0 flex-col gap-1.5">
+                    <span className="truncate text-sm font-medium text-n-900" title={name}>{name}</span>
+                    <div className="h-1.5 overflow-hidden rounded-full bg-n-100">
                       <div
-                        className="h-full bg-tierra-700 rounded-full"
+                        className="h-full rounded-full bg-brand-600"
                         style={{ width: `${Math.round((total / maxProduct) * 100)}%` }}
                       />
                     </div>
                   </div>
+                  <span className="text-right text-sm font-semibold tabular-nums text-n-900">{fmtK(total)}</span>
                 </div>
               ))}
             </div>
-          </div>
+          </Card>
 
         </div>
 
         {/* Columna derecha */}
-        <div className="space-y-4">
+        <div className="flex flex-col gap-4">
 
           {/* Requiere atención — alertas agrupadas */}
-          <div className="bg-white rounded-2xl border border-neutral-200 overflow-hidden">
-            <div className="px-5 py-3.5 border-b border-neutral-100 flex items-center justify-between">
-              <p className="text-xs font-semibold text-neutral-400 uppercase tracking-wider">Requiere atención</p>
-              {totalAlerts > 0 && (
-                <span className="size-5 rounded-full bg-warning flex items-center justify-center text-white text-[10px] font-bold tabular-nums leading-none">
+          <Card>
+            <CardHeader
+              title="Requiere atención"
+              action={totalAlerts > 0 && (
+                <span className={cn("rounded-full border px-2 py-px text-xs font-semibold tabular-nums", TONE_STYLES.warning.badge)}>
                   {totalAlerts > 99 ? "99+" : totalAlerts}
                 </span>
               )}
-            </div>
+            />
             {alertGroups.length === 0 ? (
               <div className="px-5 py-8 text-center">
                 <p className="text-sm font-medium text-success">Todo en orden</p>
-                <p className="text-xs text-neutral-300 mt-0.5">Sin alertas activas</p>
+                <p className="mt-0.5 text-[13px] text-n-600">Sin alertas activas</p>
               </div>
             ) : (
-              <ul className="divide-y divide-neutral-50">
-                {alertGroups.map((g, i) => (
-                  <li key={i} className={`flex items-start gap-3 px-5 py-3.5 ${g.bgClass}`}>
-                    <span className={`size-1.5 rounded-full ${g.dotClass} shrink-0 mt-1.5`} />
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-neutral-800 leading-snug">{g.title}</p>
-                      <p className="text-xs text-neutral-400 mt-0.5">{g.ctx}</p>
-                    </div>
-                    <Link href={g.href} className="text-xs text-tierra-700 hover:underline shrink-0 mt-0.5">
-                      Ver →
-                    </Link>
-                  </li>
-                ))}
+              <ul>
+                {alertGroups.map((g, i) => {
+                  const tone = toneFromDot(g.dotClass);
+                  const Icon = TONE_ICON[tone];
+                  return (
+                    <li key={i} className="flex items-center gap-3 border-b border-n-100 px-5 py-3.5">
+                      <span className={cn("flex size-8 shrink-0 items-center justify-center rounded-lg [&_svg]:size-[18px]", TONE_STYLES[tone].tile)}>
+                        <Icon />
+                      </span>
+                      <div className="flex min-w-0 flex-1 flex-col gap-0.5">
+                        <p className="text-sm font-medium text-n-900">{g.title}</p>
+                        <p className={cn("text-[13px]", tone === "neutral" ? "text-n-600" : TONE_STYLES[tone].text)}>{g.ctx}</p>
+                      </div>
+                      <Link
+                        href={g.href}
+                        className="inline-flex h-8 shrink-0 items-center gap-1 rounded-lg border border-n-btn bg-n-0 px-2.5 text-[13px] font-medium text-n-800 shadow-btn transition-colors hover:border-n-400 hover:bg-n-50"
+                      >
+                        Ver <ArrowRight className="size-3.5" />
+                      </Link>
+                    </li>
+                  );
+                })}
               </ul>
             )}
-            <div className="px-5 py-2.5 border-t border-neutral-50">
-              <Link href="/admin/alertas" className="text-xs text-neutral-400 hover:text-[#16233f] transition-colors">
-                Ver centro de alertas (stock, lotes, cheques…) →
+            <div className="px-5 py-3">
+              <Link href="/admin/alertas" className="inline-flex items-center gap-1 text-[13px] font-medium text-brand-700 hover:text-brand-800 hover:underline">
+                Ver centro de alertas (stock, lotes, cheques…) <ArrowRight className="size-3.5" />
               </Link>
             </div>
-          </div>
+          </Card>
 
           {/* Preventistas del mes */}
           {preventistasRanking.length > 0 && (
-            <div className="bg-white rounded-2xl border border-neutral-200 overflow-hidden">
-              <div className="px-5 py-3.5 border-b border-neutral-100 flex items-center justify-between">
-                <p className="text-xs font-semibold text-neutral-400 uppercase tracking-wider">
-                  Preventistas · <span className="normal-case capitalize">{mesNombre}</span>
-                </p>
-                <Link href="/admin/comisiones" className="text-xs text-tierra-700 hover:underline">
-                  Ver comisiones →
-                </Link>
-              </div>
-              <ul className="divide-y divide-neutral-50">
+            <Card>
+              <CardHeader
+                title={<>Preventistas <span className="font-normal capitalize text-n-600">· {mesNombre}</span></>}
+                action={
+                  <Link href="/admin/comisiones" className="inline-flex items-center gap-1 text-[13px] font-medium text-brand-700 hover:text-brand-800 hover:underline">
+                    Ver comisiones <ArrowRight className="size-3.5" />
+                  </Link>
+                }
+              />
+              <ul>
                 {preventistasRanking.map((v, i) => (
-                  <li key={v.id} className="px-5 py-3">
-                    <div className="flex items-center gap-3">
-                      <span className="text-xs font-semibold text-neutral-300 tabular-nums w-4 shrink-0 text-center">{i + 1}</span>
-                      <div className="size-7 rounded-full bg-tierra-100 text-tierra-700 flex items-center justify-center text-[11px] font-semibold shrink-0">
+                  <li key={v.id} className="border-b border-n-100 px-5 py-3.5 last:border-b-0">
+                    <div className="grid grid-cols-[16px_36px_minmax(0,1fr)_auto] items-center gap-3">
+                      <span className="text-[13px] tabular-nums text-n-600">{i + 1}</span>
+                      <div className="flex size-9 items-center justify-center rounded-full bg-brand-100 text-[13px] font-semibold text-brand-800">
                         {v.initials}
                       </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-neutral-800 truncate">{v.name}</p>
-                        <p className="text-xs text-neutral-400">{v.orders} pedido{v.orders !== 1 ? "s" : ""}</p>
+                      <div className="flex min-w-0 flex-col gap-0.5">
+                        <p className="truncate text-sm font-medium text-n-900">{v.name}</p>
+                        <p className="text-[13px] text-n-600">{v.orders} pedido{v.orders !== 1 ? "s" : ""}</p>
                       </div>
-                      <div className="text-right shrink-0">
-                        <p className="text-sm font-semibold tabular-nums text-neutral-900">
-                          {fmtK(v.total)} <span className="text-[10px] font-normal text-neutral-400">c/IVA</span>
+                      <div className="flex flex-col gap-0.5 text-right tabular-nums">
+                        <p className="text-[15px] font-semibold text-n-900">
+                          {fmtK(v.total)} <span className="text-xs font-normal text-n-600">c/IVA</span>
                         </p>
-                        <p className="text-xs tabular-nums text-neutral-400">
-                          {fmtK(v.total / IVA_DIV)} <span className="text-[10px]">s/IVA</span>
-                        </p>
+                        <p className="text-[13px] text-n-600">{fmtK(v.total / IVA_DIV)} s/IVA</p>
                       </div>
                     </div>
                     {v.clientes.length > 0 && (
-                      <details className="mt-2 ml-7">
-                        <summary className="text-xs text-tierra-700 hover:underline cursor-pointer list-none">
-                          Por cliente ({v.clientes.length}) →
+                      <details className="ml-[76px] mt-1">
+                        <summary className="inline-flex cursor-pointer list-none items-center gap-1 text-[13px] font-medium text-brand-700 hover:text-brand-800 hover:underline">
+                          Por cliente ({v.clientes.length}) <ArrowRight className="size-3.5" />
                         </summary>
-                        <ul className="mt-1.5 space-y-1 border-l border-neutral-100 pl-3">
+                        <ul className="mt-2 space-y-1.5 border-l border-n-200 pl-3">
                           {v.clientes.map((c) => (
                             <li key={c.id} className="flex items-center justify-between gap-2">
-                              <span className="text-xs text-neutral-600 truncate">{c.name}</span>
-                              <span className="text-xs tabular-nums text-neutral-500 shrink-0">
+                              <span className="truncate text-[13px] text-n-700">{c.name}</span>
+                              <span className="shrink-0 text-[13px] tabular-nums text-n-600">
                                 {fmtK(c.total)} c/IVA · {fmtK(c.total / IVA_DIV)} s/IVA
                               </span>
                             </li>
@@ -237,7 +230,7 @@ export async function AdminDashboard() {
                   </li>
                 ))}
               </ul>
-            </div>
+            </Card>
           )}
 
         </div>

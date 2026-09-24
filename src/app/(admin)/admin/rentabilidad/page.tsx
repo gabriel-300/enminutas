@@ -117,10 +117,10 @@ export default async function RentabilidadPage({
   const margenPct = totalIngresos > 0 ? Math.round((totalContribucion / totalIngresos) * 100) : 0;
 
   return (
-    <div className="p-4 md:p-8 max-w-5xl">
+    <div className="p-4 md:px-10 md:py-8 md:pb-16">
       <div className="mb-6">
         <h1 className="text-2xl font-bold font-display text-neutral-900">Rentabilidad</h1>
-        <p className="text-sm text-neutral-400 mt-1">
+        <p className="text-sm text-neutral-600 mt-1">
           Margen de contribución (ingresos − costo de materia prima)
         </p>
       </div>
@@ -138,7 +138,7 @@ export default async function RentabilidadPage({
             href={`/admin/rentabilidad?rango=${r.key}`}
             className={`px-3 py-1.5 rounded-xl text-xs font-medium border transition-colors ${
               rango === r.key
-                ? "bg-[#16233f] text-white border-[#16233f]"
+                ? "bg-brand-700 text-white border-brand-700"
                 : "bg-white border-neutral-200 text-neutral-600 hover:bg-neutral-50"
             }`}
           >
@@ -149,33 +149,33 @@ export default async function RentabilidadPage({
 
       {/* KPIs globales */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-        <div className="bg-white rounded-2xl border border-neutral-200 p-5">
-          <p className="text-xs text-neutral-400 uppercase tracking-wide mb-1">Ingresos</p>
+        <div className="bg-white rounded-xl border border-neutral-200 shadow-sm p-5">
+          <p className="text-xs text-neutral-600 mb-1">Ingresos</p>
           <p className="text-xl font-bold text-neutral-900 tabular-nums">
             {new Intl.NumberFormat("es-AR", { style: "currency", currency: "ARS", maximumFractionDigits: 0 }).format(totalIngresos)}
           </p>
-          <p className="text-xs text-neutral-400 mt-0.5">{orders.length} pedidos</p>
+          <p className="text-xs text-neutral-600 mt-0.5">{orders.length} pedidos</p>
         </div>
-        <div className="bg-white rounded-2xl border border-neutral-200 p-5">
-          <p className="text-xs text-neutral-400 uppercase tracking-wide mb-1">Costo MP</p>
+        <div className="bg-white rounded-xl border border-neutral-200 shadow-sm p-5">
+          <p className="text-xs text-neutral-600 mb-1">Costo MP</p>
           <p className="text-xl font-bold text-neutral-900 tabular-nums">
             {new Intl.NumberFormat("es-AR", { style: "currency", currency: "ARS", maximumFractionDigits: 0 }).format(totalCosto)}
           </p>
-          <p className="text-xs text-neutral-400 mt-0.5">materia prima estimada</p>
+          <p className="text-xs text-neutral-600 mt-0.5">materia prima estimada</p>
         </div>
-        <div className="bg-white rounded-2xl border border-neutral-200 p-5">
-          <p className="text-xs text-neutral-400 uppercase tracking-wide mb-1">Contribución</p>
-          <p className="text-xl font-bold text-emerald-700 tabular-nums">
+        <div className="bg-white rounded-xl border border-neutral-200 shadow-sm p-5">
+          <p className="text-xs text-neutral-600 mb-1">Contribución</p>
+          <p className="text-xl font-bold text-success tabular-nums">
             {new Intl.NumberFormat("es-AR", { style: "currency", currency: "ARS", maximumFractionDigits: 0 }).format(totalContribucion)}
           </p>
-          <p className="text-xs text-neutral-400 mt-0.5">ingresos − costo MP</p>
+          <p className="text-xs text-neutral-600 mt-0.5">ingresos − costo MP</p>
         </div>
-        <div className={`rounded-2xl border p-5 ${margenPct >= 50 ? "bg-emerald-50 border-emerald-200" : margenPct >= 30 ? "bg-amber-50 border-amber-200" : "bg-red-50 border-red-200"}`}>
-          <p className="text-xs text-neutral-400 uppercase tracking-wide mb-1">Margen</p>
-          <p className={`text-2xl font-bold tabular-nums ${margenPct >= 50 ? "text-emerald-700" : margenPct >= 30 ? "text-amber-700" : "text-red-700"}`}>
+        <div className={`rounded-xl border p-5 ${margenPct >= 50 ? "bg-success-bg border-success-border" : margenPct >= 30 ? "bg-warning-bg border-warning-border" : "bg-danger-bg border-danger-border"}`}>
+          <p className="text-xs text-neutral-600 mb-1">Margen</p>
+          <p className={`text-2xl font-bold tabular-nums ${margenPct >= 50 ? "text-success" : margenPct >= 30 ? "text-warning" : "text-danger"}`}>
             {margenPct}%
           </p>
-          <p className="text-xs text-neutral-400 mt-0.5">sobre ingresos totales</p>
+          <p className="text-xs text-neutral-600 mt-0.5">sobre ingresos totales</p>
         </div>
       </div>
 

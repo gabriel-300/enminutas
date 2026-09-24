@@ -135,19 +135,19 @@ export default async function NuevoPedidoPage({
   const fromPreventista = !!(sp.cliente || sp.repetir);
 
   return (
-    <div className="p-4 md:p-8">
+    <div className="p-4 md:px-10 md:py-8 md:pb-16">
       <div className="mb-5 md:mb-6 flex items-center justify-between">
         <div>
           <Link
             href={fromPreventista ? "/admin/preventista" : "/admin/pedidos"}
-            className="text-sm text-neutral-400 hover:text-neutral-700 transition-colors mb-2 inline-block"
+            className="text-sm text-neutral-600 hover:text-neutral-700 transition-colors mb-2 inline-block"
           >
             ← {fromPreventista ? "Volver al preventista" : "Volver a pedidos"}
           </Link>
           <h1 className="text-xl md:text-2xl font-semibold font-display text-neutral-900">
             {sp.repetir ? "Repetir pedido" : "Nuevo pedido"}
           </h1>
-          <p className="text-sm text-neutral-400 mt-1">
+          <p className="text-sm text-neutral-600 mt-1">
             {sp.repetir
               ? "Pedido pre-cargado con los productos del último pedido — revisá cantidades antes de confirmar."
               : "Pedido cargado manualmente — se registra como creado por el admin."}

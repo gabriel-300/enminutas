@@ -2,7 +2,8 @@
 
 import { useState, useTransition } from "react";
 import Link from "next/link";
-import { OrderStatusBadge } from "@/components/ui/badge";
+import { Search } from "lucide-react";
+import { Button, PedidoStatusBadge, StatusBadge, Tabs } from "@/components/ui";
 import { OrderStatusSelect } from "@/components/admin/order-status-select";
 import { aprobarPedidoB2B } from "@/app/(admin)/admin/pedidos/actions";
 import { esCanalFlujo } from "@/lib/order-channels";
@@ -28,7 +29,7 @@ type Order = {
 function FaltanteTag({ order }: { order: Order }) {
   if (!order.faltante_de && !order.faltante_en) return null;
   return (
-    <p className="text-[11px] text-neutral-500 mt-1">
+    <p className="text-xs text-neutral-600 mt-1">
       {order.faltante_en && (
         <>Faltante en <Link href={`/admin/pedidos/${order.faltante_en.id}`} className="font-mono text-tierra-700 hover:underline">{order.faltante_en.order_number}</Link></>
       )}
@@ -59,13 +60,14 @@ const TAB_STATUSES: Record<string, string[]> = {
 function AprobarInlineButton({ orderId }: { orderId: string }) {
   const [isPending, startTransition] = useTransition();
   return (
-    <button
+    <Button
+      size="sm"
       onClick={() => startTransition(() => aprobarPedidoB2B(orderId))}
       disabled={isPending}
-      className="px-2.5 py-1 rounded-lg bg-success text-white text-xs font-medium hover:opacity-90 disabled:opacity-50 transition-opacity whitespace-nowrap"
+      className="h-7 whitespace-nowrap"
     >
       {isPending ? "…" : "Aprobar"}
-    </button>
+    </Button>
   );
 }
 
@@ -114,81 +116,63 @@ export function PedidosClient({ orders, esAdmin = false }: { orders: Order[]; es
     <div className="space-y-4">
       {/* Alerta pendientes */}
       {pendingCount > 0 && (
-        <div className="px-4 py-3 bg-warning-bg border border-warning/30 rounded-xl text-sm text-warning font-medium">
+        <div className="px-4 py-3 bg-warning-bg border border-warning-border rounded-lg text-sm text-warning font-medium">
           {pendingCount} pedido{pendingCount !== 1 ? "s" : ""} esperando aprobación
         </div>
       )}
 
-      {/* Tabs — scroll horizontal en mobile */}
-      <div className="overflow-x-auto -mx-4 px-4 md:mx-0 md:px-0">
-        <div className="flex gap-1 bg-white border border-neutral-200 rounded-xl p-1 w-max md:w-auto">
-          {TABS.map((t) => {
-            const count = t.key === "todos"
-              ? orders.length
-              : orders.filter((o) => (TAB_STATUSES[t.key] ?? []).includes(o.status)).length;
-            return (
-              <button
-                key={t.key}
-                onClick={() => setTab(t.key)}
-                className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors whitespace-nowrap ${
-                  tab === t.key
-                    ? "bg-tierra-700 text-white"
-                    : "text-neutral-500 hover:text-neutral-800 hover:bg-neutral-50"
-                }`}
-              >
-                {t.label}
-                {count > 0 && (
-                  <span className={`ml-1.5 text-xs ${tab === t.key ? "opacity-80" : "text-neutral-400"}`}>
-                    {count}
-                  </span>
-                )}
-              </button>
-            );
-          })}
-        </div>
-      </div>
+      {/* Tabs */}
+      <Tabs
+        active={tab}
+        onSelect={setTab}
+        items={TABS.map((t) => {
+          const count = t.key === "todos"
+            ? orders.length
+            : orders.filter((o) => (TAB_STATUSES[t.key] ?? []).includes(o.status)).length;
+          return { key: t.key, label: t.label, count: count > 0 ? count : undefined };
+        })}
+      />
 
       {/* Buscador */}
-      <input
-        type="search"
-        placeholder="Buscar por cliente o nro. pedido…"
-        value={search}
-        onChange={(e) => setSearch(e.target.value)}
-        className="w-full md:w-72 px-3 py-2 text-sm border border-neutral-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-tierra-700/20"
-      />
+      <div className="relative max-w-[420px]">
+        <Search aria-hidden className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-n-500" />
+        <input
+          type="search"
+          placeholder="Buscar por cliente o nro. pedido…"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="h-10 w-full rounded-lg border border-neutral-400 bg-white pl-9 pr-3 text-sm focus:outline-none focus:ring-[3px] focus:ring-brand-500/30 focus:border-brand-700"
+        />
+      </div>
 
       {/* ── Mobile: cards ──────────────────────────────────────────── */}
       <div className="md:hidden space-y-2">
         {filtered.length === 0 ? (
-          <div className="bg-white rounded-2xl border border-neutral-200 px-4 py-10 text-center text-sm text-neutral-400">
+          <div className="bg-white rounded-xl border border-neutral-200 shadow-sm px-4 py-10 text-center text-sm text-neutral-600">
             {search ? "Sin resultados." : "No hay pedidos en esta categoría."}
           </div>
         ) : filtered.map((order) => (
-          <div key={order.id} className="bg-white rounded-2xl border border-neutral-200 p-4">
+          <div key={order.id} className="bg-white rounded-xl border border-neutral-200 shadow-sm p-4">
             <div className="flex items-start justify-between gap-2 mb-2">
               <div className="flex items-center gap-2 flex-wrap">
                 <Link
                   href={`/admin/pedidos/${order.id}`}
-                  className="font-mono text-sm font-semibold text-tierra-700 hover:underline"
+                  className="font-mono text-[13px] font-semibold text-brand-700 hover:underline"
                 >
                   {order.order_number}
                 </Link>
                 {order.channel === "b2b_mayorista" && (
-                  <span className="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-info-bg text-info uppercase tracking-wide">
-                    B2B
-                  </span>
+                  <StatusBadge tone="info">B2B</StatusBadge>
                 )}
                 {order.channel === "muestra" && (
-                  <span className="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-warning-bg text-warning uppercase tracking-wide">
-                    Muestra
-                  </span>
+                  <StatusBadge tone="warning">Muestra</StatusBadge>
                 )}
               </div>
               <div className="text-right shrink-0">
                 <div className="font-semibold text-sm text-neutral-900 tabular-nums">
                   {fmtMonto(order.total)}
                 </div>
-                <div className="text-[11px] text-neutral-400 tabular-nums mt-0.5">
+                <div className="text-xs text-neutral-600 tabular-nums mt-0.5">
                   Neto {fmtMonto(desgloseIVA(order.total).neto)} · IVA {fmtMonto(desgloseIVA(order.total).iva)}
                 </div>
               </div>
@@ -198,12 +182,12 @@ export function PedidosClient({ orders, esAdmin = false }: { orders: Order[]; es
               {order.customer_name ?? order.customer_email ?? "Invitado"}
             </p>
             {order.vendedor_name && (
-              <p className="text-xs text-neutral-400 mb-1">Vendedor: {order.vendedor_name}</p>
+              <p className="text-xs text-neutral-600 mb-1">Vendedor: {order.vendedor_name}</p>
             )}
 
             <div className="flex items-center gap-2 flex-wrap mb-3">
-              <OrderStatusBadge status={order.status} />
-              <span className="text-xs text-neutral-400">{fmtDate(order.created_at)}</span>
+              <PedidoStatusBadge status={order.status} />
+              <span className="text-xs text-neutral-600">{fmtDate(order.created_at)}</span>
               <FaltanteTag order={order} />
             </div>
 
@@ -226,48 +210,44 @@ export function PedidosClient({ orders, esAdmin = false }: { orders: Order[]; es
       </div>
 
       {/* ── Desktop: tabla ─────────────────────────────────────────── */}
-      <div className="hidden md:block bg-white rounded-2xl border border-neutral-200 overflow-x-auto">
+      <div className="hidden md:block bg-white rounded-xl border border-neutral-200 shadow-sm overflow-x-auto">
         <table className="w-full min-w-[1020px] text-sm">
           <thead>
             <tr className="border-b border-neutral-200 text-left">
-              <th className="px-4 py-3 font-medium text-neutral-500 w-48">Nro. pedido</th>
-              <th className="px-4 py-3 font-medium text-neutral-500">Cliente</th>
-              <th className="px-4 py-3 font-medium text-neutral-500">Vendedor</th>
-              <th className="px-4 py-3 font-medium text-neutral-500">Estado</th>
-              <th className="px-4 py-3 font-medium text-neutral-500 text-right">Subtotal</th>
-              <th className="px-4 py-3 font-medium text-neutral-500 text-right">IVA (21%)</th>
-              <th className="px-4 py-3 font-medium text-neutral-500 text-right">Total</th>
-              <th className="px-4 py-3 font-medium text-neutral-500">Fecha</th>
-              <th className="px-4 py-3 font-medium text-neutral-500 w-52">Cambiar estado</th>
+              <th className="text-xs px-4 py-3 font-semibold text-neutral-600 w-48">Nro. pedido</th>
+              <th className="text-xs px-4 py-3 font-semibold text-neutral-600">Cliente</th>
+              <th className="text-xs px-4 py-3 font-semibold text-neutral-600">Vendedor</th>
+              <th className="text-xs px-4 py-3 font-semibold text-neutral-600">Estado</th>
+              <th className="text-xs px-4 py-3 font-semibold text-neutral-600 text-right">Subtotal</th>
+              <th className="text-xs px-4 py-3 font-semibold text-neutral-600 text-right">IVA (21%)</th>
+              <th className="text-xs px-4 py-3 font-semibold text-neutral-600 text-right">Total</th>
+              <th className="text-xs px-4 py-3 font-semibold text-neutral-600">Fecha</th>
+              <th className="text-xs px-4 py-3 font-semibold text-neutral-600 w-52">Cambiar estado</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-neutral-100">
             {filtered.length === 0 && (
               <tr>
-                <td colSpan={9} className="px-4 py-12 text-center text-neutral-400">
+                <td colSpan={9} className="px-4 py-12 text-center text-neutral-600">
                   {search ? "No hay pedidos que coincidan con la búsqueda." : "No hay pedidos en esta categoría."}
                 </td>
               </tr>
             )}
             {filtered.map((order) => (
-              <tr key={order.id} className="hover:bg-neutral-50 transition-colors">
+              <tr key={order.id} className="hover:bg-brand-50 transition-colors">
                 <td className="px-4 py-3">
                   <div className="flex items-center gap-2 flex-wrap">
                     <Link
                       href={`/admin/pedidos/${order.id}`}
-                      className="font-mono text-xs text-tierra-700 hover:underline"
+                      className="font-mono text-[13px] font-medium text-brand-700 hover:underline"
                     >
                       {order.order_number}
                     </Link>
                     {order.channel === "b2b_mayorista" && (
-                      <span className="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-info-bg text-info uppercase tracking-wide">
-                        B2B
-                      </span>
+                      <StatusBadge tone="info">B2B</StatusBadge>
                     )}
                     {order.channel === "muestra" && (
-                      <span className="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-warning-bg text-warning uppercase tracking-wide">
-                        Muestra
-                      </span>
+                      <StatusBadge tone="warning">Muestra</StatusBadge>
                     )}
                     {esAdmin && esCanalFlujo(order.channel) && order.status === "pending_payment" && (
                       <AprobarInlineButton orderId={order.id} />
@@ -279,23 +259,23 @@ export function PedidosClient({ orders, esAdmin = false }: { orders: Order[]; es
                     {order.customer_name ?? order.customer_email ?? "Invitado"}
                   </span>
                 </td>
-                <td className="px-4 py-3 text-neutral-500 text-xs">
-                  {order.vendedor_name ?? <span className="text-neutral-300">—</span>}
+                <td className="px-4 py-3 text-neutral-600 text-xs">
+                  {order.vendedor_name ?? <span className="text-neutral-500">—</span>}
                 </td>
                 <td className="px-4 py-3">
-                  <OrderStatusBadge status={order.status} />
+                  <PedidoStatusBadge status={order.status} />
                   <FaltanteTag order={order} />
                 </td>
-                <td className="px-4 py-3 text-right text-neutral-500 tabular-nums">
+                <td className="px-4 py-3 text-right text-neutral-600 tabular-nums">
                   {fmtMonto(desgloseIVA(order.total).neto)}
                 </td>
-                <td className="px-4 py-3 text-right text-neutral-500 tabular-nums">
+                <td className="px-4 py-3 text-right text-neutral-600 tabular-nums">
                   {fmtMonto(desgloseIVA(order.total).iva)}
                 </td>
                 <td className="px-4 py-3 text-right font-medium text-neutral-900 tabular-nums">
                   {fmtMonto(order.total)}
                 </td>
-                <td className="px-4 py-3 text-neutral-500 text-xs whitespace-nowrap">
+                <td className="px-4 py-3 text-neutral-600 text-xs whitespace-nowrap">
                   {fmtDate(order.created_at)}
                 </td>
                 <td className="px-4 py-3">

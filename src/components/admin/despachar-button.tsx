@@ -51,13 +51,13 @@ export function DespacharButton({ orderId, lines }: { orderId: string; lines: Li
 
   const hayAjuste = lines.some((l) => (cantidades[l.lineId] ?? l.quantity) !== l.quantity);
 
-  const inputCls = "w-full text-sm border border-neutral-200 rounded-lg px-2.5 py-1.5 text-neutral-800 focus:outline-none focus:ring-2 focus:ring-tierra-700/20";
+  const inputCls = "w-full text-sm border border-neutral-400 rounded-lg px-2.5 py-1.5 text-neutral-800 focus:outline-none focus:ring-[3px] focus:ring-brand-500/30 focus:border-brand-700";
 
   return (
     <>
       <button
         onClick={() => setOpen(true)}
-        className="w-full sm:w-auto px-4 py-2.5 rounded-xl bg-tierra-700 text-white text-sm font-medium hover:bg-tierra-800 transition-colors"
+        className="w-full sm:w-auto px-4 py-2.5 rounded-lg bg-tierra-700 text-white text-sm font-medium hover:bg-tierra-800 transition-colors"
       >
         Despachar ✓
       </button>
@@ -68,16 +68,16 @@ export function DespacharButton({ orderId, lines }: { orderId: string; lines: Li
           style={{ background: "rgba(0,0,0,0.45)" }}
           onClick={(e) => { if (e.target === e.currentTarget) setOpen(false); }}
         >
-          <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm max-h-[90vh] overflow-y-auto">
+          <div className="bg-white rounded-xl shadow-xl w-full max-w-sm max-h-[90vh] overflow-y-auto">
             <div className="px-5 py-4 border-b border-neutral-100">
               <p className="text-sm font-semibold text-neutral-900">Confirmar despacho</p>
-              <p className="text-xs text-neutral-400 mt-0.5">Completá los datos de envío</p>
+              <p className="text-xs text-neutral-600 mt-0.5">Completá los datos de envío</p>
             </div>
 
             {/* Datos del envío */}
             <div className="px-5 py-4 space-y-3 border-b border-neutral-100">
               <div>
-                <label className="text-xs font-medium text-neutral-500 block mb-1">Quién reparte</label>
+                <label className="block text-[13px] font-medium text-neutral-800 mb-1.5">Quién reparte</label>
                 <input
                   type="text"
                   placeholder="Nombre del repartidor"
@@ -88,7 +88,7 @@ export function DespacharButton({ orderId, lines }: { orderId: string; lines: Li
               </div>
               <div className="grid grid-cols-2 gap-2">
                 <div>
-                  <label className="text-xs font-medium text-neutral-500 block mb-1">Fecha de entrega</label>
+                  <label className="block text-[13px] font-medium text-neutral-800 mb-1.5">Fecha de entrega</label>
                   <input
                     type="date"
                     value={info.fecha_entrega}
@@ -97,7 +97,7 @@ export function DespacharButton({ orderId, lines }: { orderId: string; lines: Li
                   />
                 </div>
                 <div>
-                  <label className="text-xs font-medium text-neutral-500 block mb-1">Hora estimada</label>
+                  <label className="block text-[13px] font-medium text-neutral-800 mb-1.5">Hora estimada</label>
                   <input
                     type="time"
                     value={info.hora_entrega}
@@ -107,7 +107,7 @@ export function DespacharButton({ orderId, lines }: { orderId: string; lines: Li
                 </div>
               </div>
               <div>
-                <label className="text-xs font-medium text-neutral-500 block mb-1">Patente del vehículo</label>
+                <label className="block text-[13px] font-medium text-neutral-800 mb-1.5">Patente del vehículo</label>
                 <input
                   type="text"
                   placeholder="Ej: ABC 123"
@@ -120,7 +120,7 @@ export function DespacharButton({ orderId, lines }: { orderId: string; lines: Li
 
             {/* Cantidades */}
             <div className="px-5 py-4 space-y-3">
-              <p className="text-xs font-medium text-neutral-500">Cantidades a despachar</p>
+              <p className="text-xs font-medium text-neutral-600">Cantidades a despachar</p>
               {lines.map((l) => {
                 const val = cantidades[l.lineId] ?? l.quantity;
                 const reducido = val < l.quantity;
@@ -133,7 +133,7 @@ export function DespacharButton({ orderId, lines }: { orderId: string; lines: Li
                       <button
                         type="button"
                         onClick={() => setCantidades((p) => ({ ...p, [l.lineId]: Math.max(0, (p[l.lineId] ?? l.quantity) - 1) }))}
-                        className="w-7 h-7 rounded-lg border border-neutral-200 text-neutral-500 hover:bg-neutral-50 flex items-center justify-center text-base leading-none"
+                        className="w-7 h-7 rounded-lg border border-neutral-200 text-neutral-600 hover:bg-neutral-50 flex items-center justify-center text-base leading-none"
                       >
                         −
                       </button>
@@ -143,12 +143,12 @@ export function DespacharButton({ orderId, lines }: { orderId: string; lines: Li
                       <button
                         type="button"
                         onClick={() => setCantidades((p) => ({ ...p, [l.lineId]: Math.min(l.quantity, (p[l.lineId] ?? l.quantity) + 1) }))}
-                        className="w-7 h-7 rounded-lg border border-neutral-200 text-neutral-500 hover:bg-neutral-50 flex items-center justify-center text-base leading-none"
+                        className="w-7 h-7 rounded-lg border border-neutral-200 text-neutral-600 hover:bg-neutral-50 flex items-center justify-center text-base leading-none"
                       >
                         +
                       </button>
                       {reducido && (
-                        <span className="text-xs text-neutral-400 tabular-nums">/{l.quantity}</span>
+                        <span className="text-xs text-neutral-600 tabular-nums">/{l.quantity}</span>
                       )}
                     </div>
                   </div>
@@ -177,7 +177,7 @@ export function DespacharButton({ orderId, lines }: { orderId: string; lines: Li
               <button
                 onClick={handleConfirm}
                 disabled={isPending}
-                className="px-4 py-2 rounded-xl bg-tierra-700 text-white text-sm font-medium hover:bg-tierra-800 disabled:opacity-50 transition-colors"
+                className="px-4 py-2 rounded-lg bg-tierra-700 text-white text-sm font-medium hover:bg-tierra-800 disabled:opacity-50 transition-colors"
               >
                 {isPending ? "Procesando…" : hayAjuste ? "Despachar con ajuste" : "Confirmar despacho"}
               </button>

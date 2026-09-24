@@ -21,65 +21,65 @@ export default async function EditarCanalPage({ params }: { params: Promise<{ id
 
   return (
     <div className="p-8 max-w-lg">
-      <Link href="/admin/canales" className="text-sm text-neutral-400 hover:text-neutral-700 mb-4 inline-block">
+      <Link href="/admin/canales" className="text-sm text-neutral-600 hover:text-neutral-700 mb-4 inline-block">
         ← Canales B2B
       </Link>
       <h1 className="text-2xl font-semibold font-display text-neutral-900 mb-6">Editar canal</h1>
 
-      <form action={action} className="bg-white rounded-2xl border border-neutral-200 p-6 space-y-5">
+      <form action={action} className="bg-white rounded-xl border border-neutral-200 shadow-sm p-6 space-y-5">
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <label className="block text-xs font-medium text-neutral-500 mb-1">Nombre *</label>
+            <label className="block text-[13px] font-medium text-neutral-800 mb-1.5">Nombre *</label>
             <input name="nombre" defaultValue={canal.nombre} required
-              className="w-full px-3 py-2 text-sm border border-neutral-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-tierra-700/20" />
+              className="w-full px-3 py-2 text-sm border border-neutral-400 rounded-lg focus:outline-none focus:ring-[3px] focus:ring-brand-500/30 focus:border-brand-700" />
           </div>
           <div>
-            <label className="block text-xs font-medium text-neutral-500 mb-1">Slug</label>
+            <label className="block text-[13px] font-medium text-neutral-800 mb-1.5">Slug</label>
             <input value={canal.slug} readOnly
-              className="w-full px-3 py-2 text-sm border border-neutral-200 rounded-xl bg-neutral-50 font-mono text-neutral-400 cursor-not-allowed" />
+              className="w-full px-3 py-2 text-sm border border-neutral-200 rounded-xl bg-neutral-50 font-mono text-neutral-600 cursor-not-allowed" />
           </div>
         </div>
 
         {/* Márgenes v5 */}
         <div>
-          <p className="text-xs font-semibold text-neutral-500 uppercase tracking-wide mb-3">Márgenes de precio (fórmula v5)</p>
+          <p className="text-xs font-semibold text-neutral-600 mb-3">Márgenes de precio (fórmula v5)</p>
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
             <div>
-              <label className="block text-xs font-medium text-neutral-500 mb-1">Margen std %</label>
+              <label className="block text-[13px] font-medium text-neutral-800 mb-1.5">Margen std %</label>
               <input name="margen_std" type="number" defaultValue={pctVal(canal.margen_std)} min="0" max="99" step="1" required
-                className="w-full px-3 py-2 text-sm border border-neutral-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-tierra-700/20" />
+                className="w-full px-3 py-2 text-sm border border-neutral-400 rounded-lg focus:outline-none focus:ring-[3px] focus:ring-brand-500/30 focus:border-brand-700" />
             </div>
             <div>
-              <label className="block text-xs font-medium text-neutral-500 mb-1">Margen premium %</label>
+              <label className="block text-[13px] font-medium text-neutral-800 mb-1.5">Margen premium %</label>
               <input name="margen_premium" type="number" defaultValue={pctVal(canal.margen_premium)} min="0" max="99" step="1" required
-                className="w-full px-3 py-2 text-sm border border-neutral-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-tierra-700/20" />
+                className="w-full px-3 py-2 text-sm border border-neutral-400 rounded-lg focus:outline-none focus:ring-[3px] focus:ring-brand-500/30 focus:border-brand-700" />
             </div>
             <div>
-              <label className="block text-xs font-medium text-neutral-500 mb-1">Venta directa %</label>
+              <label className="block text-[13px] font-medium text-neutral-800 mb-1.5">Venta directa %</label>
               <input name="margen_venta_directa" type="number" defaultValue={pctVal(canal.margen_venta_directa)} min="0" max="99" step="1" required
-                className="w-full px-3 py-2 text-sm border border-neutral-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-tierra-700/20" />
+                className="w-full px-3 py-2 text-sm border border-neutral-400 rounded-lg focus:outline-none focus:ring-[3px] focus:ring-brand-500/30 focus:border-brand-700" />
             </div>
             <div>
-              <label className="block text-xs font-medium text-neutral-500 mb-1">Markup PVP %</label>
+              <label className="block text-[13px] font-medium text-neutral-800 mb-1.5">Markup PVP %</label>
               <input name="markup_pvp" type="number" defaultValue={pctVal(canal.markup_pvp)} min="0" max="500" step="1" required
-                className="w-full px-3 py-2 text-sm border border-neutral-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-tierra-700/20" />
+                className="w-full px-3 py-2 text-sm border border-neutral-400 rounded-lg focus:outline-none focus:ring-[3px] focus:ring-brand-500/30 focus:border-brand-700" />
             </div>
           </div>
-          <p className="text-xs text-neutral-400 mt-2">
+          <p className="text-xs text-neutral-600 mt-2">
             Ingresá el valor en porcentaje (ej: 40 = 40%). El cálculo usa la fórmula: lista = costo / (1 − margen) + packaging.
           </p>
         </div>
 
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <label className="block text-xs font-medium text-neutral-500 mb-1">Orden</label>
+            <label className="block text-[13px] font-medium text-neutral-800 mb-1.5">Orden</label>
             <input name="sort_order" type="number" defaultValue={canal.sort_order} min="0"
-              className="w-full px-3 py-2 text-sm border border-neutral-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-tierra-700/20" />
+              className="w-full px-3 py-2 text-sm border border-neutral-400 rounded-lg focus:outline-none focus:ring-[3px] focus:ring-brand-500/30 focus:border-brand-700" />
           </div>
           <div>
-            <label className="block text-xs font-medium text-neutral-500 mb-1">Desc. lista % (legado)</label>
+            <label className="block text-[13px] font-medium text-neutral-800 mb-1.5">Desc. lista % (legado)</label>
             <input name="descuento_pct" type="number" defaultValue={canal.descuento_pct} min="0" max="99" step="0.01"
-              className="w-full px-3 py-2 text-sm border border-neutral-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-tierra-700/20" />
+              className="w-full px-3 py-2 text-sm border border-neutral-400 rounded-lg focus:outline-none focus:ring-[3px] focus:ring-brand-500/30 focus:border-brand-700" />
           </div>
         </div>
 
@@ -89,7 +89,7 @@ export default async function EditarCanalPage({ params }: { params: Promise<{ id
         </div>
 
         <div className="flex gap-3 pt-2">
-          <button type="submit" className="px-5 py-2.5 rounded-xl bg-tierra-700 text-white text-sm font-medium hover:bg-tierra-800 transition-colors">
+          <button type="submit" className="px-5 py-2.5 rounded-lg bg-tierra-700 text-white text-sm font-medium hover:bg-tierra-800 transition-colors">
             Guardar cambios
           </button>
           <Link href="/admin/canales" className="px-5 py-2.5 rounded-xl border border-neutral-200 text-sm text-neutral-600 hover:bg-neutral-50 transition-colors">

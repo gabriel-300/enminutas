@@ -10,10 +10,10 @@ export default async function RecepcionesPage() {
   ]);
 
   return (
-    <div className="px-6 py-6 max-w-6xl mx-auto space-y-4">
+    <div className="p-4 md:px-10 md:py-8 md:pb-16 space-y-4">
       <div>
         <h1 className="text-xl font-semibold text-neutral-900">Recepciones de mercadería</h1>
-        <p className="text-sm text-neutral-400 mt-0.5">
+        <p className="text-sm text-neutral-600 mt-0.5">
           Registrá facturas o remitos. El sistema suma el stock y actualiza el precio del insumo automáticamente.
         </p>
       </div>

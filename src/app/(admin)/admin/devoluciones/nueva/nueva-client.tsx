@@ -77,18 +77,18 @@ export function NuevaDevolucionClient({
     });
   }
 
-  const labelClass = "block text-xs font-medium text-neutral-500 mb-1";
-  const inputClass = "w-full rounded-xl border border-neutral-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#16233f]/20 focus:border-[#16233f]";
+  const labelClass = "block text-xs font-medium text-neutral-600 mb-1";
+  const inputClass = "w-full rounded-lg border border-neutral-400 px-3 py-2 text-sm focus:outline-none focus:ring-[3px] focus:ring-brand-500/30 focus:border-brand-700";
 
   return (
-    <div className="p-4 md:p-8 max-w-3xl">
+    <div className="p-4 md:px-10 md:py-8 md:pb-16">
       <div className="mb-6 flex items-center gap-3">
-        <Link href="/admin/devoluciones" className="p-1.5 rounded-lg text-neutral-400 hover:bg-neutral-100 transition-colors">
+        <Link href="/admin/devoluciones" className="p-1.5 rounded-lg text-neutral-600 hover:bg-neutral-100 transition-colors">
           <ChevronLeft className="size-5" />
         </Link>
         <div>
           <h1 className="text-xl font-semibold font-display text-neutral-900">Nueva devolución</h1>
-          <p className="text-sm text-neutral-400 mt-0.5">La devolución quedará en estado "Solicitada" hasta que la apruebes</p>
+          <p className="text-sm text-neutral-600 mt-0.5">La devolución quedará en estado "Solicitada" hasta que la apruebes</p>
         </div>
       </div>
 
@@ -98,7 +98,7 @@ export function NuevaDevolucionClient({
 
       <form onSubmit={handleSubmit} className="space-y-5">
         {/* Cliente y fecha */}
-        <div className="bg-white rounded-2xl border border-neutral-200 p-5 space-y-4">
+        <div className="bg-white rounded-xl border border-neutral-200 shadow-sm p-5 space-y-4">
           <h2 className="text-sm font-semibold text-neutral-900">Datos generales</h2>
           <div className="grid grid-cols-2 gap-3">
             <div>
@@ -168,7 +168,7 @@ export function NuevaDevolucionClient({
         </div>
 
         {/* Ítems */}
-        <div className="bg-white rounded-2xl border border-neutral-200 p-5 space-y-3">
+        <div className="bg-white rounded-xl border border-neutral-200 shadow-sm p-5 space-y-3">
           <h2 className="text-sm font-semibold text-neutral-900">Productos a devolver</h2>
 
           {items.map((item, idx) => (
@@ -215,7 +215,7 @@ export function NuevaDevolucionClient({
                   type="button"
                   onClick={() => removeItem(item._key)}
                   disabled={items.length === 1}
-                  className="p-2 rounded-xl border border-neutral-200 text-neutral-300 hover:text-red-500 hover:border-red-200 transition-colors disabled:opacity-30"
+                  className="p-2 rounded-xl border border-neutral-200 text-neutral-500 hover:text-danger hover:border-danger-border transition-colors disabled:opacity-30"
                 >
                   <Trash2 className="size-4" />
                 </button>
@@ -226,7 +226,7 @@ export function NuevaDevolucionClient({
           <button
             type="button"
             onClick={addItem}
-            className="flex items-center gap-1.5 text-xs text-neutral-500 hover:text-neutral-800 transition-colors mt-1"
+            className="flex items-center gap-1.5 text-xs text-neutral-600 hover:text-neutral-800 transition-colors mt-1"
           >
             <Plus className="size-3.5" /> Agregar ítem
           </button>
@@ -234,18 +234,18 @@ export function NuevaDevolucionClient({
           {/* Total */}
           <div className="border-t border-neutral-100 pt-3 flex justify-end">
             <div className="text-right">
-              <p className="text-xs text-neutral-400 mb-0.5">Total a acreditar</p>
+              <p className="text-xs text-neutral-600 mb-0.5">Total a acreditar</p>
               <p className="text-xl font-bold text-neutral-900 tabular-nums">{fmt(total)}</p>
             </div>
           </div>
         </div>
 
-        {error && <p className="text-sm text-red-600 px-1">{error}</p>}
+        {error && <p className="text-sm text-danger px-1">{error}</p>}
 
         <button
           type="submit"
           disabled={pending}
-          className="w-full py-3 rounded-xl bg-[#16233f] text-white text-sm font-medium hover:bg-[#1e2f52] transition-colors disabled:opacity-50"
+          className="w-full py-3 rounded-lg bg-brand-700 text-white text-sm font-medium hover:bg-brand-800 transition-colors disabled:opacity-50"
         >
           {pending ? "Guardando..." : "Crear devolución"}
         </button>

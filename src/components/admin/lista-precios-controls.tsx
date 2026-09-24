@@ -31,7 +31,7 @@ export function ListaPreciosControls({
         value={zonaActiva}
         onChange={(e) => ir(canalActivo, e.target.value)}
         aria-label="Zona de entrega"
-        className="px-3 py-2 text-sm border border-neutral-200 rounded-xl bg-white text-neutral-700 focus:outline-none focus:ring-2 focus:ring-tierra-700/20"
+        className="px-3 py-2 text-sm border border-neutral-400 rounded-lg bg-white text-neutral-700 focus:outline-none focus:ring-[3px] focus:ring-brand-500/30 focus:border-brand-700"
       >
         <option value="">Zona de entrega…</option>
         {zonas.map((z) => (
@@ -50,7 +50,7 @@ export function ListaPreciosControls({
             className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
               c.slug === canalActivo
                 ? "bg-white text-neutral-900 shadow-sm"
-                : "text-neutral-500 hover:text-neutral-700"
+                : "text-neutral-600 hover:text-neutral-700"
             }`}
           >
             {c.label}
@@ -61,7 +61,7 @@ export function ListaPreciosControls({
       {/* Botón imprimir */}
       <button
         onClick={() => window.print()}
-        className="flex items-center gap-1.5 px-3 py-1.5 bg-tierra-700 text-white text-sm font-medium rounded-xl hover:bg-tierra-800 transition-colors"
+        className="flex items-center gap-1.5 px-3 py-1.5 bg-tierra-700 text-white text-sm font-medium rounded-lg hover:bg-tierra-800 transition-colors"
       >
         <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
           <path strokeLinecap="round" strokeLinejoin="round" d="M6 9V2h12v7M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2M6 14h12v8H6v-8z" />

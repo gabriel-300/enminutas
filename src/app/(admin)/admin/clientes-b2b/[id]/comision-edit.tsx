@@ -52,12 +52,12 @@ export function ComisionEdit({ clienteId, comisionOverride, comisionGlobal }: Pr
         title="Clic para editar"
       >
         {comisionOverride === null
-          ? <span className="text-neutral-500">{globalPct}% (global)</span>
+          ? <span className="text-neutral-600">{globalPct}% (global)</span>
           : comisionOverride === 0
-            ? <span className="text-emerald-600 font-medium">Sin comisión</span>
+            ? <span className="text-success font-medium">Sin comisión</span>
             : <span className="font-medium">{Math.round(comisionOverride * 100)}% (personalizada)</span>
         }
-        <span className="text-neutral-300 group-hover:text-tierra-700 text-xs">✏</span>
+        <span className="text-neutral-500 group-hover:text-tierra-700 text-xs">✏</span>
       </button>
     );
   }
@@ -85,14 +85,14 @@ export function ComisionEdit({ clienteId, comisionOverride, comisionGlobal }: Pr
             onChange={e => setValor(e.target.value)}
             onKeyDown={e => { if (e.key === "Enter") guardar(); if (e.key === "Escape") setEditing(false); }}
             disabled={isPending}
-            className="w-28 px-2 py-1 text-sm border border-neutral-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-tierra-700/20 disabled:opacity-50"
+            className="w-28 px-2 py-1 text-sm border border-neutral-400 rounded-lg focus:outline-none focus:ring-[3px] focus:ring-brand-500/30 focus:border-brand-700 disabled:opacity-50"
           />
-          <span className="text-sm text-neutral-400">%</span>
-          <span className="text-xs text-neutral-400">(vacío = usar global)</span>
+          <span className="text-sm text-neutral-600">%</span>
+          <span className="text-xs text-neutral-600">(vacío = usar global)</span>
         </div>
       )}
 
-      {error && <p className="text-xs text-red-500">{error}</p>}
+      {error && <p className="text-xs text-danger">{error}</p>}
 
       <div className="flex gap-2">
         <button onClick={guardar} disabled={isPending}
@@ -100,7 +100,7 @@ export function ComisionEdit({ clienteId, comisionOverride, comisionGlobal }: Pr
           {isPending ? "Guardando…" : "Guardar"}
         </button>
         <button onClick={() => { setEditing(false); setError(null); }} disabled={isPending}
-          className="text-xs text-neutral-400 hover:text-neutral-700 px-1">
+          className="text-xs text-neutral-600 hover:text-neutral-700 px-1">
           Cancelar
         </button>
       </div>

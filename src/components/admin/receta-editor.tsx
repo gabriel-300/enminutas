@@ -148,39 +148,39 @@ export function RecetaEditor({ productId, insumos, recipe }: RecetaProps) {
     });
   }
 
-  const inputCls = "w-full px-3 py-2 text-sm border border-neutral-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-tierra-700/20 disabled:opacity-50";
+  const inputCls = "w-full px-3 py-2 text-sm border border-neutral-400 rounded-lg focus:outline-none focus:ring-[3px] focus:ring-brand-500/30 focus:border-brand-700 disabled:opacity-50";
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
 
       {/* Config del lote */}
-      <div className="bg-white rounded-2xl border border-neutral-200 p-5">
+      <div className="bg-white rounded-xl border border-neutral-200 shadow-sm p-5">
         <p className="text-sm font-semibold text-neutral-700 mb-4">Configuración del lote</p>
         <div className="grid grid-cols-3 gap-4">
           <div>
-            <label className="block text-xs font-medium text-neutral-500 mb-1.5">
+            <label className="block text-[13px] font-medium text-neutral-800 mb-1.5">
               Cajas que produce este lote estándar
             </label>
             <input type="text" inputMode="decimal" value={yieldCajasStr}
               onChange={e => setYieldCajasStr(e.target.value)}
               className={inputCls} disabled={isPending} />
-            <p className="text-xs text-neutral-400 mt-1">
+            <p className="text-xs text-neutral-600 mt-1">
               Los ingredientes aplican para producir {yieldCajas} caja{yieldCajas !== 1 ? "s" : ""}.
             </p>
           </div>
           <div>
-            <label className="block text-xs font-medium text-neutral-500 mb-1.5">
+            <label className="block text-[13px] font-medium text-neutral-800 mb-1.5">
               Vida útil del producto (días)
             </label>
             <input type="number" min="1" value={vidaUtilDias}
               onChange={e => setVidaUtilDias(parseInt(e.target.value) || 180)}
               className={inputCls} disabled={isPending} />
-            <p className="text-xs text-neutral-400 mt-1">
+            <p className="text-xs text-neutral-600 mt-1">
               Se usa para calcular la fecha de vencimiento al registrar producción.
             </p>
           </div>
           <div>
-            <label className="block text-xs font-medium text-neutral-500 mb-1.5">Notas generales</label>
+            <label className="block text-[13px] font-medium text-neutral-800 mb-1.5">Notas generales</label>
             <textarea value={notes} onChange={e => setNotes(e.target.value)}
               placeholder="Temperatura de horno, tips, etc." rows={3}
               className={`${inputCls} resize-none`} disabled={isPending} />
@@ -191,13 +191,13 @@ export function RecetaEditor({ productId, insumos, recipe }: RecetaProps) {
           <div className="mt-4 pt-4 border-t border-neutral-100 grid grid-cols-2 gap-4">
             {totalMinutos > 0 && (
               <div>
-                <p className="text-xs text-neutral-500">Tiempo total del lote</p>
+                <p className="text-xs text-neutral-600">Tiempo total del lote</p>
                 <p className="text-sm font-semibold text-neutral-900">{fmtMin(totalMinutos)}</p>
               </div>
             )}
             {costoLote > 0 && (
               <div>
-                <p className="text-xs text-neutral-500">Costo de materia prima</p>
+                <p className="text-xs text-neutral-600">Costo de materia prima</p>
                 <p className="text-sm font-semibold text-neutral-900">
                   {fmtARS(costoLote)} / lote
                   <span className="text-tierra-700 ml-2">{fmtARS(costoCaja)} / caja</span>
@@ -209,11 +209,11 @@ export function RecetaEditor({ productId, insumos, recipe }: RecetaProps) {
       </div>
 
       {/* Ingredientes */}
-      <div className="bg-white rounded-2xl border border-neutral-200 overflow-hidden">
+      <div className="bg-white rounded-xl border border-neutral-200 shadow-sm overflow-hidden">
         <div className="px-5 py-4 border-b border-neutral-100 flex items-center justify-between">
           <div>
             <p className="text-sm font-semibold text-neutral-700">Ingredientes del lote</p>
-            <p className="text-xs text-neutral-400 mt-0.5">
+            <p className="text-xs text-neutral-600 mt-0.5">
               Qué se necesita para producir {yieldCajas} caja{yieldCajas !== 1 ? "s" : ""}
             </p>
           </div>
@@ -227,7 +227,7 @@ export function RecetaEditor({ productId, insumos, recipe }: RecetaProps) {
 
         {insumos.length === 0 ? (
           <div className="px-5 py-8 text-center">
-            <p className="text-sm text-neutral-500">No hay insumos en el catálogo todavía.</p>
+            <p className="text-sm text-neutral-600">No hay insumos en el catálogo todavía.</p>
             <a href="/admin/cocina/insumos"
               className="inline-block mt-2 text-sm text-tierra-700 font-medium hover:underline">
               → Crear insumos primero
@@ -242,14 +242,14 @@ export function RecetaEditor({ productId, insumos, recipe }: RecetaProps) {
                   const costoIng = ins ? ing.cantidad * ins.precio_unitario : 0;
                   return (
                     <div key={i} className="px-5 py-3 flex items-center gap-2">
-                      <span className="text-xs font-mono text-neutral-300 w-5 text-center shrink-0">{i + 1}</span>
+                      <span className="text-xs font-mono text-neutral-500 w-5 text-center shrink-0">{i + 1}</span>
 
                       {/* Selector de insumo */}
                       <select
                         value={ing.insumo_id}
                         onChange={e => updateIngInsumo(i, e.target.value)}
                         disabled={isPending}
-                        className="flex-1 px-3 py-2 text-sm border border-neutral-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-tierra-700/20 disabled:opacity-50 bg-white"
+                        className="flex-1 px-3 py-2 text-sm border border-neutral-400 rounded-lg focus:outline-none focus:ring-[3px] focus:ring-brand-500/30 focus:border-brand-700 disabled:opacity-50 bg-white"
                       >
                         <option value="">— Seleccionar insumo —</option>
                         {insumos.map(ins => (
@@ -267,10 +267,10 @@ export function RecetaEditor({ productId, insumos, recipe }: RecetaProps) {
                           value={ing.cantidadStr ?? ""}
                           onChange={e => updateIngCantidad(i, e.target.value)}
                           disabled={isPending}
-                          className="w-20 px-3 py-2 text-sm border border-neutral-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-tierra-700/20 disabled:opacity-50 text-center"
+                          className="w-20 px-3 py-2 text-sm border border-neutral-400 rounded-lg focus:outline-none focus:ring-[3px] focus:ring-brand-500/30 focus:border-brand-700 disabled:opacity-50 text-center"
                         />
                         {ins && (
-                          <span className="text-xs text-neutral-400 font-mono w-8">{ins.unidad}</span>
+                          <span className="text-xs text-neutral-600 font-mono w-8">{ins.unidad}</span>
                         )}
                       </div>
 
@@ -281,12 +281,12 @@ export function RecetaEditor({ productId, insumos, recipe }: RecetaProps) {
                             {fmtARS(costoIng)}
                           </span>
                         ) : (
-                          <span className="text-sm text-neutral-300">—</span>
+                          <span className="text-sm text-neutral-500">—</span>
                         )}
                       </div>
 
                       <button type="button" onClick={() => removeIng(i)} disabled={isPending}
-                        className="size-7 flex items-center justify-center rounded-lg border border-danger/30 text-danger hover:bg-danger-bg disabled:opacity-30 text-xs shrink-0">
+                        className="size-7 flex items-center justify-center rounded-lg border border-danger-border text-danger hover:bg-danger-bg disabled:opacity-30 text-xs shrink-0">
                         ✕
                       </button>
                     </div>
@@ -300,7 +300,7 @@ export function RecetaEditor({ productId, insumos, recipe }: RecetaProps) {
                 + Agregar ingrediente
               </button>
               {ings.length === 0 && (
-                <p className="text-xs text-neutral-400">Sin ingredientes no se puede generar la lista de compras.</p>
+                <p className="text-xs text-neutral-600">Sin ingredientes no se puede generar la lista de compras.</p>
               )}
             </div>
           </>
@@ -308,16 +308,16 @@ export function RecetaEditor({ productId, insumos, recipe }: RecetaProps) {
       </div>
 
       {/* Pasos */}
-      <div className="bg-white rounded-2xl border border-neutral-200 overflow-hidden">
+      <div className="bg-white rounded-xl border border-neutral-200 shadow-sm overflow-hidden">
         <div className="px-5 py-4 border-b border-neutral-100 flex items-center justify-between">
           <p className="text-sm font-semibold text-neutral-700">Pasos de producción</p>
-          <span className="text-xs text-neutral-400">{steps.length} paso{steps.length !== 1 ? "s" : ""}</span>
+          <span className="text-xs text-neutral-600">{steps.length} paso{steps.length !== 1 ? "s" : ""}</span>
         </div>
         <div className="divide-y divide-neutral-100">
           {steps.map((step, i) => (
             <div key={i} className="px-5 py-4 space-y-2">
               <div className="flex items-center gap-2">
-                <span className="text-xs font-semibold text-neutral-300 w-5 text-center">{i + 1}</span>
+                <span className="text-xs font-semibold text-neutral-500 w-5 text-center">{i + 1}</span>
                 <div className="flex-1 grid grid-cols-[1fr_100px] gap-2">
                   <input type="text" placeholder="Descripción del paso"
                     value={step.description}
@@ -328,23 +328,23 @@ export function RecetaEditor({ productId, insumos, recipe }: RecetaProps) {
                       value={step.minutes || ""}
                       onChange={e => updateStep(i, "minutes", parseFloat(e.target.value.replace(",", ".")) || 0)}
                       className={`${inputCls} pr-10`} disabled={isPending} />
-                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-neutral-400 pointer-events-none">min</span>
+                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-neutral-600 pointer-events-none">min</span>
                   </div>
                 </div>
                 <div className="flex gap-1 shrink-0">
                   <button type="button" onClick={() => moveStep(i, -1)} disabled={i === 0 || isPending}
-                    className="size-7 flex items-center justify-center rounded-lg border border-neutral-200 text-neutral-400 hover:bg-neutral-100 disabled:opacity-30 text-xs">↑</button>
+                    className="size-7 flex items-center justify-center rounded-lg border border-neutral-200 text-neutral-600 hover:bg-neutral-100 disabled:opacity-30 text-xs">↑</button>
                   <button type="button" onClick={() => moveStep(i, 1)} disabled={i === steps.length - 1 || isPending}
-                    className="size-7 flex items-center justify-center rounded-lg border border-neutral-200 text-neutral-400 hover:bg-neutral-100 disabled:opacity-30 text-xs">↓</button>
+                    className="size-7 flex items-center justify-center rounded-lg border border-neutral-200 text-neutral-600 hover:bg-neutral-100 disabled:opacity-30 text-xs">↓</button>
                   <button type="button" onClick={() => removeStep(i)} disabled={isPending}
-                    className="size-7 flex items-center justify-center rounded-lg border border-danger/30 text-danger hover:bg-danger-bg disabled:opacity-30 text-xs">✕</button>
+                    className="size-7 flex items-center justify-center rounded-lg border border-danger-border text-danger hover:bg-danger-bg disabled:opacity-30 text-xs">✕</button>
                 </div>
               </div>
               <div className="pl-7">
                 <input type="text" placeholder="Notas adicionales (opcional)"
                   value={step.notes}
                   onChange={e => updateStep(i, "notes", e.target.value)}
-                  className="w-full px-3 py-1.5 text-xs border border-neutral-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-tierra-700/20 disabled:opacity-50 text-neutral-600"
+                  className="w-full px-3 py-1.5 text-xs border border-neutral-400 rounded-lg focus:outline-none focus:ring-[3px] focus:ring-brand-500/30 focus:border-brand-700 disabled:opacity-50 text-neutral-600"
                   disabled={isPending} />
               </div>
             </div>
@@ -356,7 +356,7 @@ export function RecetaEditor({ productId, insumos, recipe }: RecetaProps) {
             + Agregar paso
           </button>
           <div>
-            <p className="text-xs text-neutral-400 mb-2">Pasos comunes:</p>
+            <p className="text-xs text-neutral-600 mb-2">Pasos comunes:</p>
             <div className="flex flex-wrap gap-1.5">
               {STEP_TEMPLATES.map(tpl => (
                 <button key={tpl.description} type="button" disabled={isPending}
@@ -374,7 +374,7 @@ export function RecetaEditor({ productId, insumos, recipe }: RecetaProps) {
       {error   && <p className="text-sm text-danger px-1">{error}</p>}
       {success && <p className="text-sm text-success px-1">{success}</p>}
       {syncMsg && (
-        <p className={`text-sm px-1 ${syncMsg.startsWith("Error") ? "text-danger" : "text-emerald-600"}`}>
+        <p className={`text-sm px-1 ${syncMsg.startsWith("Error") ? "text-danger" : "text-success"}`}>
           {syncMsg}
         </p>
       )}
@@ -382,11 +382,11 @@ export function RecetaEditor({ productId, insumos, recipe }: RecetaProps) {
       {/* Acciones */}
       <div className="flex items-center flex-wrap gap-3">
         <button type="submit" disabled={isPending}
-          className="px-5 py-2.5 rounded-xl bg-tierra-700 text-white text-sm font-semibold hover:bg-tierra-800 disabled:opacity-50 transition-colors">
+          className="px-5 py-2.5 rounded-lg bg-tierra-700 text-white text-sm font-semibold hover:bg-tierra-800 disabled:opacity-50 transition-colors">
           {isPending ? "Guardando…" : "Guardar receta"}
         </button>
         <a href="/admin/cocina/recetas"
-          className="text-sm text-neutral-400 hover:text-neutral-700 transition-colors">
+          className="text-sm text-neutral-600 hover:text-neutral-700 transition-colors">
           Cancelar
         </a>
         {costoLote > 0 && (

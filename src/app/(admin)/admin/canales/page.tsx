@@ -21,32 +21,32 @@ export default async function CanalesPage() {
   const pct = (n: number | null) => n != null ? `${Math.round(n * 100)}%` : "—";
 
   return (
-    <div className="p-8 max-w-3xl">
+    <div className="p-4 md:px-10 md:py-8 md:pb-16">
       <div className="mb-6 flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-semibold font-display text-neutral-900">Canales B2B</h1>
-          <p className="text-sm text-neutral-500 mt-1">
+          <p className="text-sm text-neutral-600 mt-1">
             Cada canal define los márgenes para el cálculo dinámico de precios v5.
           </p>
         </div>
         <Link
           href="/admin/canales/nuevo"
-          className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-tierra-700 text-white text-sm font-medium hover:bg-tierra-800 transition-colors"
+          className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-tierra-700 text-white text-sm font-medium hover:bg-tierra-800 transition-colors"
         >
           + Nuevo canal
         </Link>
       </div>
 
-      <div className="bg-white rounded-2xl border border-neutral-200 overflow-hidden">
+      <div className="bg-white rounded-xl border border-neutral-200 shadow-sm overflow-hidden">
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-neutral-200 text-left">
-              <th className="px-4 py-3 font-medium text-neutral-500">Canal</th>
-              <th className="px-4 py-3 font-medium text-neutral-500 text-right">Margen std</th>
-              <th className="px-4 py-3 font-medium text-neutral-500 text-right">Margen prem.</th>
-              <th className="px-4 py-3 font-medium text-neutral-500 text-right">Venta directa</th>
-              <th className="px-4 py-3 font-medium text-neutral-500 text-right">Markup PVP</th>
-              <th className="px-4 py-3 font-medium text-neutral-500 text-center">Activo</th>
+              <th className="text-xs px-4 py-3 font-semibold text-neutral-600">Canal</th>
+              <th className="text-xs px-4 py-3 font-semibold text-neutral-600 text-right">Margen std</th>
+              <th className="text-xs px-4 py-3 font-semibold text-neutral-600 text-right">Margen prem.</th>
+              <th className="text-xs px-4 py-3 font-semibold text-neutral-600 text-right">Venta directa</th>
+              <th className="text-xs px-4 py-3 font-semibold text-neutral-600 text-right">Markup PVP</th>
+              <th className="text-xs px-4 py-3 font-semibold text-neutral-600 text-center">Activo</th>
               <th className="px-4 py-3 w-28"></th>
             </tr>
           </thead>
@@ -55,7 +55,7 @@ export default async function CanalesPage() {
               <tr key={c.id} className={`hover:bg-neutral-50 ${!c.activo ? "opacity-50" : ""}`}>
                 <td className="px-4 py-3">
                   <p className="font-medium text-neutral-900">{c.nombre}</p>
-                  <p className="text-xs font-mono text-neutral-400">{c.slug}</p>
+                  <p className="text-xs font-mono text-neutral-600">{c.slug}</p>
                 </td>
                 <td className="px-4 py-3 text-right tabular-nums font-medium text-neutral-700">
                   {pct(c.margen_std)}
@@ -66,7 +66,7 @@ export default async function CanalesPage() {
                 <td className="px-4 py-3 text-right tabular-nums font-medium text-neutral-700">
                   {pct(c.margen_venta_directa)}
                 </td>
-                <td className="px-4 py-3 text-right tabular-nums text-neutral-500">
+                <td className="px-4 py-3 text-right tabular-nums text-neutral-600">
                   {pct(c.markup_pvp)}
                 </td>
                 <td className="px-4 py-3 text-center">
@@ -84,7 +84,7 @@ export default async function CanalesPage() {
             ))}
             {(!canales || canales.length === 0) && (
               <tr>
-                <td colSpan={7} className="px-4 py-10 text-center text-neutral-400">
+                <td colSpan={7} className="px-4 py-10 text-center text-neutral-600">
                   No hay canales configurados.
                 </td>
               </tr>

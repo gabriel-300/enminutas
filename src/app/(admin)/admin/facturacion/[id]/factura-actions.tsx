@@ -22,7 +22,7 @@ export function FacturaActions({ id, estado }: { id: string; estado: string }) {
           <button
             onClick={() => run(() => emitirFactura(id))}
             disabled={pending}
-            className="px-4 py-2 rounded-xl bg-[#16233f] text-white text-sm font-medium hover:bg-[#1e2f52] transition-colors disabled:opacity-50"
+            className="px-4 py-2 rounded-lg bg-brand-700 text-white text-sm font-medium hover:bg-brand-800 transition-colors disabled:opacity-50"
           >
             {pending ? "..." : "Emitir"}
           </button>
@@ -31,7 +31,7 @@ export function FacturaActions({ id, estado }: { id: string; estado: string }) {
           <button
             onClick={() => run(() => marcarCobrada(id))}
             disabled={pending}
-            className="px-4 py-2 rounded-xl bg-emerald-700 text-white text-sm font-medium hover:bg-emerald-800 transition-colors disabled:opacity-50"
+            className="px-4 py-2 rounded-xl bg-success text-white text-sm font-medium hover:bg-success transition-colors disabled:opacity-50"
           >
             {pending ? "..." : "Marcar cobrada"}
           </button>
@@ -49,7 +49,7 @@ export function FacturaActions({ id, estado }: { id: string; estado: string }) {
           </button>
         )}
       </div>
-      {error && <p className="text-xs text-red-600">{error}</p>}
+      {error && <p className="text-xs text-danger">{error}</p>}
     </div>
   );
 }

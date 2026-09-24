@@ -79,21 +79,21 @@ export function ImportarProductosClient() {
   const sinCambio = result?.rows.filter((r) => !r.cambia) ?? [];
 
   return (
-    <div className="space-y-6 max-w-5xl">
+    <div className="space-y-6">
 
       {/* ── Paso 1: Descargar plantilla ── */}
-      <div className="bg-white rounded-2xl border border-neutral-200 p-5">
+      <div className="bg-white rounded-xl border border-neutral-200 shadow-sm p-5">
         <div className="flex items-start justify-between gap-4">
           <div>
             <p className="text-sm font-semibold text-neutral-900">1. Descargar plantilla</p>
-            <p className="text-xs text-neutral-500 mt-1">
+            <p className="text-xs text-neutral-600 mt-1">
               CSV con todos los productos activos: código, nombre, costo, pkg_unitario, pkg_bulto.
               Editá solo las columnas que cambiaron.
             </p>
           </div>
           <a
             href="/admin/productos/importar/template"
-            className="shrink-0 inline-flex items-center gap-1.5 px-4 py-2 rounded-xl border border-neutral-200 text-sm font-medium text-neutral-700 hover:bg-neutral-50 transition-colors"
+            className="shrink-0 inline-flex items-center gap-1.5 px-4 py-2 rounded-lg border border-n-btn text-sm font-medium text-neutral-800 hover:bg-neutral-50 transition-colors"
           >
             ↓ Descargar plantilla
           </a>
@@ -101,7 +101,7 @@ export function ImportarProductosClient() {
       </div>
 
       {/* ── Paso 2: Subir CSV ── */}
-      <div className="bg-white rounded-2xl border border-neutral-200 p-5 space-y-4">
+      <div className="bg-white rounded-xl border border-neutral-200 shadow-sm p-5 space-y-4">
         <p className="text-sm font-semibold text-neutral-900">2. Subir CSV actualizado</p>
 
         <div className="flex items-center gap-3 flex-wrap">
@@ -123,7 +123,7 @@ export function ImportarProductosClient() {
             <button
               onClick={handleParse}
               disabled={isPending}
-              className="px-4 py-2 rounded-xl bg-tierra-700 text-white text-sm font-medium hover:bg-tierra-800 disabled:opacity-50 transition-colors"
+              className="px-4 py-2 rounded-lg bg-tierra-700 text-white text-sm font-medium hover:bg-tierra-800 disabled:opacity-50 transition-colors"
             >
               Analizar cambios
             </button>
@@ -131,13 +131,13 @@ export function ImportarProductosClient() {
         </div>
 
         {error && (
-          <p className="text-xs text-danger bg-danger-bg border border-danger/20 rounded-xl px-3 py-2">
+          <p className="text-xs text-danger bg-danger-bg border border-danger-border rounded-xl px-3 py-2">
             {error}
           </p>
         )}
 
         {state === "parsing" && (
-          <p className="text-xs text-neutral-400 animate-pulse">Analizando archivo…</p>
+          <p className="text-xs text-neutral-600 animate-pulse">Analizando archivo…</p>
         )}
       </div>
 
@@ -150,7 +150,7 @@ export function ImportarProductosClient() {
             <span className={`px-3 py-1.5 rounded-xl text-sm font-semibold ${cambios.length > 0 ? "bg-warning-bg text-warning" : "bg-success-bg text-success"}`}>
               {cambios.length} {cambios.length === 1 ? "cambio" : "cambios"} detectado{cambios.length !== 1 ? "s" : ""}
             </span>
-            <span className="text-xs text-neutral-400">
+            <span className="text-xs text-neutral-600">
               {sinCambio.length} producto{sinCambio.length !== 1 ? "s" : ""} sin modificación
             </span>
             {result.errores.length > 0 && (
@@ -162,7 +162,7 @@ export function ImportarProductosClient() {
 
           {/* Errores de parseo */}
           {result.errores.length > 0 && (
-            <div className="bg-danger-bg border border-danger/20 rounded-2xl p-4 space-y-1">
+            <div className="bg-danger-bg border border-danger-border rounded-xl p-4 space-y-1">
               <p className="text-xs font-semibold text-danger">Filas ignoradas:</p>
               {result.errores.map((e, i) => (
                 <p key={i} className="text-xs text-danger/80">{e}</p>
@@ -172,23 +172,23 @@ export function ImportarProductosClient() {
 
           {/* Tabla de cambios */}
           {cambios.length > 0 ? (
-            <div className="bg-white rounded-2xl border border-neutral-200 overflow-hidden">
+            <div className="bg-white rounded-xl border border-neutral-200 shadow-sm overflow-hidden">
               <div className="px-5 py-3 border-b border-neutral-100 bg-neutral-50">
-                <p className="text-xs font-semibold text-neutral-500 uppercase tracking-wide">
+                <p className="text-xs font-semibold text-neutral-600">
                   Vista previa de cambios
                 </p>
               </div>
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="border-b border-neutral-100 text-left text-xs text-neutral-400">
+                  <tr className="border-b border-neutral-100 text-left text-xs text-neutral-600">
                     <th className="px-4 py-2.5 w-14">Cód.</th>
                     <th className="px-4 py-2.5">Producto</th>
                     <th className="px-4 py-2.5 text-right">Costo actual</th>
-                    <th className="px-4 py-2.5 text-right font-semibold text-warning">Costo nuevo</th>
+                    <th className="text-xs px-4 py-2.5 text-right font-semibold text-warning">Costo nuevo</th>
                     <th className="px-4 py-2.5 text-right">Pkg unit. actual</th>
-                    <th className="px-4 py-2.5 text-right font-semibold text-warning">Pkg unit. nuevo</th>
+                    <th className="text-xs px-4 py-2.5 text-right font-semibold text-warning">Pkg unit. nuevo</th>
                     <th className="px-4 py-2.5 text-right">Pkg bulto actual</th>
-                    <th className="px-4 py-2.5 text-right font-semibold text-warning">Pkg bulto nuevo</th>
+                    <th className="text-xs px-4 py-2.5 text-right font-semibold text-warning">Pkg bulto nuevo</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-neutral-50">
@@ -196,11 +196,11 @@ export function ImportarProductosClient() {
                     <tr key={r.id} className="hover:bg-crema-50 transition-colors">
                       <td className="px-4 py-2.5 text-xs font-mono text-tierra-700 font-semibold tabular-nums">{r.codigo}</td>
                       <td className="px-4 py-2.5 font-medium text-neutral-900 max-w-xs truncate">{r.nombre}</td>
-                      <td className="px-4 py-2.5 text-right text-neutral-400 tabular-nums line-through text-xs">{fmt(r.costo_actual)}</td>
+                      <td className="px-4 py-2.5 text-right text-neutral-600 tabular-nums line-through text-xs">{fmt(r.costo_actual)}</td>
                       <td className="px-4 py-2.5 text-right tabular-nums font-semibold text-neutral-900">{fmt(r.costo_nuevo)}</td>
-                      <td className="px-4 py-2.5 text-right text-neutral-400 tabular-nums line-through text-xs">{r.pkg_unitario_actual > 0 ? fmt(r.pkg_unitario_actual) : "—"}</td>
+                      <td className="px-4 py-2.5 text-right text-neutral-600 tabular-nums line-through text-xs">{r.pkg_unitario_actual > 0 ? fmt(r.pkg_unitario_actual) : "—"}</td>
                       <td className="px-4 py-2.5 text-right tabular-nums font-semibold text-neutral-900">{r.pkg_unitario_nuevo > 0 ? fmt(r.pkg_unitario_nuevo) : "—"}</td>
-                      <td className="px-4 py-2.5 text-right text-neutral-400 tabular-nums line-through text-xs">{r.pkg_bulto_actual > 0 ? fmt(r.pkg_bulto_actual) : "—"}</td>
+                      <td className="px-4 py-2.5 text-right text-neutral-600 tabular-nums line-through text-xs">{r.pkg_bulto_actual > 0 ? fmt(r.pkg_bulto_actual) : "—"}</td>
                       <td className="px-4 py-2.5 text-right tabular-nums font-semibold text-neutral-900">{r.pkg_bulto_nuevo > 0 ? fmt(r.pkg_bulto_nuevo) : "—"}</td>
                     </tr>
                   ))}
@@ -208,7 +208,7 @@ export function ImportarProductosClient() {
               </table>
             </div>
           ) : (
-            <div className="bg-success-bg border border-success/20 rounded-2xl px-5 py-4 text-sm text-success">
+            <div className="bg-success-bg border border-success-border rounded-xl px-5 py-4 text-sm text-success">
               No se detectaron cambios. Los precios en el CSV son iguales a los actuales.
             </div>
           )}
@@ -219,12 +219,12 @@ export function ImportarProductosClient() {
               <button
                 onClick={handleApply}
                 disabled={isPending}
-                className="px-6 py-2.5 rounded-xl bg-tierra-700 text-white text-sm font-semibold hover:bg-tierra-800 disabled:opacity-50 transition-colors"
+                className="px-6 py-2.5 rounded-lg bg-tierra-700 text-white text-sm font-semibold hover:bg-tierra-800 disabled:opacity-50 transition-colors"
               >
                 {isPending ? "Aplicando…" : `Confirmar ${cambios.length} cambio${cambios.length !== 1 ? "s" : ""}`}
               </button>
             )}
-            <button onClick={handleReset} className="px-4 py-2.5 rounded-xl text-sm text-neutral-500 hover:text-neutral-800 transition-colors">
+            <button onClick={handleReset} className="px-4 py-2.5 rounded-xl text-sm text-neutral-600 hover:text-neutral-800 transition-colors">
               Cargar otro archivo
             </button>
           </div>
@@ -232,7 +232,7 @@ export function ImportarProductosClient() {
       )}
 
       {state === "done" && (
-        <div className="bg-success-bg border border-success/20 rounded-2xl px-5 py-4 text-sm text-success font-medium">
+        <div className="bg-success-bg border border-success-border rounded-xl px-5 py-4 text-sm text-success font-medium">
           ✓ Precios actualizados correctamente. Redirigiendo…
         </div>
       )}

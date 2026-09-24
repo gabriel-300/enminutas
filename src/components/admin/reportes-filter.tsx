@@ -31,14 +31,14 @@ export function ReportesFilter({ mes }: { mes: string }) {
   return (
     <div className="flex items-center gap-1 bg-white border border-neutral-200 rounded-xl px-1 py-1">
       <button onClick={prev}
-        className="size-7 flex items-center justify-center rounded-lg text-neutral-400 hover:bg-neutral-100 text-sm transition-colors">
+        className="size-7 flex items-center justify-center rounded-lg text-neutral-600 hover:bg-neutral-100 text-sm transition-colors">
         ‹
       </button>
       <span className="px-3 text-sm font-medium text-neutral-800 min-w-[160px] text-center capitalize">
         {MESES[month - 1]} {year}
       </span>
       <button onClick={next} disabled={isCurrentMonth}
-        className="size-7 flex items-center justify-center rounded-lg text-neutral-400 hover:bg-neutral-100 disabled:opacity-30 text-sm transition-colors">
+        className="size-7 flex items-center justify-center rounded-lg text-neutral-600 hover:bg-neutral-100 disabled:opacity-30 text-sm transition-colors">
         ›
       </button>
     </div>

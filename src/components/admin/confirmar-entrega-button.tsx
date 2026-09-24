@@ -47,7 +47,7 @@ export function ConfirmarEntregaButton({
   if (mode === "confirm") {
     return (
       <div className="w-full flex flex-col gap-2">
-        <p className="text-xs text-neutral-500 text-center">¿Confirmar la entrega completa?</p>
+        <p className="text-xs text-neutral-600 text-center">¿Confirmar la entrega completa?</p>
         <div className="flex gap-2">
           <button
             onClick={() => setMode("idle")}
@@ -109,9 +109,9 @@ export function ConfirmarEntregaButton({
                 onChange={(e) =>
                   setCantidades((prev) => ({ ...prev, [l.lineId]: Number(e.target.value) }))
                 }
-                className="w-16 text-center text-sm border border-neutral-200 rounded-lg px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-tierra-700/20 focus:border-tierra-700"
+                className="w-16 text-center text-sm border border-neutral-400 rounded-lg px-2 py-1.5 focus:outline-none focus:ring-[3px] focus:ring-brand-500/30 focus:border-brand-700"
               />
-              <span className="text-xs text-neutral-400 w-10">/ {l.pedido}</span>
+              <span className="text-xs text-neutral-600 w-10">/ {l.pedido}</span>
             </div>
           </div>
         ))}
@@ -126,14 +126,14 @@ export function ConfirmarEntregaButton({
             id={`motivo-${orderId}`}
             value={motivo}
             onChange={(e) => setMotivo(e.target.value)}
-            className="w-full text-sm border border-neutral-200 rounded-lg px-2 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-tierra-700/20 focus:border-tierra-700"
+            className="w-full text-sm border border-neutral-400 rounded-lg px-2 py-2 bg-white focus:outline-none focus:ring-[3px] focus:ring-brand-500/30 focus:border-brand-700"
           >
             <option value="">Elegí un motivo…</option>
             {MOTIVOS_FALTANTE.map((m) => (
               <option key={m.value} value={m.value}>{m.label}</option>
             ))}
           </select>
-          <p className="text-xs text-neutral-400">
+          <p className="text-xs text-neutral-600">
             Lo que no se entrega se cierra: el pedido y la cuenta corriente quedan solo con lo entregado.
           </p>
         </div>
@@ -157,7 +157,7 @@ export function ConfirmarEntregaButton({
         <button
           onClick={handleParcial}
           disabled={isPending || nadaEntregado}
-          className="flex-1 px-3 py-2.5 text-sm rounded-xl bg-tierra-700 text-white font-medium hover:bg-tierra-800 disabled:opacity-50 transition-colors"
+          className="flex-1 px-3 py-2.5 text-sm rounded-lg bg-tierra-700 text-white font-medium hover:bg-tierra-800 disabled:opacity-50 transition-colors"
         >
           {isPending ? "Registrando…" : "Registrar entrega"}
         </button>

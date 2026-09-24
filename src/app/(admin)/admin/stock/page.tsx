@@ -94,15 +94,15 @@ export default async function StockPage() {
   const lineas    = [...new Set(filas.map(f => f.linea))].sort();
 
   return (
-    <div className="p-4 md:p-8">
+    <div className="p-4 md:px-10 md:py-8 md:pb-16">
       <div className="mb-6 flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold font-display text-neutral-900">Control de stock</h1>
-          <p className="text-sm text-neutral-400 mt-1">Disponible en lotes · comprometido en pedidos activos</p>
+          <p className="text-sm text-neutral-600 mt-1">Disponible en lotes · comprometido en pedidos activos</p>
         </div>
         <a
           href="/admin/lotes"
-          className="text-sm font-medium text-[#16233f] hover:underline"
+          className="text-sm font-medium text-brand-700 hover:underline"
         >
           Gestionar lotes →
         </a>
@@ -110,27 +110,27 @@ export default async function StockPage() {
 
       {/* KPIs */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-        <div className={`rounded-2xl p-5 border ${sinStock > 0 ? "bg-red-50 border-red-200" : "bg-white border-neutral-200"}`}>
-          <p className="text-xs text-neutral-400 uppercase tracking-wide mb-1">Sin stock</p>
-          <p className={`text-2xl font-bold ${sinStock > 0 ? "text-red-700" : "text-neutral-900"}`}>{sinStock}</p>
-          <p className="text-xs text-neutral-400 mt-0.5">productos en cero</p>
+        <div className={`rounded-xl p-5 border ${sinStock > 0 ? "bg-danger-bg border-danger-border" : "bg-white border-neutral-200"}`}>
+          <p className="text-xs text-neutral-600 mb-1">Sin stock</p>
+          <p className={`text-2xl font-bold ${sinStock > 0 ? "text-danger" : "text-neutral-900"}`}>{sinStock}</p>
+          <p className="text-xs text-neutral-600 mt-0.5">productos en cero</p>
         </div>
-        <div className={`rounded-2xl p-5 border ${bajoStock > 0 ? "bg-amber-50 border-amber-200" : "bg-white border-neutral-200"}`}>
-          <p className="text-xs text-neutral-400 uppercase tracking-wide mb-1">Stock bajo</p>
-          <p className={`text-2xl font-bold ${bajoStock > 0 ? "text-amber-700" : "text-neutral-900"}`}>{bajoStock}</p>
-          <p className="text-xs text-neutral-400 mt-0.5">bajo el mínimo</p>
+        <div className={`rounded-xl p-5 border ${bajoStock > 0 ? "bg-warning-bg border-warning-border" : "bg-white border-neutral-200"}`}>
+          <p className="text-xs text-neutral-600 mb-1">Stock bajo</p>
+          <p className={`text-2xl font-bold ${bajoStock > 0 ? "text-warning" : "text-neutral-900"}`}>{bajoStock}</p>
+          <p className="text-xs text-neutral-600 mt-0.5">bajo el mínimo</p>
         </div>
-        <div className="bg-white rounded-2xl border border-neutral-200 p-5">
-          <p className="text-xs text-neutral-400 uppercase tracking-wide mb-1">Con stock</p>
-          <p className="text-2xl font-bold text-emerald-700">{conStock}</p>
-          <p className="text-xs text-neutral-400 mt-0.5">productos ok</p>
+        <div className="bg-white rounded-xl border border-neutral-200 shadow-sm p-5">
+          <p className="text-xs text-neutral-600 mb-1">Con stock</p>
+          <p className="text-2xl font-bold text-success">{conStock}</p>
+          <p className="text-xs text-neutral-600 mt-0.5">productos ok</p>
         </div>
-        <div className="bg-white rounded-2xl border border-neutral-200 p-5">
-          <p className="text-xs text-neutral-400 uppercase tracking-wide mb-1">Comprometido</p>
+        <div className="bg-white rounded-xl border border-neutral-200 shadow-sm p-5">
+          <p className="text-xs text-neutral-600 mb-1">Comprometido</p>
           <p className="text-2xl font-bold text-neutral-900">
             {filas.reduce((s, f) => s + f.comprometido, 0).toLocaleString("es-AR")}
           </p>
-          <p className="text-xs text-neutral-400 mt-0.5">unidades en pedidos</p>
+          <p className="text-xs text-neutral-600 mt-0.5">unidades en pedidos</p>
         </div>
       </div>
 

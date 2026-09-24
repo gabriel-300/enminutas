@@ -121,20 +121,20 @@ export default async function ListaPreciosPage({
   });
 
   return (
-    <div className="p-4 md:p-8 max-w-6xl">
+    <div className="p-4 md:px-10 md:py-8 md:pb-16">
 
       {/* Header — oculto al imprimir */}
       <div className="print:hidden mb-5 flex items-start justify-between flex-wrap gap-3">
         <div>
           <div className="flex items-center gap-2 mb-1">
-            <Link href="/admin/preventista" className="text-sm text-neutral-400 hover:text-neutral-600">
+            <Link href="/admin/preventista" className="text-sm text-neutral-600 hover:text-neutral-600">
               ← Preventista
             </Link>
           </div>
           <h1 className="text-xl md:text-2xl font-semibold font-display text-neutral-900">
             Lista de Precios
           </h1>
-          <p className="text-sm text-neutral-500 mt-0.5">
+          <p className="text-sm text-neutral-600 mt-0.5">
             Canal <span className="font-medium text-neutral-700">{canalLabel}</span> — {fecha}
             {zonaActiva && zonaActiva.flete_pct > 0 && (
               <> · Zona <span className="font-medium text-neutral-700">{zonaActiva.name}</span></>
@@ -157,44 +157,44 @@ export default async function ListaPreciosPage({
             <p className="text-xl font-bold">En Minutas</p>
             <p className="text-base font-semibold mt-0.5">Lista de Precios — {canalLabel}</p>
           </div>
-          <div className="text-right text-sm text-neutral-500">
+          <div className="text-right text-sm text-neutral-600">
             <p>{fecha}</p>
           </div>
         </div>
       </div>
 
       {/* Tabla */}
-      <div className="bg-white rounded-2xl border border-neutral-200 overflow-x-auto print:rounded-none print:border-0 print:overflow-visible">
+      <div className="bg-white rounded-xl border border-neutral-200 shadow-sm overflow-x-auto print:rounded-none print:border-0 print:overflow-visible">
         <table className="w-full min-w-[700px] text-sm print:text-xs">
           <thead>
             <tr className="border-b border-neutral-200 text-left bg-neutral-50 print:bg-transparent">
-              <th className="px-3 py-3 font-semibold text-neutral-600 w-14 text-right">Cód</th>
-              <th className="px-3 py-3 font-semibold text-neutral-600">Línea</th>
-              <th className="px-3 py-3 font-semibold text-neutral-600">Producto</th>
-              <th className="px-3 py-3 font-semibold text-neutral-600">Presentación</th>
-              <th className="px-3 py-3 font-semibold text-neutral-600 text-center w-16">Bolsas</th>
-              <th className="px-3 py-3 font-semibold text-neutral-600 text-center w-14">U/bolsa</th>
-              <th className="px-3 py-3 font-semibold text-neutral-500 text-right">Precio s/IVA</th>
-              <th className="px-3 py-3 font-semibold text-neutral-700 text-right">Precio caja</th>
-              <th className="px-3 py-3 font-semibold text-neutral-700 text-right">Precio/u</th>
+              <th className="text-xs px-3 py-3 font-semibold text-neutral-600 w-14 text-right">Cód</th>
+              <th className="text-xs px-3 py-3 font-semibold text-neutral-600">Línea</th>
+              <th className="text-xs px-3 py-3 font-semibold text-neutral-600">Producto</th>
+              <th className="text-xs px-3 py-3 font-semibold text-neutral-600">Presentación</th>
+              <th className="text-xs px-3 py-3 font-semibold text-neutral-600 text-center w-16">Bolsas</th>
+              <th className="text-xs px-3 py-3 font-semibold text-neutral-600 text-center w-14">U/bolsa</th>
+              <th className="text-xs px-3 py-3 font-semibold text-neutral-600 text-right">Precio s/IVA</th>
+              <th className="text-xs px-3 py-3 font-semibold text-neutral-700 text-right">Precio caja</th>
+              <th className="text-xs px-3 py-3 font-semibold text-neutral-700 text-right">Precio/u</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-neutral-100">
             {filas.length === 0 ? (
               <tr>
-                <td colSpan={9} className="px-4 py-12 text-center text-neutral-400 text-sm">
+                <td colSpan={9} className="px-4 py-12 text-center text-neutral-600 text-sm">
                   Sin productos con precios configurados para este canal.
                 </td>
               </tr>
             ) : filas.map((f) => (
               <tr key={f.codigo} className="hover:bg-neutral-50 print:hover:bg-transparent">
-                <td className="px-3 py-2 text-right text-neutral-400 font-mono text-xs">{f.codigo}</td>
-                <td className="px-3 py-2 text-neutral-500 text-xs">{f.linea}</td>
+                <td className="px-3 py-2 text-right text-neutral-600 font-mono text-xs">{f.codigo}</td>
+                <td className="px-3 py-2 text-neutral-600 text-xs">{f.linea}</td>
                 <td className="px-3 py-2 font-medium text-neutral-900">{f.nombre}</td>
                 <td className="px-3 py-2 text-neutral-600 text-xs">{f.presentacion}</td>
-                <td className="px-3 py-2 text-center text-neutral-500">{f.bolsas_caja}</td>
-                <td className="px-3 py-2 text-center text-neutral-500">{f.u_bolsa}</td>
-                <td className="px-3 py-2 text-right text-neutral-400 tabular-nums text-xs">
+                <td className="px-3 py-2 text-center text-neutral-600">{f.bolsas_caja}</td>
+                <td className="px-3 py-2 text-center text-neutral-600">{f.u_bolsa}</td>
+                <td className="px-3 py-2 text-right text-neutral-600 tabular-nums text-xs">
                   {formatPrecio(f.precio_siva)}
                 </td>
                 <td className="px-3 py-2 text-right font-semibold text-neutral-900 tabular-nums">
@@ -210,7 +210,7 @@ export default async function ListaPreciosPage({
       </div>
 
       {/* Disclaimer — siempre visible */}
-      <p className="mt-4 text-xs text-neutral-400 italic print:text-neutral-600 print:mt-3">
+      <p className="mt-4 text-xs text-neutral-600 italic print:text-neutral-600 print:mt-3">
         Lista de precios sujeta a modificaciones sin previo aviso. Precios en pesos argentinos c/IVA incluido.
       </p>
 

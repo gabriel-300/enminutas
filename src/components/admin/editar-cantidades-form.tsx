@@ -100,13 +100,13 @@ export function EditarCantidadesForm({
   }
 
   const fmt      = (n: number) => `$ ${Math.round(n).toLocaleString("es-AR")}`;
-  const inputCls = "w-20 text-right px-2 py-1 text-sm border border-blue-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400 disabled:opacity-50";
+  const inputCls = "w-20 text-right px-2 py-1 text-sm border border-info-border rounded-lg focus:outline-none focus:ring-2 focus:ring-info-border disabled:opacity-50";
 
   if (!editing) {
     return (
       <button
         onClick={() => setEditing(true)}
-        className="text-xs text-neutral-400 hover:text-blue-600 underline underline-offset-2 transition-colors"
+        className="text-xs text-neutral-600 hover:text-info underline underline-offset-2 transition-colors"
       >
         Editar pedido
       </button>
@@ -114,21 +114,21 @@ export function EditarCantidadesForm({
   }
 
   return (
-    <div className="border border-blue-200 rounded-2xl overflow-hidden bg-blue-50/30">
-      <div className="px-5 py-3 border-b border-blue-100 flex items-center justify-between gap-3">
-        <p className="text-sm font-medium text-blue-800">Editar pedido</p>
+    <div className="border border-info-border rounded-xl overflow-hidden bg-info-bg/30">
+      <div className="px-5 py-3 border-b border-info-border flex items-center justify-between gap-3">
+        <p className="text-sm font-medium text-info">Editar pedido</p>
         <div className="flex gap-2">
           <button
             onClick={handleSave}
             disabled={isPending}
-            className="px-4 py-1.5 bg-blue-600 text-white text-xs font-medium rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors"
+            className="px-4 py-1.5 bg-info text-white text-xs font-medium rounded-lg hover:bg-info disabled:opacity-50 transition-colors"
           >
             {isPending ? "Guardando…" : "Guardar cantidades"}
           </button>
           <button
             onClick={handleCancel}
             disabled={isPending}
-            className="px-3 py-1.5 border border-neutral-200 text-xs text-neutral-500 rounded-lg hover:bg-neutral-50 transition-colors"
+            className="px-3 py-1.5 border border-neutral-200 text-xs text-neutral-600 rounded-lg hover:bg-neutral-50 transition-colors"
           >
             Cancelar
           </button>
@@ -137,35 +137,35 @@ export function EditarCantidadesForm({
 
       <table className="w-full text-sm">
         <thead>
-          <tr className="text-left border-b border-blue-100">
-            <th className="px-5 py-2.5 text-xs font-medium text-neutral-400">Producto</th>
-            <th className="px-5 py-2.5 text-xs font-medium text-neutral-400 text-right">Precio u.</th>
-            <th className="px-5 py-2.5 text-xs font-medium text-neutral-400 text-right">Cantidad</th>
-            <th className="px-5 py-2.5 text-xs font-medium text-neutral-400 text-right">Subtotal</th>
+          <tr className="text-left border-b border-info-border">
+            <th className="px-5 py-2.5 text-xs font-semibold text-neutral-600">Producto</th>
+            <th className="px-5 py-2.5 text-xs font-semibold text-neutral-600 text-right">Precio u.</th>
+            <th className="px-5 py-2.5 text-xs font-semibold text-neutral-600 text-right">Cantidad</th>
+            <th className="px-5 py-2.5 text-xs font-semibold text-neutral-600 text-right">Subtotal</th>
             <th className="px-5 py-2.5 w-10"></th>
           </tr>
         </thead>
-        <tbody className="divide-y divide-blue-50">
+        <tbody className="divide-y divide-info-border">
           {lines.map(line => {
             const q        = parseInt(qtys[line.id] ?? "0", 10);
             const subtotal = isNaN(q) ? 0 : q * Number(line.unit_price);
             const changed  = q !== line.quantity;
             return (
-              <tr key={line.id} className={changed ? "bg-blue-50" : ""}>
+              <tr key={line.id} className={changed ? "bg-info-bg" : ""}>
                 <td className="px-5 py-2.5 text-neutral-800">
                   {line.product_snapshot?.name ?? "Producto"}
                   {line.product_snapshot?.sku && (
-                    <span className="ml-2 text-xs text-neutral-400 font-mono">
+                    <span className="ml-2 text-xs text-neutral-600 font-mono">
                       {line.product_snapshot.sku}
                     </span>
                   )}
                   {changed && (
-                    <span className="ml-2 text-xs text-blue-600 font-medium">
+                    <span className="ml-2 text-xs text-info font-medium">
                       (antes: {line.quantity})
                     </span>
                   )}
                 </td>
-                <td className="px-5 py-2.5 text-right text-neutral-500">
+                <td className="px-5 py-2.5 text-right text-neutral-600">
                   {fmt(Number(line.unit_price))}
                 </td>
                 <td className="px-5 py-2.5 text-right">
@@ -186,7 +186,7 @@ export function EditarCantidadesForm({
                     onClick={() => handleDelete(line.id)}
                     disabled={isPending}
                     title="Eliminar línea"
-                    className="p-1 text-neutral-300 hover:text-red-500 disabled:opacity-40 transition-colors rounded"
+                    className="p-1 text-neutral-500 hover:text-danger disabled:opacity-40 transition-colors rounded"
                   >
                     <Trash2 className="w-4 h-4" />
                   </button>
@@ -198,14 +198,14 @@ export function EditarCantidadesForm({
       </table>
 
       {productos.length > 0 && (
-        <div className="px-5 py-4 border-t border-blue-100 bg-blue-50/50">
-          <p className="text-xs font-medium text-neutral-500 mb-2">Agregar producto</p>
+        <div className="px-5 py-4 border-t border-info-border bg-info-bg/50">
+          <p className="text-xs font-medium text-neutral-600 mb-2">Agregar producto</p>
           <div className="flex flex-wrap gap-2 items-center">
             <select
               value={newProductId}
               onChange={e => setNewProductId(e.target.value)}
               disabled={isPending}
-              className="flex-1 min-w-48 px-3 py-1.5 text-sm border border-blue-200 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-blue-400 disabled:opacity-50"
+              className="flex-1 min-w-48 px-3 py-1.5 text-sm border border-info-border rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-info-border disabled:opacity-50"
             >
               <option value="">— Seleccionar producto —</option>
               {productos.map(p => (
@@ -221,12 +221,12 @@ export function EditarCantidadesForm({
               onChange={e => setNewQty(e.target.value)}
               disabled={isPending}
               placeholder="Cant."
-              className="w-20 px-2 py-1.5 text-sm border border-blue-200 rounded-lg text-right focus:outline-none focus:ring-2 focus:ring-blue-400 disabled:opacity-50"
+              className="w-20 px-2 py-1.5 text-sm border border-info-border rounded-lg text-right focus:outline-none focus:ring-2 focus:ring-info-border disabled:opacity-50"
             />
             <button
               onClick={handleAdd}
               disabled={isPending || !newProductId}
-              className="px-4 py-1.5 bg-emerald-600 text-white text-xs font-medium rounded-lg hover:bg-emerald-700 disabled:opacity-50 transition-colors"
+              className="px-4 py-1.5 bg-success text-white text-xs font-medium rounded-lg hover:bg-success disabled:opacity-50 transition-colors"
             >
               {isPending ? "…" : "Agregar"}
             </button>
@@ -235,7 +235,7 @@ export function EditarCantidadesForm({
       )}
 
       {error && (
-        <div className="px-5 py-3 border-t border-red-100 text-sm text-red-600 bg-red-50">
+        <div className="px-5 py-3 border-t border-danger-border text-sm text-danger bg-danger-bg">
           {error}
         </div>
       )}

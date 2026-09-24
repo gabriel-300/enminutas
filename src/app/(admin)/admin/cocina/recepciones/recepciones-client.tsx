@@ -254,8 +254,8 @@ export function RecepcionesClient({ insumos, historial }: Props) {
     });
   }
 
-  const inputCls   = "w-full px-3 py-2 text-sm border border-neutral-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#16233f]/20 disabled:opacity-50 bg-white";
-  const inputSmCls = "px-2 py-1.5 text-sm border border-neutral-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#16233f]/20 disabled:opacity-50 bg-white";
+  const inputCls   = "w-full px-3 py-2 text-sm border border-neutral-400 rounded-lg focus:outline-none focus:ring-[3px] focus:ring-brand-500/30 focus:border-brand-700 disabled:opacity-50 bg-white";
+  const inputSmCls = "px-2 py-1.5 text-sm border border-neutral-400 rounded-lg focus:outline-none focus:ring-[3px] focus:ring-brand-500/30 focus:border-brand-700 disabled:opacity-50 bg-white";
 
   return (
     <div className="space-y-6">
@@ -263,7 +263,7 @@ export function RecepcionesClient({ insumos, historial }: Props) {
       {!formOpen && (
         <button
           onClick={() => { setFormOpen(true); setOk(null); }}
-          className="flex items-center gap-2 px-5 py-2.5 bg-[#16233f] text-white text-sm font-medium rounded-xl hover:bg-[#253760] transition-colors"
+          className="flex items-center gap-2 px-5 py-2.5 bg-brand-700 text-white text-sm font-medium rounded-lg hover:bg-brand-800 transition-colors"
         >
           <Plus className="size-4" />
           Nueva recepción
@@ -271,23 +271,23 @@ export function RecepcionesClient({ insumos, historial }: Props) {
       )}
 
       {ok && (
-        <p className="text-sm text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-xl px-4 py-3">
+        <p className="text-sm text-success bg-success-bg border border-success-border rounded-xl px-4 py-3">
           ✓ {ok}
         </p>
       )}
 
       {/* Formulario */}
       {formOpen && (
-        <div className="bg-white rounded-2xl border border-neutral-200 overflow-hidden">
+        <div className="bg-white rounded-xl border border-neutral-200 shadow-sm overflow-hidden">
           <div className="px-5 py-4 border-b border-neutral-100 flex items-start justify-between gap-4">
             <div>
               <p className="text-sm font-semibold text-neutral-800">Nueva recepción de mercadería</p>
-              <p className="text-xs text-neutral-400 mt-0.5">
+              <p className="text-xs text-neutral-600 mt-0.5">
                 Insumos con IVA: ingresá el precio <strong>neto (sin IVA)</strong>. El sistema calcula el IVA y cierra el total.
               </p>
             </div>
             <button onClick={() => { setFormOpen(false); resetForm(); }}
-              className="shrink-0 text-xs text-neutral-400 hover:text-neutral-600 px-3 py-1.5 border border-neutral-200 rounded-lg">
+              className="shrink-0 text-xs text-neutral-600 hover:text-neutral-600 px-3 py-1.5 border border-neutral-200 rounded-lg">
               Cancelar
             </button>
           </div>
@@ -297,7 +297,7 @@ export function RecepcionesClient({ insumos, historial }: Props) {
             {/* Leer remito/factura con IA -- precarga cabecera e ítems a partir de una foto */}
             <div className="bg-crema-50 border border-tierra-700/20 rounded-xl px-4 py-3 flex items-start gap-3 flex-wrap">
               <label className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-colors shrink-0 ${
-                leyendoIA ? "bg-neutral-200 text-neutral-500 cursor-wait" : "bg-[#16233f] text-white hover:bg-[#253760] cursor-pointer"
+                leyendoIA ? "bg-neutral-200 text-neutral-600 cursor-wait" : "bg-brand-700 text-white hover:bg-brand-800 cursor-pointer"
               }`}>
                 {leyendoIA ? (
                   <>
@@ -309,7 +309,7 @@ export function RecepcionesClient({ insumos, historial }: Props) {
                 )}
                 <input type="file" accept="image/*" className="hidden" disabled={leyendoIA} onChange={handleLeerConIA} />
               </label>
-              <p className="text-xs text-neutral-500 flex-1 min-w-[200px]">
+              <p className="text-xs text-neutral-600 flex-1 min-w-[200px]">
                 Sacá una foto del remito o la mercadería y precarga los insumos, cantidades y precios abajo — revisá antes de guardar.
                 Para remitos escritos a mano o sin insumos en el catálogo, cargá manual.
                 {subiendoImg && " (subiendo foto…)"}
@@ -317,7 +317,7 @@ export function RecepcionesClient({ insumos, historial }: Props) {
             </div>
 
             {ocrWarnings.length > 0 && (
-              <div className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 space-y-1">
+              <div className="text-xs text-warning bg-warning-bg border border-warning-border rounded-xl px-4 py-3 space-y-1">
                 <p className="font-medium">La lectura automática es experimental — revisá antes de guardar:</p>
                 <ul className="list-disc list-inside space-y-0.5">
                   {ocrWarnings.map((w, i) => <li key={i}>{w}</li>)}
@@ -328,14 +328,14 @@ export function RecepcionesClient({ insumos, historial }: Props) {
             {/* Cabecera */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
               <div>
-                <label className="block text-xs font-medium text-neutral-500 mb-1">Tipo *</label>
+                <label className="block text-[13px] font-medium text-neutral-800 mb-1.5">Tipo *</label>
                 <div className="flex rounded-xl overflow-hidden border border-neutral-200">
                   {(["factura", "remito"] as const).map(t => (
                     <button
                       key={t} type="button"
                       onClick={() => setTipo(t)}
                       className={`flex-1 flex items-center justify-center gap-1.5 py-2 text-sm font-medium transition-colors ${
-                        tipo === t ? "bg-[#16233f] text-white" : "bg-white text-neutral-500 hover:bg-neutral-50"
+                        tipo === t ? "bg-brand-700 text-white" : "bg-white text-neutral-600 hover:bg-neutral-50"
                       }`}
                     >
                       {t === "factura" ? <FileText className="size-3.5" /> : <ClipboardList className="size-3.5" />}
@@ -345,12 +345,12 @@ export function RecepcionesClient({ insumos, historial }: Props) {
                 </div>
               </div>
               <div>
-                <label className="block text-xs font-medium text-neutral-500 mb-1">Número *</label>
+                <label className="block text-[13px] font-medium text-neutral-800 mb-1.5">Número *</label>
                 <input value={numero} onChange={e => setNumero(e.target.value)} required
                   placeholder="0001-00012345" className={inputCls} disabled={isPending} />
               </div>
               <div>
-                <label className="block text-xs font-medium text-neutral-500 mb-1">Proveedor *</label>
+                <label className="block text-[13px] font-medium text-neutral-800 mb-1.5">Proveedor *</label>
                 <input value={proveedor} onChange={e => setProveedor(e.target.value)} required
                   placeholder="Nombre del proveedor" className={inputCls} disabled={isPending}
                   list="proveedores-list" />
@@ -361,13 +361,13 @@ export function RecepcionesClient({ insumos, historial }: Props) {
                 </datalist>
               </div>
               <div>
-                <label className="block text-xs font-medium text-neutral-500 mb-1">Fecha</label>
+                <label className="block text-[13px] font-medium text-neutral-800 mb-1.5">Fecha</label>
                 <input type="date" value={fecha} onChange={e => setFecha(e.target.value)}
                   className={inputCls} disabled={isPending} />
               </div>
               <div>
-                <label className="block text-xs font-medium text-neutral-500 mb-1">
-                  CUIT <span className="font-normal text-neutral-400">(opcional)</span>
+                <label className="block text-[13px] font-medium text-neutral-800 mb-1.5">
+                  CUIT <span className="font-normal text-neutral-600">(opcional)</span>
                 </label>
                 <input value={cuit} onChange={e => setCuit(e.target.value)}
                   placeholder="XX-XXXXXXXX-X" className={inputCls} disabled={isPending} />
@@ -380,13 +380,13 @@ export function RecepcionesClient({ insumos, historial }: Props) {
                 <table className="w-full text-sm" style={{ minWidth: 920 }}>
                   <thead>
                     <tr className="bg-neutral-50 border-b border-neutral-100 text-left">
-                      <th className="px-3 py-2.5 text-xs font-semibold text-neutral-400 uppercase tracking-wide">Insumo</th>
-                      <th className="px-3 py-2.5 text-xs font-semibold text-neutral-400 uppercase tracking-wide w-24">Cantidad</th>
-                      <th className="px-3 py-2.5 text-xs font-semibold text-neutral-400 uppercase tracking-wide w-10">Un.</th>
-                      <th className="px-3 py-2.5 text-xs font-semibold text-neutral-400 uppercase tracking-wide w-32">Precio neto/u.</th>
-                      <th className="px-3 py-2.5 text-xs font-semibold text-neutral-400 uppercase tracking-wide w-40">IVA</th>
-                      <th className="px-3 py-2.5 text-xs font-semibold text-neutral-400 uppercase tracking-wide w-32">Vencimiento</th>
-                      <th className="px-3 py-2.5 text-xs font-semibold text-neutral-400 uppercase tracking-wide w-28 text-right">Subtotal c/IVA</th>
+                      <th className="px-3 py-2.5 text-xs font-semibold text-neutral-600">Insumo</th>
+                      <th className="px-3 py-2.5 text-xs font-semibold text-neutral-600 w-24">Cantidad</th>
+                      <th className="px-3 py-2.5 text-xs font-semibold text-neutral-600 w-10">Un.</th>
+                      <th className="px-3 py-2.5 text-xs font-semibold text-neutral-600 w-32">Precio neto/u.</th>
+                      <th className="px-3 py-2.5 text-xs font-semibold text-neutral-600 w-40">IVA</th>
+                      <th className="px-3 py-2.5 text-xs font-semibold text-neutral-600 w-32">Vencimiento</th>
+                      <th className="px-3 py-2.5 text-xs font-semibold text-neutral-600 w-28 text-right">Subtotal c/IVA</th>
                       <th className="px-3 py-2.5 w-8"></th>
                     </tr>
                   </thead>
@@ -415,15 +415,15 @@ export function RecepcionesClient({ insumos, historial }: Props) {
                               ))}
                             </select>
                             {stockPost !== null && (
-                              <p className="text-xs text-neutral-400 mt-0.5 px-1">
+                              <p className="text-xs text-neutral-600 mt-0.5 px-1">
                                 Stock: {fmtNum(row.stock_actual)} →{" "}
-                                <span className="text-emerald-600 font-medium">{fmtNum(stockPost)}</span>{" "}
+                                <span className="text-success font-medium">{fmtNum(stockPost)}</span>{" "}
                                 {row.unidad}
                               </p>
                             )}
                             {row.ocrHint && !row.insumo_id && (
                               <div className="mt-0.5 px-1">
-                                <p className="text-xs text-amber-600">
+                                <p className="text-xs text-warning">
                                   El remito decía: "{row.ocrHint}"{row.candidatos.length === 0 && " — elegí el insumo"}
                                 </p>
                                 {row.candidatos.length > 0 && (
@@ -432,7 +432,7 @@ export function RecepcionesClient({ insumos, historial }: Props) {
                                       <button
                                         key={c.id} type="button"
                                         onClick={() => handleInsumoChange(row.key, c.id)}
-                                        className="px-2 py-0.5 text-xs rounded-full border border-amber-300 bg-amber-50 text-amber-700 hover:bg-amber-100 transition-colors"
+                                        className="px-2 py-0.5 text-xs rounded-full border border-warning-border bg-warning-bg text-warning hover:bg-warning-bg transition-colors"
                                       >
                                         {c.nombre}
                                       </button>
@@ -450,12 +450,12 @@ export function RecepcionesClient({ insumos, historial }: Props) {
                               className={`${inputSmCls} w-full text-right`} disabled={isPending}
                             />
                           </td>
-                          <td className="px-3 py-2 text-xs text-neutral-500 font-mono">
+                          <td className="px-3 py-2 text-xs text-neutral-600 font-mono">
                             {row.unidad || "—"}
                           </td>
                           <td className="px-3 py-2">
                             <div className="flex items-center gap-0.5">
-                              <span className="text-xs text-neutral-400">$</span>
+                              <span className="text-xs text-neutral-600">$</span>
                               <input
                                 value={row.precio_unitario}
                                 onChange={e => updateRow(row.key, "precio_unitario", e.target.value)}
@@ -464,7 +464,7 @@ export function RecepcionesClient({ insumos, historial }: Props) {
                               />
                             </div>
                             {alarma && (
-                              <p className={`text-xs mt-0.5 px-1 font-medium ${alarma.nivel === "fuerte" ? "text-red-600" : "text-amber-600"}`}>
+                              <p className={`text-xs mt-0.5 px-1 font-medium ${alarma.nivel === "fuerte" ? "text-danger" : "text-warning"}`}>
                                 {alarma.nivel === "fuerte" ? "⚠ ¿Precio mal cargado?" : "⚠"} Antes {fmtPrecio(precioAnterior!)}
                                 {" "}({alarma.pct > 0 ? "+" : ""}{alarma.pct.toFixed(0)}%)
                               </p>
@@ -481,7 +481,7 @@ export function RecepcionesClient({ insumos, historial }: Props) {
                               ))}
                             </select>
                             {row.iva_pct > 0 && neto > 0 && (
-                              <p className="text-xs text-neutral-400 mt-0.5 px-1 tabular-nums">
+                              <p className="text-xs text-neutral-600 mt-0.5 px-1 tabular-nums">
                                 IVA: {fmtPrecio(ivaAmt)}
                               </p>
                             )}
@@ -497,13 +497,13 @@ export function RecepcionesClient({ insumos, historial }: Props) {
                           <td className="px-3 py-2 text-right tabular-nums font-semibold text-neutral-800">
                             {subTotal > 0
                               ? fmtPrecio(subTotal)
-                              : <span className="text-neutral-300 font-normal">—</span>
+                              : <span className="text-neutral-500 font-normal">—</span>
                             }
                           </td>
                           <td className="px-3 py-2">
                             <button type="button" onClick={() => removeRow(row.key)}
                               disabled={rows.length === 1 || isPending}
-                              className="p-1 text-neutral-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-20">
+                              className="p-1 text-neutral-500 hover:text-danger hover:bg-danger-bg rounded-lg transition-colors disabled:opacity-20">
                               <Trash2 className="size-3.5" />
                             </button>
                           </td>
@@ -515,11 +515,11 @@ export function RecepcionesClient({ insumos, historial }: Props) {
                     <tr className="border-t border-neutral-200 bg-neutral-50/50">
                       <td className="px-3 py-2" colSpan={6}>
                         <button type="button" onClick={addRow} disabled={isPending}
-                          className="flex items-center gap-1.5 text-sm text-[#16233f] hover:underline disabled:opacity-40">
+                          className="flex items-center gap-1.5 text-sm text-brand-700 hover:underline disabled:opacity-40">
                           <Plus className="size-3.5" /> Agregar ítem
                         </button>
                       </td>
-                      <td className="px-3 py-2 text-right text-xs tabular-nums text-neutral-400 space-y-0.5" colSpan={2}>
+                      <td className="px-3 py-2 text-right text-xs tabular-nums text-neutral-600 space-y-0.5" colSpan={2}>
                         <div>Neto: <span className="text-neutral-700 font-medium">{fmtPrecio(totales.neto)}</span></div>
                         {totales.iva > 0 && (
                           <div>IVA: <span className="text-neutral-700 font-medium">{fmtPrecio(totales.iva)}</span></div>
@@ -534,20 +534,20 @@ export function RecepcionesClient({ insumos, historial }: Props) {
             {/* Otros impuestos + notas */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               <div>
-                <label className="block text-xs font-medium text-neutral-500 mb-1">
+                <label className="block text-[13px] font-medium text-neutral-800 mb-1.5">
                   Otros impuestos / cargos
-                  <span className="font-normal ml-1 text-neutral-400">(percepciones, flete, etc.)</span>
+                  <span className="font-normal ml-1 text-neutral-600">(percepciones, flete, etc.)</span>
                 </label>
                 <div className="flex items-center border border-neutral-200 rounded-xl overflow-hidden">
-                  <span className="px-3 py-2 text-sm text-neutral-400 bg-neutral-50 border-r border-neutral-200">$</span>
+                  <span className="px-3 py-2 text-sm text-neutral-600 bg-neutral-50 border-r border-neutral-200">$</span>
                   <input value={otrosImp} onChange={e => setOtrosImp(e.target.value)}
                     inputMode="decimal" placeholder="0"
-                    className="flex-1 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#16233f]/20 text-right disabled:opacity-50"
+                    className="flex-1 px-3 py-2 text-sm focus:outline-none focus:ring-[3px] focus:ring-brand-500/30 focus:border-brand-700 text-right disabled:opacity-50"
                     disabled={isPending} />
                 </div>
               </div>
               <div>
-                <label className="block text-xs font-medium text-neutral-500 mb-1">Notas (opcional)</label>
+                <label className="block text-[13px] font-medium text-neutral-800 mb-1.5">Notas (opcional)</label>
                 <input value={notas} onChange={e => setNotas(e.target.value)}
                   placeholder="Observaciones…"
                   className={inputCls} disabled={isPending} />
@@ -556,7 +556,7 @@ export function RecepcionesClient({ insumos, historial }: Props) {
 
             {/* Resumen total */}
             <div className="bg-neutral-50 border border-neutral-200 rounded-xl px-4 py-3 flex items-end justify-between gap-4">
-              <div className="text-xs text-neutral-400 space-y-0.5 tabular-nums">
+              <div className="text-xs text-neutral-600 space-y-0.5 tabular-nums">
                 <div>Subtotal neto: <span className="text-neutral-700 font-medium">{fmtPrecio(totales.neto)}</span></div>
                 <div>IVA total:     <span className="text-neutral-700 font-medium">{fmtPrecio(totales.iva)}</span></div>
                 {otrosNum > 0 && (
@@ -564,7 +564,7 @@ export function RecepcionesClient({ insumos, historial }: Props) {
                 )}
               </div>
               <div className="text-right">
-                <div className="text-xs text-neutral-400 mb-0.5">Total {tipo}</div>
+                <div className="text-xs text-neutral-600 mb-0.5">Total {tipo}</div>
                 <div className="text-2xl font-bold tabular-nums text-neutral-900">
                   {fmtPrecio(totalFinal)}
                 </div>
@@ -572,7 +572,7 @@ export function RecepcionesClient({ insumos, historial }: Props) {
             </div>
 
             {error && (
-              <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-xl px-4 py-3">{error}</p>
+              <p className="text-sm text-danger bg-danger-bg border border-danger-border rounded-xl px-4 py-3">{error}</p>
             )}
 
             {imagenUrl && (
@@ -582,7 +582,7 @@ export function RecepcionesClient({ insumos, historial }: Props) {
             )}
 
             <button type="submit" disabled={isPending}
-              className="px-6 py-2.5 bg-[#16233f] text-white text-sm font-medium rounded-xl hover:bg-[#253760] disabled:opacity-40 transition-colors">
+              className="px-6 py-2.5 bg-brand-700 text-white text-sm font-medium rounded-lg hover:bg-brand-800 disabled:opacity-40 transition-colors">
               {isPending ? "Registrando…" : "Confirmar recepción"}
             </button>
           </form>
@@ -595,9 +595,9 @@ export function RecepcionesClient({ insumos, historial }: Props) {
       )}
 
       {historial.length === 0 && !formOpen && (
-        <div className="bg-white rounded-2xl border border-neutral-200 px-8 py-12 text-center">
-          <p className="text-sm text-neutral-400">Todavía no hay recepciones registradas.</p>
-          <p className="text-xs text-neutral-300 mt-1">Usá el botón de arriba para cargar tu primera factura o remito.</p>
+        <div className="bg-white rounded-xl border border-neutral-200 shadow-sm px-8 py-12 text-center">
+          <p className="text-sm text-neutral-600">Todavía no hay recepciones registradas.</p>
+          <p className="text-xs text-neutral-500 mt-1">Usá el botón de arriba para cargar tu primera factura o remito.</p>
         </div>
       )}
     </div>
@@ -610,7 +610,7 @@ function HistorialTable({ historial }: { historial: RecepcionHistorial[] }) {
   const toggle = (id: string) => setExpanded(prev => prev === id ? null : id);
 
   return (
-    <div className="bg-white rounded-2xl border border-neutral-200 overflow-hidden">
+    <div className="bg-white rounded-xl border border-neutral-200 shadow-sm overflow-hidden">
       <div className="px-5 py-4 border-b border-neutral-100">
         <p className="text-sm font-semibold text-neutral-800">Historial de recepciones</p>
       </div>
@@ -618,11 +618,11 @@ function HistorialTable({ historial }: { historial: RecepcionHistorial[] }) {
         <thead>
           <tr className="border-b border-neutral-100 text-left">
             <th className="px-4 py-3 w-6"></th>
-            <th className="px-4 py-3 text-xs font-medium text-neutral-400">Fecha</th>
-            <th className="px-4 py-3 text-xs font-medium text-neutral-400">Tipo / Número</th>
-            <th className="px-4 py-3 text-xs font-medium text-neutral-400">Proveedor</th>
-            <th className="px-4 py-3 text-xs font-medium text-neutral-400 text-center">Ítems</th>
-            <th className="px-4 py-3 text-xs font-medium text-neutral-400 text-right">Total</th>
+            <th className="px-4 py-3 text-xs font-semibold text-neutral-600">Fecha</th>
+            <th className="px-4 py-3 text-xs font-semibold text-neutral-600">Tipo / Número</th>
+            <th className="px-4 py-3 text-xs font-semibold text-neutral-600">Proveedor</th>
+            <th className="px-4 py-3 text-xs font-semibold text-neutral-600 text-center">Ítems</th>
+            <th className="px-4 py-3 text-xs font-semibold text-neutral-600 text-right">Total</th>
           </tr>
         </thead>
         <tbody>
@@ -635,23 +635,23 @@ function HistorialTable({ historial }: { historial: RecepcionHistorial[] }) {
                   onClick={() => toggle(h.id)}
                   className={`border-t border-neutral-50 cursor-pointer transition-colors ${isOpen ? "bg-neutral-50" : "hover:bg-neutral-50"}`}
                 >
-                  <td className="px-4 py-3 text-neutral-300">
+                  <td className="px-4 py-3 text-neutral-500">
                     {isOpen
                       ? <ChevronDown className="size-3.5" />
                       : <ChevronRight className="size-3.5" />
                     }
                   </td>
-                  <td className="px-4 py-3 text-neutral-500 text-xs">{fmtFecha(h.fecha)}</td>
+                  <td className="px-4 py-3 text-neutral-600 text-xs">{fmtFecha(h.fecha)}</td>
                   <td className="px-4 py-3">
                     <span className={`text-xs font-medium px-2 py-0.5 rounded-full mr-2 ${
-                      h.tipo === "factura" ? "bg-blue-100 text-blue-700" : "bg-neutral-100 text-neutral-600"
+                      h.tipo === "factura" ? "bg-info-bg text-info" : "bg-neutral-100 text-neutral-600"
                     }`}>
                       {h.tipo === "factura" ? "Factura" : "Remito"}
                     </span>
                     <span className="font-mono text-sm text-neutral-800">{h.numero}</span>
                   </td>
                   <td className="px-4 py-3 font-medium text-neutral-800">{h.proveedor}</td>
-                  <td className="px-4 py-3 text-center text-neutral-500 text-xs">{h.items.length}</td>
+                  <td className="px-4 py-3 text-center text-neutral-600 text-xs">{h.items.length}</td>
                   <td className="px-4 py-3 text-right tabular-nums font-semibold text-neutral-800">
                     {h.total !== null ? fmtPrecio(h.total) : "—"}
                   </td>
@@ -662,14 +662,14 @@ function HistorialTable({ historial }: { historial: RecepcionHistorial[] }) {
                     <td colSpan={6} className="px-6 pb-4 pt-2">
                       <table className="w-full text-xs">
                         <thead>
-                          <tr className="text-left text-neutral-400 border-b border-neutral-200">
-                            <th className="py-1.5 pr-4 font-medium">Insumo</th>
-                            <th className="py-1.5 pr-4 font-medium text-right">Cantidad</th>
-                            <th className="py-1.5 pr-4 font-medium">Un.</th>
-                            <th className="py-1.5 pr-4 font-medium text-right">Precio neto/u.</th>
-                            <th className="py-1.5 pr-4 font-medium text-right">IVA</th>
-                            <th className="py-1.5 pr-4 font-medium text-right">Subtotal c/IVA</th>
-                            <th className="py-1.5 font-medium">Vencimiento</th>
+                          <tr className="text-left text-neutral-600 border-b border-neutral-200">
+                            <th className="text-xs py-1.5 pr-4 font-semibold">Insumo</th>
+                            <th className="text-xs py-1.5 pr-4 font-semibold text-right">Cantidad</th>
+                            <th className="text-xs py-1.5 pr-4 font-semibold">Un.</th>
+                            <th className="text-xs py-1.5 pr-4 font-semibold text-right">Precio neto/u.</th>
+                            <th className="text-xs py-1.5 pr-4 font-semibold text-right">IVA</th>
+                            <th className="text-xs py-1.5 pr-4 font-semibold text-right">Subtotal c/IVA</th>
+                            <th className="text-xs py-1.5 font-semibold">Vencimiento</th>
                           </tr>
                         </thead>
                         <tbody className="divide-y divide-neutral-100">
@@ -677,13 +677,13 @@ function HistorialTable({ historial }: { historial: RecepcionHistorial[] }) {
                             <tr key={it.id} className="text-neutral-700">
                               <td className="py-1.5 pr-4 font-medium">{it.insumo_nombre}</td>
                               <td className="py-1.5 pr-4 text-right tabular-nums">{fmtNum(it.cantidad)}</td>
-                              <td className="py-1.5 pr-4 font-mono text-neutral-400">{it.unidad}</td>
+                              <td className="py-1.5 pr-4 font-mono text-neutral-600">{it.unidad}</td>
                               <td className="py-1.5 pr-4 text-right tabular-nums">{fmtPrecio(it.precio_unitario)}</td>
-                              <td className="py-1.5 pr-4 text-right tabular-nums text-neutral-400">
+                              <td className="py-1.5 pr-4 text-right tabular-nums text-neutral-600">
                                 {it.iva_pct > 0 ? `${it.iva_pct}%` : "—"}
                               </td>
                               <td className="py-1.5 pr-4 text-right tabular-nums font-semibold">{fmtPrecio(it.subtotal_civa)}</td>
-                              <td className="py-1.5 text-neutral-400">
+                              <td className="py-1.5 text-neutral-600">
                                 {it.fecha_vencimiento ? fmtFecha(it.fecha_vencimiento) : "—"}
                               </td>
                             </tr>
@@ -693,7 +693,7 @@ function HistorialTable({ historial }: { historial: RecepcionHistorial[] }) {
 
                       {/* Pie del detalle */}
                       <div className="mt-3 flex items-start justify-between gap-4">
-                        <div className="text-xs text-neutral-400 space-y-1">
+                        <div className="text-xs text-neutral-600 space-y-1">
                           {h.proveedor_cuit && <p>CUIT: <span className="font-mono text-neutral-600">{h.proveedor_cuit}</span></p>}
                           {h.notas && <p className="italic">Notas: {h.notas}</p>}
                           {h.imagen_url && (
@@ -703,7 +703,7 @@ function HistorialTable({ historial }: { historial: RecepcionHistorial[] }) {
                             </a>
                           )}
                         </div>
-                        <div className="text-xs text-neutral-400 text-right space-y-0.5 tabular-nums">
+                        <div className="text-xs text-neutral-600 text-right space-y-0.5 tabular-nums">
                           <div>Subtotal neto: <span className="text-neutral-700 font-medium">{fmtPrecio(h.items.reduce((s, i) => s + i.subtotal_neto, 0))}</span></div>
                           <div>IVA total: <span className="text-neutral-700 font-medium">{fmtPrecio(h.items.reduce((s, i) => s + (i.subtotal_civa - i.subtotal_neto), 0))}</span></div>
                           {h.otros_impuestos > 0 && (

@@ -44,7 +44,7 @@ export function ReprogramarFaltanteButton({
     return (
       <button
         onClick={() => setAbierto(true)}
-        className="mt-3 px-3 py-2 text-xs font-medium rounded-lg border border-warning/40 text-warning hover:bg-white transition-colors"
+        className="mt-3 px-3 py-2 text-xs font-medium rounded-lg border border-warning-border text-warning hover:bg-white transition-colors"
       >
         Crear pedido con el faltante
       </button>
@@ -60,15 +60,15 @@ export function ReprogramarFaltanteButton({
         ))}
       </ul>
       {yaPedido.length > 0 && (
-        <div className="rounded-lg bg-warning-bg border border-warning/30 px-3 py-2 text-xs text-neutral-700 space-y-0.5">
+        <div className="rounded-lg bg-warning-bg border border-warning-border px-3 py-2 text-xs text-neutral-700 space-y-0.5">
           <p className="font-medium text-warning">El cliente ya volvió a pedir parte de esto:</p>
           {yaPedido.map((y, i) => (
             <p key={i}>{y.name} → {y.pedidos.join(", ")}</p>
           ))}
-          <p className="text-neutral-500">Si ese pedido ya lo cubre, no hace falta reprogramar: crearlo duplicaría la entrega.</p>
+          <p className="text-neutral-600">Si ese pedido ya lo cubre, no hace falta reprogramar: crearlo duplicaría la entrega.</p>
         </div>
       )}
-      <p className="text-xs text-neutral-400">
+      <p className="text-xs text-neutral-600">
         Mismo cliente, zona y forma de pago, con el precio original. No se cobra nada hasta que se despache.
       </p>
       <div className="flex items-center gap-2">

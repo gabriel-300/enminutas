@@ -45,65 +45,65 @@ export default async function PreciosClientePage() {
   const totalOverrides    = filas.reduce((s, f) => s + f.overrides, 0);
 
   return (
-    <div className="p-4 md:p-8 max-w-4xl">
+    <div className="p-4 md:px-10 md:py-8 md:pb-16">
       <div className="mb-6">
         <h1 className="text-2xl font-bold font-display text-neutral-900">Precios por cliente</h1>
-        <p className="text-sm text-neutral-400 mt-1">Acuerdos de precio negociados individualmente</p>
+        <p className="text-sm text-neutral-600 mt-1">Acuerdos de precio negociados individualmente</p>
       </div>
 
       {/* KPIs */}
       <div className="grid grid-cols-3 gap-4 mb-6">
-        <div className="bg-white rounded-2xl border border-neutral-200 p-5">
-          <p className="text-xs text-neutral-400 uppercase tracking-wide mb-1">Clientes con acuerdos</p>
+        <div className="bg-white rounded-xl border border-neutral-200 shadow-sm p-5">
+          <p className="text-xs text-neutral-600 mb-1">Clientes con acuerdos</p>
           <p className="text-2xl font-bold text-neutral-900">{totalConOverrides}</p>
-          <p className="text-xs text-neutral-400 mt-0.5">de {filas.length} activos</p>
+          <p className="text-xs text-neutral-600 mt-0.5">de {filas.length} activos</p>
         </div>
-        <div className="bg-white rounded-2xl border border-neutral-200 p-5">
-          <p className="text-xs text-neutral-400 uppercase tracking-wide mb-1">Precios especiales</p>
+        <div className="bg-white rounded-xl border border-neutral-200 shadow-sm p-5">
+          <p className="text-xs text-neutral-600 mb-1">Precios especiales</p>
           <p className="text-2xl font-bold text-neutral-900">{totalOverrides}</p>
-          <p className="text-xs text-neutral-400 mt-0.5">overrides totales</p>
+          <p className="text-xs text-neutral-600 mt-0.5">overrides totales</p>
         </div>
-        <div className="bg-[#16233f] rounded-2xl p-5 flex items-center gap-3">
+        <div className="bg-brand-700 rounded-xl p-5 flex items-center gap-3">
           <Tag className="size-6 text-white/60 shrink-0" />
           <div>
-            <p className="text-xs text-white/60 uppercase tracking-wide mb-0.5">Tipos</p>
+            <p className="text-xs text-white/60 mb-0.5">Tipos</p>
             <p className="text-sm text-white font-medium">Precio fijo · Descuento %</p>
           </div>
         </div>
       </div>
 
       {/* Tabla */}
-      <div className="bg-white rounded-2xl border border-neutral-200 overflow-hidden">
+      <div className="bg-white rounded-xl border border-neutral-200 shadow-sm overflow-hidden">
         <table className="w-full text-sm">
           <thead className="border-b border-neutral-100">
             <tr>
-              <th className="px-5 py-3 text-left text-xs font-semibold text-neutral-400 uppercase tracking-wide">Cliente</th>
-              <th className="px-5 py-3 text-left text-xs font-semibold text-neutral-400 uppercase tracking-wide">CUIT</th>
-              <th className="px-5 py-3 text-center text-xs font-semibold text-neutral-400 uppercase tracking-wide">Precios especiales</th>
+              <th className="px-5 py-3 text-left text-xs font-semibold text-neutral-600">Cliente</th>
+              <th className="px-5 py-3 text-left text-xs font-semibold text-neutral-600">CUIT</th>
+              <th className="px-5 py-3 text-center text-xs font-semibold text-neutral-600">Precios especiales</th>
               <th className="px-5 py-3"></th>
             </tr>
           </thead>
           <tbody className="divide-y divide-neutral-50">
             {filas.length === 0 && (
-              <tr><td colSpan={4} className="px-5 py-10 text-center text-sm text-neutral-400">No hay clientes B2B aprobados.</td></tr>
+              <tr><td colSpan={4} className="px-5 py-10 text-center text-sm text-neutral-600">No hay clientes B2B aprobados.</td></tr>
             )}
             {filas.map(f => (
               <tr key={f.profile_id} className="hover:bg-neutral-50 transition-colors">
                 <td className="px-5 py-3.5 font-medium text-neutral-900">{f.business_name}</td>
-                <td className="px-5 py-3.5 text-neutral-500 tabular-nums">{f.cuit}</td>
+                <td className="px-5 py-3.5 text-neutral-600 tabular-nums">{f.cuit}</td>
                 <td className="px-5 py-3.5 text-center">
                   {f.overrides > 0 ? (
-                    <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-blue-50 text-blue-700">
+                    <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-info-bg text-info">
                       <Tag className="size-3" /> {f.overrides} producto{f.overrides !== 1 ? "s" : ""}
                     </span>
                   ) : (
-                    <span className="text-xs text-neutral-300">precio estándar</span>
+                    <span className="text-xs text-neutral-500">precio estándar</span>
                   )}
                 </td>
                 <td className="px-5 py-3.5 text-right">
                   <Link
                     href={`/admin/precios-cliente/${f.profile_id}`}
-                    className="text-xs font-medium text-[#16233f] hover:underline"
+                    className="text-xs font-medium text-brand-700 hover:underline"
                   >
                     {f.overrides > 0 ? "Gestionar →" : "Agregar →"}
                   </Link>

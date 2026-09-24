@@ -20,13 +20,13 @@ function OrderCard({
 }) {
   const cardCls = {
     default:    "bg-white border-neutral-200",
-    pending:    "bg-warning-bg/30 border-warning/30",
-    active:     "bg-success-bg/30 border-success/30",
+    pending:    "bg-warning-bg/50 border-warning-border",
+    active:     "bg-success-bg/50 border-success-border",
     dispatched: "bg-neutral-50 border-neutral-200 opacity-70",
   }[variant];
 
   return (
-    <div className={`rounded-2xl border p-4 md:p-5 ${cardCls}`}>
+    <div className={`rounded-xl border shadow-sm p-4 md:p-5 ${cardCls}`}>
       <div className="flex items-center gap-2 flex-wrap mb-1">
         <span className="font-mono text-sm font-semibold text-neutral-900">
           {order.order_number}
@@ -35,7 +35,7 @@ function OrderCard({
           {order.customer?.full_name ?? "—"}
         </span>
         {order.aprobado_at && (
-          <span className="text-xs text-neutral-400 ml-auto shrink-0">
+          <span className="text-xs text-neutral-600 ml-auto shrink-0">
             {fmtFecha(order.aprobado_at, { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" })}
           </span>
         )}
@@ -49,7 +49,7 @@ function OrderCard({
             </span>
             <span>{line.product_snapshot?.name ?? "Producto"}</span>
             {line.product_snapshot?.unit_label && (
-              <span className="text-xs text-neutral-400">
+              <span className="text-xs text-neutral-600">
                 ({line.product_snapshot.unit_label})
               </span>
             )}
@@ -58,7 +58,7 @@ function OrderCard({
       </ul>
 
       {order.despacho_info && (
-        <div className="mt-2 mb-1 flex flex-wrap gap-x-4 gap-y-0.5 text-xs text-neutral-500">
+        <div className="mt-2 mb-1 flex flex-wrap gap-x-4 gap-y-0.5 text-xs text-neutral-600">
           {order.despacho_info.repartidor && (
             <span>👤 {order.despacho_info.repartidor}</span>
           )}
@@ -104,10 +104,10 @@ export default async function ProduccionPage() {
   const despachados = lista.filter((o) => o.status === "despachado" || o.status === "en_distribucion");
 
   return (
-    <div className="p-4 md:p-8 max-w-3xl">
+    <div className="p-4 md:px-10 md:py-8 md:pb-16">
       <div className="mb-6 md:mb-8">
         <h1 className="text-2xl font-semibold font-display text-neutral-900">Producción</h1>
-        <p className="text-sm text-neutral-500 mt-1">
+        <p className="text-sm text-neutral-600 mt-1">
           {lista.length === 0
             ? "Sin pedidos activos en este momento."
             : `${cola.length} en cola · ${preparando.length} en preparación · ${despachados.length} en distribución`}
@@ -117,7 +117,7 @@ export default async function ProduccionPage() {
       {/* Cola de producción */}
       {cola.length > 0 && (
         <section className="mb-8">
-          <h2 className="text-xs font-semibold text-warning uppercase tracking-wider mb-3">
+          <h2 className="text-sm font-semibold text-warning mb-3">
             ● Pendientes — sin iniciar
           </h2>
           <div className="space-y-3">
@@ -136,7 +136,7 @@ export default async function ProduccionPage() {
       {/* En preparación */}
       {preparando.length > 0 && (
         <section>
-          <h2 className="text-xs font-semibold text-success uppercase tracking-wider mb-3">
+          <h2 className="text-sm font-semibold text-success mb-3">
             ● En preparación — listos para despachar
           </h2>
           <div className="space-y-3">
@@ -166,7 +166,7 @@ export default async function ProduccionPage() {
       {/* En distribución (solo lectura) */}
       {despachados.length > 0 && (
         <section className="mt-8">
-          <h2 className="text-xs font-semibold text-neutral-400 uppercase tracking-wider mb-3">
+          <h2 className="text-sm font-semibold text-neutral-600 mb-3">
             ● En distribución
           </h2>
           <div className="space-y-3">
@@ -182,8 +182,8 @@ export default async function ProduccionPage() {
       )}
 
       {lista.length === 0 && (
-        <div className="bg-white rounded-2xl border border-neutral-200 p-12 text-center">
-          <p className="text-neutral-400 text-sm">No hay pedidos activos en producción.</p>
+        <div className="bg-white rounded-xl border border-neutral-200 shadow-sm p-12 text-center">
+          <p className="text-neutral-600 text-sm">No hay pedidos activos en producción.</p>
         </div>
       )}
     </div>

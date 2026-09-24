@@ -105,44 +105,44 @@ export default async function RecetasPage() {
   }
 
   return (
-    <div className="p-8 max-w-5xl">
+    <div className="p-4 md:px-10 md:py-8 md:pb-16">
       <div className="mb-6 flex items-start justify-between">
         <div>
-          <Link href="/admin/cocina" className="text-sm text-neutral-400 hover:text-neutral-700 mb-2 inline-block">
+          <Link href="/admin/cocina" className="text-sm text-neutral-600 hover:text-neutral-700 mb-2 inline-block">
             ← Cocina
           </Link>
           <h1 className="text-2xl font-semibold font-display text-neutral-900">Recetas de producción</h1>
-          <p className="text-sm text-neutral-500 mt-1">
+          <p className="text-sm text-neutral-600 mt-1">
             {conReceta.length} de {products.length} productos con receta cargada
           </p>
         </div>
       </div>
 
       {sinReceta.length > 0 && (
-        <div className="mb-6 px-4 py-3 bg-warning-bg border border-warning/30 rounded-xl text-sm text-warning font-medium">
+        <div className="mb-6 px-4 py-3 bg-warning-bg border border-warning-border rounded-xl text-sm text-warning font-medium">
           {sinReceta.length} producto{sinReceta.length !== 1 ? "s" : ""} sin receta — el planificador no puede estimar tiempos para ellos
         </div>
       )}
 
-      <div className="bg-white rounded-2xl border border-neutral-200 overflow-hidden mb-4">
+      <div className="bg-white rounded-xl border border-neutral-200 shadow-sm overflow-hidden mb-4">
         <div className="px-5 py-3 border-b border-neutral-100 flex items-center justify-between">
           <p className="text-sm font-medium text-neutral-700">Con receta ({conReceta.length})</p>
-          <p className="text-xs text-neutral-400">⚠ = costo desactualizado</p>
+          <p className="text-xs text-neutral-600">⚠ = costo desactualizado</p>
         </div>
         {conReceta.length === 0 ? (
-          <p className="px-5 py-8 text-sm text-neutral-400 text-center">Todavía no hay recetas cargadas.</p>
+          <p className="px-5 py-8 text-sm text-neutral-600 text-center">Todavía no hay recetas cargadas.</p>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-neutral-100 text-left">
-                  <th className="px-5 py-3 text-xs font-medium text-neutral-400">Producto</th>
-                  <th className="px-5 py-3 text-xs font-medium text-neutral-400 text-center">Lote</th>
-                  <th className="px-5 py-3 text-xs font-medium text-neutral-400 text-center">Pasos</th>
-                  <th className="px-5 py-3 text-xs font-medium text-neutral-400 text-center">Tiempo</th>
-                  <th className="px-5 py-3 text-xs font-medium text-neutral-400 text-right">Costo receta / caja</th>
-                  <th className="px-5 py-3 text-xs font-medium text-neutral-400 text-right">Costo producto / caja</th>
-                  <th className="px-5 py-3 text-xs font-medium text-neutral-400"></th>
+                  <th className="px-5 py-3 text-xs font-semibold text-neutral-600">Producto</th>
+                  <th className="px-5 py-3 text-xs font-semibold text-neutral-600 text-center">Lote</th>
+                  <th className="px-5 py-3 text-xs font-semibold text-neutral-600 text-center">Pasos</th>
+                  <th className="px-5 py-3 text-xs font-semibold text-neutral-600 text-center">Tiempo</th>
+                  <th className="px-5 py-3 text-xs font-semibold text-neutral-600 text-right">Costo receta / caja</th>
+                  <th className="px-5 py-3 text-xs font-semibold text-neutral-600 text-right">Costo producto / caja</th>
+                  <th className="px-5 py-3 text-xs font-semibold text-neutral-600"></th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-neutral-50">
@@ -153,9 +153,9 @@ export default async function RecetasPage() {
                     <tr key={p.id} className="hover:bg-neutral-50 transition-colors">
                       <td className="px-5 py-3">
                         <p className="font-medium text-neutral-900">{p.name}</p>
-                        <p className="text-xs text-neutral-400 font-mono">{p.sku}</p>
+                        <p className="text-xs text-neutral-600 font-mono">{p.sku}</p>
                         {r.baseId && (
-                          <p className="text-xs text-neutral-400">
+                          <p className="text-xs text-neutral-600">
                             Presentación{p.unit_label ? ` ${p.unit_label}` : ""} · usa la receta de{" "}
                             <Link href={`/admin/cocina/recetas/${r.baseId}`} className="text-tierra-700 hover:underline">
                               {todos.find((x) => x.id === r.baseId)?.name ?? "otro producto"}
@@ -165,7 +165,7 @@ export default async function RecetasPage() {
                       </td>
                       <td className="px-5 py-3 text-center text-sm text-neutral-600">
                         {r.yieldCajas === null
-                          ? <span className="text-amber-600 text-xs">falta kg/caja</span>
+                          ? <span className="text-warning text-xs">falta kg/caja</span>
                           : <>{fmtRinde(r.yieldCajas)} caja{r.yieldCajas !== 1 ? "s" : ""}</>}
                       </td>
                       <td className="px-5 py-3 text-center text-sm text-neutral-600">{r.pasos}</td>
@@ -176,7 +176,7 @@ export default async function RecetasPage() {
                       <td className="px-5 py-3 text-right text-sm tabular-nums">
                         {r.costoCaja > 0
                           ? <span className="font-medium text-neutral-800">{fmtPeso(r.costoCaja)}</span>
-                          : <span className="text-neutral-300">—</span>
+                          : <span className="text-neutral-500">—</span>
                         }
                       </td>
 
@@ -190,7 +190,7 @@ export default async function RecetasPage() {
                             desactualizado={pricing.desactualizado}
                           />
                         ) : (
-                          <span className="text-neutral-300">—</span>
+                          <span className="text-neutral-500">—</span>
                         )}
                       </td>
 
@@ -210,16 +210,16 @@ export default async function RecetasPage() {
       </div>
 
       {/* Leyenda */}
-      <div className="flex items-center gap-4 mb-6 text-xs text-neutral-400 px-1">
+      <div className="flex items-center gap-4 mb-6 text-xs text-neutral-600 px-1">
         <span>⚠ el costo guardado en el producto difiere del costo real de la receta — actualizarlo afecta el precio de lista</span>
       </div>
 
-      <div className="bg-white rounded-2xl border border-neutral-200 overflow-hidden">
+      <div className="bg-white rounded-xl border border-neutral-200 shadow-sm overflow-hidden">
         <div className="px-5 py-3 border-b border-neutral-100">
           <p className="text-sm font-medium text-neutral-700">Sin receta ({sinReceta.length})</p>
         </div>
         {sinReceta.length === 0 ? (
-          <p className="px-5 py-8 text-sm text-neutral-400 text-center">¡Todos los productos tienen receta!</p>
+          <p className="px-5 py-8 text-sm text-neutral-600 text-center">¡Todos los productos tienen receta!</p>
         ) : (
           <table className="w-full text-sm">
             <tbody className="divide-y divide-neutral-50">
@@ -227,7 +227,7 @@ export default async function RecetasPage() {
                 <tr key={p.id} className="hover:bg-neutral-50 transition-colors">
                   <td className="px-5 py-3">
                     <p className="font-medium text-neutral-900">{p.name}</p>
-                    <p className="text-xs text-neutral-400 font-mono">{p.sku}</p>
+                    <p className="text-xs text-neutral-600 font-mono">{p.sku}</p>
                   </td>
                   <td className="px-5 py-3 text-right">
                     <Link href={`/admin/cocina/recetas/${p.id}`}

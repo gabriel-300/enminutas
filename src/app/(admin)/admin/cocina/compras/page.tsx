@@ -226,14 +226,14 @@ export default async function ComprasPage() {
   const hayNada          = listaProduccion.length === 0 && sinIngredientes.length === 0 && insumosSoloReorden.length === 0;
 
   return (
-    <div className="p-8 max-w-5xl">
+    <div className="p-4 md:px-10 md:py-8 md:pb-16">
       <div className="mb-6 flex items-start justify-between">
         <div>
-          <Link href="/admin/cocina" className="text-sm text-neutral-400 hover:text-neutral-700 mb-2 inline-block">
+          <Link href="/admin/cocina" className="text-sm text-neutral-600 hover:text-neutral-700 mb-2 inline-block">
             ← Cocina
           </Link>
           <h1 className="text-2xl font-semibold font-display text-neutral-900">Lista de compras</h1>
-          <p className="text-sm text-neutral-500 mt-1">
+          <p className="text-sm text-neutral-600 mt-1">
             Insumos necesarios para la producción pendiente, descontando stock en depósito
           </p>
         </div>
@@ -241,27 +241,27 @@ export default async function ComprasPage() {
       </div>
 
       {hayNada ? (
-        <div className="bg-white rounded-2xl border border-neutral-200 p-12 text-center">
-          <p className="text-neutral-400 text-sm">No hay compras necesarias.</p>
-          <p className="text-xs text-neutral-300 mt-1">Todo el stock está cubierto y no hay producción pendiente.</p>
+        <div className="bg-white rounded-xl border border-neutral-200 shadow-sm p-12 text-center">
+          <p className="text-neutral-600 text-sm">No hay compras necesarias.</p>
+          <p className="text-xs text-neutral-500 mt-1">Todo el stock está cubierto y no hay producción pendiente.</p>
         </div>
       ) : (
         <div className="space-y-6">
 
           {/* Lista principal: insumos para producción */}
           {listaProduccion.length > 0 && (
-            <div className="bg-white rounded-2xl border border-neutral-200 overflow-hidden">
+            <div className="bg-white rounded-xl border border-neutral-200 shadow-sm overflow-hidden">
               <div className="px-5 py-4 border-b border-neutral-100 flex items-center justify-between">
                 <div>
                   <p className="text-sm font-semibold text-neutral-800">Para producción</p>
-                  <p className="text-xs text-neutral-400 mt-0.5">
+                  <p className="text-xs text-neutral-600 mt-0.5">
                     {needItems.length} producto{needItems.length !== 1 ? "s" : ""} a producir ·{" "}
                     {listaProduccion.filter(i => i.aComprar > 0).length} ingrediente{listaProduccion.filter(i => i.aComprar > 0).length !== 1 ? "s" : ""} a comprar
                   </p>
                 </div>
                 {costoTotalCompra > 0 && (
                   <div className="text-right">
-                    <p className="text-xs text-neutral-400">Costo estimado</p>
+                    <p className="text-xs text-neutral-600">Costo estimado</p>
                     <p className="text-lg font-semibold font-display text-neutral-900">{fmtPeso(costoTotalCompra)}</p>
                   </div>
                 )}
@@ -270,12 +270,12 @@ export default async function ComprasPage() {
                 <table className="w-full text-sm">
                   <thead>
                     <tr className="border-b border-neutral-100 text-left">
-                      <th className="px-5 py-3 text-xs font-medium text-neutral-400">Ingrediente</th>
-                      <th className="px-5 py-3 text-xs font-medium text-neutral-400 text-right">Necesario</th>
-                      <th className="px-5 py-3 text-xs font-medium text-neutral-400 text-right">En depósito</th>
-                      <th className="px-5 py-3 text-xs font-medium text-neutral-400 text-right font-semibold">Comprar</th>
-                      <th className="px-5 py-3 text-xs font-medium text-neutral-400 text-right">Costo est.</th>
-                      <th className="px-5 py-3 text-xs font-medium text-neutral-400">Se usa en</th>
+                      <th className="px-5 py-3 text-xs font-semibold text-neutral-600">Ingrediente</th>
+                      <th className="px-5 py-3 text-xs font-semibold text-neutral-600 text-right">Necesario</th>
+                      <th className="px-5 py-3 text-xs font-semibold text-neutral-600 text-right">En depósito</th>
+                      <th className="px-5 py-3 text-xs font-semibold text-neutral-600 text-right font-semibold">Comprar</th>
+                      <th className="px-5 py-3 text-xs font-semibold text-neutral-600 text-right">Costo est.</th>
+                      <th className="px-5 py-3 text-xs font-semibold text-neutral-600">Se usa en</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-neutral-50">
@@ -286,33 +286,33 @@ export default async function ComprasPage() {
                           <td className="px-5 py-3">
                             <span className="font-medium text-neutral-900">{ing.nombre}</span>
                             {ing.bajoPuntoPedido && !cubierto && (
-                              <span className="ml-2 text-xs text-amber-600 font-medium">⚠ bajo punto de pedido</span>
+                              <span className="ml-2 text-xs text-warning font-medium">⚠ bajo punto de pedido</span>
                             )}
                           </td>
-                          <td className="px-5 py-3 text-right tabular-nums text-neutral-500">
+                          <td className="px-5 py-3 text-right tabular-nums text-neutral-600">
                             {fmtCant(ing.totalNecesario)}
-                            <span className="text-neutral-300 ml-1">{ing.unidad}</span>
+                            <span className="text-neutral-500 ml-1">{ing.unidad}</span>
                           </td>
                           <td className="px-5 py-3 text-right tabular-nums">
-                            <span className={ing.enStock >= ing.totalNecesario ? "text-emerald-600 font-medium" : "text-neutral-500"}>
+                            <span className={ing.enStock >= ing.totalNecesario ? "text-success font-medium" : "text-neutral-600"}>
                               {fmtCant(ing.enStock)}
                             </span>
-                            <span className="text-neutral-300 ml-1">{ing.unidad}</span>
+                            <span className="text-neutral-500 ml-1">{ing.unidad}</span>
                           </td>
                           <td className="px-5 py-3 text-right tabular-nums font-semibold">
                             {cubierto ? (
-                              <span className="text-emerald-500 text-xs font-normal">✓ cubierto</span>
+                              <span className="text-success text-xs font-normal">✓ cubierto</span>
                             ) : (
                               <span className="text-neutral-900">
                                 {fmtCant(ing.aComprar)}
-                                <span className="text-neutral-400 font-normal ml-1">{ing.unidad}</span>
+                                <span className="text-neutral-600 font-normal ml-1">{ing.unidad}</span>
                               </span>
                             )}
                           </td>
-                          <td className="px-5 py-3 text-right tabular-nums text-neutral-500 text-xs">
+                          <td className="px-5 py-3 text-right tabular-nums text-neutral-600 text-xs">
                             {ing.costoCompra > 0 ? fmtPeso(ing.costoCompra) : "—"}
                           </td>
-                          <td className="px-5 py-3 text-xs text-neutral-400">
+                          <td className="px-5 py-3 text-xs text-neutral-600">
                             {ing.productos.join(" · ")}
                           </td>
                         </tr>
@@ -326,37 +326,37 @@ export default async function ComprasPage() {
 
           {/* Punto de pedido: insumos bajo mínimo no relacionados a producción hoy */}
           {insumosSoloReorden.length > 0 && (
-            <div className="bg-white rounded-2xl border border-amber-200 overflow-hidden">
-              <div className="px-5 py-4 border-b border-amber-100">
-                <p className="text-sm font-semibold text-amber-800">⚠ Punto de pedido</p>
-                <p className="text-xs text-amber-600 mt-0.5">
+            <div className="bg-white rounded-xl border border-warning-border overflow-hidden">
+              <div className="px-5 py-4 border-b border-warning-border">
+                <p className="text-sm font-semibold text-warning">⚠ Punto de pedido</p>
+                <p className="text-xs text-warning mt-0.5">
                   Insumos bajo su mínimo aunque no se necesiten para la producción de hoy
                 </p>
               </div>
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="border-b border-amber-50 text-left">
-                    <th className="px-5 py-3 text-xs font-medium text-neutral-400">Insumo</th>
-                    <th className="px-5 py-3 text-xs font-medium text-neutral-400 text-right">Stock actual</th>
-                    <th className="px-5 py-3 text-xs font-medium text-neutral-400 text-right">Punto de pedido</th>
-                    <th className="px-5 py-3 text-xs font-medium text-neutral-400 text-right">Reponer</th>
+                  <tr className="border-b border-warning-border text-left">
+                    <th className="px-5 py-3 text-xs font-semibold text-neutral-600">Insumo</th>
+                    <th className="px-5 py-3 text-xs font-semibold text-neutral-600 text-right">Stock actual</th>
+                    <th className="px-5 py-3 text-xs font-semibold text-neutral-600 text-right">Punto de pedido</th>
+                    <th className="px-5 py-3 text-xs font-semibold text-neutral-600 text-right">Reponer</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-amber-50">
+                <tbody className="divide-y divide-warning-border">
                   {insumosSoloReorden.map((ins) => (
-                    <tr key={ins.id} className="hover:bg-amber-50/50">
+                    <tr key={ins.id} className="hover:bg-warning-bg/50">
                       <td className="px-5 py-3 font-medium text-neutral-800">{ins.nombre}</td>
-                      <td className="px-5 py-3 text-right tabular-nums text-amber-700 font-semibold">
+                      <td className="px-5 py-3 text-right tabular-nums text-warning font-semibold">
                         {fmtCant(ins.stockActual)}
-                        <span className="text-neutral-400 font-normal ml-1">{ins.unidad}</span>
+                        <span className="text-neutral-600 font-normal ml-1">{ins.unidad}</span>
                       </td>
-                      <td className="px-5 py-3 text-right tabular-nums text-neutral-400">
+                      <td className="px-5 py-3 text-right tabular-nums text-neutral-600">
                         {fmtCant(ins.puntoPedido)}
-                        <span className="text-neutral-300 ml-1">{ins.unidad}</span>
+                        <span className="text-neutral-500 ml-1">{ins.unidad}</span>
                       </td>
                       <td className="px-5 py-3 text-right tabular-nums font-semibold text-neutral-800">
                         {fmtCant(ins.aReponer)}
-                        <span className="text-neutral-400 font-normal ml-1">{ins.unidad}</span>
+                        <span className="text-neutral-600 font-normal ml-1">{ins.unidad}</span>
                       </td>
                     </tr>
                   ))}
@@ -367,9 +367,9 @@ export default async function ComprasPage() {
 
           {/* Productos sin ingredientes en receta */}
           {sinIngredientes.length > 0 && (
-            <div className="bg-neutral-50 rounded-2xl border border-neutral-200 p-5">
-              <p className="text-xs font-semibold text-neutral-400 uppercase tracking-wide mb-2">Sin ingredientes en receta</p>
-              <p className="text-xs text-neutral-500 mb-3">
+            <div className="bg-neutral-50 rounded-xl border border-neutral-200 p-5">
+              <p className="text-xs font-semibold text-neutral-600 mb-2">Sin ingredientes en receta</p>
+              <p className="text-xs text-neutral-600 mb-3">
                 Necesitan producción pero sus recetas no tienen ingredientes — no se incluyen en la lista.
               </p>
               <div className="flex flex-wrap gap-2">

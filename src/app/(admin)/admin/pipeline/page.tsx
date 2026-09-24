@@ -3,6 +3,7 @@ import { createClient, createAdminClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { PipelineClient } from "./pipeline-client";
 import { ESTADOS } from "./constants";
+import { KpiCard, PageHeader } from "@/components/ui";
 
 export const metadata: Metadata = { title: "Pipeline — Admin" };
 export const revalidate = 0;
@@ -48,36 +49,28 @@ export default async function PipelinePage() {
     }).length;
 
   return (
-    <div className="p-4 md:p-8">
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold font-display text-neutral-900">Pipeline B2B</h1>
-        <p className="text-sm text-neutral-400 mt-1">Prospección y seguimiento de nuevos clientes</p>
-      </div>
+    <div className="p-4 md:px-10 md:py-8 md:pb-16">
+      <PageHeader
+        className="mb-6"
+        title="Pipeline B2B"
+        subtitle="Prospección y seguimiento de nuevos clientes"
+      />
 
       {/* KPIs */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-        <div className="bg-white rounded-2xl border border-neutral-200 p-5">
-          <p className="text-xs text-neutral-400 uppercase tracking-wide mb-1">Prospectos activos</p>
-          <p className="text-2xl font-bold text-neutral-900">{activos.length}</p>
-          <p className="text-xs text-neutral-400 mt-0.5">{lista.length} totales</p>
-        </div>
-        <div className="bg-white rounded-2xl border border-neutral-200 p-5">
-          <p className="text-xs text-neutral-400 uppercase tracking-wide mb-1">Valor estimado</p>
-          <p className="text-2xl font-bold text-neutral-900">
-            {new Intl.NumberFormat("es-AR", { style: "currency", currency: "ARS", maximumFractionDigits: 0 }).format(totalPipeline)}
-          </p>
-          <p className="text-xs text-neutral-400 mt-0.5">mensual en pipeline</p>
-        </div>
-        <div className="bg-white rounded-2xl border border-neutral-200 p-5">
-          <p className="text-xs text-neutral-400 uppercase tracking-wide mb-1">Tasa conversión</p>
-          <p className="text-2xl font-bold text-emerald-600">{tasaConversion}%</p>
-          <p className="text-xs text-neutral-400 mt-0.5">{ganados.length} ganados</p>
-        </div>
-        <div className={`rounded-2xl p-5 border ${proximos > 0 ? "bg-amber-50 border-amber-200" : "bg-white border-neutral-200"}`}>
-          <p className="text-xs text-neutral-400 uppercase tracking-wide mb-1">Contactar esta semana</p>
-          <p className={`text-2xl font-bold ${proximos > 0 ? "text-amber-700" : "text-neutral-900"}`}>{proximos}</p>
-          <p className="text-xs text-neutral-400 mt-0.5">próximos 7 días</p>
-        </div>
+      <div className="grid grid-cols-[repeat(auto-fit,minmax(220px,1fr))] gap-4 mb-6">
+        <KpiCard label="Prospectos activos" value={activos.length} footer={`${lista.length} totales`} />
+        <KpiCard
+          label="Valor estimado"
+          value={new Intl.NumberFormat("es-AR", { style: "currency", currency: "ARS", maximumFractionDigits: 0 }).format(totalPipeline)}
+          footer="mensual en pipeline"
+        />
+        <KpiCard label="Tasa conversión" value={`${tasaConversion}%`} footer={`${ganados.length} ganados`} />
+        <KpiCard
+          label="Contactar esta semana"
+          value={proximos}
+          footer="próximos 7 días"
+          tone={proximos > 0 ? "warning" : "default"}
+        />
       </div>
 
       <PipelineClient

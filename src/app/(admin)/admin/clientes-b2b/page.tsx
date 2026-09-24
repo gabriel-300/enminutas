@@ -96,10 +96,10 @@ export default async function AdminClientesBb2Page() {
   const pendingCount = lista.filter((c) => c.b2b_status === "pendiente").length;
 
   return (
-    <div className="p-4 md:p-8">
+    <div className="p-4 md:px-10 md:py-8 md:pb-16">
       <div className="mb-5 md:mb-6">
         <h1 className="text-xl md:text-2xl font-semibold font-display text-neutral-900">Clientes B2B</h1>
-        <p className="text-sm text-neutral-500 mt-1">{lista.length} cliente{lista.length !== 1 ? "s" : ""} registrado{lista.length !== 1 ? "s" : ""}</p>
+        <p className="text-sm text-neutral-600 mt-1">{lista.length} cliente{lista.length !== 1 ? "s" : ""} registrado{lista.length !== 1 ? "s" : ""}</p>
       </div>
 
       <ClientesBb2Client clientes={lista} pendingCount={pendingCount} zonas={zonas} canales={canales} vendedores={vendedores} esAdmin={!esVendedor} esVendedor={esVendedor} />

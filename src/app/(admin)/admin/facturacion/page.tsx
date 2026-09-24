@@ -63,18 +63,18 @@ export default async function FacturacionPage({
   const MESES = ["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
 
   return (
-    <div className="p-4 md:p-8 max-w-6xl">
+    <div className="p-4 md:px-10 md:py-8 md:pb-16">
       {/* Header */}
       <div className="mb-6 flex items-start justify-between gap-4">
         <div>
           <h1 className="text-xl md:text-2xl font-semibold font-display text-neutral-900">Facturación</h1>
-          <p className="text-sm text-neutral-500 mt-0.5">
+          <p className="text-sm text-neutral-600 mt-0.5">
             {MESES[month - 1]} {year}
           </p>
         </div>
         <Link
           href="/admin/facturacion/nueva"
-          className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-[#16233f] text-white text-sm font-medium hover:bg-[#1e2f52] transition-colors shrink-0"
+          className="flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-brand-700 text-white text-sm font-medium hover:bg-brand-800 transition-colors shrink-0"
         >
           <Plus className="size-4" />
           Nueva factura
@@ -88,10 +88,10 @@ export default async function FacturacionPage({
           { label: "Pendiente de cobro",   value: fmt(pendienteCobro), sub: "facturas emitidas" },
           { label: "Ticket promedio",      value: cantMes > 0 ? fmt(totalMes / cantMes) : fmt(0), sub: "por comprobante" },
         ].map(({ label, value, sub }) => (
-          <div key={label} className="bg-white rounded-2xl border border-neutral-200 p-4">
-            <p className="text-xs text-neutral-400 mb-1">{label}</p>
+          <div key={label} className="bg-white rounded-xl border border-neutral-200 shadow-sm p-4">
+            <p className="text-xs text-neutral-600 mb-1">{label}</p>
             <p className="text-xl font-semibold font-display text-neutral-900">{value}</p>
-            <p className="text-xs text-neutral-400 mt-0.5">{sub}</p>
+            <p className="text-xs text-neutral-600 mt-0.5">{sub}</p>
           </div>
         ))}
       </div>
@@ -99,7 +99,7 @@ export default async function FacturacionPage({
       <FacturacionClient facturas={rows} mes={mes} estadoFiltro={sp.estado ?? "todas"} />
 
       {/* Aviso AFIP */}
-      <p className="mt-6 text-xs text-neutral-400 text-center">
+      <p className="mt-6 text-xs text-neutral-600 text-center">
         ⚠ Los comprobantes no tienen validez fiscal hasta la integración con ARCA/AFIP.
       </p>
     </div>

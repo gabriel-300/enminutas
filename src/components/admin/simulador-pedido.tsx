@@ -151,20 +151,20 @@ export function SimuladorPedido({
   const hayCarrito = lineasCarrito.length > 0;
 
   return (
-    <div className="p-4 md:p-8 max-w-7xl">
+    <div className="p-4 md:px-10 md:py-8 md:pb-16">
 
       {/* Header */}
       <div className="mb-5 flex items-start justify-between flex-wrap gap-3 print:hidden">
         <div>
           <div className="flex items-center gap-2 mb-1">
-            <Link href="/admin/preventista" className="text-sm text-neutral-400 hover:text-neutral-600">
+            <Link href="/admin/preventista" className="text-sm text-neutral-600 hover:text-neutral-600">
               ← Preventista
             </Link>
           </div>
           <h1 className="text-xl md:text-2xl font-semibold font-display text-neutral-900">
             Simulador de pedido
           </h1>
-          <p className="text-sm text-neutral-500 mt-0.5">
+          <p className="text-sm text-neutral-600 mt-0.5">
             Canal <span className="font-medium text-neutral-700">{canalLabel}</span>
           </p>
         </div>
@@ -175,7 +175,7 @@ export function SimuladorPedido({
             value={zonaId}
             onChange={(e) => setZonaId(e.target.value)}
             aria-label="Zona de entrega"
-            className="px-3 py-2 text-sm border border-neutral-200 rounded-xl bg-white text-neutral-700 focus:outline-none focus:ring-2 focus:ring-tierra-700/20"
+            className="px-3 py-2 text-sm border border-neutral-400 rounded-lg bg-white text-neutral-700 focus:outline-none focus:ring-[3px] focus:ring-brand-500/30 focus:border-brand-700"
           >
             <option value="">Zona de entrega…</option>
             {zonas.map((z) => (
@@ -198,7 +198,7 @@ export function SimuladorPedido({
                 className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
                   c.slug === canalActivo
                     ? "bg-white text-neutral-900 shadow-sm"
-                    : "text-neutral-500 hover:text-neutral-700"
+                    : "text-neutral-600 hover:text-neutral-700"
                 }`}
               >
                 {c.label}
@@ -218,23 +218,23 @@ export function SimuladorPedido({
             placeholder="Buscar producto por nombre, línea o código…"
             value={busqueda}
             onChange={(e) => setBusqueda(e.target.value)}
-            className="w-full px-3 py-2 text-sm border border-neutral-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-tierra-700/20"
+            className="w-full px-3 py-2 text-sm border border-neutral-400 rounded-lg focus:outline-none focus:ring-[3px] focus:ring-brand-500/30 focus:border-brand-700"
           />
 
-          <div className="bg-white rounded-2xl border border-neutral-200 overflow-hidden">
+          <div className="bg-white rounded-xl border border-neutral-200 shadow-sm overflow-hidden">
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-neutral-100 bg-neutral-50 text-left">
-                  <th className="px-4 py-2.5 text-xs font-medium text-neutral-400 w-14 text-right">Cód</th>
-                  <th className="px-4 py-2.5 text-xs font-medium text-neutral-400">Producto</th>
-                  <th className="px-4 py-2.5 text-xs font-medium text-neutral-400 text-right hidden sm:table-cell">Precio caja</th>
-                  <th className="px-4 py-2.5 text-xs font-medium text-neutral-400 text-center w-28">Cajas</th>
+                  <th className="px-4 py-2.5 text-xs font-semibold text-neutral-600 w-14 text-right">Cód</th>
+                  <th className="px-4 py-2.5 text-xs font-semibold text-neutral-600">Producto</th>
+                  <th className="px-4 py-2.5 text-xs font-semibold text-neutral-600 text-right hidden sm:table-cell">Precio caja</th>
+                  <th className="px-4 py-2.5 text-xs font-semibold text-neutral-600 text-center w-28">Cajas</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-neutral-50">
                 {filtrados.length === 0 ? (
                   <tr>
-                    <td colSpan={4} className="px-4 py-8 text-center text-neutral-400 text-sm">
+                    <td colSpan={4} className="px-4 py-8 text-center text-neutral-600 text-sm">
                       Sin resultados.
                     </td>
                   </tr>
@@ -245,10 +245,10 @@ export function SimuladorPedido({
                       key={p.id}
                       className={`transition-colors ${cajasActuales > 0 ? "bg-tierra-50" : "hover:bg-neutral-50"}`}
                     >
-                      <td className="px-4 py-2.5 text-right text-neutral-400 font-mono text-xs">{p.codigo}</td>
+                      <td className="px-4 py-2.5 text-right text-neutral-600 font-mono text-xs">{p.codigo}</td>
                       <td className="px-4 py-2.5">
                         <p className="font-medium text-neutral-900 leading-tight">{p.nombre}</p>
-                        <p className="text-xs text-neutral-400 mt-0.5">{p.linea} · {p.presentacion}</p>
+                        <p className="text-xs text-neutral-600 mt-0.5">{p.linea} · {p.presentacion}</p>
                       </td>
                       <td className="px-4 py-2.5 text-right tabular-nums font-medium text-neutral-700 hidden sm:table-cell">
                         {fmt(precioCaja(p))}
@@ -258,7 +258,7 @@ export function SimuladorPedido({
                           <button
                             onClick={() => setCajas(p.id, cajasActuales - 1)}
                             disabled={cajasActuales === 0}
-                            className="w-7 h-7 rounded-lg border border-neutral-200 text-neutral-500 hover:bg-neutral-100 disabled:opacity-30 transition-colors flex items-center justify-center font-medium text-base leading-none"
+                            className="w-7 h-7 rounded-lg border border-neutral-200 text-neutral-600 hover:bg-neutral-100 disabled:opacity-30 transition-colors flex items-center justify-center font-medium text-base leading-none"
                           >
                             −
                           </button>
@@ -268,11 +268,11 @@ export function SimuladorPedido({
                             value={cajasActuales || ""}
                             placeholder="0"
                             onChange={(e) => setCajas(p.id, Math.max(0, parseInt(e.target.value) || 0))}
-                            className="w-10 text-center text-sm font-semibold border border-neutral-200 rounded-lg py-1 focus:outline-none focus:ring-2 focus:ring-tierra-700/20 tabular-nums"
+                            className="w-10 text-center text-sm font-semibold border border-neutral-400 rounded-lg py-1 focus:outline-none focus:ring-[3px] focus:ring-brand-500/30 focus:border-brand-700 tabular-nums"
                           />
                           <button
                             onClick={() => agregarUna(p.id)}
-                            className="w-7 h-7 rounded-lg border border-neutral-200 text-neutral-500 hover:bg-neutral-100 transition-colors flex items-center justify-center font-medium text-base leading-none"
+                            className="w-7 h-7 rounded-lg border border-neutral-200 text-neutral-600 hover:bg-neutral-100 transition-colors flex items-center justify-center font-medium text-base leading-none"
                           >
                             +
                           </button>
@@ -290,24 +290,24 @@ export function SimuladorPedido({
         <div className="space-y-3 lg:sticky lg:top-6 print:w-full print:max-w-lg print:mx-auto">
 
           {/* Panel principal */}
-          <div className="bg-white rounded-2xl border border-neutral-200 p-5 space-y-4 print:rounded-none print:border-0 print:shadow-none">
+          <div className="bg-white rounded-xl border border-neutral-200 p-5 space-y-4 print:rounded-none print:border-0 print:shadow-none">
 
             {/* Encabezado solo al imprimir */}
             <div className="hidden print:block mb-2">
               <p className="text-base font-bold text-neutral-900">En Minutas — Simulador de pedido</p>
-              <p className="text-sm text-neutral-500">
+              <p className="text-sm text-neutral-600">
                 Canal {canalLabel} · {new Date().toLocaleDateString("es-AR", { day: "2-digit", month: "long", year: "numeric" })}
               </p>
             </div>
 
             <div className="flex items-center justify-between print:hidden">
-              <p className="text-xs font-semibold text-neutral-400 uppercase tracking-wide">
+              <p className="text-xs font-semibold text-neutral-600">
                 Resumen del pedido
               </p>
               {hayCarrito && (
                 <button
                   onClick={() => window.print()}
-                  className="flex items-center gap-1 text-xs text-neutral-400 hover:text-neutral-700 transition-colors"
+                  className="flex items-center gap-1 text-xs text-neutral-600 hover:text-neutral-700 transition-colors"
                 >
                   <svg xmlns="http://www.w3.org/2000/svg" className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M6 9V2h12v7M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2M6 14h12v8H6v-8z" />
@@ -319,13 +319,13 @@ export function SimuladorPedido({
 
             {/* Solo en pantalla: nota interna para el preventista, nunca se imprime */}
             {zona && zona.flete_pct > 0 && (
-              <p className="text-xs text-neutral-400 print:hidden">
+              <p className="text-xs text-neutral-600 print:hidden">
                 {zona.name}: los precios incluyen un {Math.round(zona.flete_pct * 10000) / 100}% de recargo por entrega.
               </p>
             )}
 
             {!hayCarrito ? (
-              <p className="text-sm text-neutral-400 text-center py-2">
+              <p className="text-sm text-neutral-600 text-center py-2">
                 Agregá productos del catálogo
               </p>
             ) : (
@@ -336,7 +336,7 @@ export function SimuladorPedido({
                     <div key={p.id} className="flex items-start justify-between gap-2">
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-medium text-neutral-800 truncate">{p.nombre}</p>
-                        <p className="text-xs text-neutral-400">
+                        <p className="text-xs text-neutral-600">
                           {cajas} caja{cajas !== 1 ? "s" : ""} × {fmt(precioCaja(p))}
                         </p>
                       </div>
@@ -349,22 +349,22 @@ export function SimuladorPedido({
 
                 {/* Desglose numérico */}
                 <div className="border-t border-neutral-100 pt-3 space-y-1.5">
-                  <div className="flex justify-between text-sm text-neutral-500">
+                  <div className="flex justify-between text-sm text-neutral-600">
                     <span>Subtotal s/IVA</span>
                     <span className="tabular-nums">{fmt(totalSinIVA)}</span>
                   </div>
-                  <div className="flex justify-between text-sm text-neutral-500">
+                  <div className="flex justify-between text-sm text-neutral-600">
                     <span>IVA ({Math.round(ivaPct * 100)}%)</span>
                     <span className="tabular-nums">{fmt(totalIVA)}</span>
                   </div>
 
                   {/* Percepciones IIBB */}
                   {lineasPercepcion.map((p) => (
-                    <div key={p.id} className="flex justify-between text-sm text-neutral-500">
+                    <div key={p.id} className="flex justify-between text-sm text-neutral-600">
                       <span className="truncate max-w-[140px]">
                         {p.descripcion || "Percepción IIBB"}
                         {p.pctNum > 0 && (
-                          <span className="text-neutral-400 ml-1">({p.pctNum}%)</span>
+                          <span className="text-neutral-600 ml-1">({p.pctNum}%)</span>
                         )}
                       </span>
                       <span className="tabular-nums shrink-0 ml-2">{fmt(p.monto)}</span>
@@ -376,7 +376,7 @@ export function SimuladorPedido({
                     <span>Total</span>
                     <span className="tabular-nums text-tierra-700">{fmt(totalFinal)}</span>
                   </div>
-                  <p className="text-xs text-neutral-400 text-right">
+                  <p className="text-xs text-neutral-600 text-right">
                     {totalCajas} caja{totalCajas !== 1 ? "s" : ""}
                   </p>
                 </div>
@@ -386,7 +386,7 @@ export function SimuladorPedido({
             {/* ── Percepciones IIBB ────────────────────── */}
             <div className="border-t border-neutral-100 pt-4 space-y-2">
               <div className="flex items-center justify-between">
-                <p className="flex items-center gap-1.5 text-xs font-semibold text-neutral-400 uppercase tracking-wide">
+                <p className="flex items-center gap-1.5 text-xs font-semibold text-neutral-600">
                   Percepciones IIBB
                   <HelpTooltip wide text="Impuesto provincial de Ingresos Brutos. No todos los clientes lo pagan. El porcentaje varía según la provincia del cliente. Consultá con administración si no sabés qué % usar." />
                 </p>
@@ -399,7 +399,7 @@ export function SimuladorPedido({
               </div>
 
               {percepciones.length === 0 ? (
-                <p className="text-xs text-neutral-400">Sin percepciones cargadas.</p>
+                <p className="text-xs text-neutral-600">Sin percepciones cargadas.</p>
               ) : (
                 <div className="space-y-2">
                   {percepciones.map((p) => (
@@ -409,7 +409,7 @@ export function SimuladorPedido({
                         placeholder="Descripción (ej. IIBB Bs.As.)"
                         value={p.descripcion}
                         onChange={(e) => actualizarPercepcion(p.id, "descripcion", e.target.value)}
-                        className="flex-1 min-w-0 px-2 py-1.5 text-xs border border-neutral-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-tierra-700/20"
+                        className="flex-1 min-w-0 px-2 py-1.5 text-xs border border-neutral-400 rounded-lg focus:outline-none focus:ring-[3px] focus:ring-brand-500/30 focus:border-brand-700"
                       />
                       <div className="relative w-20 shrink-0">
                         <input
@@ -418,13 +418,13 @@ export function SimuladorPedido({
                           placeholder="0"
                           value={p.pct}
                           onChange={(e) => actualizarPercepcion(p.id, "pct", e.target.value)}
-                          className="w-full px-2 py-1.5 pr-5 text-xs border border-neutral-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-tierra-700/20 tabular-nums text-right"
+                          className="w-full px-2 py-1.5 pr-5 text-xs border border-neutral-400 rounded-lg focus:outline-none focus:ring-[3px] focus:ring-brand-500/30 focus:border-brand-700 tabular-nums text-right"
                         />
-                        <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-neutral-400 pointer-events-none">%</span>
+                        <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-neutral-600 pointer-events-none">%</span>
                       </div>
                       <button
                         onClick={() => eliminarPercepcion(p.id)}
-                        className="text-neutral-300 hover:text-red-400 transition-colors shrink-0"
+                        className="text-neutral-500 hover:text-danger transition-colors shrink-0"
                         aria-label="Eliminar"
                       >
                         <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -437,7 +437,7 @@ export function SimuladorPedido({
               )}
 
               {percepciones.length > 0 && hayCarrito && totalPercepciones > 0 && (
-                <p className="text-xs text-neutral-400">
+                <p className="text-xs text-neutral-600">
                   Base IIBB: {fmt(totalSinIVA)} (subtotal s/IVA)
                 </p>
               )}
@@ -448,7 +448,7 @@ export function SimuladorPedido({
           {(hayCarrito || percepciones.length > 0) && (
             <button
               onClick={limpiar}
-              className="w-full py-2 text-sm text-neutral-500 hover:text-neutral-700 border border-neutral-200 rounded-xl transition-colors print:hidden"
+              className="w-full py-2 text-sm text-neutral-600 hover:text-neutral-700 border border-neutral-200 rounded-xl transition-colors print:hidden"
             >
               Limpiar simulación
             </button>

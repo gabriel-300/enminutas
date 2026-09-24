@@ -79,7 +79,7 @@ function CategoriaCard({ cat }: { cat: Categoria }) {
   }
 
   return (
-    <div className="bg-white rounded-2xl border border-neutral-200 overflow-hidden">
+    <div className="bg-white rounded-xl border border-neutral-200 shadow-sm overflow-hidden">
       {/* Imagen */}
       <div
         className="relative aspect-video w-full flex items-center justify-center cursor-pointer group"
@@ -92,7 +92,7 @@ function CategoriaCard({ cat }: { cat: Categoria }) {
           // eslint-disable-next-line @next/next/no-img-element
           <img src={imgUrl} alt={name} className="w-full h-full object-cover" />
         ) : (
-          <div className="flex flex-col items-center gap-1 text-neutral-400">
+          <div className="flex flex-col items-center gap-1 text-neutral-600">
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
               <rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/>
               <polyline points="21 15 16 10 5 21"/>
@@ -109,15 +109,15 @@ function CategoriaCard({ cat }: { cat: Categoria }) {
       {/* Campos */}
       <div className="p-4 flex flex-col gap-3">
         <div>
-          <label className="block text-xs text-neutral-400 mb-1">Nombre</label>
+          <label className="block text-xs text-neutral-600 mb-1">Nombre</label>
           <input
             value={name}
             onChange={e => setName(e.target.value)}
-            className="w-full text-sm px-3 py-2 border border-neutral-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-tierra-700/20"
+            className="w-full text-sm px-3 py-2 border border-neutral-400 rounded-lg focus:outline-none focus:ring-[3px] focus:ring-brand-500/30 focus:border-brand-700"
           />
         </div>
         <div>
-          <label className="block text-xs text-neutral-400 mb-1">Descripción (opcional)</label>
+          <label className="block text-xs text-neutral-600 mb-1">Descripción (opcional)</label>
           <textarea
             value={desc}
             onChange={e => setDesc(e.target.value)}
@@ -130,7 +130,7 @@ function CategoriaCard({ cat }: { cat: Categoria }) {
         <div className="flex items-center justify-between py-2 border-t border-neutral-100">
           <div>
             <p className="text-xs font-medium text-neutral-700">Visible en tienda</p>
-            <p className="text-xs text-neutral-400">Se muestra en el catálogo público</p>
+            <p className="text-xs text-neutral-600">Se muestra en el catálogo público</p>
           </div>
           <button
             type="button"
@@ -148,18 +148,18 @@ function CategoriaCard({ cat }: { cat: Categoria }) {
           </button>
         </div>
 
-        {error && <p className="text-xs text-red-500">{error}</p>}
+        {error && <p className="text-xs text-danger">{error}</p>}
 
         <div className="flex items-center justify-between gap-2 pt-1">
           <button
             onClick={handleDelete}
             disabled={cat.product_count > 0}
-            className="text-xs text-red-400 hover:text-red-600 disabled:opacity-30 disabled:cursor-not-allowed"
+            className="text-xs text-danger hover:text-danger disabled:opacity-30 disabled:cursor-not-allowed"
           >
             Eliminar
           </button>
           <div className="flex items-center gap-2">
-            {saved && <span className="text-xs text-green-600">Guardado ✓</span>}
+            {saved && <span className="text-xs text-success">Guardado ✓</span>}
             <button
               onClick={handleSave}
               disabled={saving || uploading}
@@ -170,7 +170,7 @@ function CategoriaCard({ cat }: { cat: Categoria }) {
           </div>
         </div>
 
-        <p className="text-xs text-neutral-400">{cat.product_count} producto{cat.product_count !== 1 ? "s" : ""}</p>
+        <p className="text-xs text-neutral-600">{cat.product_count} producto{cat.product_count !== 1 ? "s" : ""}</p>
       </div>
     </div>
   );
@@ -203,13 +203,13 @@ export function CategoriasClient({ categorias }: { categorias: Categoria[] }) {
           onChange={e => setNewName(e.target.value)}
           placeholder="Nueva categoría…"
           required
-          className="flex-1 px-3 py-2 text-sm border border-neutral-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-tierra-700/20"
+          className="flex-1 px-3 py-2 text-sm border border-neutral-400 rounded-lg focus:outline-none focus:ring-[3px] focus:ring-brand-500/30 focus:border-brand-700"
           disabled={creating}
         />
         <button
           type="submit"
           disabled={creating}
-          className="px-4 py-2 rounded-xl bg-tierra-700 text-white text-sm font-medium hover:bg-tierra-800 disabled:opacity-50 transition-colors"
+          className="px-4 py-2 rounded-lg bg-tierra-700 text-white text-sm font-medium hover:bg-tierra-800 disabled:opacity-50 transition-colors"
         >
           Agregar
         </button>
@@ -221,7 +221,7 @@ export function CategoriasClient({ categorias }: { categorias: Categoria[] }) {
       </div>
 
       {categorias.length === 0 && (
-        <p className="text-sm text-neutral-400">No hay categorías todavía.</p>
+        <p className="text-sm text-neutral-600">No hay categorías todavía.</p>
       )}
     </div>
   );

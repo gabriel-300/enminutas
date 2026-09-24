@@ -50,20 +50,20 @@ export default async function HistorialDistribucionPage() {
   const dias = Object.values(byDate).sort((a, b) => b.fecha.localeCompare(a.fecha));
 
   return (
-    <div className="p-4 md:p-8 max-w-2xl">
+    <div className="p-4 md:px-10 md:py-8 md:pb-16 max-w-2xl">
       <div className="mb-5 md:mb-6 flex items-center gap-4">
-        <Link href="/admin/distribucion" className="text-sm text-neutral-400 hover:text-neutral-700 transition-colors">
+        <Link href="/admin/distribucion" className="text-sm text-neutral-600 hover:text-neutral-700 transition-colors">
           ← Volver
         </Link>
         <div>
           <h1 className="text-xl md:text-2xl font-semibold font-display text-neutral-900">Historial de entregas</h1>
-          <p className="text-sm text-neutral-500 mt-0.5">Últimos 30 días</p>
+          <p className="text-sm text-neutral-600 mt-0.5">Últimos 30 días</p>
         </div>
       </div>
 
       {dias.length === 0 ? (
-        <div className="bg-white rounded-2xl border border-neutral-200 p-12 text-center">
-          <p className="text-neutral-400 text-sm">No hay entregas registradas en los últimos 30 días.</p>
+        <div className="bg-white rounded-xl border border-neutral-200 shadow-sm p-12 text-center">
+          <p className="text-neutral-600 text-sm">No hay entregas registradas en los últimos 30 días.</p>
         </div>
       ) : (
         <div className="space-y-2">
@@ -72,11 +72,11 @@ export default async function HistorialDistribucionPage() {
               key={d.fecha}
               href={`/admin/distribucion/hoja-de-ruta?fecha=${d.fecha}`}
               target="_blank"
-              className="flex items-center justify-between bg-white rounded-2xl border border-neutral-200 px-5 py-4 hover:border-neutral-300 transition-colors group"
+              className="flex items-center justify-between bg-white rounded-xl border border-neutral-200 shadow-sm px-5 py-4 hover:border-neutral-300 transition-colors group"
             >
               <div>
                 <p className="text-sm font-medium text-neutral-900 capitalize">{d.label}</p>
-                <p className="text-xs text-neutral-400 mt-0.5">{d.fecha}</p>
+                <p className="text-xs text-neutral-600 mt-0.5">{d.fecha}</p>
               </div>
               <div className="flex items-center gap-3">
                 <span className="text-sm font-semibold text-neutral-700">

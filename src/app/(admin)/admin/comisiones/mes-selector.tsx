@@ -22,7 +22,7 @@ export function MesSelector({ mes }: { mes: string }) {
     <div className="flex items-center gap-2">
       <Link
         href={`/admin/comisiones?mes=${sumarMes(mes, -1)}`}
-        className="size-8 flex items-center justify-center rounded-lg border border-neutral-200 text-neutral-500 hover:bg-neutral-50 transition-colors"
+        className="size-8 flex items-center justify-center rounded-lg border border-neutral-200 text-neutral-600 hover:bg-neutral-50 transition-colors"
         aria-label="Mes anterior"
       >
         ←
@@ -35,13 +35,13 @@ export function MesSelector({ mes }: { mes: string }) {
           type="month"
           value={mes}
           onChange={(e) => e.target.value && router.push(`/admin/comisiones?mes=${e.target.value}`)}
-          className="text-xs border border-neutral-200 rounded-lg px-2 py-1.5 text-neutral-500 focus:outline-none focus:ring-2 focus:ring-tierra-700/20"
+          className="text-xs border border-neutral-400 rounded-lg px-2 py-1.5 text-neutral-600 focus:outline-none focus:ring-[3px] focus:ring-brand-500/30 focus:border-brand-700"
           aria-label="Elegir mes"
         />
       </div>
       <Link
         href={`/admin/comisiones?mes=${sumarMes(mes, 1)}`}
-        className="size-8 flex items-center justify-center rounded-lg border border-neutral-200 text-neutral-500 hover:bg-neutral-50 transition-colors"
+        className="size-8 flex items-center justify-center rounded-lg border border-neutral-200 text-neutral-600 hover:bg-neutral-50 transition-colors"
         aria-label="Mes siguiente"
       >
         →

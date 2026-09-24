@@ -2,7 +2,8 @@ import type { Metadata } from "next";
 import { createClient, createAdminClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import Link from "next/link";
-import { AlertTriangle, AlertCircle, Info, CheckCircle } from "lucide-react";
+import { AlertTriangle, AlertCircle, ArrowRight, Info, CheckCircle } from "lucide-react";
+import { PageHeader, StatusBadge, TONE_STYLES, type Tone } from "@/components/ui";
 
 export const metadata: Metadata = { title: "Alertas — Admin" };
 export const revalidate = 0;
@@ -16,10 +17,10 @@ type Alerta = {
   count?: number;
 };
 
-const NIVEL_CFG = {
-  critico: { icon: AlertCircle,   bg: "bg-red-50",    border: "border-red-200",    text: "text-red-700",    badge: "bg-red-100 text-red-700",    label: "Crítico" },
-  urgente: { icon: AlertTriangle, bg: "bg-amber-50",  border: "border-amber-200",  text: "text-amber-700",  badge: "bg-amber-100 text-amber-700",  label: "Urgente" },
-  aviso:   { icon: Info,          bg: "bg-blue-50",   border: "border-blue-200",   text: "text-blue-700",   badge: "bg-blue-100 text-blue-700",   label: "Aviso" },
+const NIVEL_CFG: Record<Alerta["nivel"], { icon: React.ElementType; tone: Tone; label: string }> = {
+  critico: { icon: AlertCircle,   tone: "danger",  label: "Crítico" },
+  urgente: { icon: AlertTriangle, tone: "warning", label: "Urgente" },
+  aviso:   { icon: Info,          tone: "info",    label: "Aviso" },
 };
 
 export default async function AlertasPage() {
@@ -270,52 +271,56 @@ export default async function AlertasPage() {
   const urgentes = alertas.filter(a => a.nivel === "urgente").length;
 
   return (
-    <div className="p-4 md:p-8 max-w-3xl">
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold font-display text-neutral-900">Centro de alertas</h1>
-        <p className="text-sm text-neutral-400 mt-1">
-          {alertas.length === 0
+    <div className="p-4 md:px-10 md:py-8 md:pb-16">
+      <PageHeader
+        className="mb-6"
+        title="Centro de alertas"
+        subtitle={
+          alertas.length === 0
             ? "Todo en orden — sin alertas activas"
-            : `${alertas.length} alerta${alertas.length > 1 ? "s" : ""} activa${alertas.length > 1 ? "s" : ""}${criticos > 0 ? ` · ${criticos} crítica${criticos > 1 ? "s" : ""}` : ""}${urgentes > 0 ? ` · ${urgentes} urgente${urgentes > 1 ? "s" : ""}` : ""}`}
-        </p>
-      </div>
+            : `${alertas.length} alerta${alertas.length > 1 ? "s" : ""} activa${alertas.length > 1 ? "s" : ""}${criticos > 0 ? ` · ${criticos} crítica${criticos > 1 ? "s" : ""}` : ""}${urgentes > 0 ? ` · ${urgentes} urgente${urgentes > 1 ? "s" : ""}` : ""}`
+        }
+      />
 
       {alertas.length === 0 ? (
-        <div className="bg-white rounded-2xl border border-neutral-200 p-12 text-center">
-          <CheckCircle className="size-10 text-emerald-400 mx-auto mb-3" />
-          <p className="text-sm font-medium text-neutral-700">Todo en orden</p>
-          <p className="text-xs text-neutral-400 mt-1">No hay alertas activas en este momento.</p>
+        <div className="bg-white rounded-xl border border-neutral-200 shadow-sm p-12 text-center">
+          <CheckCircle className="size-10 text-success-solid mx-auto mb-3" />
+          <p className="text-sm font-medium text-neutral-900">Todo en orden</p>
+          <p className="text-[13px] text-neutral-600 mt-1">No hay alertas activas en este momento.</p>
         </div>
       ) : (
-        <div className="space-y-3">
+        <div className="grid grid-cols-[repeat(auto-fill,minmax(min(100%,400px),1fr))] gap-3">
           {alertas.map((a, i) => {
             const cfg = NIVEL_CFG[a.nivel];
             const Icon = cfg.icon;
+            const t = TONE_STYLES[cfg.tone];
             return (
               <Link
                 key={i}
                 href={a.href}
-                className={`flex items-start gap-4 p-4 rounded-2xl border ${cfg.bg} ${cfg.border} hover:opacity-90 transition-opacity`}
+                className={`flex items-start gap-3.5 rounded-xl border bg-white px-[18px] py-4 shadow-sm transition-shadow hover:shadow-md ${t.border}`}
               >
-                <Icon className={`size-5 shrink-0 mt-0.5 ${cfg.text}`} />
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 flex-wrap mb-0.5">
-                    <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${cfg.badge}`}>
-                      {cfg.label}
-                    </span>
-                    <span className="text-xs text-neutral-400">{a.categoria}</span>
+                <span className={`flex size-9 shrink-0 items-center justify-center rounded-[9px] ${t.tile}`}>
+                  <Icon className="size-[18px]" />
+                </span>
+                <div className="flex-1 min-w-0 flex flex-col gap-1">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <StatusBadge tone={cfg.tone}>{cfg.label}</StatusBadge>
+                    <span className="text-xs text-neutral-600">{a.categoria}</span>
                   </div>
-                  <p className={`font-semibold text-sm ${cfg.text}`}>{a.titulo}</p>
-                  <p className="text-xs text-neutral-500 mt-0.5">{a.descripcion}</p>
+                  <p className="text-[15px] font-semibold text-neutral-900">{a.titulo}</p>
+                  <p className="text-[13px] text-neutral-600">{a.descripcion}</p>
                 </div>
-                <span className="text-xs text-neutral-400 shrink-0 self-center">Ver →</span>
+                <span className="inline-flex h-8 shrink-0 items-center gap-1 rounded-lg border border-n-btn bg-white px-2.5 text-[13px] font-medium text-neutral-800 shadow-btn">
+                  Ver <ArrowRight className="size-3.5" />
+                </span>
               </Link>
             );
           })}
         </div>
       )}
 
-      <p className="text-xs text-neutral-400 text-center mt-6">
+      <p className="text-xs text-neutral-600 text-center mt-6">
         Actualizado al cargar la página · Recargá para ver el estado actual
       </p>
     </div>

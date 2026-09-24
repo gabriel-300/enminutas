@@ -7,7 +7,7 @@ export const metadata: Metadata = { title: "Ayuda — En Minutas" };
 
 function Section({ title, icon, children }: { title: string; icon: React.ReactNode; children: React.ReactNode }) {
   return (
-    <section className="bg-white rounded-2xl border border-neutral-200 overflow-hidden">
+    <section className="bg-white rounded-xl border border-neutral-200 shadow-sm overflow-hidden">
       <div className="flex items-center gap-3 px-5 py-4 border-b border-neutral-100 bg-neutral-50">
         <span className="text-tierra-700">{icon}</span>
         <h2 className="text-sm font-semibold text-neutral-800">{title}</h2>
@@ -22,7 +22,7 @@ function Steps({ items }: { items: string[] }) {
     <ol className="space-y-2">
       {items.map((item, i) => (
         <li key={i} className="flex gap-3 items-start">
-          <span className="shrink-0 size-5 rounded-full bg-tierra-700 text-white text-xs flex items-center justify-center font-semibold mt-0.5">
+          <span className="shrink-0 size-5 rounded-lg bg-tierra-700 text-white text-xs flex items-center justify-center font-semibold mt-0.5">
             {i + 1}
           </span>
           <span className="text-neutral-700 leading-relaxed">{item}</span>
@@ -41,13 +41,13 @@ function StatusBadge({ label, color }: { label: string; color: string }) {
 }
 
 const ESTADOS = [
-  { key: "pending_payment", label: "Pendiente de pago",  color: "bg-yellow-100 text-yellow-800", desc: "El pedido fue cargado pero el cliente aún no confirmó el pago." },
-  { key: "aprobado",        label: "Aprobado",           color: "bg-blue-100 text-blue-800",     desc: "El pago fue confirmado. El pedido entra en cola de producción." },
-  { key: "enviado_prod",    label: "En producción",      color: "bg-purple-100 text-purple-800", desc: "El equipo de cocina está preparando el pedido." },
-  { key: "despachado",      label: "Despachado",         color: "bg-orange-100 text-orange-800", desc: "El pedido está listo y esperando al repartidor." },
-  { key: "en_distribucion", label: "En distribución",   color: "bg-sky-100 text-sky-800",       desc: "El repartidor está en camino con el pedido." },
-  { key: "delivered",       label: "Entregado",          color: "bg-green-100 text-green-800",   desc: "El pedido fue entregado correctamente al cliente." },
-  { key: "entrega_parcial", label: "Entrega parcial",    color: "bg-amber-100 text-amber-800",   desc: "Se entregó solo una parte del pedido. El resto queda pendiente." },
+  { key: "pending_payment", label: "Pendiente de pago",  color: "bg-warning-bg text-warning", desc: "El pedido fue cargado pero el cliente aún no confirmó el pago." },
+  { key: "aprobado",        label: "Aprobado",           color: "bg-info-bg text-info",     desc: "El pago fue confirmado. El pedido entra en cola de producción." },
+  { key: "enviado_prod",    label: "En producción",      color: "bg-brand-100 text-brand-700", desc: "El equipo de cocina está preparando el pedido." },
+  { key: "despachado",      label: "Despachado",         color: "bg-warning-bg text-warning", desc: "El pedido está listo y esperando al repartidor." },
+  { key: "en_distribucion", label: "En distribución",   color: "bg-info-bg text-info",       desc: "El repartidor está en camino con el pedido." },
+  { key: "delivered",       label: "Entregado",          color: "bg-success-bg text-success",   desc: "El pedido fue entregado correctamente al cliente." },
+  { key: "entrega_parcial", label: "Entrega parcial",    color: "bg-warning-bg text-warning",   desc: "Se entregó solo una parte del pedido. El resto queda pendiente." },
   { key: "liquidado",       label: "Liquidado",          color: "bg-neutral-200 text-neutral-700", desc: "La comisión fue calculada y el pedido está cerrado contablemente." },
 ];
 
@@ -74,7 +74,7 @@ export default async function AyudaPage() {
 
       <div>
         <h1 className="text-xl md:text-2xl font-semibold font-display text-neutral-900">Ayuda del sistema</h1>
-        <p className="text-sm text-neutral-500 mt-1">
+        <p className="text-sm text-neutral-600 mt-1">
           Guías y referencia rápida para usar En Minutas.
         </p>
       </div>
@@ -88,7 +88,7 @@ export default async function AyudaPage() {
           </svg>
         }
       >
-        <p className="text-neutral-500 text-xs">Los pedidos avanzan por estos estados en orden:</p>
+        <p className="text-neutral-600 text-xs">Los pedidos avanzan por estos estados en orden:</p>
         <div className="space-y-2.5">
           {ESTADOS.map((e) => (
             <div key={e.key} className="flex items-start gap-3">
@@ -137,14 +137,14 @@ export default async function AyudaPage() {
               "Hacer click en Imprimir para generar una versión para papel o PDF.",
             ]} />
             <div className="mt-3 space-y-2">
-              <p className="text-xs font-medium text-neutral-500 uppercase tracking-wide">Canales de precio</p>
+              <p className="text-xs font-medium text-neutral-600">Canales de precio</p>
               {CANALES.map((c) => (
                 <div key={c.slug} className="flex items-start gap-2 text-xs">
                   <span className="font-mono bg-neutral-100 px-1.5 py-0.5 rounded text-neutral-600 shrink-0">{c.slug}</span>
                   <span className="text-neutral-600">{c.desc}</span>
                 </div>
               ))}
-              <p className="text-xs text-neutral-400 italic">Los precios incluyen IVA. El precio s/IVA es para Factura A.</p>
+              <p className="text-xs text-neutral-600 italic">Los precios incluyen IVA. El precio s/IVA es para Factura A.</p>
             </div>
           </Section>
 
@@ -275,7 +275,7 @@ export default async function AyudaPage() {
             ].map((item, i) => (
               <div key={i} className="border-l-2 border-tierra-700/20 pl-3">
                 <p className="font-medium text-neutral-800 text-xs">{item.label}</p>
-                <p className="text-neutral-500 text-xs mt-0.5">{item.desc}</p>
+                <p className="text-neutral-600 text-xs mt-0.5">{item.desc}</p>
               </div>
             ))}
           </div>
@@ -305,10 +305,10 @@ export default async function AyudaPage() {
             </li>
           ))}
         </ul>
-        <p className="text-xs text-neutral-400 mt-3">El asistente consulta los datos reales del sistema. No inventa precios ni pedidos.</p>
+        <p className="text-xs text-neutral-600 mt-3">El asistente consulta los datos reales del sistema. No inventa precios ni pedidos.</p>
       </Section>
 
-      <p className="text-xs text-neutral-400 pb-4">
+      <p className="text-xs text-neutral-600 pb-4">
         ¿Encontraste un error o algo no funciona como esperabas?{" "}
         <Link href="/admin/dashboard" className="underline hover:text-neutral-600">Volver al inicio</Link>
       </p>

@@ -37,7 +37,7 @@ function PasswordInput({ name, placeholder, className, disabled, value, onChange
       <button
         type="button"
         onClick={() => setShow((s) => !s)}
-        className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-neutral-600 transition-colors"
+        className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-600 hover:text-neutral-600 transition-colors"
         tabIndex={-1}
       >
         <EyeIcon open={show} />
@@ -91,7 +91,7 @@ function ResetPasswordPanel({ member, onClose }: { member: StaffMember; onClose:
   const [err,  setErr]          = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
 
-  const inputCls = "w-full px-3 py-2 text-sm border border-neutral-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-tierra-700/20 disabled:opacity-50";
+  const inputCls = "w-full px-3 py-2 text-sm border border-neutral-400 rounded-lg focus:outline-none focus:ring-[3px] focus:ring-brand-500/30 focus:border-brand-700 disabled:opacity-50";
 
   function handleEmail() {
     setErr(null); setMsg(null);
@@ -127,12 +127,12 @@ function ResetPasswordPanel({ member, onClose }: { member: StaffMember; onClose:
           className={`px-2.5 py-1 rounded-lg text-xs transition-colors ${mode === "direct" ? "bg-tierra-700 text-white" : "bg-white border border-neutral-200 text-neutral-600 hover:bg-neutral-100"}`}>
           Poner contraseña
         </button>
-        <button type="button" onClick={onClose} className="ml-auto text-xs text-neutral-400 hover:text-neutral-700">✕</button>
+        <button type="button" onClick={onClose} className="ml-auto text-xs text-neutral-600 hover:text-neutral-700">✕</button>
       </div>
 
       {mode === "email" ? (
         <div className="space-y-2">
-          <p className="text-xs text-neutral-500">
+          <p className="text-xs text-neutral-600">
             Se enviará un link de recuperación a <strong>{member.email}</strong>.
           </p>
           <button onClick={handleEmail} disabled={isPending}
@@ -142,7 +142,7 @@ function ResetPasswordPanel({ member, onClose }: { member: StaffMember; onClose:
         </div>
       ) : (
         <form onSubmit={handleDirect} className="space-y-2">
-          <p className="text-xs text-neutral-500">El usuario puede ingresar inmediatamente con la nueva contraseña.</p>
+          <p className="text-xs text-neutral-600">El usuario puede ingresar inmediatamente con la nueva contraseña.</p>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
             <PasswordInput value={password} onChange={e => setPassword(e.target.value)}
               placeholder="Nueva contraseña" disabled={isPending} className={inputCls} />
@@ -184,7 +184,7 @@ function ComisionVendedorInput({ member }: { member: StaffMember }) {
 
   return (
     <div className="flex items-center gap-2 flex-wrap">
-      <span className="text-xs text-neutral-500 shrink-0">% comisión:</span>
+      <span className="text-xs text-neutral-600 shrink-0">% comisión:</span>
       <div className="flex items-center gap-1">
         <input
           type="number"
@@ -195,9 +195,9 @@ function ComisionVendedorInput({ member }: { member: StaffMember }) {
           onChange={(e) => { setValue(e.target.value); setSaved(false); }}
           placeholder="—"
           disabled={isPending}
-          className="w-16 px-2 py-1 text-xs border border-neutral-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-tierra-700/20 disabled:opacity-50 tabular-nums"
+          className="w-16 px-2 py-1 text-xs border border-neutral-400 rounded-lg focus:outline-none focus:ring-[3px] focus:ring-brand-500/30 focus:border-brand-700 disabled:opacity-50 tabular-nums"
         />
-        <span className="text-xs text-neutral-400">%</span>
+        <span className="text-xs text-neutral-600">%</span>
       </div>
       <button
         onClick={handleSave}
@@ -234,30 +234,30 @@ function StaffMobileCard({ member, isCurrentUser, zonas = [] }: {
   }
 
   return (
-    <div className="bg-white rounded-2xl border border-neutral-200 p-4">
+    <div className="bg-white rounded-xl border border-neutral-200 shadow-sm p-4">
       <div className="flex items-start justify-between gap-2 mb-1">
         <div>
           <p className="font-medium text-neutral-900">{member.name ?? member.email}</p>
-          {member.name && <p className="text-xs text-neutral-400">{member.email}</p>}
-          {isCurrentUser && <span className="text-xs text-neutral-400 italic">Vos</span>}
+          {member.name && <p className="text-xs text-neutral-600">{member.email}</p>}
+          {isCurrentUser && <span className="text-xs text-neutral-600 italic">Vos</span>}
         </div>
         <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium shrink-0 ${ROLE_BADGE[member.role] ?? "bg-neutral-100 text-neutral-600"}`}>
           {ROLE_OPTIONS.find((r) => r.value === member.role)?.label ?? member.role}
         </span>
       </div>
 
-      <p className="text-xs text-neutral-400 mb-3">Último acceso: {fmtAcceso(member.last_sign_in)}</p>
+      <p className="text-xs text-neutral-600 mb-3">Último acceso: {fmtAcceso(member.last_sign_in)}</p>
 
       {!isCurrentUser && (
         <div className="space-y-2">
           <div className="flex gap-2">
             <select value={member.role} onChange={(e) => handleRoleChange(e.target.value)} disabled={isPending}
-              className="flex-1 text-xs border border-neutral-200 rounded-lg px-2 py-1.5 bg-white text-neutral-700 disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-tierra-700/20">
+              className="flex-1 text-xs border border-neutral-400 rounded-lg px-2 py-1.5 bg-white text-neutral-700 disabled:opacity-50 focus:outline-none focus:ring-[3px] focus:ring-brand-500/30 focus:border-brand-700">
               {ROLE_OPTIONS.map((r) => <option key={r.value} value={r.value}>{r.label}</option>)}
             </select>
             {member.role === "distribucion" && zonas.length > 0 && (
               <select value={member.zona_id ?? ""} onChange={(e) => handleZonaChange(e.target.value)} disabled={isPending}
-                className="flex-1 text-xs border border-neutral-200 rounded-lg px-2 py-1.5 bg-white text-neutral-700 disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-tierra-700/20">
+                className="flex-1 text-xs border border-neutral-400 rounded-lg px-2 py-1.5 bg-white text-neutral-700 disabled:opacity-50 focus:outline-none focus:ring-[3px] focus:ring-brand-500/30 focus:border-brand-700">
                 <option value="">Sin zona</option>
                 {zonas.map((z) => <option key={z.id} value={z.id}>{z.name}</option>)}
               </select>
@@ -272,7 +272,7 @@ function StaffMobileCard({ member, isCurrentUser, zonas = [] }: {
               {showReset ? "Cancelar" : "Contraseña"}
             </button>
             <button onClick={handleRevoke} disabled={isPending}
-              className="px-3 py-1.5 text-xs rounded-lg border border-danger/30 text-danger hover:bg-danger-bg disabled:opacity-40">
+              className="px-3 py-1.5 text-xs rounded-lg border border-danger-border text-danger hover:bg-danger-bg disabled:opacity-40">
               Revocar
             </button>
           </div>
@@ -310,34 +310,34 @@ function StaffRow({ member, isCurrentUser, zonas = [] }: {
       <tr className="hover:bg-neutral-50 transition-colors">
         <td className="px-4 py-3">
           <p className="font-medium text-neutral-900">{member.name ?? member.email}</p>
-          {member.name && <p className="text-xs text-neutral-400 mt-0.5">{member.email}</p>}
-          {isCurrentUser && <span className="text-xs text-neutral-400 italic">Vos</span>}
+          {member.name && <p className="text-xs text-neutral-600 mt-0.5">{member.email}</p>}
+          {isCurrentUser && <span className="text-xs text-neutral-600 italic">Vos</span>}
         </td>
         <td className="px-4 py-3">
           <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${ROLE_BADGE[member.role] ?? "bg-neutral-100 text-neutral-600"}`}>
             {ROLE_OPTIONS.find((r) => r.value === member.role)?.label ?? member.role}
           </span>
         </td>
-        <td className="px-4 py-3 text-xs text-neutral-400">{fmtAcceso(member.last_sign_in)}</td>
+        <td className="px-4 py-3 text-xs text-neutral-600">{fmtAcceso(member.last_sign_in)}</td>
         <td className="px-4 py-3">
           {!isCurrentUser ? (
             <div className="space-y-2">
               {/* Fila 1: rol + zona/comisión inline + acciones de texto */}
               <div className="flex items-center gap-3 flex-wrap">
                 <select value={member.role} onChange={(e) => handleRoleChange(e.target.value)} disabled={isPending}
-                  className="text-xs border border-neutral-200 rounded-lg px-2 py-1.5 bg-white text-neutral-700 disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-tierra-700/20">
+                  className="text-xs border border-neutral-400 rounded-lg px-2 py-1.5 bg-white text-neutral-700 disabled:opacity-50 focus:outline-none focus:ring-[3px] focus:ring-brand-500/30 focus:border-brand-700">
                   {ROLE_OPTIONS.map((r) => <option key={r.value} value={r.value}>{r.label}</option>)}
                 </select>
                 {member.role === "distribucion" && zonas.length > 0 && (
                   <select value={member.zona_id ?? ""} onChange={(e) => handleZonaChange(e.target.value)} disabled={isPending}
-                    className="text-xs border border-neutral-200 rounded-lg px-2 py-1.5 bg-white text-neutral-700 disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-tierra-700/20"
+                    className="text-xs border border-neutral-400 rounded-lg px-2 py-1.5 bg-white text-neutral-700 disabled:opacity-50 focus:outline-none focus:ring-[3px] focus:ring-brand-500/30 focus:border-brand-700"
                     title="Zona de distribución">
                     <option value="">Sin zona</option>
                     {zonas.map((z) => <option key={z.id} value={z.id}>{z.name}</option>)}
                   </select>
                 )}
                 <button onClick={() => setShowReset(!showReset)} disabled={isPending}
-                  className="text-xs text-neutral-500 hover:text-neutral-800 hover:underline disabled:opacity-40">
+                  className="text-xs text-neutral-600 hover:text-neutral-800 hover:underline disabled:opacity-40">
                   Contraseña
                 </button>
                 <button onClick={handleRevoke} disabled={isPending}
@@ -351,7 +351,7 @@ function StaffRow({ member, isCurrentUser, zonas = [] }: {
               )}
             </div>
           ) : (
-            <span className="text-xs text-neutral-300">—</span>
+            <span className="text-xs text-neutral-500">—</span>
           )}
         </td>
       </tr>
@@ -374,7 +374,7 @@ function InviteForm() {
   const [error, setError]     = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
 
-  const inputCls = "w-full px-3 py-2 text-sm border border-neutral-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-tierra-700/20 disabled:opacity-50";
+  const inputCls = "w-full px-3 py-2 text-sm border border-neutral-400 rounded-lg focus:outline-none focus:ring-[3px] focus:ring-brand-500/30 focus:border-brand-700 disabled:opacity-50";
 
   function handleSubmit(e: React.SyntheticEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -400,22 +400,22 @@ function InviteForm() {
   }
 
   return (
-    <div className="bg-white rounded-2xl border border-neutral-200 p-5 md:p-6">
+    <div className="bg-white rounded-xl border border-neutral-200 shadow-sm p-5 md:p-6">
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-sm font-semibold text-neutral-800">Agregar miembro</h2>
         <div className="flex rounded-lg border border-neutral-200 overflow-hidden text-xs">
           <button type="button" onClick={() => { setMode("password"); setError(null); setSuccess(null); }}
-            className={`px-3 py-1.5 transition-colors ${mode === "password" ? "bg-tierra-700 text-white" : "text-neutral-500 hover:bg-neutral-50"}`}>
+            className={`px-3 py-1.5 transition-colors ${mode === "password" ? "bg-tierra-700 text-white" : "text-neutral-600 hover:bg-neutral-50"}`}>
             Con contraseña
           </button>
           <button type="button" onClick={() => { setMode("invite"); setError(null); setSuccess(null); }}
-            className={`px-3 py-1.5 transition-colors ${mode === "invite" ? "bg-tierra-700 text-white" : "text-neutral-500 hover:bg-neutral-50"}`}>
+            className={`px-3 py-1.5 transition-colors ${mode === "invite" ? "bg-tierra-700 text-white" : "text-neutral-600 hover:bg-neutral-50"}`}>
             Invitar por email
           </button>
         </div>
       </div>
 
-      <p className="text-xs text-neutral-400 mb-4">
+      <p className="text-xs text-neutral-600 mb-4">
         {mode === "password"
           ? "Creá el usuario directamente con una contraseña. No se envía ningún email."
           : "El usuario recibirá un email de invitación para crear su contraseña."}
@@ -424,15 +424,15 @@ function InviteForm() {
       <form onSubmit={handleSubmit} className="space-y-4">
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
           <div>
-            <label className="block text-xs font-medium text-neutral-500 mb-1">Nombre</label>
+            <label className="block text-[13px] font-medium text-neutral-800 mb-1.5">Nombre</label>
             <input name="name" placeholder="Nombre completo" className={inputCls} disabled={isPending} />
           </div>
           <div>
-            <label className="block text-xs font-medium text-neutral-500 mb-1">Email *</label>
+            <label className="block text-[13px] font-medium text-neutral-800 mb-1.5">Email *</label>
             <input name="email" type="email" required placeholder="nombre@empresa.com" className={inputCls} disabled={isPending} />
           </div>
           <div>
-            <label className="block text-xs font-medium text-neutral-500 mb-1">Rol *</label>
+            <label className="block text-[13px] font-medium text-neutral-800 mb-1.5">Rol *</label>
             <select name="rol" required className={`${inputCls} bg-white`} disabled={isPending}>
               {ROLE_OPTIONS.map((r) => (
                 <option key={r.value} value={r.value}>{r.label} — {r.desc}</option>
@@ -444,11 +444,11 @@ function InviteForm() {
         {mode === "password" && (
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-medium text-neutral-500 mb-1">Contraseña *</label>
+              <label className="block text-[13px] font-medium text-neutral-800 mb-1.5">Contraseña *</label>
               <PasswordInput name="password" placeholder="Mínimo 8 caracteres" className={inputCls} disabled={isPending} />
             </div>
             <div>
-              <label className="block text-xs font-medium text-neutral-500 mb-1">Confirmar contraseña *</label>
+              <label className="block text-[13px] font-medium text-neutral-800 mb-1.5">Confirmar contraseña *</label>
               <PasswordInput name="password_confirm" placeholder="Repetir contraseña" className={inputCls} disabled={isPending} />
             </div>
           </div>
@@ -458,7 +458,7 @@ function InviteForm() {
         {success && <p className="text-sm text-success">{success}</p>}
 
         <button type="submit" disabled={isPending}
-          className="w-full sm:w-auto px-4 py-2 rounded-xl bg-tierra-700 text-white text-sm font-medium hover:bg-tierra-800 disabled:opacity-50 transition-colors">
+          className="w-full sm:w-auto px-4 py-2 rounded-lg bg-tierra-700 text-white text-sm font-medium hover:bg-tierra-800 disabled:opacity-50 transition-colors">
           {isPending
             ? "Procesando…"
             : mode === "password" ? "Crear usuario" : "Enviar invitación"}
@@ -481,7 +481,7 @@ export function StaffClient({ staff, currentUserId, zonas = [] }: {
       {/* ── Mobile: cards ────────────────────────────────────────────────── */}
       <div className="md:hidden space-y-3">
         {staff.length === 0
-          ? <p className="text-sm text-neutral-400 text-center py-10">No hay miembros de staff configurados.</p>
+          ? <p className="text-sm text-neutral-600 text-center py-10">No hay miembros de staff configurados.</p>
           : staff.map((m) => (
               <StaffMobileCard key={m.id} member={m} isCurrentUser={m.id === currentUserId} zonas={zonas} />
             ))
@@ -489,20 +489,20 @@ export function StaffClient({ staff, currentUserId, zonas = [] }: {
       </div>
 
       {/* ── Desktop: tabla ───────────────────────────────────────────────── */}
-      <div className="hidden md:block bg-white rounded-2xl border border-neutral-200 overflow-hidden">
+      <div className="hidden md:block bg-white rounded-xl border border-neutral-200 shadow-sm overflow-hidden">
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-neutral-200 text-left">
-              <th className="px-4 py-3 font-medium text-neutral-500">Miembro</th>
-              <th className="px-4 py-3 font-medium text-neutral-500">Rol</th>
-              <th className="px-4 py-3 font-medium text-neutral-500">Último acceso</th>
-              <th className="px-4 py-3 font-medium text-neutral-500">Acciones</th>
+              <th className="text-xs px-4 py-3 font-semibold text-neutral-600">Miembro</th>
+              <th className="text-xs px-4 py-3 font-semibold text-neutral-600">Rol</th>
+              <th className="text-xs px-4 py-3 font-semibold text-neutral-600">Último acceso</th>
+              <th className="text-xs px-4 py-3 font-semibold text-neutral-600">Acciones</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-neutral-100">
             {staff.length === 0 && (
               <tr>
-                <td colSpan={4} className="px-4 py-10 text-center text-neutral-400">
+                <td colSpan={4} className="px-4 py-10 text-center text-neutral-600">
                   No hay miembros de staff configurados.
                 </td>
               </tr>
@@ -521,8 +521,8 @@ export function StaffClient({ staff, currentUserId, zonas = [] }: {
             <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium mb-2 ${ROLE_BADGE[r.value]}`}>
               {r.label}
             </span>
-            <p className="text-xs text-neutral-500">{r.desc}</p>
-            <ul className="mt-2 text-xs text-neutral-400 space-y-0.5">
+            <p className="text-xs text-neutral-600">{r.desc}</p>
+            <ul className="mt-2 text-xs text-neutral-600 space-y-0.5">
               {r.value === "admin" && (<><li>· Dashboard, pedidos, producción</li><li>· Productos, categorías, zonas</li><li>· Clientes B2B, staff</li></>)}
               {r.value === "vendedor" && (<><li>· Dashboard, pedidos, preventista</li><li>· Clientes B2B</li><li>· Sin acceso a configuración ni producción</li></>)}
               {r.value === "produccion" && (<><li>· Dashboard y producción</li><li>· Cocina / Stock completa</li><li>· Sin acceso a pedidos ni clientes</li></>)}

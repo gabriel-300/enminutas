@@ -76,14 +76,14 @@ function Slot({
 
   if (url) {
     return (
-      <div className="relative group w-24 h-24 rounded-2xl overflow-hidden border-2 border-neutral-200 shrink-0 cursor-pointer"
+      <div className="relative group w-24 h-24 rounded-xl overflow-hidden border-2 border-neutral-200 shrink-0 cursor-pointer"
         onClick={() => inputRef.current?.click()}
       >
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src={url} alt="" className="w-full h-full object-cover" />
 
         {isPrincipal && (
-          <span className="absolute top-1.5 left-1.5 px-1.5 py-0.5 rounded-md bg-tierra-700 text-white text-[10px] font-semibold leading-none">
+          <span className="absolute top-1.5 left-1.5 px-1.5 py-0.5 rounded-md bg-tierra-700 text-white text-xs font-semibold leading-none">
             Principal
           </span>
         )}
@@ -94,7 +94,7 @@ function Slot({
             <button
               type="button"
               onClick={(e) => { e.stopPropagation(); onMakePrincipal(); }}
-              className="px-2 py-1 rounded-lg bg-white/90 text-neutral-800 text-[10px] font-semibold leading-none whitespace-nowrap"
+              className="px-2 py-1 rounded-lg bg-white/90 text-neutral-800 text-xs font-semibold leading-none whitespace-nowrap"
             >
               Principal
             </button>
@@ -102,7 +102,7 @@ function Slot({
           <button
             type="button"
             onClick={(e) => { e.stopPropagation(); onClear(); }}
-            className="px-2 py-1 rounded-lg bg-white/90 text-danger text-[10px] font-semibold leading-none"
+            className="px-2 py-1 rounded-lg bg-white/90 text-danger text-xs font-semibold leading-none"
           >
             Quitar
           </button>
@@ -117,18 +117,18 @@ function Slot({
   return (
     <div
       onClick={() => inputRef.current?.click()}
-      className="w-24 h-24 rounded-2xl border-2 border-dashed border-neutral-200 hover:border-tierra-700/40 hover:bg-crema-50 flex flex-col items-center justify-center gap-1 cursor-pointer transition-colors shrink-0"
+      className="w-24 h-24 rounded-xl border-2 border-dashed border-neutral-200 hover:border-tierra-700/40 hover:bg-crema-50 flex flex-col items-center justify-center gap-1 cursor-pointer transition-colors shrink-0"
     >
       {uploading ? (
-        <span className="text-xs text-neutral-400">Subiendo…</span>
+        <span className="text-xs text-neutral-600">Subiendo…</span>
       ) : (
         <>
-          <span className="text-2xl text-neutral-300 leading-none font-light">+</span>
-          <span className="text-[10px] text-neutral-300 font-medium">Foto</span>
+          <span className="text-2xl text-neutral-500 leading-none font-light">+</span>
+          <span className="text-xs text-neutral-500 font-medium">Foto</span>
         </>
       )}
       {error && (
-        <span className="absolute text-[10px] text-danger text-center px-1">{error}</span>
+        <span className="absolute text-xs text-danger text-center px-1">{error}</span>
       )}
       <input ref={inputRef} type="file" accept="image/*" className="hidden"
         onChange={(e) => { const f = e.target.files?.[0]; if (f) onFile(f); }} />
@@ -195,9 +195,9 @@ export function ImageUploader({
 
   return (
     <div className="space-y-3">
-      <label className="block text-xs font-medium text-neutral-500">
+      <label className="block text-[13px] font-medium text-neutral-800">
         Fotos del producto{" "}
-        <span className="font-normal text-neutral-400">(la primera es la principal)</span>
+        <span className="font-normal text-neutral-600">(la primera es la principal)</span>
       </label>
 
       <input type="hidden" name="cover_image_url" value={cover} />
@@ -226,7 +226,7 @@ export function ImageUploader({
           onChange={(e) => setUrlInput(e.target.value)}
           onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); addUrl(); } }}
           placeholder="O pegá un link de imagen (https://...)"
-          className="flex-1 px-3 py-2 text-sm border border-neutral-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-tierra-700/20"
+          className="flex-1 px-3 py-2 text-sm border border-neutral-400 rounded-lg focus:outline-none focus:ring-[3px] focus:ring-brand-500/30 focus:border-brand-700"
         />
         <button
           type="button"
@@ -238,7 +238,7 @@ export function ImageUploader({
         </button>
       </div>
 
-      <p className="text-xs text-neutral-400">
+      <p className="text-xs text-neutral-600">
         {images.filter(Boolean).length}/{MAX_IMAGES} imágenes · Hover para quitar o marcar como principal
       </p>
     </div>

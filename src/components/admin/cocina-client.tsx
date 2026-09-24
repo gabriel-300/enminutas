@@ -64,7 +64,7 @@ function LoteForm({ item, onClose }: { item: StockItem; onClose: () => void }) {
     });
   }
 
-  const inputCls = "px-3 py-2 text-sm border border-neutral-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-tierra-700/20 disabled:opacity-50";
+  const inputCls = "px-3 py-2 text-sm border border-neutral-400 rounded-lg focus:outline-none focus:ring-[3px] focus:ring-brand-500/30 focus:border-brand-700 disabled:opacity-50";
 
   return (
     <div className="mt-2 p-4 bg-neutral-50 border border-neutral-200 rounded-xl space-y-3">
@@ -77,13 +77,13 @@ function LoteForm({ item, onClose }: { item: StockItem; onClose: () => void }) {
           className={`px-2.5 py-1 rounded-lg text-xs font-medium transition-colors ${mode === "ajuste" ? "bg-tierra-700 text-white" : "bg-white border border-neutral-200 text-neutral-600 hover:bg-neutral-50"}`}>
           Ajuste de inventario
         </button>
-        <button type="button" onClick={onClose} className="ml-auto text-xs text-neutral-400 hover:text-neutral-700">✕</button>
+        <button type="button" onClick={onClose} className="ml-auto text-xs text-neutral-600 hover:text-neutral-700">✕</button>
       </div>
 
       <form onSubmit={handle} className="flex items-end gap-3 flex-wrap">
         <input type="hidden" name="product_id" value={item.id} />
         <div>
-          <label className="block text-xs font-medium text-neutral-500 mb-1">
+          <label className="block text-[13px] font-medium text-neutral-800 mb-1.5">
             {mode === "lote" ? "Cajas producidas" : "Stock actual (nuevo valor)"}
           </label>
           <input
@@ -100,7 +100,7 @@ function LoteForm({ item, onClose }: { item: StockItem; onClose: () => void }) {
         </div>
         {mode === "ajuste" && (
           <div>
-            <label className="block text-xs font-medium text-neutral-500 mb-1">Stock mínimo deseado</label>
+            <label className="block text-[13px] font-medium text-neutral-800 mb-1.5">Stock mínimo deseado</label>
             <input
               name="minimo"
               type="text"
@@ -112,17 +112,17 @@ function LoteForm({ item, onClose }: { item: StockItem; onClose: () => void }) {
           </div>
         )}
         <div className="flex-1 min-w-40">
-          <label className="block text-xs font-medium text-neutral-500 mb-1">Notas (opcional)</label>
+          <label className="block text-[13px] font-medium text-neutral-800 mb-1.5">Notas (opcional)</label>
           <input name="notes" placeholder={mode === "lote" ? "Lote matutino…" : "Conteo físico…"} className={`${inputCls} w-full`} disabled={isPending} />
         </div>
         <button type="submit" disabled={isPending}
-          className="px-4 py-2 rounded-xl bg-tierra-700 text-white text-sm font-medium hover:bg-tierra-800 disabled:opacity-50 transition-colors">
+          className="px-4 py-2 rounded-lg bg-tierra-700 text-white text-sm font-medium hover:bg-tierra-800 disabled:opacity-50 transition-colors">
           {isPending ? "Guardando…" : mode === "lote" ? "Registrar lote" : "Ajustar stock"}
         </button>
       </form>
 
       {mode === "lote" && item.demanda > 0 && (
-        <p className="text-xs text-neutral-500">
+        <p className="text-xs text-neutral-600">
           Hay <strong>{item.demanda} cajas</strong> comprometidas en pedidos activos.
           {item.minimo > 0 && ` Mínimo deseado: ${item.minimo}.`}
           {" "}Sugerido a producir: <strong>{sugerido} cajas</strong>.
@@ -141,24 +141,24 @@ function ProductCard({
   item: StockItem; open: boolean; onToggle: () => void; highlight: boolean;
 }) {
   return (
-    <div className={`bg-white rounded-2xl border p-4 ${highlight ? "border-warning/30 bg-warning-bg/20" : "border-neutral-200"}`}>
+    <div className={`bg-white rounded-xl border p-4 ${highlight ? "border-warning-border bg-warning-bg/20" : "border-neutral-200"}`}>
       <div className="flex items-start justify-between gap-2 mb-1">
         <div className="min-w-0">
           <p className="text-sm font-medium text-neutral-900 leading-tight">{item.name}</p>
-          <p className="text-xs text-neutral-400 font-mono mt-0.5">
+          <p className="text-xs text-neutral-600 font-mono mt-0.5">
             {item.sku}{item.bolsas_caja ? ` · ${item.bolsas_caja}u/caja` : ""}
           </p>
         </div>
         <StockBadge stock={item.stock} minimo={item.minimo} />
       </div>
-      <div className="flex items-center gap-4 text-xs text-neutral-500 mb-3">
+      <div className="flex items-center gap-4 text-xs text-neutral-600 mb-3">
         {item.minimo > 0 && <span>Mín: <strong className="text-neutral-700">{item.minimo}</strong></span>}
         {item.demanda > 0 && <span>Comprometido: <strong className="text-tierra-700">{item.demanda}</strong></span>}
         {item.minutosEstimados != null && <span>⏱ {fmtMin(item.minutosEstimados)}</span>}
       </div>
       <button
         onClick={onToggle}
-        className="w-full py-2 text-xs font-medium rounded-xl bg-tierra-700 text-white hover:bg-tierra-800 transition-colors"
+        className="w-full py-2 text-xs font-medium rounded-lg bg-tierra-700 text-white hover:bg-tierra-800 transition-colors"
       >
         {open ? "Cancelar" : "+ Registrar lote / ajustar stock"}
       </button>
@@ -198,28 +198,28 @@ export function CocinaClient({ items }: { items: StockItem[] }) {
     <div className="space-y-6">
       {/* Planificador rápido */}
       {alertaTotal > 0 && (
-        <div className="bg-white rounded-2xl border border-neutral-200 p-4 md:p-5">
-          <p className="text-xs font-semibold text-neutral-400 uppercase tracking-wide mb-3">Plan del día</p>
+        <div className="bg-white rounded-xl border border-neutral-200 shadow-sm p-4 md:p-5">
+          <p className="text-xs font-semibold text-neutral-600 mb-3">Plan del día</p>
           <div className="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-4">
             <div>
-              <p className="text-xs text-neutral-400">Productos a producir</p>
+              <p className="text-xs text-neutral-600">Productos a producir</p>
               <p className="text-2xl font-semibold font-display text-warning">{alertaTotal}</p>
             </div>
             {minTotalUrgente > 0 && (
               <div>
-                <p className="text-xs text-neutral-400">Tiempo estimado total</p>
+                <p className="text-xs text-neutral-600">Tiempo estimado total</p>
                 <p className="text-2xl font-semibold font-display text-neutral-900">{fmtMin(minTotalUrgente)}</p>
               </div>
             )}
             <div>
-              <p className="text-xs text-neutral-400">Prioridad</p>
+              <p className="text-xs text-neutral-600">Prioridad</p>
               <p className="text-sm font-medium text-neutral-700 mt-1">
                 {urgentes[0]?.name ?? "—"}
               </p>
             </div>
           </div>
           {urgentes.some((i) => !i.tieneReceta) && (
-            <p className="mt-3 text-xs text-neutral-400">
+            <p className="mt-3 text-xs text-neutral-600">
               Algunos productos no tienen receta —{" "}
               <a href="/admin/cocina/recetas" className="text-tierra-700 hover:underline">cargalas acá</a>{" "}
               para ver el tiempo estimado.
@@ -232,12 +232,12 @@ export function CocinaClient({ items }: { items: StockItem[] }) {
       <div className="overflow-x-auto -mx-4 px-4 md:mx-0 md:px-0">
         <div className="flex gap-1 bg-white border border-neutral-200 rounded-xl p-1 w-max md:w-fit">
           <button onClick={() => setFilterCat("todas")}
-            className={`px-3 py-1 rounded-lg text-xs font-medium transition-colors whitespace-nowrap ${filterCat === "todas" ? "bg-tierra-700 text-white" : "text-neutral-500 hover:text-neutral-800"}`}>
+            className={`px-3 py-1 rounded-lg text-xs font-medium transition-colors whitespace-nowrap ${filterCat === "todas" ? "bg-tierra-700 text-white" : "text-neutral-600 hover:text-neutral-800"}`}>
             Todas
           </button>
           {categorias.map((cat) => (
             <button key={cat} onClick={() => setFilterCat(cat)}
-              className={`px-3 py-1 rounded-lg text-xs font-medium transition-colors whitespace-nowrap ${filterCat === cat ? "bg-tierra-700 text-white" : "text-neutral-500 hover:text-neutral-800"}`}>
+              className={`px-3 py-1 rounded-lg text-xs font-medium transition-colors whitespace-nowrap ${filterCat === cat ? "bg-tierra-700 text-white" : "text-neutral-600 hover:text-neutral-800"}`}>
               {cat}
             </button>
           ))}
@@ -247,7 +247,7 @@ export function CocinaClient({ items }: { items: StockItem[] }) {
       {/* ── Mobile: cards ──────────────────────────────────────────── */}
       <div className="md:hidden space-y-2">
         {urgentes.length === 0 && resto.length === 0 ? (
-          <div className="bg-white rounded-2xl border border-neutral-200 p-10 text-center text-xs text-neutral-400">
+          <div className="bg-white rounded-xl border border-neutral-200 shadow-sm p-10 text-center text-xs text-neutral-600">
             Sin productos activos.
           </div>
         ) : (
@@ -280,22 +280,22 @@ export function CocinaClient({ items }: { items: StockItem[] }) {
       </div>
 
       {/* ── Desktop: tabla ─────────────────────────────────────────── */}
-      <div className="hidden md:block bg-white rounded-2xl border border-neutral-200 overflow-hidden">
+      <div className="hidden md:block bg-white rounded-xl border border-neutral-200 shadow-sm overflow-hidden">
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-neutral-200 text-left">
-              <th className="px-5 py-3 text-xs font-medium text-neutral-400">Producto</th>
-              <th className="px-5 py-3 text-xs font-medium text-neutral-400 text-center">Stock actual</th>
-              <th className="px-5 py-3 text-xs font-medium text-neutral-400 text-center">Mínimo</th>
-              <th className="px-5 py-3 text-xs font-medium text-neutral-400 text-center">Comprometido</th>
-              <th className="px-5 py-3 text-xs font-medium text-neutral-400 text-center">Tiempo est.</th>
-              <th className="px-5 py-3 text-xs font-medium text-neutral-400"></th>
+              <th className="px-5 py-3 text-xs font-semibold text-neutral-600">Producto</th>
+              <th className="px-5 py-3 text-xs font-semibold text-neutral-600 text-center">Stock actual</th>
+              <th className="px-5 py-3 text-xs font-semibold text-neutral-600 text-center">Mínimo</th>
+              <th className="px-5 py-3 text-xs font-semibold text-neutral-600 text-center">Comprometido</th>
+              <th className="px-5 py-3 text-xs font-semibold text-neutral-600 text-center">Tiempo est.</th>
+              <th className="px-5 py-3 text-xs font-semibold text-neutral-600"></th>
             </tr>
           </thead>
           <tbody className="divide-y divide-neutral-100">
             {urgentes.length === 0 && resto.length === 0 && (
               <tr>
-                <td colSpan={6} className="px-5 py-10 text-center text-neutral-400 text-xs">
+                <td colSpan={6} className="px-5 py-10 text-center text-neutral-600 text-xs">
                   Sin productos activos. Cargá productos desde el panel de Productos.
                 </td>
               </tr>
@@ -343,27 +343,27 @@ function ProductRow({
       <tr className={`hover:bg-neutral-50 transition-colors ${highlight ? "bg-warning-bg/30" : ""}`}>
         <td className="px-5 py-3">
           <p className="font-medium text-neutral-900">{item.name}</p>
-          <p className="text-xs text-neutral-400 font-mono mt-0.5">
+          <p className="text-xs text-neutral-600 font-mono mt-0.5">
             {item.sku}{item.bolsas_caja ? ` · ${item.bolsas_caja} u/caja` : ""}
           </p>
         </td>
         <td className="px-5 py-3 text-center">
           <StockBadge stock={item.stock} minimo={item.minimo} />
         </td>
-        <td className="px-5 py-3 text-center text-sm text-neutral-500 tabular-nums">
-          {item.minimo > 0 ? item.minimo : <span className="text-neutral-300">—</span>}
+        <td className="px-5 py-3 text-center text-sm text-neutral-600 tabular-nums">
+          {item.minimo > 0 ? item.minimo : <span className="text-neutral-500">—</span>}
         </td>
         <td className="px-5 py-3 text-center text-sm tabular-nums">
           {item.demanda > 0
             ? <span className="font-medium text-tierra-700">{item.demanda}</span>
-            : <span className="text-neutral-300">—</span>}
+            : <span className="text-neutral-500">—</span>}
         </td>
-        <td className="px-5 py-3 text-center text-xs text-neutral-500">
+        <td className="px-5 py-3 text-center text-xs text-neutral-600">
           {item.minutosEstimados != null
             ? <span className="font-medium text-neutral-700">{fmtMin(item.minutosEstimados)}</span>
             : item.tieneReceta
-              ? <span className="text-neutral-300">—</span>
-              : <a href="/admin/cocina/recetas" className="text-neutral-300 hover:text-tierra-700 underline underline-offset-2">Sin receta</a>
+              ? <span className="text-neutral-500">—</span>
+              : <a href="/admin/cocina/recetas" className="text-neutral-500 hover:text-tierra-700 underline underline-offset-2">Sin receta</a>
           }
         </td>
         <td className="px-5 py-3 text-right">

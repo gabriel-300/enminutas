@@ -70,22 +70,22 @@ export default async function LotesPage() {
   const vigentes = lotes.filter(l => l.estado === "vigente").length;
 
   return (
-    <div className="p-4 md:p-8 max-w-5xl">
+    <div className="p-4 md:px-10 md:py-8 md:pb-16">
       <div className="mb-6">
         <h1 className="text-2xl font-bold font-display text-neutral-900">Lotes</h1>
-        <p className="text-sm text-neutral-400 mt-1">Trazabilidad y vencimientos — FEFO</p>
+        <p className="text-sm text-neutral-600 mt-1">Trazabilidad y vencimientos — FEFO</p>
       </div>
 
       {/* KPIs */}
       <div className="grid grid-cols-4 gap-3 mb-6">
         {[
-          { label: "Vencidos",         val: vencidos, color: "text-red-600",     bg: "bg-red-50",     border: "border-red-200" },
-          { label: "Críticos (≤7d)",   val: criticos, color: "text-orange-600",  bg: "bg-orange-50",  border: "border-orange-200" },
-          { label: "Próximos (≤30d)",  val: proximos, color: "text-amber-600",   bg: "bg-amber-50",   border: "border-amber-200" },
-          { label: "Vigentes",         val: vigentes, color: "text-emerald-600", bg: "bg-emerald-50", border: "border-emerald-200" },
+          { label: "Vencidos",         val: vencidos, color: "text-danger",     bg: "bg-danger-bg",     border: "border-danger-border" },
+          { label: "Críticos (≤7d)",   val: criticos, color: "text-warning",  bg: "bg-warning-bg",  border: "border-warning-border" },
+          { label: "Próximos (≤30d)",  val: proximos, color: "text-warning",   bg: "bg-warning-bg",   border: "border-warning-border" },
+          { label: "Vigentes",         val: vigentes, color: "text-success", bg: "bg-success-bg", border: "border-success-border" },
         ].map(k => (
-          <div key={k.label} className={`rounded-2xl border p-4 ${k.bg} ${k.border}`}>
-            <p className="text-xs text-neutral-500 mb-1">{k.label}</p>
+          <div key={k.label} className={`rounded-xl border p-4 ${k.bg} ${k.border}`}>
+            <p className="text-xs text-neutral-600 mb-1">{k.label}</p>
             <p className={`text-2xl font-bold ${k.color}`}>{k.val}</p>
           </div>
         ))}

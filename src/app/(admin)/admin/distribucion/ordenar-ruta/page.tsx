@@ -53,16 +53,16 @@ export default async function OrdenarRutaPage() {
   const merged = [...ordenados, ...sinOrden];
 
   return (
-    <div className="p-4 md:p-8 max-w-2xl">
+    <div className="p-4 md:px-10 md:py-8 md:pb-16 max-w-2xl">
       <div className="mb-6 flex items-center gap-3">
-        <a href="/admin/distribucion" className="p-1.5 rounded-lg text-neutral-400 hover:bg-neutral-100 transition-colors">
+        <a href="/admin/distribucion" className="p-1.5 rounded-lg text-neutral-600 hover:bg-neutral-100 transition-colors">
           <svg xmlns="http://www.w3.org/2000/svg" className="size-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
           </svg>
         </a>
         <div>
           <h1 className="text-xl font-semibold font-display text-neutral-900">Ordenar ruta</h1>
-          <p className="text-sm text-neutral-400 mt-0.5">
+          <p className="text-sm text-neutral-600 mt-0.5">
             {lista.length} parada{lista.length !== 1 ? "s" : ""} · arrastrá para reordenar
           </p>
         </div>

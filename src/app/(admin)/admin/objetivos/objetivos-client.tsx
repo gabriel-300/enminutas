@@ -13,10 +13,10 @@ const CANAL_LABEL: Record<string, string> = {
 };
 
 const CANAL_COLOR: Record<string, string> = {
-  b2b_mayorista:   "bg-blue-500",
-  b2c_nacional:    "bg-emerald-500",
-  pedido_ya_local: "bg-amber-500",
-  global:          "bg-[#16233f]",
+  b2b_mayorista:   "bg-info-solid",
+  b2c_nacional:    "bg-success-solid",
+  pedido_ya_local: "bg-warning-solid",
+  global:          "bg-brand-700",
 };
 
 type MesData = {
@@ -70,15 +70,15 @@ export function ObjetivosClient({ meses }: { meses: MesData[] }) {
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-base font-semibold text-neutral-900">{mesActual.label} — en curso</h2>
             <div className="text-right">
-              <p className="text-xs text-neutral-400">Total real vs meta</p>
+              <p className="text-xs text-neutral-600">Total real vs meta</p>
               <p className="text-lg font-bold text-neutral-900 tabular-nums">
                 {fmt(mesActual.totalReal)}
-                <span className="text-sm font-normal text-neutral-400 ml-1">/ {fmt(mesActual.totalMeta)}</span>
+                <span className="text-sm font-normal text-neutral-600 ml-1">/ {fmt(mesActual.totalMeta)}</span>
               </p>
             </div>
           </div>
 
-          <div className="bg-white rounded-2xl border border-neutral-200 divide-y divide-neutral-50">
+          <div className="bg-white rounded-xl border border-neutral-200 shadow-sm divide-y divide-neutral-50">
             {mesActual.canales.map(c => {
               const isEdit = editando?.anio === mesActual.anio && editando?.mes === mesActual.mes && editando?.canal === c.canal;
               const barColor = CANAL_COLOR[c.canal] ?? "bg-neutral-400";
@@ -89,7 +89,7 @@ export function ObjetivosClient({ meses }: { meses: MesData[] }) {
                     <span className="text-sm font-medium text-neutral-800">{CANAL_LABEL[c.canal] ?? c.canal}</span>
                     <div className="flex items-center gap-3">
                       <span className="text-sm tabular-nums text-neutral-600">
-                        {fmt(c.real)} <span className="text-neutral-300">/</span>{" "}
+                        {fmt(c.real)} <span className="text-neutral-500">/</span>{" "}
                         {isEdit ? (
                           <span className="inline-flex items-center gap-1">
                             <input
@@ -99,23 +99,23 @@ export function ObjetivosClient({ meses }: { meses: MesData[] }) {
                               value={valor}
                               onChange={e => setValor(e.target.value)}
                               onKeyDown={e => { if (e.key === "Enter") saveEdit(); if (e.key === "Escape") cancelEdit(); }}
-                              className="w-28 rounded-lg border border-[#16233f] px-2 py-0.5 text-sm text-right focus:outline-none"
+                              className="w-28 rounded-lg border border-brand-700 px-2 py-0.5 text-sm text-right focus:outline-none"
                               autoFocus
                             />
-                            <button onClick={saveEdit} disabled={pending} className="p-1 rounded text-emerald-600 hover:bg-emerald-50"><Check className="size-4" /></button>
-                            <button onClick={cancelEdit} className="p-1 rounded text-neutral-400 hover:bg-neutral-100"><X className="size-4" /></button>
+                            <button onClick={saveEdit} disabled={pending} className="p-1 rounded text-success hover:bg-success-bg"><Check className="size-4" /></button>
+                            <button onClick={cancelEdit} className="p-1 rounded text-neutral-600 hover:bg-neutral-100"><X className="size-4" /></button>
                           </span>
                         ) : (
                           <button
                             onClick={() => startEdit(mesActual.anio, mesActual.mes, c.canal, c.meta)}
-                            className="group inline-flex items-center gap-1 text-neutral-500 hover:text-neutral-800"
+                            className="group inline-flex items-center gap-1 text-neutral-600 hover:text-neutral-800"
                           >
                             {fmt(c.meta)}
                             <Edit2 className="size-3 opacity-0 group-hover:opacity-100 transition-opacity" />
                           </button>
                         )}
                       </span>
-                      <span className={`text-sm font-semibold tabular-nums w-12 text-right ${c.pct >= 100 ? "text-emerald-600" : c.pct >= 70 ? "text-amber-600" : "text-red-600"}`}>
+                      <span className={`text-sm font-semibold tabular-nums w-12 text-right ${c.pct >= 100 ? "text-success" : c.pct >= 70 ? "text-warning" : "text-danger"}`}>
                         {c.meta > 0 ? `${Math.round(c.pct)}%` : "—"}
                       </span>
                     </div>
@@ -126,7 +126,7 @@ export function ObjetivosClient({ meses }: { meses: MesData[] }) {
                       style={{ width: `${pct}%` }}
                     />
                   </div>
-                  {error && isEdit && <p className="text-xs text-red-600 mt-1">{error}</p>}
+                  {error && isEdit && <p className="text-xs text-danger mt-1">{error}</p>}
                 </div>
               );
             })}
@@ -137,16 +137,16 @@ export function ObjetivosClient({ meses }: { meses: MesData[] }) {
       {/* Tabla histórica — todos los meses */}
       <div>
         <h2 className="text-base font-semibold text-neutral-900 mb-4">Histórico mensual</h2>
-        <div className="bg-white rounded-2xl border border-neutral-200 overflow-hidden">
+        <div className="bg-white rounded-xl border border-neutral-200 shadow-sm overflow-hidden">
           <table className="w-full text-sm">
             <thead className="border-b border-neutral-100">
               <tr>
-                <th className="px-5 py-3 text-left text-xs font-semibold text-neutral-400 uppercase tracking-wide">Mes</th>
-                <th className="px-5 py-3 text-right text-xs font-semibold text-neutral-400 uppercase tracking-wide">B2B</th>
-                <th className="px-5 py-3 text-right text-xs font-semibold text-neutral-400 uppercase tracking-wide">B2C</th>
-                <th className="px-5 py-3 text-right text-xs font-semibold text-neutral-400 uppercase tracking-wide">Real total</th>
-                <th className="px-5 py-3 text-right text-xs font-semibold text-neutral-400 uppercase tracking-wide">Meta total</th>
-                <th className="px-5 py-3 text-right text-xs font-semibold text-neutral-400 uppercase tracking-wide">%</th>
+                <th className="px-5 py-3 text-left text-xs font-semibold text-neutral-600">Mes</th>
+                <th className="px-5 py-3 text-right text-xs font-semibold text-neutral-600">B2B</th>
+                <th className="px-5 py-3 text-right text-xs font-semibold text-neutral-600">B2C</th>
+                <th className="px-5 py-3 text-right text-xs font-semibold text-neutral-600">Real total</th>
+                <th className="px-5 py-3 text-right text-xs font-semibold text-neutral-600">Meta total</th>
+                <th className="px-5 py-3 text-right text-xs font-semibold text-neutral-600">%</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-neutral-50">
@@ -174,28 +174,28 @@ export function ObjetivosClient({ meses }: { meses: MesData[] }) {
                             type="number" min="0" step="1000" value={valor}
                             onChange={e => setValor(e.target.value)}
                             onKeyDown={e => { if (e.key === "Enter") saveEdit(); if (e.key === "Escape") cancelEdit(); }}
-                            className="w-28 rounded-lg border border-[#16233f] px-2 py-0.5 text-sm text-right focus:outline-none"
+                            className="w-28 rounded-lg border border-brand-700 px-2 py-0.5 text-sm text-right focus:outline-none"
                             autoFocus
                           />
-                          <button onClick={saveEdit} disabled={pending} className="p-1 text-emerald-600"><Check className="size-3.5" /></button>
-                          <button onClick={cancelEdit} className="p-1 text-neutral-400"><X className="size-3.5" /></button>
+                          <button onClick={saveEdit} disabled={pending} className="p-1 text-success"><Check className="size-3.5" /></button>
+                          <button onClick={cancelEdit} className="p-1 text-neutral-600"><X className="size-3.5" /></button>
                         </span>
                       ) : (
                         <button
                           onClick={() => startEdit(m.anio, m.mes, "global", m.totalMeta)}
-                          className="group inline-flex items-center gap-1 text-neutral-500 hover:text-neutral-800"
+                          className="group inline-flex items-center gap-1 text-neutral-600 hover:text-neutral-800"
                         >
-                          {m.totalMeta > 0 ? fmt(m.totalMeta) : <span className="text-neutral-300">sin meta</span>}
+                          {m.totalMeta > 0 ? fmt(m.totalMeta) : <span className="text-neutral-500">sin meta</span>}
                           <Edit2 className="size-3 opacity-0 group-hover:opacity-100 transition-opacity" />
                         </button>
                       )}
                     </td>
                     <td className="px-5 py-3 text-right">
                       {pct !== null ? (
-                        <span className={`text-sm font-semibold tabular-nums ${pct >= 100 ? "text-emerald-600" : pct >= 70 ? "text-amber-600" : "text-red-600"}`}>
+                        <span className={`text-sm font-semibold tabular-nums ${pct >= 100 ? "text-success" : pct >= 70 ? "text-warning" : "text-danger"}`}>
                           {pct}%
                         </span>
-                      ) : <span className="text-neutral-300 text-xs">—</span>}
+                      ) : <span className="text-neutral-500 text-xs">—</span>}
                     </td>
                   </tr>
                 );
@@ -203,7 +203,7 @@ export function ObjetivosClient({ meses }: { meses: MesData[] }) {
             </tbody>
           </table>
         </div>
-        <p className="text-xs text-neutral-400 mt-2 px-1">Hacé click en cualquier meta para editarla.</p>
+        <p className="text-xs text-neutral-600 mt-2 px-1">Hacé click en cualquier meta para editarla.</p>
       </div>
     </div>
   );
