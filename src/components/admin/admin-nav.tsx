@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
 import { useState, useEffect, useRef } from "react";
 import { createClient } from "@/lib/supabase/client";
@@ -213,9 +214,7 @@ export function AdminNav({
       >
         {/* ── Marca ── */}
         <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "16px 14px", borderBottom: "1px solid rgba(255,255,255,0.08)", minHeight: 62, overflow: "hidden", flexShrink: 0 }}>
-          <div style={{ width: 32, height: 32, minWidth: 32, background: "#e8672e", borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13, fontWeight: 700, color: "#fff", flexShrink: 0 }}>
-            EM
-          </div>
+          <Image src="/logo.png" alt="En Minutas" width={32} height={40} priority style={{ width: 32, height: 40, minWidth: 32, flexShrink: 0 }} />
           {!collapsed && (
             <div style={{ minWidth: 0, overflow: "hidden" }}>
               <div style={{ fontSize: 14, fontWeight: 600, color: "#ffffff", whiteSpace: "nowrap" }}>En Minutas</div>
