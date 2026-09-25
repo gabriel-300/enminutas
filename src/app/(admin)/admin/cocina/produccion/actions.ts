@@ -4,9 +4,12 @@ import { createAdminClient } from "@/lib/supabase/server";
 import { requireRole } from "@/lib/auth";
 import { generarNumeroLote } from "@/lib/lotes";
 import { factorABase, cajasPorLote, kgPorLote } from "@/lib/receta-base";
+import { repartirLotes } from "@/lib/produccion-reparto";
 import { revalidatePath } from "next/cache";
 
-type Result = { error: string } | { ok: true; id: string; numero_lote: string; cajas: number };
+type Result =
+  | { error: string }
+  | { ok: true; id: string; numero_lote: string; items: { name: string; unit_label: string | null; cajas: number }[] };
 
 // Pedidos que todavía necesitan producto terminado (mismo criterio que Planificador y Compras)
 const ESTADOS_PENDIENTES = ["aprobado", "enviado_prod"];
@@ -26,18 +29,29 @@ export async function registrarProduccion(formData: FormData): Promise<Result> {
   let user;
   try { user = await requireRole("admin", "produccion"); } catch { return { error: "No autorizado" }; }
 
-  // producto_id = presentación que se produce (puede ser el producto de la receta u otra presentación vinculada)
-  const productoId    = formData.get("producto_id") as string;
   const recetaId      = formData.get("receta_id") as string;
   const cantLotes     = parseFloat((formData.get("cantidad_lotes") as string)?.replace(",", "."));
-  const cajasRealesRaw = (formData.get("cajas_reales") as string | null)?.replace(",", ".");
-  const cajasReales   = cajasRealesRaw ? parseFloat(cajasRealesRaw) : NaN;
   const vidaUtilDias  = parseInt(formData.get("vida_util_dias") as string, 10) || 180;
   const fecha         = (formData.get("fecha") as string) || new Date().toISOString().slice(0, 10);
   const notas         = (formData.get("notas") as string)?.trim() || null;
 
-  if (!productoId || !recetaId) return { error: "Seleccioná un producto con receta" };
+  // Presentaciones en las que sale el batch: [{ producto_id, cajas }]
+  let items: { producto_id: string; cajas?: number }[];
+  try {
+    const parsed = JSON.parse((formData.get("items") as string) || "[]");
+    if (!Array.isArray(parsed)) throw new Error();
+    items = parsed.map((i: any) => ({
+      producto_id: String(i?.producto_id ?? ""),
+      cajas:       i?.cajas !== undefined && i?.cajas !== null && i?.cajas !== "" ? Number(i.cajas) : undefined,
+    }));
+  } catch {
+    return { error: "Las presentaciones no tienen un formato válido" };
+  }
+
+  if (!recetaId || items.length === 0 || items.some(i => !i.producto_id)) return { error: "Seleccioná un producto con receta y al menos una presentación" };
+  if (new Set(items.map(i => i.producto_id)).size !== items.length) return { error: "No repitas la misma presentación: sumá las cajas en una sola línea" };
   if (isNaN(cantLotes) || cantLotes <= 0) return { error: "La cantidad de lotes debe ser mayor a 0" };
+  if (items.some(i => i.cajas !== undefined && !(i.cajas > 0))) return { error: "Las cajas de cada presentación deben ser mayores a 0" };
 
   // El rendimiento se calcula acá con datos de la base, no con lo que mande el cliente
   const { data: receta } = await db
@@ -49,74 +63,81 @@ export async function registrarProduccion(formData: FormData): Promise<Result> {
   const yieldCajas = Number(receta.yield_cajas);
   if (!(yieldCajas > 0)) return { error: "La receta no tiene rendimiento configurado" };
 
-  const { data: presentacion } = await db
-    .from("products")
-    .select("id, unit_label, kg_caja, receta_producto_id")
-    .eq("id", productoId)
-    .maybeSingle();
-  if (!presentacion) return { error: "La presentación no existe" };
+  const [{ data: presentaciones }, { data: base }] = await Promise.all([
+    db.from("products").select("id, name, unit_label, kg_caja, receta_producto_id").in("id", items.map(i => i.producto_id)),
+    db.from("products").select("kg_caja").eq("id", receta.product_id).single(),
+  ]);
+  const presPorId: Record<string, any> = Object.fromEntries((presentaciones ?? []).map((p: any) => [p.id, p]));
 
-  let factor: number | null;
-  if (presentacion.id === receta.product_id) {
-    factor = 1;
-  } else if (presentacion.receta_producto_id === receta.product_id) {
-    const { data: base } = await db.from("products").select("kg_caja").eq("id", receta.product_id).single();
-    factor = factorABase(presentacion.kg_caja, base?.kg_caja);
+  type Linea = { pres: any; cajas: number; kg: number | null };
+  const lineas: Linea[] = [];
+  for (const it of items) {
+    const pres = presPorId[it.producto_id];
+    if (!pres) return { error: "Una de las presentaciones no existe" };
+
+    let factor: number | null;
+    if (pres.id === receta.product_id) factor = 1;
+    else if (pres.receta_producto_id === receta.product_id) factor = factorABase(pres.kg_caja, base?.kg_caja);
+    else return { error: `"${pres.name}" no usa esta receta` };
+
+    // Sin cajas informadas (solo válido con una única presentación) se calcula por peso
+    let cajas = it.cajas;
+    if (cajas === undefined) {
+      const calc = items.length === 1 ? cajasPorLote(yieldCajas, factor) : null;
+      if (calc === null) return { error: `Ingresá las cajas de "${pres.name}" (falta el kg por caja para calcularlas)` };
+      cajas = Math.round(cantLotes * calc * 100) / 100;
+    }
+
+    const kgCaja = Number(pres.kg_caja);
+    lineas.push({ pres, cajas, kg: kgCaja > 0 ? cajas * kgCaja : null });
+  }
+
+  // Los insumos se descuentan una sola vez por batch: los lotes de receta se reparten entre
+  // las presentaciones en proporción a sus kg (una fila de produccion por presentación).
+  let lotesPorLinea: number[];
+  if (lineas.length === 1) {
+    lotesPorLinea = [cantLotes];
   } else {
-    return { error: "Esa presentación no usa esta receta" };
+    if (lineas.some(l => l.kg === null)) return { error: "Para repartir el batch en varias presentaciones todas necesitan kg por caja cargado (en Productos)" };
+    lotesPorLinea = repartirLotes(cantLotes, lineas.map(l => l.kg as number));
   }
 
-  const cajasCalculadas = cajasPorLote(yieldCajas, factor);
-  if (cajasCalculadas === null) {
-    return { error: "Falta cargar el kg por caja de la presentación o del producto base para calcular el rendimiento" };
-  }
-
-  const cantCajas = !isNaN(cajasReales) && cajasReales > 0
-    ? cajasReales
-    : Math.round(cantLotes * cajasCalculadas * 100) / 100;
-  if (!(cantCajas > 0)) return { error: "La cantidad de cajas debe ser mayor a 0" };
-
-  // Etiqueta de la unidad de stock del lote = unit_label de la presentación (no "cajas" fijo),
-  // para que sea consistente con los lotes cargados manualmente.
-  // La cantidad queda en cajas: pedidos, precios y consumo FEFO también están en cajas.
-  const unidadLote = presentacion.unit_label?.trim() || "cajas";
-
-  // 1. Registrar producción (trigger descuenta insumos según cantidad_lotes)
-  const { data: prod, error: errProd } = await db
+  // 1. Registrar producción en una sola sentencia (trigger descuenta insumos según cantidad_lotes)
+  const { data: prods, error: errProd } = await db
     .from("produccion")
-    .insert({
-      producto_id:    productoId,
+    .insert(lineas.map((l, i) => ({
+      producto_id:    l.pres.id,
       receta_id:      recetaId,
-      cantidad_cajas: cantCajas,
-      cantidad_lotes: cantLotes,
+      cantidad_cajas: l.cajas,
+      cantidad_lotes: lotesPorLinea[i],
       fecha,
       notas,
       created_by: user.id,
-    })
-    .select("id")
-    .single();
+    })))
+    .select("id");
 
   if (errProd) return { error: errProd.message };
 
-  // 2. Generar número de lote y crear entrada en lotes
+  // 2. Un lote por presentación, con el mismo número: es el mismo batch
   const numero_lote = await generarNumeroLote(db);
 
-  // Calcular fecha de vencimiento
   const fechaObj = new Date(fecha + "T12:00:00");
   fechaObj.setDate(fechaObj.getDate() + vidaUtilDias);
   const fechaVenc = fechaObj.toISOString().slice(0, 10);
 
-  const { error: errLote } = await db.from("lotes").insert({
-    producto_id:      productoId,
+  // La cantidad queda en cajas (pedidos, precios y consumo FEFO también están en cajas);
+  // la etiqueta de unidad es el unit_label de cada presentación.
+  const { error: errLote } = await db.from("lotes").insert(lineas.map(l => ({
+    producto_id:       l.pres.id,
     numero_lote,
-    fecha_ingreso:    fecha,
+    fecha_ingreso:     fecha,
     fecha_vencimiento: fechaVenc,
-    cantidad_inicial: cantCajas,
-    cantidad_actual:  cantCajas,
-    unidad:           unidadLote,
-    observaciones:    notas,
-    created_by:       user.id,
-  });
+    cantidad_inicial:  l.cajas,
+    cantidad_actual:   l.cajas,
+    unidad:            l.pres.unit_label?.trim() || "cajas",
+    observaciones:     notas,
+    created_by:        user.id,
+  })));
 
   if (errLote) {
     // No revertir la producción, solo advertir
@@ -124,7 +145,12 @@ export async function registrarProduccion(formData: FormData): Promise<Result> {
   }
 
   revalidateAll();
-  return { ok: true, id: prod.id, numero_lote, cajas: cantCajas };
+  return {
+    ok: true,
+    id: prods?.[0]?.id ?? "",
+    numero_lote,
+    items: lineas.map(l => ({ name: l.pres.name, unit_label: l.pres.unit_label ?? null, cajas: l.cajas })),
+  };
 }
 
 export type Presentacion = {
@@ -133,6 +159,8 @@ export type Presentacion = {
   sku:            string | null;
   unit_label:     string | null;
   es_base:        boolean;
+  /** kg de una caja de esta presentación (null si no está cargado) */
+  kg_caja:        number | null;
   /** Cajas de esta presentación que rinde 1 lote (null si falta kg_caja) */
   cajas_por_lote: number | null;
   stock:          number;
@@ -239,6 +267,7 @@ export async function getProductosConReceta(): Promise<ProductoConReceta[]> {
         sku:            p.sku,
         unit_label:     p.unit_label,
         es_base:        p.id === base.id,
+        kg_caja:        Number(p.kg_caja) > 0 ? Number(p.kg_caja) : null,
         cajas_por_lote: cajasPorLote(yieldCajas, factor),
         stock,
         faltante:       Math.max((demandaMap[p.id] ?? 0) + Number(p.stock_minimo ?? 0) - stock, 0),
