@@ -30,6 +30,7 @@ export async function loadAdminDashboard() {
     { count: productosSinDatosB2B },
     users,
     { data: ventasConVendedor },
+    { data: b2bProfiles },
   ] = await Promise.all([
     db.from("orders").select("*", { count: "exact", head: true })
       .eq("channel", "b2b_mayorista").eq("status", "pending_payment"),
@@ -99,15 +100,14 @@ export async function loadAdminDashboard() {
       .eq("channel", "b2b_mayorista")
       .in("status", VENTAS_STATUSES)
       .gte("created_at", monthStart),
+
+    // Perfiles B2B: se piden en paralelo y se cruzan con el rol real (auth) más abajo.
+    // No se filtra por profiles.role porque está desincronizado del rol real.
+    db.from("profiles").select("id, full_name, b2b_status").not("b2b_status", "is", null),
   ]);
 
   // ── Clientes B2B ─────────────────────────────────────────────────────
   const b2bUsers = (users ?? []).filter((u: any) => u.app_metadata?.role === "customer_b2b");
-  const b2bIds   = b2bUsers.map((u: any) => u.id);
-
-  const { data: b2bProfiles } = b2bIds.length > 0
-    ? await db.from("profiles").select("id, full_name, b2b_status").in("id", b2bIds)
-    : { data: [] };
 
   const profileMap: Record<string, any> = Object.fromEntries(
     (b2bProfiles ?? []).map((p: any) => [p.id, p])
