@@ -44,7 +44,7 @@ export default async function SimuladorPage({
       .from("products")
       .select(`
         id, name, codigo, presentacion, unit_label,
-        bolsas_caja, u_bolsa,
+        bolsas_caja, u_bolsa, kg_caja,
         costo, pkg_unitario, pkg_bulto,
         categoria, divisiones_display,
         linea:lineas_producto!linea_id (nombre)
@@ -74,6 +74,7 @@ export default async function SimuladorPage({
     presentacion: string;
     bolsas_caja:  number;
     u_bolsa:      number;
+    kg_caja:      number;
     precio_caja:  number;
     precio_unidad: number;
     // precio de la caja con el flete de cada zona ya incluido: { [zonaId]: precio }
@@ -114,6 +115,7 @@ export default async function SimuladorPage({
       presentacion: p.presentacion ?? p.unit_label ?? "—",
       bolsas_caja:  Number(p.bolsas_caja),
       u_bolsa:      Number(p.u_bolsa),
+      kg_caja:      Number(p.kg_caja ?? 0),
       precio_caja:  precio.final_civa,
       precio_unidad: precio.precio_unidad,
       precio_caja_zona,

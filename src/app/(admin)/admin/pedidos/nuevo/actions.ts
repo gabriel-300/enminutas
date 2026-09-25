@@ -78,7 +78,7 @@ export async function crearPedidoAdmin(payload: CrearPedidoPayload): Promise<{ o
     getParametros(),
     (adminClient as any)
       .from("profiles")
-      .select("comision_pct_override, canal:canales!canal_id (margen_std, margen_premium, markup_pvp)")
+      .select("comision_pct_override, flete_pct_override, canal:canales!canal_id (margen_std, margen_premium, markup_pvp)")
       .eq("id", clientId)
       .single(),
     (adminClient as any)
@@ -92,7 +92,10 @@ export async function crearPedidoAdmin(payload: CrearPedidoPayload): Promise<{ o
       : Promise.resolve({ data: null }),
   ]);
 
-  const fletePct = Number(zonaRes.data?.flete_pct ?? 0);
+  // El % personalizado del cliente pisa el de la zona (0 = sin flete); igual que en la pantalla
+  const fletePct = clientProfileRes.data?.flete_pct_override != null
+    ? Number(clientProfileRes.data.flete_pct_override)
+    : Number(zonaRes.data?.flete_pct ?? 0);
 
   const canalData = clientProfileRes.data?.canal as { margen_std: number; margen_premium: number; markup_pvp: number } | null | undefined;
   if (!canalData) return { error: "El cliente no tiene canal asignado" };

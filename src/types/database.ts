@@ -2185,6 +2185,7 @@ export type Database = {
           document_number: string | null
           document_type: string | null
           es_comercializadora: boolean
+          flete_pct_override: number | null
           full_name: string | null
           id: string
           notas_internas: string | null
@@ -2209,6 +2210,7 @@ export type Database = {
           document_number?: string | null
           document_type?: string | null
           es_comercializadora?: boolean
+          flete_pct_override?: number | null
           full_name?: string | null
           id: string
           notas_internas?: string | null
@@ -2233,6 +2235,7 @@ export type Database = {
           document_number?: string | null
           document_type?: string | null
           es_comercializadora?: boolean
+          flete_pct_override?: number | null
           full_name?: string | null
           id?: string
           notas_internas?: string | null

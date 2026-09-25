@@ -17,6 +17,7 @@ type ClienteB2B = {
   margen_premium:        number;
   markup_pvp:            number;
   comision_pct_override: number | null;
+  flete_pct_override:    number | null;   // fracción; pisa el % de la zona (0 = sin flete)
 };
 
 type DireccionB2B = {
@@ -100,7 +101,8 @@ export function NuevoPedidoClient({
     ?? direcciones[0]
     ?? null;
 
-  const fletePct = direccion?.flete_pct ?? 0;
+  // Flete CIF: el % personalizado del cliente pisa el de la zona de entrega
+  const fletePct = cliente?.flete_pct_override ?? direccion?.flete_pct ?? 0;
 
   function handleClienteChange(id: string) {
     setClienteId(id);
@@ -236,7 +238,13 @@ export function NuevoPedidoClient({
                 <span className="px-2 py-0.5 bg-info-bg text-info rounded-full font-medium">{cliente.canal_nombre}</span>
                 {fletePct > 0 && (
                   <span className="px-2 py-0.5 bg-neutral-100 rounded-full">
-                    Flete incluido: {(Math.round(fletePct * 10000) / 100).toLocaleString("es-AR")}% ({direccion?.zona_name})
+                    Flete incluido: {(Math.round(fletePct * 10000) / 100).toLocaleString("es-AR")}%{" "}
+                    ({cliente.flete_pct_override != null ? "personalizado del cliente" : direccion?.zona_name})
+                  </span>
+                )}
+                {cliente.flete_pct_override === 0 && (direccion?.flete_pct ?? 0) > 0 && (
+                  <span className="px-2 py-0.5 bg-neutral-100 rounded-full">
+                    Sin flete (condición del cliente)
                   </span>
                 )}
               </div>
@@ -458,7 +466,7 @@ export function NuevoPedidoClient({
                 </div>
                 {fleteIncluido > 0 && (
                   <div className="flex justify-between text-xs text-neutral-600">
-                    <span>Incluye flete ({direccion?.zona_name})</span>
+                    <span>Incluye flete ({cliente?.flete_pct_override != null ? "cliente" : direccion?.zona_name})</span>
                     <span className="tabular-nums">{fmt(fleteIncluido)}</span>
                   </div>
                 )}

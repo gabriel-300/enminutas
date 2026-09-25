@@ -13,6 +13,7 @@ type Producto = {
   presentacion:  string;
   bolsas_caja:   number;
   u_bolsa:       number;
+  kg_caja:       number;
   precio_caja:   number;
   precio_unidad: number;
   precio_caja_zona: Record<string, number>; // precio de la caja con el flete de cada zona incluido
@@ -97,6 +98,11 @@ export function SimuladorPedido({
   const totalSinIVA = totalConIVA / (1 + ivaPct);
   const totalIVA    = totalConIVA - totalSinIVA;
   const totalCajas  = lineasCarrito.reduce((s, l) => s + l.cajas, 0);
+
+  // Valor por kg puesto en destino (mercadería c/IVA ÷ kg). Solo si todas las líneas tienen kg cargados.
+  const kgCompleto = lineasCarrito.every((l) => l.producto.kg_caja > 0);
+  const totalKg    = lineasCarrito.reduce((s, l) => s + l.producto.kg_caja * l.cajas, 0);
+  const valorPorKg = kgCompleto && totalKg > 0 ? totalConIVA / totalKg : null;
 
   // Percepciones — la base es el subtotal s/IVA (base imponible IIBB estándar)
   const lineasPercepcion = percepciones.map((p) => {
@@ -378,7 +384,14 @@ export function SimuladorPedido({
                   </div>
                   <p className="text-xs text-neutral-600 text-right">
                     {totalCajas} caja{totalCajas !== 1 ? "s" : ""}
+                    {valorPorKg != null && ` · ${totalKg.toLocaleString("es-AR", { maximumFractionDigits: 1 })} kg`}
                   </p>
+                  {valorPorKg != null && (
+                    <p className="text-xs text-neutral-600 pt-1.5">
+                      Valor por kg puesto en destino: <span className="font-semibold">{fmt(valorPorKg)}</span>
+                      {" "}— valor referencial.
+                    </p>
+                  )}
                 </div>
               </>
             )}

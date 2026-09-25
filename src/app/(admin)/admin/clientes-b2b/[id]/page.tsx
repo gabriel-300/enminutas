@@ -8,6 +8,7 @@ import { fmtFechaLarga, fmtFechaSolo } from "@/lib/fecha";
 import { DireccionesClient } from "./direcciones-client";
 import { PagosClient, type Pago, type OrdenResumen } from "./pagos-client";
 import { ComisionEdit } from "./comision-edit";
+import { FleteEdit } from "./flete-edit";
 import { getParametros } from "@/lib/parametros";
 
 export const metadata: Metadata = { title: "Historial de cliente — Admin En Minutas" };
@@ -55,7 +56,7 @@ export default async function ClienteB2BDetailPage({
   ] = await Promise.all([
     (adminClient as any)
       .from("profiles")
-      .select("id, full_name, descuento_extra_pct, b2b_status, created_at, phone, document_number, comision_pct_override, canal:canales!canal_id (nombre, descuento_pct)")
+      .select("id, full_name, descuento_extra_pct, b2b_status, created_at, phone, document_number, comision_pct_override, flete_pct_override, canal:canales!canal_id (nombre, descuento_pct)")
       .eq("id", id)
       .single(),
     adminClient.auth.admin.getUserById(id),
@@ -168,6 +169,15 @@ export default async function ClienteB2BDetailPage({
                 clienteId={id}
                 comisionOverride={profile.comision_pct_override != null ? Number(profile.comision_pct_override) : null}
                 comisionGlobal={globalParams.comision_pct}
+              />
+            </div>
+          )}
+          {role === "admin" && (
+            <div>
+              <p className="text-xs text-neutral-600">Flete incluido en el precio</p>
+              <FleteEdit
+                clienteId={id}
+                fleteOverride={profile.flete_pct_override != null ? Number(profile.flete_pct_override) : null}
               />
             </div>
           )}

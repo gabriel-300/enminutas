@@ -16,7 +16,7 @@ export default async function CatalogoB2BPage() {
   const { data: profileRaw } = await (supabase as any)
     .from("profiles")
     .select(`
-      full_name, b2b_status, zona_id, canal_id, comision_pct_override,
+      full_name, b2b_status, zona_id, canal_id, comision_pct_override, flete_pct_override,
       canal:canales!canal_id (nombre, slug, margen_std, margen_premium, markup_pvp),
       zona:delivery_zones!zona_id (name, flete_pct)
     `)
@@ -102,7 +102,10 @@ export default async function CatalogoB2BPage() {
         comision_pct:       profile.comision_pct_override != null
                               ? Number(profile.comision_pct_override)
                               : params.comision_pct,
-        flete_pct:          Number(zona?.flete_pct ?? 0),
+        // El % personalizado del cliente pisa el de su zona (0 = sin flete)
+        flete_pct:          profile.flete_pct_override != null
+                              ? Number(profile.flete_pct_override)
+                              : Number(zona?.flete_pct ?? 0),
       }),
     }));
 

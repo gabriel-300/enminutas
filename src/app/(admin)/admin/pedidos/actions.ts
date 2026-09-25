@@ -978,7 +978,7 @@ export async function agregarLineaPedido(
       .eq("id", productId)
       .single(),
     db.from("profiles")
-      .select("comision_pct_override, canal:canales!canal_id (margen_std, margen_premium, markup_pvp)")
+      .select("comision_pct_override, flete_pct_override, canal:canales!canal_id (margen_std, margen_premium, markup_pvp)")
       .eq("id", order.customer_id)
       .single(),
     getParametros(),
@@ -1012,7 +1012,10 @@ export async function agregarLineaPedido(
     markup_pvp:         Number(canalData.markup_pvp),
     iva_pct:            params.iva_pct,
     comision_pct:       comisionPctCliente,
-    flete_pct:          Number(zonaRes.data?.flete_pct ?? 0),
+    // El % personalizado del cliente pisa el de la zona del pedido (0 = sin flete)
+    flete_pct:          profileRes.data?.flete_pct_override != null
+                          ? Number(profileRes.data.flete_pct_override)
+                          : Number(zonaRes.data?.flete_pct ?? 0),
   });
 
   const unitPrice = precio.final_civa;
