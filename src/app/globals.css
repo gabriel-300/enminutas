@@ -276,6 +276,12 @@
   opacity: 1;
 }
 
+/* Montos y números de tabla: nunca se parten en dos líneas ("$ / 109.910") */
+.admin-panel td.tabular-nums,
+.admin-panel td.text-right {
+  white-space: nowrap;
+}
+
 /* Campos de formulario de ancho completo: 40px de alto mínimo */
 .admin-panel :is(input:not([type="checkbox"], [type="radio"], [type="file"], [type="range"], [type="hidden"], [type="color"]), select).w-full {
   min-height: 40px;

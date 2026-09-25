@@ -31,7 +31,7 @@ export default async function AdminLayout({
   const alertasCount = role === "admin" ? await getAlertasCount() : 0;
 
   return (
-    <div className={`admin-panel ${geistSans.variable} ${geistMono.variable} flex min-h-screen bg-neutral-50`}>
+    <div className={`admin-panel ${geistSans.variable} ${geistMono.variable} flex min-h-screen flex-col md:flex-row bg-neutral-50`}>
       <AdminNav role={role} email={email} name={name} alertasCount={alertasCount} />
       <main className="min-w-0 flex-1 overflow-auto">{children}</main>
       <ChatWidget />
