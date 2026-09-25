@@ -3,6 +3,7 @@
 import { createClient, createAdminClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { emailNuevoPedidoB2B } from "@/lib/email";
+import { getParametros } from "@/lib/parametros";
 
 import type { PrecioB2B } from "@/lib/b2b-pricing";
 
@@ -33,6 +34,14 @@ export async function confirmarPedidoB2B(items: CartItem[], notes: string | null
   const subtotal = items.reduce((s, i) => s + i.precio.final_civa * i.qty, 0);
   const r = (n: number) => Math.round(n * 100) / 100;
 
+  // % de flete CIF que llevan incluido los precios del carrito (se recupera de cualquier ítem:
+  // flete = lista_siva × flete_pct × (1 + IVA)). La comisión se calcula sin el flete.
+  const { iva_pct } = await getParametros();
+  const itemConFlete = items.find((i) => i.precio.lista_siva > 0);
+  const fletePct = itemConFlete
+    ? Math.min(Math.max(Math.round((itemConFlete.precio.flete / (itemConFlete.precio.lista_siva * (1 + iva_pct))) * 10000) / 10000, 0), 0.9999)
+    : 0;
+
   const baseInsert = {
     channel:                  "b2b_mayorista",
     customer_id:              user.id,
@@ -47,6 +56,7 @@ export async function confirmarPedidoB2B(items: CartItem[], notes: string | null
     payment_method:           "transferencia",
     notes:                    notes ?? null,
     delivery_zone_id:         zonaId ?? null,
+    flete_pct:                fletePct,
   };
 
   // Insertar con retry en caso de colisión de número (constraint UNIQUE)

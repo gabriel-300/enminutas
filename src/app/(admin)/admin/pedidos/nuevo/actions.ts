@@ -167,6 +167,7 @@ export async function crearPedidoAdmin(payload: CrearPedidoPayload): Promise<{ o
     payment_method:          paymentMethod,
     notes:                   notes || null,
     delivery_zone_id:        zonaId ?? null,
+    flete_pct:               fletePct,
     shipping_snapshot:       shippingSnapshot,
   };
   if (safeStatus === "aprobado") {

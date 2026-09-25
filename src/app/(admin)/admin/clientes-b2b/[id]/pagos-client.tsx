@@ -286,6 +286,7 @@ export function PagosClient({ clienteId, pagos, totalFacturado, ordenes }: Props
                       className="rounded border-neutral-300 text-tierra-700 focus:ring-tierra-700/20" />
                     <span className="text-sm text-neutral-700">
                       Marcar {orderIds.length > 1 ? "los pedidos seleccionados" : "el pedido"} como <strong>liquidado</strong>
+                      <span className="text-xs text-neutral-500"> (solo los ya entregados; el pago se registra igual)</span>
                     </span>
                   </label>
                 </div>

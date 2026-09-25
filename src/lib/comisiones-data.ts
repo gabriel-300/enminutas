@@ -27,12 +27,14 @@ export type ComisionesAnio = {
  * la tarjeta de /admin/preventista, para que los tres muestren el mismo número.
  *
  * Criterio: la comisión se devenga cuando el pedido está ENTREGADO (delivered, entrega_parcial o
- * liquidado) y cae en el mes de la entrega (entregado_at, hora Argentina). Si el pedido no tiene
- * entregado_at (datos viejos) se usa created_at. Antes se contaba desde "aprobado" y en el mes de
- * creación.
+ * liquidado) Y tiene entregado_at: cae en el mes de la entrega (hora Argentina). Un pedido liquidado
+ * sin entrega confirmada no comisiona. Antes se contaba desde "aprobado" y en el mes de creación.
  *
- * Base del pedido: lo entregado (en una entrega parcial, total × proporción entregada) o, si se
- * cobró "sin factura", lo efectivamente cobrado.
+ * Base del pedido: su total (que en una entrega parcial ya es lo entregado) sin el cargo adicional
+ * manual. Es la misma con o sin factura: la comisión ya viene incluida en el precio de lista, y que
+ * el cliente pague sin factura (sin IVA) es un acuerdo con la empresa que no cambia lo que cobran
+ * preventista y comercializadora. El flete CIF incluido en el precio (orders.flete_pct) se saca en
+ * el divisor de calcularComisionOrden.
  *
  * Pool de comisión del cliente = lo que realmente tiene cargado en su precio (comision_pct_override,
  * o el % global si no tiene override — así un cliente con override 0 da comisión $0 para todos).
@@ -89,32 +91,20 @@ export async function cargarComisionesAnio(anio: number): Promise<ComisionesAnio
   }
   const clienteIds = Object.keys(clienteVendedorMap);
 
-  // ── Pedidos entregados en el año (por fecha de entrega; created_at si no la tiene) ─
+  // ── Pedidos entregados en el año (por fecha de entrega) ────────────────
+  // Sin entregado_at no hay entrega confirmada: un pedido puede estar "liquidado" (pagado) sin haberse
+  // entregado, y ese no comisiona todavía.
   const { desde, hasta } = rangoAnioAR(anio);
   const { data: rawOrders } = clienteIds.length > 0
     ? await db.from("orders")
-        .select("id, customer_id, total, created_at, entregado_at")
+        .select("id, customer_id, total, entregado_at, flete_pct, cargo_adicional_monto")
         .eq("channel", "b2b_mayorista")
         .in("customer_id", clienteIds)
         .in("status", COMISION_STATUSES)
-        .or(
-          `and(entregado_at.gte.${desde},entregado_at.lte.${hasta}),` +
-          `and(entregado_at.is.null,created_at.gte.${desde},created_at.lte.${hasta})`,
-        )
+        .gte("entregado_at", desde)
+        .lte("entregado_at", hasta)
     : { data: [] };
   const orders = (rawOrders ?? []) as any[];
-  const orderIds = orders.map((o) => o.id);
-
-  // Pedidos cobrados "sin factura": la comisión de esos pedidos se calcula sobre lo
-  // efectivamente cobrado, no sobre el total con IVA.
-  const { data: pagosSinFactura } = orderIds.length > 0
-    ? await db.from("pagos").select("order_id, monto").in("order_id", orderIds).eq("sin_factura", true)
-    : { data: [] };
-  const netoSinFacturaMap: Record<string, number> = {};
-  for (const p of (pagosSinFactura ?? []) as any[]) {
-    if (!p.order_id) continue;
-    netoSinFacturaMap[p.order_id] = (netoSinFacturaMap[p.order_id] ?? 0) + Number(p.monto);
-  }
 
   // ── Repartir cada pedido entre el preventista asignado y la comercializadora ─
   // Se agrega por vendedor × mes × cliente (no solo vendedor × mes) para poder pagar cliente por cliente.
@@ -133,9 +123,10 @@ export async function cargarComisionesAnio(anio: number): Promise<ComisionesAnio
 
   for (const o of orders) {
     const customerId = o.customer_id;
-    const mesKey = mesAR(o.entregado_at ?? o.created_at);
+    const mesKey = mesAR(o.entregado_at);
     const entregado = Number(o.total);
-    const base = netoSinFacturaMap[o.id] ?? entregado;
+    // Un cargo adicional manual (flete, IIBB, etc.) se cobra aparte del precio: no es base de comisión.
+    const base = Math.max(entregado - Number(o.cargo_adicional_monto ?? 0), 0);
 
     const poolPct = clientePoolPctMap[customerId] ?? comision_pct;
 
@@ -143,7 +134,9 @@ export async function cargarComisionesAnio(anio: number): Promise<ComisionesAnio
     const assignedEsOtroQueLaComercializadora = assignedVid && assignedVid !== comercializadoraId;
     const assignedPct = assignedEsOtroQueLaComercializadora ? (pctMap[assignedVid!] ?? 0) : 0;
 
-    const comision = calcularComisionOrden({ base, ivaPct: iva_pct, poolPct, preventistaPct: assignedPct });
+    const comision = calcularComisionOrden({
+      base, ivaPct: iva_pct, poolPct, preventistaPct: assignedPct, fletePct: Number(o.flete_pct ?? 0),
+    });
 
     if (assignedEsOtroQueLaComercializadora) {
       sumar(assignedVid!, mesKey, customerId, entregado, comision.preventista, comision.preventistaPct);

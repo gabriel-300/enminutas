@@ -1396,6 +1396,7 @@ export type Database = {
           customer_id: string | null
           delivered_snapshot: Json | null
           delivery_zone_id: string | null
+          flete_pct: number
           despachado_at: string | null
           despacho_info: Json | null
           discount: number
@@ -1442,6 +1443,7 @@ export type Database = {
           customer_id?: string | null
           delivered_snapshot?: Json | null
           delivery_zone_id?: string | null
+          flete_pct?: number
           despachado_at?: string | null
           despacho_info?: Json | null
           discount?: number
@@ -1488,6 +1490,7 @@ export type Database = {
           customer_id?: string | null
           delivered_snapshot?: Json | null
           delivery_zone_id?: string | null
+          flete_pct?: number
           despachado_at?: string | null
           despacho_info?: Json | null
           discount?: number

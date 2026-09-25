@@ -46,11 +46,18 @@ describe("calcularComisionOrden", () => {
     expect(c).toEqual({ total: 0, preventista: 0, preventistaPct: 0, comercializadora: 0, comercializadoraPct: 0 });
   });
 
-  it("un pedido cobrado sin factura comisiona sobre lo cobrado, no sobre el total", () => {
-    const conFactura = calcularComisionOrden({ base: 1_000_000, ivaPct: IVA, poolPct: 0.15, preventistaPct: 0.05 });
-    const sinFactura = calcularComisionOrden({ base: 826_446, ivaPct: IVA, poolPct: 0.15, preventistaPct: 0.05 }); // 1.000.000 / 1,21
-    expect(sinFactura.total).toBeLessThan(conFactura.total);
-    expect(sinFactura.total / conFactura.total).toBeCloseTo(826_446 / 1_000_000, 6);
+  it("el flete incluido en el precio no es base de comisión", () => {
+    // Precio = lista_siva × (1,21 + 0,15 + 0,10 × 1,21) con lista_siva 100.000 → 148.100. La comisión sigue siendo 15.000.
+    const c = calcularComisionOrden({ base: 148_100, ivaPct: IVA, poolPct: 0.15, preventistaPct: 0.03, fletePct: 0.10 });
+    expect(c.total).toBeCloseTo(15_000, 6);
+    expect(c.preventista).toBeCloseTo(3_000, 6);
+    expect(c.comercializadora).toBeCloseTo(12_000, 6);
+  });
+
+  it("fletePct 0 o ausente no cambia el cálculo", () => {
+    const sin = calcularComisionOrden({ base: 1_000_000, ivaPct: IVA, poolPct: 0.15, preventistaPct: 0.05 });
+    const cero = calcularComisionOrden({ base: 1_000_000, ivaPct: IVA, poolPct: 0.15, preventistaPct: 0.05, fletePct: 0 });
+    expect(cero).toEqual(sin);
   });
 
   it("base 0 da comisión 0", () => {

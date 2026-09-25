@@ -7,6 +7,19 @@ import { revalidatePath } from "next/cache";
 
 type Result = { error: string } | { ok: true; pagoId: string };
 
+// Un pedido solo pasa a "liquidado" (cobrado) si ya se entregó. Si se paga por adelantado, el pago
+// queda registrado pero el pedido sigue su curso: pasar a liquidado antes de entregarse lo saca del
+// circuito de distribución (no se puede confirmar la entrega) y hacía que comisionara sin entregarse.
+async function liquidarSiEntregado(db: any, orderId: string): Promise<boolean> {
+  const { data } = await db
+    .from("orders")
+    .update({ status: "liquidado", payment_confirmed_at: new Date().toISOString() })
+    .eq("id", orderId)
+    .in("status", ["delivered", "entrega_parcial"])
+    .select("id");
+  return (data?.length ?? 0) > 0;
+}
+
 // Admin: cualquier cliente. Vendedor: sólo los clientes que tiene asignados.
 async function autorizarCliente(clienteId: string): Promise<{ error: string } | { user: User }> {
   let user: User;
@@ -59,11 +72,9 @@ export async function registrarPago(formData: FormData): Promise<Result> {
 
   if (error) return { error: error.message };
 
-  // Cambiar estado del pedido a liquidado si corresponde
+  // Cambiar estado del pedido a liquidado si corresponde (solo si ya fue entregado)
   if (orderId && marcarLiquidado) {
-    await db.from("orders")
-      .update({ status: "liquidado", payment_confirmed_at: new Date().toISOString() })
-      .eq("id", orderId);
+    await liquidarSiEntregado(db, orderId);
     revalidatePath(`/admin/pedidos/${orderId}`);
   }
 
@@ -117,9 +128,7 @@ export async function registrarPagoPedidos(payload: {
     pagoIds.push(pago.id);
 
     if (item.marcarLiquidado) {
-      await db.from("orders")
-        .update({ status: "liquidado", payment_confirmed_at: new Date().toISOString() })
-        .eq("id", item.orderId);
+      await liquidarSiEntregado(db, item.orderId);
       revalidatePath(`/admin/pedidos/${item.orderId}`);
     }
   }
