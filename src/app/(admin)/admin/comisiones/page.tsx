@@ -1,6 +1,6 @@
 import { cargarComisionesAnio } from "@/lib/comisiones-data";
 import { mesAR, mesValido } from "@/lib/fecha";
-import { fmt } from "@/lib/format";
+import { fmt, fmtPct } from "@/lib/format";
 import type { Metadata } from "next";
 import { createClient, createAdminClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
@@ -40,9 +40,11 @@ export default async function ComisionesPage({
   const vendedorIds = vendedores.map((v) => v.id);
 
   // ── Comisiones ya marcadas como pagadas este año (por vendedor+mes+cliente) ─
-  const { data: rawPagosComision } = vendedorIds.length > 0
+  const { data: rawPagosComision, error: errPagos } = vendedorIds.length > 0
     ? await db.from("comisiones_pagos").select("*").in("vendedor_id", vendedorIds).like("mes", `${selYear}-%`)
-    : { data: [] };
+    : { data: [], error: null };
+  // Sin esto, un fallo de lectura mostraría todo como "pendiente" y se podría pagar dos veces.
+  if (errPagos) throw new Error(`No se pudieron leer los pagos de comisiones: ${errPagos.message}`);
   type PagoComisionRow = {
     vendedor_id: string; cliente_id: string; mes: string; monto: number; pct: number;
     ventas: number; fecha_pago: string; notas: string | null;
@@ -53,9 +55,12 @@ export default async function ComisionesPage({
   }
 
   type ComisionClienteRow = {
-    id: string; nombre: string; ventas: number; comision: number; pct: number;
+    id: string; nombre: string; ventas: number; comision: number; extra: number; pct: number;
     pagado: boolean; fechaPago: string | null;
   };
+  // Lo que todavía falta pagar de un cliente: todo si nunca se pagó, o lo que se sumó por entregas
+  // posteriores al pago.
+  const pendienteDe = (c: ComisionClienteRow) => (c.pagado ? c.extra : c.comision);
   type MesRow = {
     mes: string; ventas: number; comision: number;
     pagada: boolean; clientes: ComisionClienteRow[];
@@ -69,22 +74,29 @@ export default async function ComisionesPage({
       const clientes: ComisionClienteRow[] = Object.entries(clientesAgg)
         .map(([clienteId, agg]) => {
           const pago = pagoComisionMap[`${v.id}_${mesKey}_${clienteId}`];
+          const live = Math.round(agg.comisionLive);
           return {
             id:        clienteId,
             nombre:    agg.nombre,
             ventas:    agg.ventas,
-            comision:  pago ? Number(pago.monto) : Math.round(agg.comisionLive),
+            // Pagado: se muestra lo congelado al pagar. Si después hubo más entregas ese mes, la
+            // diferencia aparece como "extra" (pendiente) en vez de perderse.
+            comision:  pago ? Number(pago.monto) : live,
+            // Con signo: positivo = entregas nuevas por pagar; negativo = devoluciones a descontar.
+            extra:     pago && Math.abs(live - Number(pago.monto)) >= 1 ? live - Number(pago.monto) : 0,
             pct:       pago ? Number(pago.pct) : agg.pct,
             pagado:    !!pago,
             fechaPago: pago?.fecha_pago ?? null,
           };
         })
-        .filter((c) => c.comision > 0 || c.ventas > 0)
-        .sort((a, b) => b.comision - a.comision);
+        .filter((c) => c.comision !== 0 || c.extra !== 0 || c.ventas !== 0)
+        .sort((a, b) => (b.comision + b.extra) - (a.comision + a.extra));
 
       const ventas   = clientes.reduce((s, c) => s + c.ventas, 0);
-      const comision = clientes.reduce((s, c) => s + c.comision, 0);
-      const pagada   = comision > 0 && clientes.every((c) => c.pagado);
+      const comision = clientes.reduce((s, c) => s + c.comision + c.extra, 0);
+      // Un cliente con comisión 0 (ej. pool 0%) no se paga: no impide que el mes figure como pagado.
+      const conComision = clientes.filter((c) => c.comision + c.extra !== 0);
+      const pagada   = conComision.length > 0 && conComision.every((c) => c.pagado && c.extra === 0);
 
       return { mes: mesKey, ventas, comision, pagada, clientes };
     });
@@ -98,7 +110,7 @@ export default async function ComisionesPage({
 
   const totalMesComision  = filas.reduce((s, f) => s + f.mesSelData.comision, 0);
   const totalMesPendiente = filas.reduce(
-    (s, f) => s + f.mesSelData.clientes.filter((c) => !c.pagado).reduce((s2, c) => s2 + c.comision, 0),
+    (s, f) => s + f.mesSelData.clientes.reduce((s2, c) => s2 + pendienteDe(c), 0),
     0,
   );
   const totalAnioComision  = filas.reduce((s, f) => s + f.totalAnual, 0);
@@ -114,7 +126,7 @@ export default async function ComisionesPage({
           <h1 className="text-xl md:text-2xl font-semibold font-display text-neutral-900">Comisiones</h1>
           <p className="text-sm text-neutral-600 mt-1">
             Comisión de preventistas y comercializadora, por cliente, mes y año — lo que hay que pagarles.
-            Se cuenta cuando el pedido se entrega, en el mes de la entrega (en una entrega parcial, solo lo entregado).
+            Se cuenta cuando el pedido se entrega, en el mes de la entrega (en una entrega parcial, solo lo entregado). Las devoluciones aprobadas descuentan su comisión en el mes de la devolución.
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -181,12 +193,12 @@ export default async function ComisionesPage({
                   )}
                 </p>
                 <p className="text-xs text-neutral-600 mt-0.5">
-                  Entregado {mesLabel}: {fmt(f.mesSelData.ventas)}
+                  Entregado {mesLabel} (neto de devoluciones): {fmt(f.mesSelData.ventas)}
                   {" · "}
                   {f.esComercializadora ? (
                     <span>resto de la comisión de cada cliente (según % configurado en cada uno)</span>
                   ) : f.pctConfigurado ? (
-                    `${Math.round(f.pct * 100)}% comisión (tope: el % de cada cliente)`
+                    `${fmtPct(f.pct)} comisión (tope: el % de cada cliente)`
                   ) : (
                     <span className="text-neutral-500">sin comisión asignada</span>
                   )}
@@ -194,7 +206,7 @@ export default async function ComisionesPage({
               </div>
               <div className="flex items-center gap-2">
                 <p className="text-xl font-semibold font-display tabular-nums text-neutral-900">{fmt(f.mesSelData.comision)}</p>
-                {f.mesSelData.pagada && f.mesSelData.comision > 0 && (
+                {f.mesSelData.pagada && (
                   <span className="text-xs font-medium text-success bg-success-bg px-1.5 py-0.5 rounded">✓ Todo pagado</span>
                 )}
               </div>
@@ -237,7 +249,7 @@ export default async function ComisionesPage({
                     </td>
                     {f.meses.map((m) => (
                       <td key={m.mes} className="text-right px-3 py-2.5 tabular-nums whitespace-nowrap">
-                        {m.comision > 0 ? (
+                        {m.comision !== 0 ? (
                           <span className={m.pagada ? "text-success" : "text-neutral-700"}>
                             {fmtK(m.comision)}{m.pagada && " ✓"}
                           </span>

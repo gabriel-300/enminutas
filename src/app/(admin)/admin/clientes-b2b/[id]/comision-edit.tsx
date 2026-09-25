@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { actualizarComisionOverride } from "./comision-actions";
+import { fmtPct } from "@/lib/format";
 
 type Props = {
   clienteId:            string;
@@ -14,13 +15,13 @@ export function ComisionEdit({ clienteId, comisionOverride, comisionGlobal }: Pr
   const [sinCom,    setSinCom]    = useState(comisionOverride === 0);
   const [valor,     setValor]     = useState(
     comisionOverride != null && comisionOverride > 0
-      ? String(Math.round(comisionOverride * 100))
+      ? String(Number((comisionOverride * 100).toFixed(2)))
       : ""
   );
   const [error,     setError]     = useState<string | null>(null);
   const [isPending, start]        = useTransition();
 
-  const globalPct = Math.round(comisionGlobal * 100);
+  const globalPct = Number((comisionGlobal * 100).toFixed(2));
 
   function guardar() {
     setError(null);
@@ -55,7 +56,7 @@ export function ComisionEdit({ clienteId, comisionOverride, comisionGlobal }: Pr
           ? <span className="text-neutral-600">{globalPct}% (global)</span>
           : comisionOverride === 0
             ? <span className="text-success font-medium">Sin comisión</span>
-            : <span className="font-medium">{Math.round(comisionOverride * 100)}% (personalizada)</span>
+            : <span className="font-medium">{fmtPct(comisionOverride)} (personalizada)</span>
         }
         <span className="text-neutral-500 group-hover:text-tierra-700 text-xs">✏</span>
       </button>

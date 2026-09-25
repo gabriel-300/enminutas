@@ -14,3 +14,7 @@ export const fmtK = (n: number) => {
   if (n >= 1_000)     return `$${Math.round(n / 1_000)}k`;
   return fmt(n);
 };
+
+/** 0.025 → "2,5%" — un porcentaje guardado como fracción, sin redondear a entero (2,5% no es 3%) */
+export const fmtPct = (fraccion: number) =>
+  `${(fraccion * 100).toLocaleString("es-AR", { maximumFractionDigits: 2 })}%`;

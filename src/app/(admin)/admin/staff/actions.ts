@@ -15,16 +15,21 @@ export async function asignarZonaDistribuidor(userId: string, zonaId: string | n
   revalidatePath("/admin/distribucion");
 }
 
+// pct: fracción (0.03 = 3%); null = sin comisión asignada.
 export async function actualizarComisionPreventista(userId: string, pct: number | null) {
   await requireAdmin();
+  if (pct !== null && (typeof pct !== "number" || !Number.isFinite(pct) || pct < 0 || pct > 1))
+    throw new Error("El % de comisión debe estar entre 0 y 100");
   const supabase = createAdminClient();
-  await (supabase as any).from("profiles").upsert({
+  const { error } = await (supabase as any).from("profiles").upsert({
     id:                       userId,
     comision_preventista_pct: pct,
   });
+  if (error) throw new Error(error.message);
   revalidatePath("/admin/staff");
   revalidatePath("/admin/reportes");
   revalidatePath("/admin/preventista");
+  revalidatePath("/admin/comisiones");
 }
 
 const VALID_ROLES = ["admin", "vendedor", "produccion", "distribucion"] as const;

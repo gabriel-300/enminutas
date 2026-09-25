@@ -313,7 +313,7 @@ export async function despacharPedidoConAjuste(
   // Verificar que el pedido esté en enviado_prod
   const { data: order } = await (supabase as any)
     .from("orders")
-    .select("id, status, subtotal, shipping_fee, discount, payment_method, customer_id, order_number, customer:profiles!customer_id(full_name, vendedor_id)")
+    .select("id, status, subtotal, shipping_fee, discount, cargo_adicional_monto, payment_method, customer_id, order_number, customer:profiles!customer_id(full_name, vendedor_id)")
     .eq("id", orderId)
     .single();
   if (!order || order.status !== "enviado_prod")
@@ -351,7 +351,7 @@ export async function despacharPedidoConAjuste(
   );
   const flete     = Number(order.shipping_fee ?? 0);
   const descuento = Number(order.discount ?? 0);
-  const newTotal  = newSubtotal + flete - descuento;
+  const newTotal  = newSubtotal + flete - descuento + Number(order.cargo_adicional_monto ?? 0);
 
   const { data: updated, error } = await (supabase as any)
     .from("orders")
@@ -747,7 +747,7 @@ export async function crearPedidoConFaltante(
 
   const { data: original } = await (supabase as any)
     .from("orders")
-    .select("id, order_number, status, channel, customer_id, payment_method, delivery_zone_id, flete_pct, shipping_snapshot, delivered_snapshot")
+    .select("id, order_number, status, channel, customer_id, payment_method, delivery_zone_id, flete_pct, comision_pct, shipping_snapshot, delivered_snapshot")
     .eq("id", orderId)
     .single();
   if (!original) return { error: "Pedido no encontrado" };
@@ -797,6 +797,7 @@ export async function crearPedidoConFaltante(
     notes:                   `Faltante del pedido ${original.order_number}`,
     delivery_zone_id:        original.delivery_zone_id,
     flete_pct:               Number(original.flete_pct ?? 0), // el faltante va al mismo precio, con el mismo flete incluido
+    comision_pct:            original.comision_pct ?? null,   // y con la misma comisión incluida
     shipping_snapshot:       original.shipping_snapshot,
     origen_order_id:         orderId,
     fecha_compromiso:        fechaCompromiso,
@@ -847,7 +848,7 @@ export async function editarCantidadesPedido(
   // Verificar estado del pedido
   const { data: order } = await db
     .from("orders")
-    .select("status, discount, shipping_fee")
+    .select("status, discount, shipping_fee, cargo_adicional_monto")
     .eq("id", orderId)
     .single();
 
@@ -886,7 +887,7 @@ export async function editarCantidadesPedido(
     .eq("order_id", orderId);
 
   const subtotal = (updatedLines ?? []).reduce((s: number, l: any) => s + Number(l.line_total), 0);
-  const total    = subtotal - Number(order.discount ?? 0) + Number(order.shipping_fee ?? 0);
+  const total    = subtotal - Number(order.discount ?? 0) + Number(order.shipping_fee ?? 0) + Number(order.cargo_adicional_monto ?? 0);
 
   const { error: errOrder } = await db
     .from("orders")
@@ -912,7 +913,7 @@ export async function eliminarLineaPedido(
 
   const { data: order } = await db
     .from("orders")
-    .select("status, discount, shipping_fee")
+    .select("status, discount, shipping_fee, cargo_adicional_monto")
     .eq("id", orderId)
     .single();
   if (!order) return { error: "Pedido no encontrado" };
@@ -937,7 +938,7 @@ export async function eliminarLineaPedido(
     .select("line_total")
     .eq("order_id", orderId);
   const subtotal = (updatedLines ?? []).reduce((s: number, l: any) => s + Number(l.line_total), 0);
-  const total    = subtotal - Number(order.discount ?? 0) + Number(order.shipping_fee ?? 0);
+  const total    = subtotal - Number(order.discount ?? 0) + Number(order.shipping_fee ?? 0) + Number(order.cargo_adicional_monto ?? 0);
 
   const { error: errOrder } = await db
     .from("orders")
@@ -965,27 +966,23 @@ export async function agregarLineaPedido(
 
   const { data: order } = await db
     .from("orders")
-    .select("status, discount, shipping_fee, customer_id, delivery_zone_id")
+    .select("status, discount, shipping_fee, cargo_adicional_monto, customer_id, flete_pct, comision_pct")
     .eq("id", orderId)
     .single();
   if (!order) return { error: "Pedido no encontrado" };
   if (!ESTADOS_EDITABLES.includes(order.status))
     return { error: `Solo se pueden editar pedidos en estado: ${ESTADOS_EDITABLES.join(", ")}` };
 
-  const [productRes, profileRes, params, zonaRes] = await Promise.all([
+  const [productRes, profileRes, params] = await Promise.all([
     db.from("products")
       .select("id, name, sku, costo, bolsas_caja, pkg_unitario, pkg_bulto, u_bolsa, categoria, divisiones_display")
       .eq("id", productId)
       .single(),
     db.from("profiles")
-      .select("comision_pct_override, flete_pct_override, canal:canales!canal_id (margen_std, margen_premium, markup_pvp)")
+      .select("comision_pct_override, canal:canales!canal_id (margen_std, margen_premium, markup_pvp)")
       .eq("id", order.customer_id)
       .single(),
     getParametros(),
-    // Misma zona de entrega del pedido: la línea nueva lleva el mismo flete CIF que las demás
-    order.delivery_zone_id
-      ? db.from("delivery_zones").select("flete_pct").eq("id", order.delivery_zone_id).maybeSingle()
-      : Promise.resolve({ data: null }),
   ]);
 
   const prod      = productRes.data;
@@ -995,9 +992,13 @@ export async function agregarLineaPedido(
   if (!prod.costo) return { error: "El producto no tiene costo configurado" };
   if (!canalData) return { error: "El cliente no tiene canal asignado" };
 
-  const comisionPctCliente = profileRes.data?.comision_pct_override != null
-    ? Number(profileRes.data.comision_pct_override)
-    : params.comision_pct;
+  // La línea nueva lleva la misma comisión y el mismo flete CIF que las demás líneas del pedido
+  // (los que se guardaron al crearlo); en pedidos anteriores sin comision_pct, el % vigente del cliente.
+  const comisionPctPedido = order.comision_pct != null
+    ? Number(order.comision_pct)
+    : profileRes.data?.comision_pct_override != null
+      ? Number(profileRes.data.comision_pct_override)
+      : params.comision_pct;
 
   const precio = calcularPrecio({
     costo:              Number(prod.costo),
@@ -1011,11 +1012,8 @@ export async function agregarLineaPedido(
     margen_premium:     Number(canalData.margen_premium),
     markup_pvp:         Number(canalData.markup_pvp),
     iva_pct:            params.iva_pct,
-    comision_pct:       comisionPctCliente,
-    // El % personalizado del cliente pisa el de la zona del pedido (0 = sin flete)
-    flete_pct:          profileRes.data?.flete_pct_override != null
-                          ? Number(profileRes.data.flete_pct_override)
-                          : Number(zonaRes.data?.flete_pct ?? 0),
+    comision_pct:       comisionPctPedido,
+    flete_pct:          Number(order.flete_pct ?? 0),
   });
 
   const unitPrice = precio.final_civa;
@@ -1038,7 +1036,7 @@ export async function agregarLineaPedido(
     .select("line_total")
     .eq("order_id", orderId);
   const subtotal = (updatedLines ?? []).reduce((s: number, l: any) => s + Number(l.line_total), 0);
-  const total    = subtotal - Number(order.discount ?? 0) + Number(order.shipping_fee ?? 0);
+  const total    = subtotal - Number(order.discount ?? 0) + Number(order.shipping_fee ?? 0) + Number(order.cargo_adicional_monto ?? 0);
 
   const { error: errOrder } = await db
     .from("orders")

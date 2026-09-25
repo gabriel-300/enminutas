@@ -166,7 +166,7 @@ function ResetPasswordPanel({ member, onClose }: { member: StaffMember; onClose:
 
 function ComisionVendedorInput({ member }: { member: StaffMember }) {
   const currentPct = member.comision_preventista_pct != null
-    ? Math.round(member.comision_preventista_pct * 100)
+    ? Number((member.comision_preventista_pct * 100).toFixed(2))
     : "";
   const [value, setValue]         = useState<string>(String(currentPct));
   const [saved, setSaved]         = useState(false);
@@ -177,8 +177,12 @@ function ComisionVendedorInput({ member }: { member: StaffMember }) {
     if (num !== null && (isNaN(num) || num < 0 || num > 1)) return;
     setSaved(false);
     startTransition(async () => {
-      await actualizarComisionPreventista(member.id, num);
-      setSaved(true);
+      try {
+        await actualizarComisionPreventista(member.id, num);
+        setSaved(true);
+      } catch (e: any) {
+        alert(e?.message ?? "No se pudo guardar la comisión");
+      }
     });
   }
 

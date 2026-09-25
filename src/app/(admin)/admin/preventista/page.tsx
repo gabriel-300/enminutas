@@ -2,6 +2,7 @@ import { listAllUsers } from "@/lib/supabase/users";
 import { VENTAS_STATUSES } from "@/lib/order-status";
 import { cargarComisionesAnio } from "@/lib/comisiones-data";
 import { mesAR } from "@/lib/fecha";
+import { fmtPct } from "@/lib/format";
 import type { Metadata } from "next";
 import { createClient, createAdminClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
@@ -51,13 +52,16 @@ export default async function PreventistaPage() {
 
   // Comisión asignada al vendedor logueado (si aplica)
   let comisionPropiaConfig: number | null = null;
+  let esComercializadora = false;
   if (esVendedor) {
     const { data: perfil } = await adminClient
       .from("profiles")
-      .select("comision_preventista_pct")
+      .select("comision_preventista_pct, es_comercializadora")
       .eq("id", user.id)
       .single();
     comisionPropiaConfig = (perfil as any)?.comision_preventista_pct ?? null;
+    // La comercializadora no tiene un % propio: cobra el resto del pool de cada cliente.
+    esComercializadora = !!(perfil as any)?.es_comercializadora;
   }
 
   // Vendedores a mostrar en metas: todos (admin) o solo yo (vendedor)
@@ -194,7 +198,7 @@ export default async function PreventistaPage() {
   // Comisión del mes: mismo cálculo que /admin/comisiones (pedidos entregados en el mes, con el
   // tope del pool de cada cliente). "Ventas del mes" de arriba sigue siendo por fecha de pedido.
   let comisionPropiaAmt: number | null = null;
-  if (esVendedor && comisionPropiaConfig != null) {
+  if (esVendedor && (comisionPropiaConfig != null || esComercializadora)) {
     const mesActual = mesAR(new Date());
     const { agg } = await cargarComisionesAnio(Number(mesActual.slice(0, 4)));
     const clientesMes = Object.values(agg[user.id]?.[mesActual] ?? {});
@@ -254,7 +258,7 @@ export default async function PreventistaPage() {
           <p className="text-xs font-semibold text-neutral-600 mb-3 capitalize">
             Tu comisión · {mesNombreDisplay}
           </p>
-          {comisionPropiaConfig == null ? (
+          {comisionPropiaConfig == null && !esComercializadora ? (
             <p className="text-sm text-neutral-600">Aún no tenés comisión asignada. Consultá con el administrador.</p>
           ) : (
             <div className="flex flex-wrap gap-6">
@@ -266,9 +270,13 @@ export default async function PreventistaPage() {
               </div>
               <div>
                 <p className="text-xs text-neutral-600 mb-0.5">Tu % de comisión</p>
-                <p className="text-xl font-semibold font-display tabular-nums text-info">
-                  {Math.round(comisionPropiaConfig * 100)}%
-                </p>
+                {esComercializadora ? (
+                  <p className="text-sm text-neutral-700 mt-1">Resto de la comisión de cada cliente</p>
+                ) : (
+                  <p className="text-xl font-semibold font-display tabular-nums text-info">
+                    {fmtPct(comisionPropiaConfig ?? 0)}
+                  </p>
+                )}
               </div>
               <div>
                 <p className="text-xs text-neutral-600 mb-0.5">Tu comisión del mes <span className="text-neutral-500">· sobre pedidos entregados</span></p>

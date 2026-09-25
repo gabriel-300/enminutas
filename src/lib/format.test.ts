@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { fmt, fmt2, fmtK } from "./format";
+import { fmt, fmt2, fmtK, fmtPct } from "./format";
 
 // Intl usa espacios no separables (U+00A0) entre el $ y el número.
 const plano = (s: string) => s.replace(/\s/g, " ");
@@ -25,5 +25,16 @@ describe("fmtK", () => {
 
   it("por debajo de 1.000 usa el formato completo", () => {
     expect(plano(fmtK(999))).toBe("$ 999");
+  });
+});
+
+describe("fmtPct", () => {
+  it("no redondea un porcentaje con decimales a entero (2,5% no es 3%)", () => {
+    expect(fmtPct(0.025)).toBe("2,5%");
+  });
+
+  it("muestra enteros sin decimales", () => {
+    expect(fmtPct(0.15)).toBe("15%");
+    expect(fmtPct(0)).toBe("0%");
   });
 });

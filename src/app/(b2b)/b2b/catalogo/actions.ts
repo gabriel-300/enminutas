@@ -41,6 +41,10 @@ export async function confirmarPedidoB2B(items: CartItem[], notes: string | null
   const fletePct = itemConFlete
     ? Math.min(Math.max(Math.round((itemConFlete.precio.flete / (itemConFlete.precio.lista_siva * (1 + iva_pct))) * 10000) / 10000, 0), 0.9999)
     : 0;
+  // Idem para el % de comisión que llevan incluido (comision = lista_siva × comision_pct).
+  const comisionPct = itemConFlete
+    ? Math.min(Math.max(Math.round((itemConFlete.precio.comision / itemConFlete.precio.lista_siva) * 10000) / 10000, 0), 0.9999)
+    : null;
 
   const baseInsert = {
     channel:                  "b2b_mayorista",
@@ -57,6 +61,7 @@ export async function confirmarPedidoB2B(items: CartItem[], notes: string | null
     notes:                    notes ?? null,
     delivery_zone_id:         zonaId ?? null,
     flete_pct:                fletePct,
+    comision_pct:             comisionPct,
   };
 
   // Insertar con retry en caso de colisión de número (constraint UNIQUE)

@@ -11,6 +11,7 @@ export type ComisionCliente = {
   nombre:       string;
   ventas:       number;
   comision:     number;      // monto vigente: el pagado si ya está pagado, si no el calculado en vivo
+  extra:        number;      // comisión de entregas posteriores al pago, todavía sin pagar (0 si no hay)
   pct:          number;
   pagado:       boolean;
   fechaPago:    string | null;
@@ -30,10 +31,12 @@ export function ComisionAcciones({ vendedorId, mes, clientes }: Props) {
   const [error, setError]   = useState<string | null>(null);
   const [isPending, start]  = useTransition();
 
-  const pendientes = clientes.filter((c) => !c.pagado && c.comision > 0);
+  // Pendiente de pago: lo que nunca se pagó, o lo que se sumó por entregas después de un pago.
+  const montoPendiente = (c: ComisionCliente) => (c.pagado ? c.extra : c.comision);
+  const pendientes = clientes.filter((c) => montoPendiente(c) !== 0);
   const totalSeleccionado = clientes
     .filter((c) => seleccionados.has(c.id))
-    .reduce((s, c) => s + c.comision, 0);
+    .reduce((s, c) => s + montoPendiente(c), 0);
 
   function toggle(id: string) {
     setSeleccionados((prev) => {
@@ -60,13 +63,11 @@ export function ComisionAcciones({ vendedorId, mes, clientes }: Props) {
   }
 
   function handleConfirmarPago() {
-    const items = clientes
-      .filter((c) => seleccionados.has(c.id))
-      .map((c) => ({ clienteId: c.id, monto: c.comision, pct: c.pct, ventas: c.ventas }));
-    if (items.length === 0) return setError("Seleccioná al menos un cliente");
+    const clienteIds = clientes.filter((c) => seleccionados.has(c.id)).map((c) => c.id);
+    if (clienteIds.length === 0) return setError("Seleccioná al menos un cliente");
     setError(null);
     start(async () => {
-      const res = await marcarComisionesPagadas({ vendedorId, mes, fechaPago: fecha, notas: nota, items });
+      const res = await marcarComisionesPagadas({ vendedorId, mes, fechaPago: fecha, notas: nota, clienteIds });
       if ("error" in res) { setError(res.error); return; }
       setSeleccionados(new Set());
       setModo("idle");
@@ -77,7 +78,7 @@ export function ComisionAcciones({ vendedorId, mes, clientes }: Props) {
   return (
     <ul className="divide-y divide-neutral-50">
       {clientes.map((c) => {
-        const puedeSeleccionar = !c.pagado && c.comision > 0;
+        const puedeSeleccionar = montoPendiente(c) !== 0;
         return (
           <li key={c.id} className="px-5 py-2 flex items-center gap-3">
             {puedeSeleccionar ? (
@@ -94,6 +95,19 @@ export function ComisionAcciones({ vendedorId, mes, clientes }: Props) {
             <span className="text-xs text-neutral-600 truncate flex-1 min-w-0">{c.nombre}</span>
             <span className="text-xs tabular-nums text-neutral-600 shrink-0">
               {fmt(c.ventas)} venta · <span className="font-medium text-neutral-700">{fmt(c.comision)} comisión</span>
+              {c.pagado && c.extra > 0 && (
+                <span className="ml-1 font-medium text-warning" title="Entregas posteriores al pago: esta comisión todavía no se pagó">
+                  + {fmt(c.extra)} sin pagar
+                </span>
+              )}
+              {c.pagado && c.extra < 0 && (
+                <span className="ml-1 font-medium text-warning" title="Devoluciones posteriores al pago: hay que descontarlas">
+                  − {fmt(-c.extra)} por devolución
+                </span>
+              )}
+              {!c.pagado && c.comision < 0 && (
+                <span className="ml-1 text-neutral-500" title="Devolución: se descuenta de lo que se le paga">(descuento por devolución)</span>
+              )}
             </span>
             {c.pagado ? (
               <span className="flex items-center gap-2 shrink-0">

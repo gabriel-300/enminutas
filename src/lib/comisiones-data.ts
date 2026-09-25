@@ -36,8 +36,12 @@ export type ComisionesAnio = {
  * preventista y comercializadora. El flete CIF incluido en el precio (orders.flete_pct) se saca en
  * el divisor de calcularComisionOrden.
  *
- * Pool de comisión del cliente = lo que realmente tiene cargado en su precio (comision_pct_override,
- * o el % global si no tiene override — así un cliente con override 0 da comisión $0 para todos).
+ * Devoluciones aprobadas: descuentan su comisión (mismo cálculo, signo negativo) en el mes de la
+ * devolución, con el % vigente del cliente.
+ *
+ * Pool de comisión del pedido = lo que su precio llevó incluido: orders.comision_pct (guardado al crear
+ * el pedido) o, en pedidos viejos, comision_pct_override del cliente / el % global — así un cliente con
+ * override 0 da comisión $0 para todos, y cambiar el % de un cliente no toca los pedidos ya vendidos.
  * El preventista asignado se queda con su % (tope: el pool del cliente); la comercializadora, con
  * el resto del pool.
  */
@@ -77,10 +81,11 @@ export async function cargarComisionesAnio(anio: number): Promise<ComisionesAnio
   // ── Clientes B2B: vendedor asignado + % de comisión que tienen en su precio ─
   // profiles.role no es confiable para distinguir B2B de B2C (desincronizado en producción) —
   // b2b_status sí lo es, se setea únicamente en el alta como cliente B2B.
-  const { data: perfilesClientes } = await db
+  const { data: perfilesClientes, error: errClientes } = await db
     .from("profiles")
     .select("id, full_name, vendedor_id, comision_pct_override")
     .not("b2b_status", "is", null);
+  if (errClientes) throw new Error(`No se pudieron leer los clientes para las comisiones: ${errClientes.message}`);
   const clienteVendedorMap: Record<string, string | null> = {};
   const clientePoolPctMap:  Record<string, number>        = {};
   const clienteNombreMap:   Record<string, string>        = {};
@@ -89,22 +94,31 @@ export async function cargarComisionesAnio(anio: number): Promise<ComisionesAnio
     clientePoolPctMap[c.id]  = c.comision_pct_override != null ? Number(c.comision_pct_override) : comision_pct;
     clienteNombreMap[c.id]   = c.full_name ?? "—";
   }
-  const clienteIds = Object.keys(clienteVendedorMap);
 
   // ── Pedidos entregados en el año (por fecha de entrega) ────────────────
   // Sin entregado_at no hay entrega confirmada: un pedido puede estar "liquidado" (pagado) sin haberse
   // entregado, y ese no comisiona todavía.
   const { desde, hasta } = rangoAnioAR(anio);
-  const { data: rawOrders } = clienteIds.length > 0
-    ? await db.from("orders")
-        .select("id, customer_id, total, entregado_at, flete_pct, cargo_adicional_monto")
-        .eq("channel", "b2b_mayorista")
-        .in("customer_id", clienteIds)
-        .in("status", COMISION_STATUSES)
-        .gte("entregado_at", desde)
-        .lte("entregado_at", hasta)
-    : { data: [] };
-  const orders = (rawOrders ?? []) as any[];
+  // PostgREST corta en 1000 filas por consulta: se pagina para no perder pedidos sin aviso (un año
+  // de pedidos ya se acerca a ese tope). Los clientes B2B se filtran en memoria, no con .in() en la
+  // URL, que con muchos clientes se pasa del largo permitido.
+  const PAGINA = 1000;
+  const orders: any[] = [];
+  for (let desdeFila = 0; ; desdeFila += PAGINA) {
+    const { data, error } = await db.from("orders")
+      .select("id, customer_id, total, entregado_at, flete_pct, comision_pct, cargo_adicional_monto")
+      .eq("channel", "b2b_mayorista")
+      .in("status", COMISION_STATUSES)
+      .gte("entregado_at", desde)
+      .lte("entregado_at", hasta)
+      .order("entregado_at", { ascending: true })
+      .order("id", { ascending: true })
+      .range(desdeFila, desdeFila + PAGINA - 1);
+    // Mejor un error visible que comisiones en $0 que parecen reales.
+    if (error) throw new Error(`No se pudieron leer los pedidos para las comisiones: ${error.message}`);
+    orders.push(...(data ?? []));
+    if ((data ?? []).length < PAGINA) break;
+  }
 
   // ── Repartir cada pedido entre el preventista asignado y la comercializadora ─
   // Se agrega por vendedor × mes × cliente (no solo vendedor × mes) para poder pagar cliente por cliente.
@@ -121,29 +135,52 @@ export async function cargarComisionesAnio(anio: number): Promise<ComisionesAnio
     fila.pct           = pctEfectivo;
   }
 
-  for (const o of orders) {
-    const customerId = o.customer_id;
-    const mesKey = mesAR(o.entregado_at);
-    const entregado = Number(o.total);
-    // Un cargo adicional manual (flete, IIBB, etc.) se cobra aparte del precio: no es base de comisión.
-    const base = Math.max(entregado - Number(o.cargo_adicional_monto ?? 0), 0);
-
-    const poolPct = clientePoolPctMap[customerId] ?? comision_pct;
-
+  // signo = 1 para una entrega, -1 para una devolución (descuenta lo mismo que había comisionado).
+  function repartir(customerId: string, mesKey: string, ventas: number, base: number, poolPct: number, fletePct: number, signo: 1 | -1) {
     const assignedVid = clienteVendedorMap[customerId];
     const assignedEsOtroQueLaComercializadora = assignedVid && assignedVid !== comercializadoraId;
     const assignedPct = assignedEsOtroQueLaComercializadora ? (pctMap[assignedVid!] ?? 0) : 0;
 
-    const comision = calcularComisionOrden({
-      base, ivaPct: iva_pct, poolPct, preventistaPct: assignedPct, fletePct: Number(o.flete_pct ?? 0),
-    });
+    const comision = calcularComisionOrden({ base, ivaPct: iva_pct, poolPct, preventistaPct: assignedPct, fletePct });
 
     if (assignedEsOtroQueLaComercializadora) {
-      sumar(assignedVid!, mesKey, customerId, entregado, comision.preventista, comision.preventistaPct);
+      sumar(assignedVid!, mesKey, customerId, signo * ventas, signo * comision.preventista, comision.preventistaPct);
     }
     if (comercializadoraId) {
-      sumar(comercializadoraId, mesKey, customerId, entregado, comision.comercializadora, comision.comercializadoraPct);
+      sumar(comercializadoraId, mesKey, customerId, signo * ventas, signo * comision.comercializadora, comision.comercializadoraPct);
     }
+  }
+
+  for (const o of orders) {
+    const customerId = o.customer_id;
+    if (!(customerId in clienteVendedorMap)) continue; // no es un cliente B2B
+
+    const entregado = Number(o.total);
+    // Un cargo adicional manual (flete, IIBB, etc.) se cobra aparte del precio: no es base de comisión.
+    const base = Math.max(entregado - Number(o.cargo_adicional_monto ?? 0), 0);
+    // El % que el precio de ESTE pedido llevó incluido (guardado al crearlo); en pedidos anteriores a esa
+    // columna, el vigente del cliente.
+    const poolPct = o.comision_pct != null ? Number(o.comision_pct) : (clientePoolPctMap[customerId] ?? comision_pct);
+
+    repartir(customerId, mesAR(o.entregado_at), entregado, base, poolPct, Number(o.flete_pct ?? 0), 1);
+  }
+
+  // ── Devoluciones: una devolución aprobada descuenta su comisión ─────────
+  // Se descuenta en el mes de la devolución (no se reabre el mes del pedido original, que puede estar
+  // ya pagado). Como la devolución no está atada a un pedido, se usa el % vigente del cliente. Si el mes
+  // ya estaba pagado, la diferencia aparece como ajuste a compensar (ver "extra" en /admin/comisiones).
+  const { data: devoluciones, error: errDev } = await db.from("devoluciones")
+    .select("cliente_id, fecha, monto_total")
+    .in("estado", ["aprobada", "cerrada"])
+    .gte("fecha", `${anio}-01-01`)
+    .lte("fecha", `${anio}-12-31`)
+    .limit(PAGINA);
+  if (errDev) throw new Error(`No se pudieron leer las devoluciones para las comisiones: ${errDev.message}`);
+  for (const d of (devoluciones ?? []) as any[]) {
+    if (!(d.cliente_id in clienteVendedorMap)) continue;
+    const monto = Number(d.monto_total);
+    if (!(monto > 0)) continue;
+    repartir(d.cliente_id, String(d.fecha).slice(0, 7), monto, monto, clientePoolPctMap[d.cliente_id] ?? comision_pct, 0, -1);
   }
 
   return { vendedores, comercializadoraId, agg };

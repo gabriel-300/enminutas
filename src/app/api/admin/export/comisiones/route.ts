@@ -36,9 +36,10 @@ export async function GET(request: NextRequest) {
   const vendedorNombre: Record<string, string> = {};
   for (const v of vendedores) vendedorNombre[v.id] = v.nombre;
 
-  const { data: rawPagosComision } = vendedorIds.length > 0
+  const { data: rawPagosComision, error: errPagos } = vendedorIds.length > 0
     ? await db.from("comisiones_pagos").select("*").in("vendedor_id", vendedorIds).like("mes", `${anio}-%`)
-    : { data: [] };
+    : { data: [], error: null };
+  if (errPagos) return NextResponse.json({ error: errPagos.message }, { status: 500 });
   const pagoComisionMap: Record<string, any> = {};
   for (const p of (rawPagosComision ?? []) as any[]) {
     pagoComisionMap[`${p.vendedor_id}_${p.mes}_${p.cliente_id}`] = p;
@@ -46,7 +47,11 @@ export async function GET(request: NextRequest) {
 
   function comisionDeCliente(vid: string, mesKey: string, clienteId: string, live: number) {
     const pago = pagoComisionMap[`${vid}_${mesKey}_${clienteId}`];
-    return { monto: pago ? Number(pago.monto) : Math.round(live), pagada: !!pago, fechaPago: pago?.fecha_pago ?? "" };
+    const vivo = Math.round(live);
+    const monto = pago ? Number(pago.monto) : vivo;
+    // Cambios posteriores al pago (entregas nuevas +, devoluciones -): igual que en la pantalla.
+    const extra = pago && Math.abs(vivo - monto) >= 1 ? vivo - monto : 0;
+    return { monto, extra, pagada: !!pago, fechaPago: pago?.fecha_pago ?? "" };
   }
 
   let rows: string[];
@@ -54,7 +59,7 @@ export async function GET(request: NextRequest) {
 
   if (mesParam && /^\d{4}-\d{2}$/.test(mesParam)) {
     // ── Detalle por cliente, un mes ──────────────────────────────────────
-    rows = [csvRow(["Vendedor", "Cliente", "Entregado mes", "Comisión", "Estado", "Fecha de pago"])];
+    rows = [csvRow(["Vendedor", "Cliente", "Entregado mes", "Comisión", "Adicional sin pagar", "Estado", "Fecha de pago"])];
 
     for (const vid of vendedorIds) {
       const clientes = agg[vid]?.[mesParam] ?? {};
@@ -63,11 +68,11 @@ export async function GET(request: NextRequest) {
       if (clienteEntries.length === 0) continue;
 
       for (const [clienteId, c] of clienteEntries) {
-        const { monto, pagada, fechaPago } = comisionDeCliente(vid, mesParam, clienteId, c.comisionLive);
+        const { monto, extra, pagada, fechaPago } = comisionDeCliente(vid, mesParam, clienteId, c.comisionLive);
         rows.push(csvRow([
           nombre, c.nombre,
-          c.ventas.toFixed(2), monto.toFixed(2),
-          pagada ? "Pagada" : "Pendiente", fechaPago,
+          c.ventas.toFixed(2), monto.toFixed(2), extra.toFixed(2),
+          pagada ? (extra > 0 ? "Pagada (con adicional pendiente)" : "Pagada") : "Pendiente", fechaPago,
         ]));
       }
     }
@@ -83,7 +88,10 @@ export async function GET(request: NextRequest) {
         const mesKey = `${anio}-${String(i + 1).padStart(2, "0")}`;
         const clientes = agg[vid]?.[mesKey] ?? {};
         const montoMes = Object.entries(clientes).reduce(
-          (s, [clienteId, c]) => s + comisionDeCliente(vid, mesKey, clienteId, (c as ClienteMesAgg).comisionLive).monto,
+          (s, [clienteId, c]) => {
+            const d = comisionDeCliente(vid, mesKey, clienteId, (c as ClienteMesAgg).comisionLive);
+            return s + d.monto + d.extra;
+          },
           0,
         );
         montos.push(montoMes);

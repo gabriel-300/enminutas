@@ -1,17 +1,23 @@
 "use server";
 
-import { createAdminClient, createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/server";
+import { requireAdmin } from "@/lib/auth";
 import { revalidatePath } from "next/cache";
 
 type Result = { error: string } | { ok: true };
 
+// override: fracción (0.12 = 12%); 0 = el cliente no lleva comisión en su precio; null = usar el % global.
 export async function actualizarComisionOverride(
   clienteId: string,
   override: number | null,
 ): Promise<Result> {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user || user.app_metadata?.role !== "admin") return { error: "Sin permiso" };
+  try {
+    await requireAdmin();
+  } catch {
+    return { error: "Sin permiso" };
+  }
+  if (override !== null && (typeof override !== "number" || !Number.isFinite(override) || override < 0 || override >= 1))
+    return { error: "El % de comisión debe estar entre 0 y 99,99" };
 
   const db = createAdminClient() as any;
   const { error } = await db
@@ -21,5 +27,6 @@ export async function actualizarComisionOverride(
 
   if (error) return { error: error.message };
   revalidatePath(`/admin/clientes-b2b/${clienteId}`);
+  revalidatePath("/admin/comisiones");
   return { ok: true };
 }
