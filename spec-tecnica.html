@@ -437,7 +437,7 @@ section { margin-bottom: 4px; }
 
 <p><strong>En Minutas</strong> es el sistema de gestión B2B de la <strong>Cooperativa de Trabajo Il Pane Nostro Ltda.</strong> (marca En Minutas), en Garupá, Misiones. Elabora alimentos ultracongelados de mandioca: chipá, empanadas, pizzas, tartas y rebozados. Vende <strong>solo B2B mayorista</strong> (distribuidores, gastronomía, minoristas y clientes con condiciones especiales). La tienda B2C existe en el código pero no se usa.</p>
 
-<p>El sistema está en <strong>producción real desde junio 2026</strong> con clientes y pedidos reales (231 pedidos, 36 clientes con pedidos B2B al 24/9). No hay datos de prueba: <strong>todo lo que hay es real</strong> y no se puede borrar ni alterar sin autorización explícita.</p>
+<p>El sistema está en <strong>producción real desde junio 2026</strong> con clientes y pedidos reales (236 pedidos, 36 clientes con pedidos B2B al 26/9). No hay datos de prueba: <strong>todo lo que hay es real</strong> y no se puede borrar ni alterar sin autorización explícita.</p>
 
 <h3>Flujo operativo</h3>
 <ol>
@@ -588,7 +588,7 @@ vercel.json                 <span class="cm"># región gru1 + cron /api/ping</sp
 <section>
 <h2 id="db-schema">Base de datos — Esquema general</h2>
 
-<p>PostgreSQL en Supabase, 47 tablas en <code>public</code> (foto del 24/9/2026). RLS activo. Las mutaciones desde Server Actions usan <code>createAdminClient()</code> (service_role) y por eso <strong>cada action debe validar el rol por su cuenta</strong> con <code>requireRole()</code>. El esquema completo con columnas está en <code>docs/proyecto-javier/03-esquema-tablas.md</code>.</p>
+<p>PostgreSQL en Supabase, 47 tablas en <code>public</code> (conteos del 26/9/2026). RLS activo. Las mutaciones desde Server Actions usan <code>createAdminClient()</code> (service_role) y por eso <strong>cada action debe validar el rol por su cuenta</strong> con <code>requireRole()</code>. El esquema completo con columnas está en <code>docs/proyecto-javier/03-esquema-tablas.md</code>.</p>
 
 <h3>Tablas con datos y su uso</h3>
 <div class="tbl">
@@ -624,7 +624,7 @@ vercel.json                 <span class="cm"># región gru1 + cron /api/ping</sp
 </div>
 
 <h3>Tablas vacías (funciones sin uso todavía)</h3>
-<p><code>b2b_accounts</code>, <code>comisiones_pagos</code> (al 24/9), <code>cheques</code>, <code>devoluciones</code>, <code>devolucion_items</code>, <code>precios_cliente</code>, <code>pipeline_prospectos</code>, <code>contact_logs</code>, <code>plantillas_pedido</code>, <code>plantilla_items</code>, <code>objetivos_ventas</code>, <code>sales_goals</code>. <strong>Heredadas B2C/plataforma IDEIA</strong> (sin uso): <code>addresses</code>, <code>product_variants</code>, <code>driver_locations</code>, <code>ideia_liquidations</code>, <code>platform_settings</code>, columnas <code>orders.mp_*</code> e <code>ideia_commission_*</code>.</p>
+<p><code>b2b_accounts</code>, <code>comisiones_pagos</code> (al 26/9), <code>cheques</code>, <code>devoluciones</code>, <code>devolucion_items</code>, <code>precios_cliente</code>, <code>pipeline_prospectos</code>, <code>contact_logs</code>, <code>plantillas_pedido</code>, <code>plantilla_items</code>, <code>objetivos_ventas</code>, <code>sales_goals</code>. <strong>Heredadas B2C/plataforma IDEIA</strong> (sin uso): <code>addresses</code>, <code>product_variants</code>, <code>driver_locations</code>, <code>ideia_liquidations</code>, <code>platform_settings</code>, columnas <code>orders.mp_*</code> e <code>ideia_commission_*</code>.</p>
 
 <div class="callout danger">
   <span class="callout-icon">🔴</span>
@@ -1020,7 +1020,7 @@ pvp_unidad    = round0( final_civa × (1 + markup_pvp) / div_unidades )
 
 <h3>Flete CIF por zona (decisión 21/9/2026)</h3>
 <ul>
-  <li>El flete va <strong>incluido en el precio</strong> como % de <code>lista_siva</code>, según la zona de destino (<code>delivery_zones.flete_pct</code>, fracción: 0.02 = 2%). Se descartó el modelo por km/transportistas ("Módulo de Flete v2"): el flete real va compartido con mercadería de terceros y un costo promedio es mejor que ninguno. Zona local = 0%.</li>
+  <li>El flete va <strong>incluido en el precio</strong> como % de <code>lista_siva</code>, según la zona de destino (<code>delivery_zones.flete_pct</code>, fracción: 0.02 = 2%). Se descartó el modelo por km/transportistas ("Módulo de Flete v2"): el flete real va compartido con mercadería de terceros y un costo promedio es mejor que ninguno. Zona local = 0%. Al 26/9 solo Cataratas y Puerto Iguazú tienen flete (10%); ningún cliente tiene override.</li>
   <li><strong>Override por cliente:</strong> <code>profiles.flete_pct_override</code> (NULL = usa la zona, 0 = sin flete, x = % propio). Se edita en la ficha del cliente (solo admin).</li>
   <li>Se aplica en nuevo pedido, agregarLineaPedido, catálogo del portal B2B y CSV de precios. El simulador del preventista y la lista imprimible usan solo la zona.</li>
   <li>El flete <strong>queda fuera de la base de comisión</strong> (<code>orders.flete_pct</code> se congela al crear el pedido).</li>
@@ -1219,7 +1219,7 @@ comercializadora   = comisión_total − preventista
 <p>Una muestra es un <strong>pedido de canal <code>muestra</code></strong> (<code>MST-AAAA-NNNN</code>, sin precio) dentro del flujo normal, no una tabla aparte (las tablas <code>muestras</code> y <code>muestra_items</code> ya no existen). El vendedor la <em>solicita</em> (queda <code>pending_payment</code>); el admin la crea ya <code>aprobado</code> o la aprueba desde Pedidos. Después sigue Producción → despacho (descuenta lotes FEFO) → Distribución → entrega. Datos del contacto en <code>orders.muestra_destinatario/muestra_contacto/guest_phone/shipping_snapshot/delivery_zone_id</code>; <code>muestra_prospecto_id</code> la enlaza al Pipeline; <code>solicitado_por</code> registra quién la pidió (el vendedor ve sus muestras por eso). Se vende una <strong>presentación de muestra</strong> (<code>products.es_muestra = true</code>, no se vende ni figura en catálogos), que el admin crea desde la receta y produce como lote. Helper: <code>normalizarMuestra()</code> arma un "customer" falso para que Producción/Distribución muestren nombre, teléfono y zona.</p>
 
 <h3>Preventista (<code>/admin/preventista</code>) y Pipeline</h3>
-<p>Lista de precios imprimible por canal y zona, simulador (calcula el precio con IIBB provincial), log de contactos (<code>contact_logs</code>), tarjeta de comisiones y app instalable propia. <code>/admin/pipeline</code> (<code>pipeline_prospectos</code>) es el seguimiento de prospectos; hoy sin registros.</p>
+<p>Lista de precios imprimible por canal y zona, simulador (calcula el precio con IIBB provincial), log de contactos (<code>contact_logs</code>), tarjeta de comisiones y app instalable propia. <code>/admin/pipeline</code> (<code>pipeline_prospectos</code>) es el seguimiento de prospectos; hoy con 1 registro.</p>
 
 <h3>Dashboard y Reportes</h3>
 <p>El dashboard se arma por rol: <code>dashboard/_views/{admin,vendedor,produccion,distribucion}.tsx</code>, con las consultas en <code>_data/</code>. Reportes sigue la misma separación (<code>reportes/_data</code>, <code>_components</code>). Las pantallas con <code>?mes=&amp;anio=</code> validan con <code>mesValido/anioValido</code> de <code>lib/fecha.ts</code> (un valor inválido daba error 500). Ventas = <code>VENTAS_STATUSES</code>. Rentabilidad y Objetivos son solo admin.</p>
