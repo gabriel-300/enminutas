@@ -1,0 +1,1254 @@
+<title>En Minutas — Especificación del Sistema</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;0,700;1,600&family=Inter:wght@300;400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+
+<style>
+  :root {
+    --bg:        #FAFAF8;
+    --bg-card:   #FFFFFF;
+    --bg-muted:  #F3F1EB;
+    --border:    #E2DFD7;
+    --text:      #1A1A18;
+    --text-2:    #5A5A54;
+    --text-3:    #9A9A92;
+    --navy:      #16233F;
+    --navy-mid:  #253760;
+    --green:     #1E6641;
+    --green-lt:  #EAF3EE;
+    --amber:     #92400E;
+    --amber-lt:  #FEF3C7;
+    --accent:    #16233F;
+    --mono:      'IBM Plex Mono', monospace;
+    --sans:      'Inter', system-ui, sans-serif;
+    --serif:     'Playfair Display', Georgia, serif;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg:       #141412;
+      --bg-card:  #1E1E1B;
+      --bg-muted: #252520;
+      --border:   #2E2E28;
+      --text:     #EEEEE8;
+      --text-2:   #A0A098;
+      --text-3:   #606058;
+      --navy:     #2A4070;
+      --navy-mid: #3A5490;
+      --green:    #2A8A52;
+      --green-lt: #0F2A1A;
+      --amber:    #B45309;
+      --amber-lt: #1C1200;
+    }
+  }
+
+  :root[data-theme="dark"] {
+    --bg:       #141412;
+    --bg-card:  #1E1E1B;
+    --bg-muted: #252520;
+    --border:   #2E2E28;
+    --text:     #EEEEE8;
+    --text-2:   #A0A098;
+    --text-3:   #606058;
+    --navy:     #2A4070;
+    --navy-mid: #3A5490;
+    --green:    #2A8A52;
+    --green-lt: #0F2A1A;
+    --amber:    #B45309;
+    --amber-lt: #1C1200;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: var(--sans);
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.7;
+    font-size: 15px;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* ── COVER ── */
+  .cover {
+    background: #16233F;
+    color: #FFFFFF;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    padding: 64px 72px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .cover::before {
+    content: '';
+    position: absolute;
+    top: -120px; right: -120px;
+    width: 480px; height: 480px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.03);
+    pointer-events: none;
+  }
+  .cover::after {
+    content: '';
+    position: absolute;
+    bottom: -80px; left: -80px;
+    width: 320px; height: 320px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.03);
+    pointer-events: none;
+  }
+
+  .cover-logo {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .cover-logo-mark {
+    width: 40px; height: 40px;
+    background: rgba(255,255,255,0.15);
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-family: var(--sans);
+    font-weight: 700;
+    font-size: 14px;
+    letter-spacing: -0.5px;
+    color: #fff;
+  }
+
+  .cover-logo-text {
+    font-family: var(--sans);
+    font-weight: 600;
+    font-size: 18px;
+    color: rgba(255,255,255,0.9);
+    letter-spacing: -0.3px;
+  }
+
+  .cover-body {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 80px 0 60px;
+  }
+
+  .cover-eyebrow {
+    font-family: var(--sans);
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: rgba(255,255,255,0.45);
+    margin-bottom: 24px;
+  }
+
+  .cover-title {
+    font-family: var(--serif);
+    font-size: clamp(44px, 6vw, 72px);
+    line-height: 1.1;
+    color: #FFFFFF;
+    text-wrap: balance;
+    margin-bottom: 28px;
+    font-weight: 700;
+  }
+
+  .cover-subtitle {
+    font-size: 16px;
+    font-weight: 300;
+    color: rgba(255,255,255,0.6);
+    max-width: 480px;
+    line-height: 1.6;
+  }
+
+  .cover-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    border-top: 1px solid rgba(255,255,255,0.1);
+    padding-top: 28px;
+    font-size: 12px;
+    color: rgba(255,255,255,0.35);
+  }
+
+  .cover-footer-right {
+    text-align: right;
+    font-family: var(--mono);
+    font-size: 11px;
+  }
+
+  /* ── DOCUMENT BODY ── */
+  .doc {
+    max-width: 860px;
+    margin: 0 auto;
+    padding: 80px 48px 120px;
+  }
+
+  /* ── TOC ── */
+  .toc {
+    background: var(--bg-muted);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 36px 40px;
+    margin-bottom: 72px;
+  }
+
+  .toc-title {
+    font-family: var(--sans);
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--text-3);
+    margin-bottom: 20px;
+  }
+
+  .toc-list {
+    list-style: none;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px 32px;
+  }
+
+  .toc-list li {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    font-size: 13.5px;
+    color: var(--text-2);
+  }
+
+  .toc-num {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--text-3);
+    flex-shrink: 0;
+    min-width: 20px;
+  }
+
+  /* ── SECTIONS ── */
+  .section {
+    margin-bottom: 72px;
+  }
+
+  .section-header {
+    display: flex;
+    align-items: baseline;
+    gap: 20px;
+    margin-bottom: 32px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .section-num {
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--text-3);
+    flex-shrink: 0;
+    padding-top: 4px;
+  }
+
+  .section-title {
+    font-family: var(--serif);
+    font-size: 28px;
+    font-weight: 700;
+    color: var(--text);
+    text-wrap: balance;
+    line-height: 1.2;
+  }
+
+  .section-title em {
+    font-style: italic;
+    color: var(--text-2);
+  }
+
+  h3 {
+    font-family: var(--sans);
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
+    color: var(--text-3);
+    margin: 32px 0 14px;
+  }
+
+  h4 {
+    font-family: var(--sans);
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--text);
+    margin: 24px 0 10px;
+  }
+
+  p {
+    color: var(--text-2);
+    font-size: 14.5px;
+    line-height: 1.75;
+    margin-bottom: 14px;
+    max-width: 68ch;
+  }
+
+  /* ── ROLE CARDS ── */
+  .role-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: 16px;
+    margin: 20px 0;
+  }
+
+  .role-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 20px;
+  }
+
+  .role-name {
+    font-family: var(--sans);
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text);
+    margin-bottom: 6px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .role-badge {
+    font-family: var(--mono);
+    font-size: 10px;
+    padding: 2px 7px;
+    border-radius: 4px;
+    background: var(--bg-muted);
+    color: var(--text-3);
+    letter-spacing: 0.04em;
+  }
+
+  .role-desc {
+    font-size: 13px;
+    color: var(--text-2);
+    line-height: 1.55;
+    margin: 0;
+    max-width: none;
+  }
+
+  /* ── MODULE CARDS ── */
+  .module-list {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    margin: 20px 0;
+  }
+
+  .module-item {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 18px 22px;
+    display: grid;
+    grid-template-columns: 200px 1fr;
+    gap: 16px;
+    align-items: start;
+  }
+
+  .module-name {
+    font-family: var(--sans);
+    font-size: 13.5px;
+    font-weight: 600;
+    color: var(--text);
+    line-height: 1.4;
+  }
+
+  .module-url {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--text-3);
+    margin-top: 3px;
+  }
+
+  .module-desc {
+    font-size: 13.5px;
+    color: var(--text-2);
+    line-height: 1.6;
+    margin: 0;
+    max-width: none;
+  }
+
+  /* ── FLOW ── */
+  .flow {
+    margin: 24px 0;
+    overflow-x: auto;
+    padding: 4px 0;
+  }
+
+  .flow-steps {
+    display: flex;
+    align-items: center;
+    gap: 0;
+    min-width: max-content;
+  }
+
+  .flow-step {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .flow-pill {
+    padding: 8px 16px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 500;
+    white-space: nowrap;
+    border: 1px solid var(--border);
+    background: var(--bg-card);
+    color: var(--text);
+  }
+
+  .flow-pill.active { background: #16233F; color: #fff; border-color: #16233F; }
+  .flow-pill.green  { background: var(--green-lt); color: var(--green); border-color: var(--green); }
+  .flow-pill.amber  { background: var(--amber-lt); color: var(--amber); border-color: var(--amber); }
+
+  .flow-arrow {
+    font-size: 16px;
+    color: var(--text-3);
+    padding: 0 6px;
+    padding-bottom: 18px;
+    align-self: center;
+  }
+
+  .flow-label {
+    font-size: 10px;
+    color: var(--text-3);
+    text-align: center;
+    font-family: var(--mono);
+    white-space: nowrap;
+  }
+
+  /* ── TABLE ── */
+  .tbl-wrap { overflow-x: auto; margin: 20px 0; }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13.5px;
+  }
+
+  thead tr {
+    border-bottom: 2px solid var(--border);
+  }
+
+  th {
+    text-align: left;
+    padding: 10px 14px;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
+    color: var(--text-3);
+    white-space: nowrap;
+  }
+
+  td {
+    padding: 11px 14px;
+    color: var(--text-2);
+    border-bottom: 1px solid var(--border);
+    vertical-align: top;
+    line-height: 1.5;
+  }
+
+  td:first-child {
+    font-weight: 500;
+    color: var(--text);
+    font-family: var(--mono);
+    font-size: 12px;
+  }
+
+  tbody tr:last-child td { border-bottom: none; }
+  tbody tr:hover { background: var(--bg-muted); }
+
+  /* ── PILL TAGS ── */
+  .tag {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 500;
+    vertical-align: middle;
+  }
+  .tag-navy  { background: #EEF2F8; color: #16233F; }
+  .tag-green { background: var(--green-lt); color: var(--green); }
+  .tag-amber { background: var(--amber-lt); color: var(--amber); }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) .tag-navy { background: #1C2A45; color: #8AABDB; }
+  }
+  :root[data-theme="dark"] .tag-navy { background: #1C2A45; color: #8AABDB; }
+
+  /* ── STACK GRID ── */
+  .stack-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 12px;
+    margin: 20px 0;
+  }
+
+  .stack-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 16px 18px;
+  }
+
+  .stack-layer {
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--text-3);
+    margin-bottom: 6px;
+  }
+
+  .stack-value {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text);
+    margin-bottom: 4px;
+  }
+
+  .stack-note {
+    font-size: 12px;
+    color: var(--text-3);
+    line-height: 1.4;
+  }
+
+  /* ── FORMULA BOX ── */
+  .formula-box {
+    background: var(--bg-muted);
+    border: 1px solid var(--border);
+    border-left: 3px solid #16233F;
+    border-radius: 8px;
+    padding: 20px 24px;
+    margin: 20px 0;
+    font-family: var(--mono);
+    font-size: 13px;
+    color: var(--text);
+    line-height: 2;
+  }
+
+  .formula-box span {
+    color: var(--text-3);
+  }
+
+  /* ── NOTE BOX ── */
+  .note {
+    background: var(--amber-lt);
+    border: 1px solid #FCD34D;
+    border-radius: 8px;
+    padding: 14px 18px;
+    font-size: 13px;
+    color: var(--amber);
+    margin: 16px 0;
+  }
+
+  /* ── PRINT ── */
+  @media print {
+    @page { size: A4; margin: 20mm 18mm; }
+    body { font-size: 13px; }
+    .cover { min-height: 100vh; page-break-after: always; }
+    .toc   { page-break-after: always; }
+    .section { page-break-inside: avoid; }
+    .module-item { page-break-inside: avoid; }
+    .role-card   { page-break-inside: avoid; }
+    .no-print { display: none !important; }
+    a { color: inherit; text-decoration: none; }
+  }
+
+  /* ── PRINT BTN ── */
+  .print-bar {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    background: var(--bg);
+    border-bottom: 1px solid var(--border);
+    padding: 12px 48px;
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+  }
+
+  .btn-print {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 18px;
+    background: #16233F;
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    font-family: var(--sans);
+  }
+
+  .btn-print:hover { background: #253760; }
+  .version-tag {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--text-3);
+    align-self: center;
+  }
+</style>
+
+<!-- COVER -->
+<div class="cover">
+  <div class="cover-logo">
+    <div class="cover-logo-mark">EM</div>
+    <div class="cover-logo-text">En Minutas</div>
+  </div>
+
+  <div class="cover-body">
+    <div class="cover-eyebrow">Especificación técnica y funcional</div>
+    <h1 class="cover-title">Sistema de Gestión<br>de Distribución B2B</h1>
+    <p class="cover-subtitle">Descripción completa de módulos, roles, flujos operativos y arquitectura del sistema de administración de En Minutas.</p>
+  </div>
+
+  <div class="cover-footer">
+    <div>
+      Posadas, Misiones · enminutas.com.ar<br>
+      Documento confidencial — uso interno
+    </div>
+    <div class="cover-footer-right">
+      v2.0 · Septiembre 2026<br>
+      admin@enminutas.com.ar
+    </div>
+  </div>
+</div>
+
+<!-- PRINT BAR -->
+<div class="print-bar no-print">
+  <span class="version-tag">v2.0 · Septiembre 2026</span>
+  <button class="btn-print" onclick="window.print()">⎙ Imprimir / Guardar PDF</button>
+</div>
+
+<!-- DOCUMENT -->
+<div class="doc">
+
+  <!-- TOC -->
+  <div class="toc">
+    <div class="toc-title">Contenido</div>
+    <ul class="toc-list">
+      <li><span class="toc-num">01</span> Resumen Ejecutivo</li>
+      <li><span class="toc-num">06</span> Estructura de Precios B2B</li>
+      <li><span class="toc-num">02</span> Descripción General</li>
+      <li><span class="toc-num">07</span> Gestión de Stock y Lotes</li>
+      <li><span class="toc-num">03</span> Roles y Permisos</li>
+      <li><span class="toc-num">08</span> Reportes y Rentabilidad</li>
+      <li><span class="toc-num">04</span> Módulos del Sistema</li>
+      <li><span class="toc-num">09</span> Arquitectura Técnica</li>
+      <li><span class="toc-num">05</span> Flujo Operativo de un Pedido</li>
+      <li><span class="toc-num">10</span> Estado Actual y Roadmap</li>
+    </ul>
+  </div>
+
+  <!-- 01 -->
+  <div class="section">
+    <div class="section-header">
+      <span class="section-num">01</span>
+      <h2 class="section-title">Resumen Ejecutivo</h2>
+    </div>
+    <p>En Minutas es una plataforma de gestión integral diseñada a medida para la operación B2B de la Cooperativa de Trabajo Il Pane Nostro, que elabora y distribuye productos ultracongelados de mandioca. El sistema cubre el ciclo completo de vida de cada pedido: desde la toma del pedido por parte del preventista o del cliente en el portal web, pasando por producción y despacho, hasta la entrega con firma digital, el cobro y la comisión del equipo comercial.</p>
+    <p>La plataforma reemplaza el seguimiento por planillas y WhatsApp por un sistema centralizado, trazable y accesible desde cualquier dispositivo. Permite gestionar múltiples canales de venta con precios diferenciados, controlar el stock por lotes con vencimiento, producir desde recetas con control de insumos, registrar cobranzas por cliente, calcular las comisiones de preventistas y generar reportes de rentabilidad.</p>
+
+    <h3>Datos clave del sistema</h3>
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr><th>Dato</th><th>Valor</th></tr></thead>
+        <tbody>
+          <tr><td>URL producción</td><td>enminutas.vercel.app</td></tr>
+          <tr><td>Usuarios</td><td>Admin, vendedores/preventistas, producción, distribución, comercializadora, clientes B2B</td></tr>
+          <tr><td>Canales de precio</td><td>Distribuidor, Gastronomía, Minorista, TANDA</td></tr>
+          <tr><td>Productos activos</td><td>49 productos en catálogo, en 7 líneas</td></tr>
+          <tr><td>En producción desde</td><td>Junio 2026</td></tr>
+          <tr><td>Operación real (al 24/9/2026)</td><td>231 pedidos y 36 clientes con pedidos B2B, 20 zonas de entrega</td></tr>
+          <tr><td>Versión de este documento</td><td>2.0 — septiembre 2026</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- 02 -->
+  <div class="section">
+    <div class="section-header">
+      <span class="section-num">02</span>
+      <h2 class="section-title">Descripción General</h2>
+    </div>
+    <p>El sistema está construido como una aplicación web con cuatro interfaces: el panel de administración para el equipo interno, el portal de clientes B2B para compradores mayoristas, la app del repartidor optimizada para uso móvil en ruta y el sitio web público de la marca. El repartidor y el preventista pueden instalar su app en el celular.</p>
+
+    <h3>Interfaces principales</h3>
+    <div class="module-list">
+      <div class="module-item">
+        <div>
+          <div class="module-name">Panel Administrador</div>
+          <div class="module-url">/admin/*</div>
+        </div>
+        <div class="module-desc">Gestión completa del negocio: pedidos, clientes, cocina, stock, precios, cobranzas, comisiones, staff, reportes y configuración. Accesible para roles admin, vendedor, producción y distribución con vistas y menús diferenciados según el rol.</div>
+      </div>
+      <div class="module-item">
+        <div>
+          <div class="module-name">Portal B2B</div>
+          <div class="module-url">/b2b/*</div>
+        </div>
+        <div class="module-desc">Interfaz para clientes mayoristas: catálogo de productos con precios según canal y zona, carrito de compras, plantillas de pedido, historial y remitos. Cada cliente ve solo sus precios específicos.</div>
+      </div>
+      <div class="module-item">
+        <div>
+          <div class="module-name">App Repartidor</div>
+          <div class="module-url">/repartidor</div>
+        </div>
+        <div class="module-desc">Aplicación instalable en celular para los repartidores. Muestra los pedidos de su zona ordenados por ruta, con acceso a Google Maps, WhatsApp del cliente y confirmación de entrega (total o parcial) con firma digital.</div>
+      </div>
+      <div class="module-item">
+        <div>
+          <div class="module-name">Remito Digital</div>
+          <div class="module-url">/remito/[id]</div>
+        </div>
+        <div class="module-desc">Documento imprimible (A4) generado para cada pedido, visible solo para el personal y para el cliente dueño del pedido. Incluye detalle de productos, totales con y sin IVA, datos del reparto, lo realmente entregado en las entregas parciales y espacio para firma.</div>
+      </div>
+      <div class="module-item">
+        <div>
+          <div class="module-name">Sitio web público</div>
+          <div class="module-url">enminutas.com.ar</div>
+        </div>
+        <div class="module-desc">Sitio de la marca, con textos, imágenes y categorías editables por el administrador desde el panel (Contenido web), sin intervención técnica.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 03 -->
+  <div class="section">
+    <div class="section-header">
+      <span class="section-num">03</span>
+      <h2 class="section-title">Roles y Permisos</h2>
+    </div>
+    <p>El sistema implementa control de acceso basado en roles. Cada usuario tiene un rol que determina qué vistas, acciones y datos puede acceder. El control se aplica en tres niveles: el menú, la protección de cada ruta y la validación dentro de cada acción del servidor, de modo que una acción no se puede ejecutar aunque alguien conozca su dirección.</p>
+
+    <div class="role-grid">
+      <div class="role-card">
+        <div class="role-name">Administrador <span class="role-badge">admin</span></div>
+        <p class="role-desc">Acceso total al sistema. Aprueba pedidos, gestiona staff, configura precios, canales y zonas, registra cobranzas, paga comisiones y ve todos los reportes.</p>
+      </div>
+      <div class="role-card">
+        <div class="role-name">Vendedor / Preventista <span class="role-badge">vendedor</span></div>
+        <p class="role-desc">Carga pedidos para sus clientes y solicita muestras (el admin las aprueba). Registra contactos, usa el simulador de precios y la lista imprimible, gestiona el pipeline de prospectos y ve sus clientes y su comisión. No aprueba ni despacha.</p>
+      </div>
+      <div class="role-card">
+        <div class="role-name">Producción <span class="role-badge">produccion</span></div>
+        <p class="role-desc">Ve la cola de pedidos aprobados y los prepara y despacha. Gestiona la cocina: insumos, recetas, producción de lotes, recepción de mercadería, stock y lotes.</p>
+      </div>
+      <div class="role-card">
+        <div class="role-name">Distribución <span class="role-badge">distribucion</span></div>
+        <p class="role-desc">Ve los pedidos despachados de su zona. Inicia el reparto, confirma entregas totales o parciales y usa la app de repartidor en el móvil.</p>
+      </div>
+      <div class="role-card">
+        <div class="role-name">Comercializadora</div>
+        <p class="role-desc">No es un rol de acceso sino una condición de un perfil: participa de la comisión de todos los clientes del sistema. Recibe una vista de solo lectura de la base para armar sus propios informes.</p>
+      </div>
+      <div class="role-card">
+        <div class="role-name">Cliente B2B <span class="role-badge">customer</span></div>
+        <p class="role-desc">Accede al portal B2B para hacer pedidos, ver su historial y descargar remitos. Ve precios según su canal, su zona y sus condiciones particulares.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- 04 -->
+  <div class="section">
+    <div class="section-header">
+      <span class="section-num">04</span>
+      <h2 class="section-title">Módulos del Sistema</h2>
+    </div>
+
+    <h3>Dashboard y Analytics</h3>
+    <p>Pantalla de inicio del panel. Cada rol ve su propio tablero: el administrador ventas del período y estado de la cartera; el vendedor sus clientes, su ranking y sus comisiones; producción lo que debe preparar; distribución lo que debe entregar.</p>
+
+    <h3>Gestión de Pedidos</h3>
+    <p>Módulo central del sistema. Los pedidos se generan desde el portal B2B (lo crea el cliente), desde el panel (lo crea un vendedor o el administrador) o como muestra. Cada pedido tiene estado, canal, cliente, productos, precios, método de pago y un historial de eventos con usuario y hora.</p>
+    <ul style="margin: 12px 0 16px 20px; color: var(--text-2); font-size: 14px; line-height: 2;">
+      <li>Cargo adicional manual opcional al crear el pedido (flete extra, IIBB, etc.)</li>
+      <li>Agregar, quitar y cambiar cantidades en pedidos aprobados o en producción</li>
+      <li>Notas internas, con opción de hacerlas visibles para el cliente en el remito</li>
+      <li>Cancelación mientras el pedido no esté entregado, con reintegro de stock y de cuenta corriente</li>
+    </ul>
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr><th>Campo</th><th>Descripción</th></tr></thead>
+        <tbody>
+          <tr><td>order_number</td><td>Numeración automática. B2B-2026-0104 para pedidos, MST-2026-0001 para muestras</td></tr>
+          <tr><td>channel</td><td>Mayorista B2B o muestra</td></tr>
+          <tr><td>status</td><td>Ver flujo de estados en la sección 05</td></tr>
+          <tr><td>payment_method</td><td>Transferencia · Efectivo · Cuenta corriente</td></tr>
+          <tr><td>despacho_info</td><td>Repartidor, fecha de entrega, hora y patente del vehículo</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>Módulo de Producción</h3>
+    <p>Vista para el equipo de producción. Muestra los pedidos aprobados (incluidas las muestras) como tarjetas con el detalle de cada ítem a preparar. Permite despachar con ajuste de cantidades: si un ítem no está disponible en la cantidad pedida, se reduce al momento del despacho. El sistema recalcula los totales, descuenta el stock de los lotes más próximos a vencer y avisa por email al preventista y al cliente.</p>
+
+    <h3>Cocina</h3>
+    <p>Conjunto de herramientas para la elaboración, dentro del panel:</p>
+    <div class="module-list">
+      <div class="module-item">
+        <div><div class="module-name">Insumos</div></div>
+        <div class="module-desc">Catálogo de insumos con stock, mínimo, punto de pedido y precio. Alta y edición directa en la tabla, categorías propias e importación desde planilla CSV.</div>
+      </div>
+      <div class="module-item">
+        <div><div class="module-name">Recetas</div></div>
+        <div class="module-desc">Ingredientes tomados del catálogo de insumos, pasos, rendimiento, vida útil del producto y costo. Una misma receta puede salir en varias presentaciones. Compara el costo de la receta con el costo cargado en el producto y avisa si difieren.</div>
+      </div>
+      <div class="module-item">
+        <div><div class="module-name">Producción</div></div>
+        <div class="module-desc">Registra lo elaborado: crea el lote de producto terminado con su número y su vencimiento calculado, y descuenta los insumos utilizados.</div>
+      </div>
+      <div class="module-item">
+        <div><div class="module-name">Planificador y compras</div></div>
+        <div class="module-desc">Calcula qué producir según los pedidos comprometidos y el stock real, y arma la lista de compras de insumos.</div>
+      </div>
+      <div class="module-item">
+        <div><div class="module-name">Recepción de mercadería</div></div>
+        <div class="module-desc">Registra facturas y remitos de proveedores con IVA, vencimiento y otros impuestos. Se puede subir una foto del comprobante: el sistema la lee automáticamente, sugiere el insumo correspondiente y alerta si el precio es anormal. Al confirmar suma stock y actualiza el precio del insumo.</div>
+      </div>
+    </div>
+
+    <h3>Módulo de Distribución</h3>
+    <p>Cola de pedidos despachados, filtrada por la zona del repartidor. Cada tarjeta muestra el cliente, dirección, productos y accesos a Google Maps y WhatsApp. Incluye una hoja de ruta imprimible, el orden manual de las paradas y el historial de entregas. Las entregas parciales devuelven automáticamente al stock lo no entregado.</p>
+
+    <h3>App del Repartidor</h3>
+    <p>Aplicación instalable en Android e iOS, pensada para usar con una mano. Muestra los pedidos de la zona ordenados por número de ruta, con botones grandes para llamar al cliente, abrir Google Maps y confirmar la entrega, total o parcial. Soporta firma digital del receptor directamente en la pantalla.</p>
+
+    <h3>Portal B2B para Clientes</h3>
+    <p>Interfaz web para clientes mayoristas aprobados. Funcionalidades:</p>
+    <div class="module-list">
+      <div class="module-item">
+        <div><div class="module-name">Catálogo</div></div>
+        <div class="module-desc">Productos con precios según el canal y la zona del cliente. Ciertas líneas de producto pueden ser exclusivas de un canal y no se muestran a los demás.</div>
+      </div>
+      <div class="module-item">
+        <div><div class="module-name">Pedidos y plantillas</div></div>
+        <div class="module-desc">El cliente arma su pedido, elige el método de pago, confirma y sigue el estado. Puede guardar plantillas para repetir pedidos. Recibe email de confirmación.</div>
+      </div>
+      <div class="module-item">
+        <div><div class="module-name">Historial, remitos y cuenta</div></div>
+        <div class="module-desc">Lista de pedidos con estado y fechas, remito imprimible de cada uno y cambio de contraseña desde Mi cuenta.</div>
+      </div>
+    </div>
+
+    <h3>Clientes B2B</h3>
+    <p>Ficha completa de cada cliente mayorista: datos de contacto, vendedor asignado, canal de precio, descuento extra, múltiples direcciones de entrega con zona, historial de pedidos, resumen financiero y cobranzas. El administrador puede fijar o restablecer su contraseña, cambiar su email de acceso y definir condiciones particulares: <strong>comisión propia</strong> (incluso sin comisión) y <strong>flete propio</strong>.</p>
+
+    <h3>Cobranzas y Cuentas Corrientes</h3>
+    <p>Los cobros se registran desde la ficha del cliente y pueden imputarse a un pedido, a una factura o quedar a cuenta. Un mismo cobro puede repartirse entre varios pedidos. Para los clientes que no requieren factura existe la opción de cobrar el neto sin IVA. El sistema muestra:</p>
+    <ul style="margin: 12px 0 16px 20px; color: var(--text-2); font-size: 14px; line-height: 2;">
+      <li>Saldo por pedido y por cliente, calculado como total del pedido menos lo cobrado</li>
+      <li>Historial de pagos con recibo imprimible (individual o combinado por tanda de pedidos)</li>
+      <li>Cargo automático en cuenta corriente al despachar pedidos con ese método de pago, ajustado en las entregas parciales y cancelaciones</li>
+    </ul>
+    <p>Cuando un pedido entregado queda cobrado, pasa al estado Liquidado.</p>
+    <div class="note">Nota: el control de límite de crédito y el listado de saldos por cliente de la pantalla "Cuentas corrientes" están pendientes de reconexión con la ficha del cliente; hoy la gestión de cobranzas se hace desde la ficha de cada cliente.</div>
+
+    <h3>Comisiones</h3>
+    <p>Pantalla para calcular y registrar el pago de comisiones del equipo comercial, con exportación a planilla. Reglas principales:</p>
+    <ul style="margin: 12px 0 16px 20px; color: var(--text-2); font-size: 14px; line-height: 2;">
+      <li>La comisión se genera <strong>cuando el pedido se entrega</strong> y se asigna al mes de la entrega.</li>
+      <li>Cada cliente tiene su porcentaje de comisión cargado dentro de su precio. Ese porcentaje se reparte entre el preventista asignado (según su propio porcentaje, con tope en el del cliente) y la comercializadora, que se queda con el resto de todos los clientes.</li>
+      <li>Un cliente sin comisión en su precio no genera comisión para nadie. El flete incluido en el precio no forma parte de la base.</li>
+      <li>El pago se registra cliente por cliente y mes por mes, y queda congelado. Si hay entregas posteriores, se paga la diferencia. Las devoluciones descuentan comisión.</li>
+    </ul>
+
+    <h3>Módulo Preventista</h3>
+    <p>Herramientas para el equipo de ventas en campo, también instalables como app en el celular:</p>
+    <div class="module-list">
+      <div class="module-item">
+        <div><div class="module-name">Lista de Precios</div></div>
+        <div class="module-desc">Listado imprimible de todos los productos con precio por caja y por unidad, según el canal y la zona seleccionados.</div>
+      </div>
+      <div class="module-item">
+        <div><div class="module-name">Simulador de Precios</div></div>
+        <div class="module-desc">Calcula el precio final para el cliente incluyendo IIBB provincial y permite imprimir el detalle para presentarlo.</div>
+      </div>
+      <div class="module-item">
+        <div><div class="module-name">Log de Contactos</div></div>
+        <div class="module-desc">Registro de cada visita o contacto con un cliente: fecha, tipo, resultado y próxima acción.</div>
+      </div>
+      <div class="module-item">
+        <div><div class="module-name">Pipeline</div></div>
+        <div class="module-desc">Seguimiento de clientes potenciales por etapas del proceso de venta, hasta convertirlos en clientes.</div>
+      </div>
+    </div>
+
+    <h3>Muestras</h3>
+    <p>Las muestras son envíos sin costo a posibles clientes, y se gestionan como <strong>pedidos dentro del flujo normal</strong>: se numeran MST-AAAA-NNNN, aparecen en Pedidos y recorren producción, despacho, distribución y entrega. El vendedor las solicita y el administrador las aprueba. Se envía una presentación de muestra especialmente elaborada, que se produce como lote desde la receta, de modo que el stock real baja correctamente. Cada muestra guarda los datos del destinatario, su zona y, si corresponde, el prospecto del pipeline al que pertenece.</p>
+
+    <h3>Alertas</h3>
+    <p>Centro de alertas con tres niveles (crítico, urgente y aviso), con un contador visible en el menú. Por ejemplo, avisa cuando un pedido creado con el faltante de una entrega parcial vence sin despacharse. Los emails automáticos se envían mediante plantillas propias y llegan según el evento.</p>
+
+    <h3>Sitio web y Chat interno</h3>
+    <p>El contenido del sitio público se edita desde el panel: textos por sección, imágenes y descripción de las categorías, y qué categorías se muestran. El panel incluye además un asistente de chat que responde consultas de solo lectura (productos, pedidos, clientes, stock, pipeline) según el rol de quien pregunta.</p>
+
+    <h3>Reportes y Rentabilidad</h3>
+    <p>Análisis financiero y operativo:</p>
+    <ul style="margin: 12px 0 16px 20px; color: var(--text-2); font-size: 14px; line-height: 2;">
+      <li>Ventas por período, canal, cliente y producto</li>
+      <li>Margen bruto por producto (precio de venta contra costo)</li>
+      <li>Reporte de precios exportable en CSV y exportación de pedidos y comisiones</li>
+      <li>Rentabilidad con desglose de comisiones e IVA</li>
+    </ul>
+
+    <h3>Configuración del Sistema</h3>
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr><th>Sección</th><th>Qué configura</th></tr></thead>
+        <tbody>
+          <tr><td>Productos</td><td>Catálogo completo: nombre, SKU, código, costo, packaging, bolsas por caja, unidades, línea, categoría de precio, stock mínimo, imagen</td></tr>
+          <tr><td>Líneas de producto</td><td>Agrupaciones del catálogo (Empanadas, Chipas, Bocaditos, Pizzas, etc.), con posibilidad de exclusividad por canal</td></tr>
+          <tr><td>Canales B2B</td><td>Distribuidor, Gastronomía, Minorista y TANDA. Cada canal tiene margen estándar, premium y de venta directa, y markup de precio al público</td></tr>
+          <tr><td>Zonas</td><td>Zonas de distribución y el porcentaje de flete incluido en el precio para cada una</td></tr>
+          <tr><td>Depósitos</td><td>Ubicaciones físicas de almacenamiento para los lotes</td></tr>
+          <tr><td>Descuentos por volumen</td><td>Escalas de descuento según la cantidad de cajas</td></tr>
+          <tr><td>Clientes B2B</td><td>Alta, aprobación, canal, descuento extra, comisión y flete propios</td></tr>
+          <tr><td>Staff</td><td>Alta de usuarios del equipo con rol asignado y porcentaje de comisión del preventista</td></tr>
+          <tr><td>Parámetros globales</td><td>IVA (21%) y comisión base (15%): afectan el cálculo de todos los precios</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- 05 -->
+  <div class="section">
+    <div class="section-header">
+      <span class="section-num">05</span>
+      <h2 class="section-title">Flujo Operativo de un Pedido</h2>
+    </div>
+    <p>Cada pedido atraviesa un flujo de estados. El sistema valida las transiciones: no es posible saltear estados, y cada cambio queda registrado en el historial del pedido con usuario y hora. Si dos personas intentan procesar el mismo pedido a la vez, solo una lo logra y la otra recibe un aviso.</p>
+
+    <div class="flow">
+      <div class="flow-steps">
+        <div class="flow-step">
+          <div class="flow-pill">Pendiente</div>
+          <div class="flow-label">Cliente o vendedor lo crea</div>
+        </div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-step">
+          <div class="flow-pill active">Aprobado</div>
+          <div class="flow-label">Admin aprueba</div>
+        </div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-step">
+          <div class="flow-pill">En preparación</div>
+          <div class="flow-label">Ingresa a producción</div>
+        </div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-step">
+          <div class="flow-pill active">Despachado</div>
+          <div class="flow-label">Sale del depósito</div>
+        </div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-step">
+          <div class="flow-pill">En distribución</div>
+          <div class="flow-label">Repartidor en ruta</div>
+        </div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-step">
+          <div class="flow-pill green">Entregado</div>
+          <div class="flow-label">Cliente recibe</div>
+        </div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-step">
+          <div class="flow-pill green">Liquidado</div>
+          <div class="flow-label">Cobrado y cerrado</div>
+        </div>
+      </div>
+    </div>
+    <p>Las entregas incompletas terminan en <strong>Entrega parcial</strong> (que también pasa a Liquidado al cobrarse) y un pedido puede <strong>Cancelarse</strong>. Los pedidos creados por el administrador pueden entrar directamente como Aprobados.</p>
+
+    <h3>Acciones especiales</h3>
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr><th>Acción</th><th>Cuándo</th><th>Efecto</th></tr></thead>
+        <tbody>
+          <tr><td>Ajuste al despachar</td><td>Si no hay stock suficiente</td><td>Reduce cantidades → recalcula totales → email a preventista y cliente</td></tr>
+          <tr><td>Entrega parcial</td><td>El cliente no recibe todo</td><td>El pedido y el remito quedan con lo realmente entregado, se exige el motivo (sin stock, rechazado, dañado, otro), se devuelve la diferencia al stock y se ajusta la cuenta corriente. El faltante se cierra</td></tr>
+          <tr><td>Pedido con el faltante</td><td>Si el administrador quiere reponer lo no entregado</td><td>Crea un pedido nuevo, aprobado y al precio original, vinculado al original y con fecha de compromiso; alerta si vence sin despacharse</td></tr>
+          <tr><td>Cuenta corriente</td><td>Al despachar con ese método de pago</td><td>Cargo automático en la cuenta del cliente</td></tr>
+          <tr><td>Firma digital</td><td>Al entregar</td><td>El receptor firma en pantalla y queda guardada en el remito</td></tr>
+          <tr><td>Liquidado</td><td>Al registrarse el cobro de un pedido entregado</td><td>Marca el pedido como cobrado y cerrado</td></tr>
+          <tr><td>Cancelado</td><td>El administrador cancela</td><td>Mientras no esté entregado. Si ya estaba despachado, reintegra el stock y revierte el cargo en cuenta corriente</td></tr>
+          <tr><td>Comisión</td><td>Al entregar</td><td>El pedido devenga la comisión del mes de entrega</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>Emails automáticos del sistema</h3>
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr><th>Evento</th><th>Destinatarios</th></tr></thead>
+        <tbody>
+          <tr><td>Pedido recibido desde el portal B2B</td><td>Admin</td></tr>
+          <tr><td>Pedido creado por el equipo</td><td>Cliente</td></tr>
+          <tr><td>Solicitud de alta de cliente B2B</td><td>Admin</td></tr>
+          <tr><td>Cliente B2B aprobado</td><td>Cliente (con acceso al portal)</td></tr>
+          <tr><td>Despacho con ajuste de cantidades</td><td>Admin + Preventista del cliente + Cliente</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- 06 -->
+  <div class="section">
+    <div class="section-header">
+      <span class="section-num">06</span>
+      <h2 class="section-title">Estructura de Precios B2B</h2>
+    </div>
+    <p>Los precios no se cargan manualmente: se calculan en tiempo real a partir de variables configurables. Al modificar un costo o un margen, todos los precios del catálogo se actualizan automáticamente. Lo que se cobró en cada pedido queda guardado en el propio pedido, así que los cambios posteriores no alteran el historial.</p>
+
+    <h3>Fórmula de cálculo</h3>
+    <div class="formula-box">
+      lista_siva = (costo × bolsas_caja) / (1 − margen_canal) + pkg_unitario × bolsas_caja + pkg_bulto<br>
+      <span>↳ precio de la caja sin IVA (el costo es por bolsa)</span><br><br>
+      lista_civa = lista_siva × 1,21<br>
+      <span>↳ precio de la caja con IVA</span><br><br>
+      comisión = lista_siva × % de comisión del cliente (15% si no tiene uno propio)<br>
+      <span>↳ sin IVA adicional</span><br><br>
+      flete = lista_siva × % de flete de la zona (o del cliente) × 1,21<br>
+      <span>↳ flete incluido en el precio; 0 si la zona no lo tiene</span><br><br>
+      <strong>FINAL c/IVA = lista_civa + comisión + flete</strong><br>
+      <span>↳ precio que paga el cliente por la caja</span><br><br>
+      precio_unidad = FINAL c/IVA ÷ (bolsas × unidades_por_bolsa)
+    </div>
+
+    <h3>Variables configurables</h3>
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr><th>Variable</th><th>Dónde se configura</th><th>Ejemplo</th></tr></thead>
+        <tbody>
+          <tr><td>costo</td><td>Ficha del producto</td><td>$39.300 por bolsa</td></tr>
+          <tr><td>pkg_unitario</td><td>Ficha del producto</td><td>$200 por bolsa</td></tr>
+          <tr><td>pkg_bulto</td><td>Ficha del producto</td><td>$1.100 por caja</td></tr>
+          <tr><td>bolsas_caja</td><td>Ficha del producto</td><td>1 bolsa</td></tr>
+          <tr><td>margen_canal</td><td>Configuración → Canales</td><td>Distribuidor 40% estándar / 45% premium</td></tr>
+          <tr><td>IVA</td><td>Configuración → Parámetros</td><td>21%</td></tr>
+          <tr><td>comisión</td><td>Parámetros (global) o ficha del cliente</td><td>15% global; 0% para clientes sin comisión</td></tr>
+          <tr><td>flete</td><td>Configuración → Zonas o ficha del cliente</td><td>0% en zonas locales</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>Canales de precio</h3>
+    <p>Cada cliente B2B está asignado a un canal, que determina el margen aplicado: Distribuidor, Gastronomía, Minorista y TANDA. Además el precio puede reflejar un descuento extra del cliente, un descuento por volumen de cajas y el margen de venta directa para los productos que lo requieran.</p>
+
+    <h3>Flete incluido en el precio</h3>
+    <p>El flete no se cobra aparte: es un porcentaje del precio sin IVA que se define por zona de destino (y puede ajustarse por cliente), incluido en el precio final. Se eligió un costo promedio en lugar de calcular cada viaje, porque el transporte real se comparte con otras cargas. El flete queda fuera de la base de comisión, y los documentos que se entregan al cliente (lista de precios, simulador, remito) no lo mencionan.</p>
+
+    <h3>Importación de precios</h3>
+    <p>Los costos de los productos pueden actualizarse masivamente desde un archivo CSV. El administrador carga la planilla, el sistema actualiza los costos y todos los precios se recalculan. La fecha de la última actualización queda registrada en cada producto.</p>
+  </div>
+
+  <!-- 07 -->
+  <div class="section">
+    <div class="section-header">
+      <span class="section-num">07</span>
+      <h2 class="section-title">Gestión de Stock y Lotes</h2>
+    </div>
+    <p>El sistema implementa trazabilidad de stock por lotes con fecha de vencimiento y aplica la metodología FEFO (First Expired, First Out): primero se consume el lote más próximo a vencer. El stock real de producto terminado es siempre el de los lotes.</p>
+
+    <h3>Conceptos clave</h3>
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr><th>Concepto</th><th>Definición</th></tr></thead>
+        <tbody>
+          <tr><td>Disponible</td><td>Suma de la cantidad actual de todos los lotes activos no vencidos de un producto</td></tr>
+          <tr><td>Comprometido</td><td>Unidades en pedidos aprobados, en producción, despachados o en distribución</td></tr>
+          <tr><td>Neto</td><td>Disponible − Comprometido. Puede ser negativo (deuda de stock)</td></tr>
+          <tr><td>Mínimo</td><td>Nivel mínimo de alerta configurable por producto</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>Flujo del stock</h3>
+    <p><strong>Ingreso:</strong> Principalmente desde Cocina → Producción, que crea el lote con número correlativo y vencimiento calculado según la vida útil de la receta. También se puede dar de alta un lote manualmente.</p>
+    <p><strong>Egreso:</strong> Al despachar un pedido (o una muestra), el sistema consume el stock en orden FEFO. Si no hay stock suficiente, el despacho se completa igual pero el neto queda negativo.</p>
+    <p><strong>Devolución:</strong> En entregas parciales y en cancelaciones de pedidos ya despachados, las unidades no entregadas se reintegran a los lotes automáticamente.</p>
+    <p><strong>Insumos:</strong> Los insumos tienen su propio stock, que sube con las recepciones de mercadería y baja con la producción, con registro de cada movimiento.</p>
+
+    <h3>Indicadores visuales</h3>
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr><th>Estado</th><th>Condición</th></tr></thead>
+        <tbody>
+          <tr><td><span class="tag tag-navy">Ok</span></td><td>Neto ≥ mínimo configurado</td></tr>
+          <tr><td><span class="tag tag-amber">Stock bajo</span></td><td>Neto ≤ mínimo configurado</td></tr>
+          <tr><td><span class="tag" style="background:#FEE2E2;color:#991B1B">Sin stock</span></td><td>Disponible = 0</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- 08 -->
+  <div class="section">
+    <div class="section-header">
+      <span class="section-num">08</span>
+      <h2 class="section-title">Reportes y Rentabilidad</h2>
+    </div>
+    <p>El sistema provee reportes operativos y financieros para la toma de decisiones. Los datos se calculan en tiempo real desde la base de datos. Por convención, "ventas" significa pedidos entregados (entregados, parciales y liquidados); la cartera de pedidos incluye además los aprobados, en producción y en camino. Las muestras y los pedidos cancelados nunca cuentan como venta.</p>
+
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr><th>Reporte</th><th>Contenido</th></tr></thead>
+        <tbody>
+          <tr><td>Dashboard</td><td>Ventas del período, pedidos por estado, alertas de stock, un tablero por rol</td></tr>
+          <tr><td>Rentabilidad</td><td>Margen bruto por producto: (precio_venta − costo) / precio_venta × 100</td></tr>
+          <tr><td>Lista de precios</td><td>Exportable por canal y zona. Precio por caja, por unidad, PVP sugerido</td></tr>
+          <tr><td>Precios CSV</td><td>Export completo del catálogo con todos los campos de precio para análisis externo</td></tr>
+          <tr><td>Comisiones</td><td>Comisión por preventista, cliente y mes, con historial de pagos y export</td></tr>
+          <tr><td>Cobranzas</td><td>Cobros por cliente, saldo por pedido y recibos</td></tr>
+          <tr><td>Historial de cliente</td><td>Todos los pedidos de un cliente con fechas, estados y totales</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- 09 -->
+  <div class="section">
+    <div class="section-header">
+      <span class="section-num">09</span>
+      <h2 class="section-title">Arquitectura Técnica</h2>
+    </div>
+
+    <div class="stack-grid">
+      <div class="stack-card">
+        <div class="stack-layer">Frontend</div>
+        <div class="stack-value">Next.js 16</div>
+        <div class="stack-note">App Router, Server Components, Server Actions, React 19, TypeScript</div>
+      </div>
+      <div class="stack-card">
+        <div class="stack-layer">Estilos</div>
+        <div class="stack-value">Tailwind CSS</div>
+        <div class="stack-note">Diseño responsive, mobile-first. Panel con tema Índigo</div>
+      </div>
+      <div class="stack-card">
+        <div class="stack-layer">Base de datos</div>
+        <div class="stack-value">Supabase</div>
+        <div class="stack-note">PostgreSQL 17 con Row Level Security</div>
+      </div>
+      <div class="stack-card">
+        <div class="stack-layer">Autenticación</div>
+        <div class="stack-value">Supabase Auth</div>
+        <div class="stack-note">Roles en los metadatos del usuario, verificados en el servidor. Email + contraseña</div>
+      </div>
+      <div class="stack-card">
+        <div class="stack-layer">Deploy</div>
+        <div class="stack-value">Vercel</div>
+        <div class="stack-note">Deploy automático en cada push a GitHub. Funciones en São Paulo</div>
+      </div>
+      <div class="stack-card">
+        <div class="stack-layer">Email</div>
+        <div class="stack-value">Resend</div>
+        <div class="stack-note">Emails transaccionales con plantillas HTML propias</div>
+      </div>
+      <div class="stack-card">
+        <div class="stack-layer">Inteligencia artificial</div>
+        <div class="stack-value">Groq + OpenRouter</div>
+        <div class="stack-note">Lectura de facturas de proveedores y asistente de chat interno</div>
+      </div>
+      <div class="stack-card">
+        <div class="stack-layer">Almacenamiento</div>
+        <div class="stack-value">Supabase Storage</div>
+        <div class="stack-note">Imágenes de productos y del sitio web</div>
+      </div>
+      <div class="stack-card">
+        <div class="stack-layer">Calidad</div>
+        <div class="stack-value">Vitest</div>
+        <div class="stack-note">Pruebas automáticas de comisiones, estados, fechas y entrega parcial</div>
+      </div>
+      <div class="stack-card">
+        <div class="stack-layer">Repositorio</div>
+        <div class="stack-value">GitHub</div>
+        <div class="stack-note">Control de versiones. Deploy automático vía Vercel</div>
+      </div>
+    </div>
+
+    <h3>Seguridad</h3>
+    <p>Toda la base de datos tiene Row Level Security (RLS) activado. Los clientes B2B solo ven sus propios pedidos y remitos. El equipo interno accede según su rol, y el rol se verifica en el servidor en cada ruta y en cada acción, no solo en el menú. Las operaciones administrativas usan un cliente con privilegios de servicio que nunca se expone al navegador. Los endpoints de la API requieren autenticación válida.</p>
+
+    <h3>Infraestructura de datos</h3>
+    <p>La base de datos está alojada en Supabase (región São Paulo, Brasil, menor latencia desde Argentina) y los datos no salen de América del Sur. Las migraciones de base de datos están versionadas en el repositorio. El sistema incluye un cron de keep-alive para evitar pausas por inactividad. Existe además un acceso de solo lectura para que la comercializadora arme sus propios informes sin poder modificar datos.</p>
+  </div>
+
+  <!-- 10 -->
+  <div class="section">
+    <div class="section-header">
+      <span class="section-num">10</span>
+      <h2 class="section-title">Estado Actual y Roadmap</h2>
+    </div>
+
+    <h3>Módulos en producción</h3>
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr><th>Módulo</th><th>Estado</th></tr></thead>
+        <tbody>
+          <tr><td>Gestión de pedidos B2B (con edición, notas y cargo adicional)</td><td><span class="tag tag-green">Completo</span></td></tr>
+          <tr><td>Portal B2B para clientes</td><td><span class="tag tag-green">Completo</span></td></tr>
+          <tr><td>Producción y despacho</td><td><span class="tag tag-green">Completo</span></td></tr>
+          <tr><td>Cocina: insumos, recetas, producción, planificador, compras</td><td><span class="tag tag-green">Completo</span></td></tr>
+          <tr><td>Recepción de mercadería con lectura por IA</td><td><span class="tag tag-green">Completo</span></td></tr>
+          <tr><td>Distribución, hoja de ruta y app del repartidor</td><td><span class="tag tag-green">Completo</span></td></tr>
+          <tr><td>Entrega parcial con cierre de faltante</td><td><span class="tag tag-green">Completo</span></td></tr>
+          <tr><td>Stock por lotes (FEFO)</td><td><span class="tag tag-green">Completo</span></td></tr>
+          <tr><td>Precios dinámicos por canal, con flete incluido por zona</td><td><span class="tag tag-green">Completo</span></td></tr>
+          <tr><td>Cobranzas y recibos por cliente</td><td><span class="tag tag-green">Completo</span></td></tr>
+          <tr><td>Comisiones de preventistas y comercializadora</td><td><span class="tag tag-green">Completo</span></td></tr>
+          <tr><td>Muestras como pedidos</td><td><span class="tag tag-green">Completo</span></td></tr>
+          <tr><td>Preventista (lista, simulador, contactos, pipeline, app)</td><td><span class="tag tag-green">Completo</span></td></tr>
+          <tr><td>Sitio web público con edición de contenido</td><td><span class="tag tag-green">Completo</span></td></tr>
+          <tr><td>Alertas, emails automáticos y chat interno</td><td><span class="tag tag-green">Completo</span></td></tr>
+          <tr><td>Reportes y rentabilidad</td><td><span class="tag tag-green">Completo</span></td></tr>
+          <tr><td>Firma digital en remito</td><td><span class="tag tag-green">Completo</span></td></tr>
+          <tr><td>Pantalla Cuentas corrientes y límite de crédito</td><td><span class="tag tag-amber">Por reconectar</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>Próximos pasos identificados</h3>
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr><th>Feature</th><th>Descripción</th></tr></thead>
+        <tbody>
+          <tr><td>Cuentas corrientes y límite de crédito</td><td>Reconectar el listado de saldos y el control de límite de crédito con los datos reales de clientes</td></tr>
+          <tr><td>Comisión sobre lo cobrado</td><td>Calcular la comisión a medida que el cliente paga, en lugar de al entregar. Ya está diseñado</td></tr>
+          <tr><td>Facturación electrónica (AFIP/CAE)</td><td>Generación de comprobantes fiscales con CAE para clientes que lo requieren</td></tr>
+          <tr><td>Remito con firma física</td><td>Versión del remito apta para firma en papel + registro de recepción</td></tr>
+          <tr><td>Optimización de ruta</td><td>Hoy el orden de las paradas es manual. Ordenamiento automático por proximidad geográfica</td></tr>
+          <tr><td>Historial de precios</td><td>Registro de cambios de costo por producto para ver la evolución de márgenes</td></tr>
+          <tr><td>Alertas de stock por email</td><td>Notificación automática cuando un producto baja del mínimo configurado</td></tr>
+          <tr><td>App instalable — ícono y uso sin conexión</td><td>Reemplazar el ícono provisorio por el logo real en PNG y agregar funcionamiento sin conexión</td></tr>
+          <tr><td>Portal kioscos (proyecto separado)</td><td>Sistema para kioscos revendedores (kioscos-ideia): estructura lista, pendiente de datos</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="note">
+      El sistema está en uso con datos reales de clientes y pedidos desde junio 2026. Cualquier modificación estructural a la base de datos se realiza con migraciones versionadas y sin downtime.
+    </div>
+  </div>
+
+  <div style="border-top: 1px solid var(--border); padding-top: 32px; text-align: center;">
+    <p style="font-size: 12px; color: var(--text-3); max-width: none; text-align: center;">
+      En Minutas · Posadas, Misiones · enminutas.com.ar · admin@enminutas.com.ar<br>
+      Versión 2.0, actualizada en septiembre 2026 — confidencial, uso interno
+    </p>
+  </div>
+
+</div>

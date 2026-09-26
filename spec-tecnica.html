@@ -1,0 +1,1449 @@
+<title>En Minutas — Contexto Técnico Completo</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+
+<style>
+:root {
+  --bg:        #0F1117;
+  --bg-2:      #161B22;
+  --bg-3:      #1C2230;
+  --border:    #30363D;
+  --text:      #E6EDF3;
+  --text-2:    #8B949E;
+  --text-3:    #656D76;
+  --green:     #3FB950;
+  --green-dim: #1B3B28;
+  --amber:     #D29922;
+  --amber-dim: #3D2F0A;
+  --red:       #F85149;
+  --red-dim:   #3D1212;
+  --blue:      #58A6FF;
+  --blue-dim:  #0D2640;
+  --purple:    #BC8CFF;
+  --cyan:      #39C5CF;
+  --sans:      'Inter', system-ui, sans-serif;
+  --mono:      'IBM Plex Mono', monospace;
+}
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme="dark"]) {
+    --bg:        #FFFFFF;
+    --bg-2:      #F6F8FA;
+    --bg-3:      #EAEEF2;
+    --border:    #D0D7DE;
+    --text:      #1F2328;
+    --text-2:    #57606A;
+    --text-3:    #8C959F;
+    --green:     #1A7F37;
+    --green-dim: #DAFBE1;
+    --amber:     #9A6700;
+    --amber-dim: #FFF8C5;
+    --red:       #CF222E;
+    --red-dim:   #FFEBE9;
+    --blue:      #0969DA;
+    --blue-dim:  #DDF4FF;
+    --purple:    #8250DF;
+    --cyan:      #0550AE;
+  }
+}
+:root[data-theme="light"] {
+  --bg:        #FFFFFF;
+  --bg-2:      #F6F8FA;
+  --bg-3:      #EAEEF2;
+  --border:    #D0D7DE;
+  --text:      #1F2328;
+  --text-2:    #57606A;
+  --text-3:    #8C959F;
+  --green:     #1A7F37;
+  --green-dim: #DAFBE1;
+  --amber:     #9A6700;
+  --amber-dim: #FFF8C5;
+  --red:       #CF222E;
+  --red-dim:   #FFEBE9;
+  --blue:      #0969DA;
+  --blue-dim:  #DDF4FF;
+  --purple:    #8250DF;
+  --cyan:      #0550AE;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: var(--sans);
+  background: var(--bg);
+  color: var(--text);
+  font-size: 14px;
+  line-height: 1.7;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ── LAYOUT ── */
+.layout {
+  display: grid;
+  grid-template-columns: 260px 1fr;
+  min-height: 100vh;
+}
+
+/* ── SIDEBAR ── */
+.sidebar {
+  background: var(--bg-2);
+  border-right: 1px solid var(--border);
+  padding: 24px 0;
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  overflow-y: auto;
+}
+
+.sidebar-logo {
+  padding: 0 20px 20px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 16px;
+}
+
+.sidebar-logo-em {
+  font-family: var(--mono);
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text);
+}
+
+.sidebar-logo-sub {
+  font-size: 11px;
+  color: var(--text-3);
+  margin-top: 2px;
+}
+
+.nav-section {
+  padding: 0 12px;
+  margin-bottom: 4px;
+}
+
+.nav-label {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-3);
+  padding: 8px 8px 4px;
+}
+
+.nav-item {
+  display: block;
+  padding: 5px 10px;
+  border-radius: 6px;
+  font-size: 12.5px;
+  color: var(--text-2);
+  text-decoration: none;
+  cursor: pointer;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.nav-item:hover { background: var(--bg-3); color: var(--text); }
+.nav-item.critical { color: var(--red); }
+.nav-item.critical:hover { background: var(--red-dim); }
+
+/* ── MAIN ── */
+.main {
+  padding: 40px 48px 80px;
+  max-width: 920px;
+}
+
+/* ── HEADINGS ── */
+h1 {
+  font-size: 24px;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 8px;
+  line-height: 1.3;
+}
+
+.doc-meta {
+  font-size: 12px;
+  color: var(--text-3);
+  font-family: var(--mono);
+  margin-bottom: 40px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid var(--border);
+}
+
+h2 {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text);
+  margin: 48px 0 16px;
+  padding-top: 24px;
+  border-top: 1px solid var(--border);
+  scroll-margin-top: 16px;
+}
+
+h2:first-of-type { border-top: none; margin-top: 0; }
+
+h3 {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
+  margin: 28px 0 10px;
+}
+
+h4 {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-2);
+  margin: 20px 0 8px;
+  font-family: var(--mono);
+}
+
+p {
+  color: var(--text-2);
+  font-size: 13.5px;
+  margin-bottom: 12px;
+  line-height: 1.7;
+}
+
+ul, ol {
+  margin: 8px 0 14px 20px;
+  color: var(--text-2);
+  font-size: 13.5px;
+  line-height: 1.8;
+}
+
+li { margin-bottom: 2px; }
+
+/* ── CODE ── */
+code {
+  font-family: var(--mono);
+  font-size: 12px;
+  background: var(--bg-3);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 1px 5px;
+  color: var(--cyan);
+}
+
+pre {
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 16px 18px;
+  overflow-x: auto;
+  margin: 14px 0;
+  font-family: var(--mono);
+  font-size: 12.5px;
+  line-height: 1.7;
+  color: var(--text);
+}
+
+pre .kw  { color: #FF7B72; }    /* keywords */
+pre .fn  { color: #D2A8FF; }    /* functions */
+pre .str { color: #A5D6FF; }    /* strings */
+pre .cm  { color: #8B949E; }    /* comments */
+pre .nb  { color: #79C0FF; }    /* numbers */
+pre .ty  { color: #FFA657; }    /* types */
+
+/* ── CALLOUTS ── */
+.callout {
+  display: flex;
+  gap: 12px;
+  padding: 14px 16px;
+  border-radius: 8px;
+  margin: 16px 0;
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.callout-icon {
+  font-size: 15px;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+.callout.danger  { background: var(--red-dim);   border: 1px solid var(--red);   color: var(--red); }
+.callout.warning { background: var(--amber-dim);  border: 1px solid var(--amber); color: var(--amber); }
+.callout.info    { background: var(--blue-dim);   border: 1px solid var(--blue);  color: var(--blue); }
+.callout.tip     { background: var(--green-dim);  border: 1px solid var(--green); color: var(--green); }
+
+/* ── TABLES ── */
+.tbl { overflow-x: auto; margin: 14px 0; }
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12.5px;
+}
+
+thead tr { border-bottom: 2px solid var(--border); }
+
+th {
+  text-align: left;
+  padding: 8px 12px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--text-3);
+  white-space: nowrap;
+}
+
+td {
+  padding: 9px 12px;
+  border-bottom: 1px solid var(--border);
+  color: var(--text-2);
+  vertical-align: top;
+  line-height: 1.5;
+}
+
+td:first-child { font-family: var(--mono); font-size: 12px; color: var(--cyan); }
+td code { font-size: 11.5px; }
+tbody tr:hover { background: var(--bg-2); }
+tbody tr:last-child td { border-bottom: none; }
+
+/* ── BADGES ── */
+.badge {
+  display: inline-block;
+  padding: 1px 7px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 500;
+  font-family: var(--mono);
+  vertical-align: middle;
+  white-space: nowrap;
+}
+
+.badge-green  { background: var(--green-dim);  color: var(--green); }
+.badge-amber  { background: var(--amber-dim);  color: var(--amber); }
+.badge-red    { background: var(--red-dim);    color: var(--red); }
+.badge-blue   { background: var(--blue-dim);   color: var(--blue); }
+.badge-purple { background: #2D1F5E; color: var(--purple); }
+
+/* ── FLOW ── */
+.flow {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-wrap: wrap;
+  margin: 14px 0;
+  font-family: var(--mono);
+  font-size: 12px;
+}
+
+.flow-step {
+  padding: 5px 12px;
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  color: var(--text-2);
+  white-space: nowrap;
+}
+
+.flow-step.active  { background: var(--blue-dim);  border-color: var(--blue);  color: var(--blue); }
+.flow-step.success { background: var(--green-dim); border-color: var(--green); color: var(--green); }
+.flow-step.special { background: var(--amber-dim); border-color: var(--amber); color: var(--amber); }
+
+.flow-arrow { color: var(--text-3); }
+
+/* ── SECTION ANCHOR ── */
+section { margin-bottom: 4px; }
+
+/* ── PRINT ── */
+@media print {
+  @page { size: A4; margin: 15mm; }
+  .sidebar { display: none; }
+  .layout { grid-template-columns: 1fr; }
+  .main { padding: 0; max-width: none; }
+  pre { white-space: pre-wrap; word-break: break-all; }
+}
+
+.no-print { }
+@media print { .no-print { display: none; } }
+</style>
+
+<div class="layout">
+
+<!-- SIDEBAR -->
+<nav class="sidebar no-print">
+  <div class="sidebar-logo">
+    <div class="sidebar-logo-em">EnMinutas / contexto técnico</div>
+    <div class="sidebar-logo-sub">v2.0 · Septiembre 2026</div>
+  </div>
+
+  <div class="nav-section">
+    <div class="nav-label">Introducción</div>
+    <a class="nav-item" href="#overview">Contexto del negocio</a>
+    <a class="nav-item" href="#stack">Stack técnico</a>
+    <a class="nav-item" href="#env">Variables de entorno</a>
+    <a class="nav-item" href="#estructura">Estructura del proyecto</a>
+  </div>
+
+  <div class="nav-section">
+    <div class="nav-label">Base de datos</div>
+    <a class="nav-item" href="#db-schema">Esquema general</a>
+    <a class="nav-item" href="#db-orders">Pedidos y líneas</a>
+    <a class="nav-item" href="#db-stock">Stock y lotes</a>
+    <a class="nav-item" href="#db-clients">Clientes y cobranzas</a>
+    <a class="nav-item" href="#db-enum">ENUM order_status ⚠</a>
+  </div>
+
+  <div class="nav-section">
+    <div class="nav-label">Auth &amp; Seguridad</div>
+    <a class="nav-item critical" href="#auth-bug">Roles y hook JWT 🔴</a>
+    <a class="nav-item" href="#middleware">Proxy (ex middleware)</a>
+    <a class="nav-item" href="#roles">Roles y permisos</a>
+    <a class="nav-item" href="#grants">GRANT en SQL ⚠</a>
+  </div>
+
+  <div class="nav-section">
+    <div class="nav-label">Módulos</div>
+    <a class="nav-item" href="#pedidos">Pedidos — flujo completo</a>
+    <a class="nav-item" href="#entrega-parcial">Entrega parcial</a>
+    <a class="nav-item" href="#pricing">Precios B2B y flete CIF</a>
+    <a class="nav-item" href="#comisiones">Comisiones</a>
+    <a class="nav-item" href="#stock-sys">Sistema de stock</a>
+    <a class="nav-item" href="#email">Emails (Resend)</a>
+    <a class="nav-item" href="#produccion">Producción y Cocina</a>
+    <a class="nav-item" href="#distribucion">Distribución / PWA</a>
+    <a class="nav-item" href="#b2b-portal">Portal B2B</a>
+    <a class="nav-item" href="#cc">Cuentas corrientes</a>
+    <a class="nav-item" href="#otros">Otros módulos</a>
+  </div>
+
+  <div class="nav-section">
+    <div class="nav-label">Convenciones</div>
+    <a class="nav-item" href="#patterns">Server Actions</a>
+    <a class="nav-item" href="#gotchas">Gotchas críticos 🔴</a>
+    <a class="nav-item" href="#migrations">Migraciones</a>
+    <a class="nav-item" href="#roadmap">Roadmap</a>
+    <a class="nav-item" href="#changelog">Registro de cambios</a>
+  </div>
+</nav>
+
+<!-- MAIN -->
+<main class="main">
+
+<h1>Contexto técnico completo — En Minutas</h1>
+<div class="doc-meta">
+  Repositorio: github.com/gabriel-300/minutas · Producción: enminutas.vercel.app<br>
+  Versión 2.0 · Actualizado: 26 de septiembre de 2026 (verificado contra el código y la base de producción) · Para uso interno — pasar a Claude como contexto de sesión
+</div>
+
+<div class="callout info">
+  <span class="callout-icon">ℹ</span>
+  <div><strong>Cómo mantener este documento.</strong> Se actualiza en el mismo commit que cualquier cambio de <em>modelo de datos, regla de negocio, flujo de estados, permisos o decisión de arquitectura</em>. No hace falta tocarlo por bug fixes, ajustes visuales o refactors internos. Al final hay un registro de cambios. Las cifras de filas son de la foto del 24/9/2026 y cambian; las reglas son lo importante.</div>
+</div>
+
+<!-- ──────────────────── OVERVIEW ──────────────────── -->
+<section>
+<h2 id="overview">Contexto del negocio</h2>
+
+<p><strong>En Minutas</strong> es el sistema de gestión B2B de la <strong>Cooperativa de Trabajo Il Pane Nostro Ltda.</strong> (marca En Minutas), en Garupá, Misiones. Elabora alimentos ultracongelados de mandioca: chipá, empanadas, pizzas, tartas y rebozados. Vende <strong>solo B2B mayorista</strong> (distribuidores, gastronomía, minoristas y clientes con condiciones especiales). La tienda B2C existe en el código pero no se usa.</p>
+
+<p>El sistema está en <strong>producción real desde junio 2026</strong> con clientes y pedidos reales (231 pedidos, 36 clientes con pedidos B2B al 24/9). No hay datos de prueba: <strong>todo lo que hay es real</strong> y no se puede borrar ni alterar sin autorización explícita.</p>
+
+<h3>Flujo operativo</h3>
+<ol>
+  <li>El <strong>vendedor/preventista</strong> o el <strong>admin</strong> cargan el pedido, o el <strong>cliente B2B</strong> lo hace desde el portal. Los pedidos del portal entran en <code>pending_payment</code>; los que crea el admin pueden entrar ya <code>aprobado</code>.</li>
+  <li><strong>Admin</strong> aprueba el pedido.</li>
+  <li><strong>Producción</strong> lo pasa a preparación y lo despacha (puede ajustar cantidades si no hay stock; el stock se descuenta por lote FEFO).</li>
+  <li><strong>Distribución / repartidor</strong> lo entrega y confirma (total o parcial), con firma digital.</li>
+  <li>Al <strong>entregar</strong> se devenga la comisión de preventista y comercializadora. Los cobros se registran en <code>pagos</code> y, cuando el pedido está entregado y cobrado, pasa a <code>liquidado</code>.</li>
+</ol>
+<p>Las <strong>muestras</strong> son pedidos del canal <code>muestra</code> (sin precio) que recorren el mismo circuito.</p>
+</section>
+
+<!-- ──────────────────── STACK ──────────────────── -->
+<section>
+<h2 id="stack">Stack técnico</h2>
+
+<div class="callout danger">
+  <span class="callout-icon">🔴</span>
+  <div><strong>Este proyecto usa Next.js 16, que tiene cambios incompatibles con versiones anteriores</strong> (APIs, convenciones, estructura de archivos). Antes de escribir código de framework, leer la guía correspondiente en <code>node_modules/next/dist/docs/</code> y respetar los avisos de deprecación (ver <code>AGENTS.md</code>). Ejemplo: el antiguo <code>middleware.ts</code> ahora es <code>src/proxy.ts</code>.</div>
+</div>
+
+<div class="tbl">
+<table>
+  <thead><tr><th>Capa</th><th>Tecnología</th><th>Detalles</th></tr></thead>
+  <tbody>
+    <tr><td>Frontend</td><td>Next.js 16.2 (App Router) + React 19.2</td><td>Server Components + Server Actions + TypeScript. Interceptor de rutas: <code>src/proxy.ts</code></td></tr>
+    <tr><td>Estilos</td><td>Tailwind CSS v4</td><td>El panel admin usa el tema <strong>Índigo</strong> + fuente Geist, aplicado con tokens bajo la clase <code>.admin-panel</code> en <code>globals.css</code>. La tienda y el sitio de marketing (Montserrat) no se tocan</td></tr>
+    <tr><td>UI</td><td>lucide-react + primitivas propias</td><td>Primitivas en <code>src/components/ui</code> (Card, KpiCard, PageHeader, Tabs, StatusBadge, Switch…). shadcn/ui NO está instalado</td></tr>
+    <tr><td>Base de datos</td><td>Supabase PostgreSQL 17</td><td>Proyecto "Minutas", región São Paulo (sa-east-1)</td></tr>
+    <tr><td>Auth</td><td>Supabase Auth</td><td>Email + password. Roles en <code>app_metadata</code> (ver sección Auth)</td></tr>
+    <tr><td>Storage</td><td>Supabase Storage</td><td>Imágenes de productos y del sitio web (bucket <code>sitio-web</code>)</td></tr>
+    <tr><td>Deploy</td><td>Vercel (región gru1)</td><td>Auto-deploy en push a master. Funciones fijadas en São Paulo (gru1)</td></tr>
+    <tr><td>Email</td><td>Resend</td><td>Dominio enminutas.com.ar. Ver sección Emails</td></tr>
+    <tr><td>IA</td><td>Groq + OpenRouter</td><td>Groq (visión) lee facturas/remitos de proveedores; OpenRouter es el fallback y alimenta el chat interno. Modelos gratuitos: se caen seguido (ver Gotchas)</td></tr>
+    <tr><td>PWA</td><td>Solo manifests</td><td><code>public/manifest.json</code> (repartidor) y <code>preventista-manifest.json</code>. <strong>No hay service worker ni next-pwa</strong>: es instalable pero no funciona offline</td></tr>
+    <tr><td>Tests</td><td>Vitest</td><td><code>npm test</code>. Cubren comisiones, fechas, estados, formato, entrega parcial, reparto de producción y recetas. <code>calcularPrecio</code> aún sin tests</td></tr>
+    <tr><td>Pagos B2C</td><td>Mercado Pago (heredado)</td><td>Webhook en <code>/api/mp/webhook</code>. Sin uso: la venta es solo B2B</td></tr>
+    <tr><td>Git</td><td>GitHub</td><td>github.com/gabriel-300/minutas</td></tr>
+  </tbody>
+</table>
+</div>
+
+<p>El código vive en <code>src/</code>. Todo es App Router. Las Server Actions son archivos <code>actions.ts</code> co-ubicados en la carpeta de cada ruta.</p>
+</section>
+
+<!-- ──────────────────── ENV ──────────────────── -->
+<section>
+<h2 id="env">Variables de entorno</h2>
+
+<pre>
+<span class="cm"># Supabase — REQUERIDAS</span>
+NEXT_PUBLIC_SUPABASE_URL=https://[project-id].supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=[anon key]
+SUPABASE_SERVICE_ROLE_KEY=[service role key]   <span class="cm"># No exponer al cliente</span>
+
+<span class="cm"># Email (Resend)</span>
+RESEND_API_KEY=[key]
+EMAIL_FROM="En Minutas &lt;noreply@enminutas.com.ar&gt;"
+EMAIL_ADMIN=admin@enminutas.com.ar
+
+<span class="cm"># IA</span>
+GROQ_API_KEY=[key]          <span class="cm"># lectura de facturas/remitos (recepciones)</span>
+OPENROUTER_API_KEY=[key]    <span class="cm"># chat interno + fallback de recepciones</span>
+
+<span class="cm"># App y datos de la empresa</span>
+NEXT_PUBLIC_APP_URL=https://enminutas.vercel.app
+NEXT_PUBLIC_WHATSAPP_NUMBER=[número]
+NEXT_PUBLIC_BANK_CBU / _ALIAS / _HOLDER / _CUIT   <span class="cm"># datos bancarios para transferencias</span>
+
+<span class="cm"># Cron keep-alive (evita pausa de Supabase)</span>
+CRON_SECRET=[secret compartido entre minutas y kioscos-ideia]
+
+<span class="cm"># Heredada (B2C, sin uso)</span>
+MP_ACCESS_TOKEN=[token Mercado Pago]
+</pre>
+
+<div class="callout danger">
+  <span class="callout-icon">🔴</span>
+  <div><strong>SUPABASE_SERVICE_ROLE_KEY</strong> es necesaria en el proxy (<code>src/proxy.ts</code> → <code>updateSession()</code>) para leer el rol real por el Admin API. Sin esta variable, la protección de rutas pierde la verificación del rol real.</div>
+</div>
+</section>
+
+<!-- ──────────────────── ESTRUCTURA ──────────────────── -->
+<section>
+<h2 id="estructura">Estructura del proyecto</h2>
+
+<pre>
+src/
+  proxy.ts                  <span class="cm"># Next 16: reemplaza middleware.ts. Llama a updateSession()</span>
+  app/
+    (marketing)/            <span class="cm"># Sitio público enminutas.com.ar (editable desde Admin → Contenido web)</span>
+    (store)/                <span class="cm"># Tienda B2C (heredada, sin uso)</span>
+    (auth)/                 <span class="cm"># login, registro, forgot-password, pendiente</span>
+    (b2b)/b2b/              <span class="cm"># Portal clientes: catalogo, pedidos, plantillas, mi-cuenta, pendiente</span>
+    (repartidor)/repartidor/<span class="cm"># App PWA del repartidor</span>
+    (admin)/admin/          <span class="cm"># Panel administrativo (ver lista abajo)</span>
+    remito/[id]/            <span class="cm"># Remito imprimible (requiere login: staff o cliente dueño del pedido)</span>
+    api/
+      admin/export/         <span class="cm"># pedidos, comisiones (CSV)</span>
+      auth/registro/        <span class="cm"># alta de cliente B2B desde el sitio</span>
+      chat/                 <span class="cm"># asistente interno (7 tools de lectura)</span>
+      orders/create/        <span class="cm"># pedido B2C (heredado)</span>
+      mp/webhook/           <span class="cm"># Mercado Pago (heredado)</span>
+      ping/                 <span class="cm"># Keep-alive cron</span>
+  lib/
+    supabase/               <span class="cm"># server.ts, client.ts, middleware.ts (updateSession), users.ts (listAllUsers)</span>
+    auth.ts                 <span class="cm"># requireRole() / requireAdmin() — obligatorio en cada Server Action</span>
+    b2b-pricing.ts          <span class="cm"># calcularPrecio() — fórmula v5 (+ flete CIF)</span>
+    parametros.ts           <span class="cm"># getParametros(): iva_pct y comision_pct globales</span>
+    comisiones.ts, comisiones-data.ts   <span class="cm"># cálculo único de comisiones</span>
+    entrega-parcial.ts      <span class="cm"># cálculo puro de entrega parcial</span>
+    order-status.ts         <span class="cm"># VENTAS_STATUSES, COMISION_STATUSES</span>
+    order-channels.ts       <span class="cm"># CANALES_FLUJO, normalizarMuestra()</span>
+    order-number.ts         <span class="cm"># numeración B2B-AAAA-NNNN con reintento</span>
+    fecha.ts, format.ts     <span class="cm"># fechas AR (mesValido, hoy) y moneda ARS</span>
+    lotes.ts, receta-base.ts, produccion-reparto.ts   <span class="cm"># cocina y producción</span>
+    email.ts, groq.ts, openrouter.ts   <span class="cm"># integraciones</span>
+  components/
+    admin/, ui/, b2b/, catalog/, checkout/, marketing/, remito/, auth/
+  types/database.ts         <span class="cm"># Tipos generados por Supabase (regenerar tras migraciones)</span>
+supabase/
+  migrations/               <span class="cm"># FUENTE ÚNICA de migraciones nuevas</span>
+  legacy/                   <span class="cm"># scripts históricos 002–048: solo referencia, NO re-ejecutar</span>
+  README.md                 <span class="cm"># reglas de migraciones</span>
+vercel.json                 <span class="cm"># región gru1 + cron /api/ping</span>
+</pre>
+
+<p><strong>Rutas de <code>/admin</code>:</strong> dashboard, pedidos (+nuevo, [id]), produccion, distribucion (+hoja-de-ruta, ordenar-ruta, historial), cocina (insumos, recetas, produccion, planificador, recepciones, compras, historial), stock, lotes, muestras, clientes-b2b (+[id], recibo), clientes-b2c, cuentas-corrientes, comisiones, preventista (lista-precios, simulador), pipeline, reportes, rentabilidad, objetivos, precios-cliente, facturacion, devoluciones, cheques, liquidaciones, alertas, contenido, categorias, productos, lineas, canales, zonas, depositos, descuentos, parametros, staff, configuracion, ayuda.</p>
+
+<h3>Clientes Supabase y auth</h3>
+<pre>
+<span class="cm">// createClient() — usa la sesión del usuario, aplica RLS</span>
+<span class="cm">// Usar para: verificar auth (auth.getUser()), acciones del usuario</span>
+<span class="kw">const</span> supabase = <span class="kw">await</span> <span class="fn">createClient</span>();
+
+<span class="cm">// createAdminClient() — usa service_role_key, bypassea RLS</span>
+<span class="cm">// Usar para: mutaciones en Server Actions, leer cualquier dato</span>
+<span class="kw">const</span> supabase = <span class="fn">createAdminClient</span>(); <span class="cm">// NO async</span>
+
+<span class="cm">// requireRole() — primera línea de TODA Server Action (lib/auth.ts)</span>
+<span class="kw">const</span> user = <span class="kw">await</span> <span class="fn">requireRole</span>(<span class="str">"admin"</span>, <span class="str">"produccion"</span>);
+
+<span class="cm">// listAllUsers() — para listar usuarios de auth (lib/supabase/users.ts)</span>
+</pre>
+</section>
+
+<!-- ──────────────────── DB SCHEMA ──────────────────── -->
+<section>
+<h2 id="db-schema">Base de datos — Esquema general</h2>
+
+<p>PostgreSQL en Supabase, 47 tablas en <code>public</code> (foto del 24/9/2026). RLS activo. Las mutaciones desde Server Actions usan <code>createAdminClient()</code> (service_role) y por eso <strong>cada action debe validar el rol por su cuenta</strong> con <code>requireRole()</code>. El esquema completo con columnas está en <code>docs/proyecto-javier/03-esquema-tablas.md</code>.</p>
+
+<h3>Tablas con datos y su uso</h3>
+<div class="tbl">
+<table>
+  <thead><tr><th>Tabla</th><th>Descripción</th><th>Columnas / notas clave</th></tr></thead>
+  <tbody>
+    <tr><td>profiles</td><td>Perfil de cada usuario. Los <strong>clientes B2B viven acá</strong> (no en b2b_accounts)</td><td>id (= auth.users.id), full_name, phone, role (⚠ desincronizado), <strong>canal_id → canales</strong>, zona_id, vendedor_id (preventista asignado), b2b_status, descuento_extra_pct, <strong>comision_pct_override</strong>, <strong>flete_pct_override</strong>, comision_preventista_pct, es_comercializadora. <code>profiles.canal</code> (enum) es heredada: no usar</td></tr>
+    <tr><td>direcciones_entrega</td><td>Direcciones de entrega de clientes B2B</td><td>profile_id, alias, calle, numero, ciudad, zona_id, es_principal, activo</td></tr>
+    <tr><td>products</td><td>Catálogo</td><td>sku, name, codigo, linea_id, categoria ('Estándar'|'Premium'|'Venta directa'), costo (<em>por bolsa</em>), bolsas_caja, u_bolsa, kg_caja, pkg_unitario, pkg_bulto, divisiones_display, stock_minimo, is_active, <strong>es_muestra</strong>, vida_util_dias, receta_producto_id. Las columnas de precio (precio_lista, precio_dist, price_b2b, margen_*) son <strong>heredadas</strong></td></tr>
+    <tr><td>lineas_producto</td><td>Líneas (Empanadas, Chipas…)</td><td>id (int, sequence manual), nombre, orden, <strong>canal_exclusivo_id</strong> (línea visible solo para ese canal)</td></tr>
+    <tr><td>orders</td><td>Pedidos y muestras</td><td>order_number, channel, status (ENUM), customer_id, payment_method, subtotal, discount, total (c/IVA), <code>cargo_adicional_monto/concepto</code>, <code>flete_pct</code>, <code>comision_pct</code>, aprobado_at, despachado_at, entregado_at, despacho_info (JSONB), delivered_snapshot (JSONB), firma_*, orden_ruta, origen_order_id, fecha_compromiso, notes_visible_cliente, campos muestra_*, solicitado_por, delivery_zone_id</td></tr>
+    <tr><td>order_lines</td><td>Ítems del pedido</td><td>order_id, product_id, quantity, unit_price, line_total, product_snapshot (JSONB con nombre, unit_label, precio…)</td></tr>
+    <tr><td>order_events</td><td>Historial de cambios de estado</td><td>order_id, status, message, actor_id, created_at</td></tr>
+    <tr><td>lotes</td><td>Stock real de producto terminado</td><td>producto_id, numero_lote, fecha_vencimiento, cantidad_inicial, cantidad_actual, activo, deposito_id, costo_unitario</td></tr>
+    <tr><td>stock_movements</td><td>Movimientos de producto terminado</td><td>product_id, qty, type ('produccion'|'despacho'|'ajuste'|'muestra'), order_id</td></tr>
+    <tr><td>produccion</td><td>Producciones registradas en cocina</td><td>producto_id, receta_id, cantidad_cajas, cantidad_lotes, fecha</td></tr>
+    <tr><td>recipes / recipe_ingredients / recipe_steps</td><td>Recetas por producto</td><td>yield_cajas, vida_util_dias; ingredientes con insumo_id → insumos. Un batch puede salir en varias presentaciones (recetas_presentaciones)</td></tr>
+    <tr><td>insumos / insumos_movimientos / categorias_insumos</td><td>Catálogo y kardex de insumos</td><td>stock_actual, stock_minimo, punto_pedido, precio_unitario (neto), categoria; movimientos ingreso/egreso/ajuste</td></tr>
+    <tr><td>recepciones / recepciones_items</td><td>Compras: facturas y remitos de proveedores</td><td>proveedor, proveedor_cuit, imagen_url, otros_impuestos, ítems con iva_pct y fecha_vencimiento</td></tr>
+    <tr><td>pagos</td><td>Cobros de clientes</td><td>cliente_id, monto, fecha, metodo, order_id (null = pago a cuenta), factura_numero, <strong>sin_factura</strong>, <strong>grupo_id</strong> (un cobro repartido entre varios pedidos)</td></tr>
+    <tr><td>cc_movimientos</td><td>Libro de cuenta corriente (cargos y ajustes automáticos por pedido)</td><td>cliente_id, tipo ('cargo'|'pago'|'ajuste'|'nota_credito'), monto, order_id, fecha</td></tr>
+    <tr><td>comisiones_pagos</td><td>Pagos de comisión registrados</td><td>vendedor_id, cliente_id, mes, monto, pct, ventas, fecha_pago (único por vendedor+mes+cliente). Admite montos negativos (ajustes)</td></tr>
+    <tr><td>canales</td><td>Canales de precio</td><td>slug (dist, gastro, min, tanda), nombre, margen_std, margen_premium, margen_venta_directa, markup_pvp, descuento_pct, activo</td></tr>
+    <tr><td>parametros_globales</td><td>Parámetros clave/valor</td><td><code>clave</code> + <code>valor</code>: <code>iva_pct = 0.21</code>, <code>comision_pct = 0.15</code> (no hay flete global)</td></tr>
+    <tr><td>delivery_zones</td><td>Zonas de entrega (20)</td><td>name, <strong>flete_pct</strong> (fracción, 0.02 = 2%). La zona de un repartidor está en <code>profiles.zona_id</code>; el pedido guarda <code>delivery_zone_id</code> y Distribución/Repartidor filtran por ahí. Otras columnas (km, precio_km, flete_kg) son heredadas</td></tr>
+    <tr><td>volume_discounts</td><td>Descuento por volumen</td><td>min_cajas, descuento_pct, activo</td></tr>
+    <tr><td>depositos</td><td>Ubicaciones de stock</td><td>nombre, activo</td></tr>
+    <tr><td>categories / contenido_web</td><td>Categorías del sitio y textos del CMS</td><td>categories: visible_en_tienda, image_url, description. contenido_web: clave/valor por sección</td></tr>
+    <tr><td>disponibilidad_lineas</td><td>Disponibilidad temporal de una línea</td><td>linea_id, disponible, desde, hasta</td></tr>
+    <tr><td>facturas / factura_items</td><td>Facturación interna (1 registro)</td><td>Sin integración fiscal ARCA/AFIP</td></tr>
+  </tbody>
+</table>
+</div>
+
+<h3>Tablas vacías (funciones sin uso todavía)</h3>
+<p><code>b2b_accounts</code>, <code>comisiones_pagos</code> (al 24/9), <code>cheques</code>, <code>devoluciones</code>, <code>devolucion_items</code>, <code>precios_cliente</code>, <code>pipeline_prospectos</code>, <code>contact_logs</code>, <code>plantillas_pedido</code>, <code>plantilla_items</code>, <code>objetivos_ventas</code>, <code>sales_goals</code>. <strong>Heredadas B2C/plataforma IDEIA</strong> (sin uso): <code>addresses</code>, <code>product_variants</code>, <code>driver_locations</code>, <code>ideia_liquidations</code>, <code>platform_settings</code>, columnas <code>orders.mp_*</code> e <code>ideia_commission_*</code>.</p>
+
+<div class="callout danger">
+  <span class="callout-icon">🔴</span>
+  <div><strong>Módulo de crédito roto: <code>b2b_accounts</code> está vacía.</strong> Tres cosas leen o escriben ahí: (1) <code>/admin/cuentas-corrientes</code> arma su lista de clientes desde <code>b2b_accounts</code> con <code>status = 'approved'</code>, por lo que <strong>sale sin clientes</strong>; (2) <code>aprobarPedidoB2B</code> busca <code>credit_limit</code> ahí, no lo encuentra, y <strong>nunca bloquea por límite de crédito</strong>; (3) <code>actualizarLimiteCredito</code> hace un UPDATE que no afecta ninguna fila y no da error. Los clientes reales están en <code>profiles</code>. La cobranza real hoy se hace desde la ficha del cliente (<code>/admin/clientes-b2b/[id]</code>, tabla <code>pagos</code>). Decisión pendiente: mover el límite a <code>profiles</code> y rearmar la pantalla desde ahí, o retirar el módulo.</div>
+</div>
+</section>
+
+<!-- ──────────────────── DB ORDERS ──────────────────── -->
+<section>
+<h2 id="db-orders">Pedidos — detalle de campos</h2>
+
+<h3>Canales (enum <code>order_channel</code>)</h3>
+<ul>
+  <li><code>b2b_mayorista</code> — pedido mayorista (portal B2B o cargado por admin/preventista). Numeración <code>B2B-AAAA-NNNN</code></li>
+  <li><code>muestra</code> — muestra sin precio a un cliente o prospecto. Numeración <code>MST-AAAA-NNNN</code>. Recorre el mismo flujo operativo</li>
+  <li><code>b2c_nacional</code>, <code>pedido_ya_local</code> — heredados, sin uso</li>
+</ul>
+<p>Helper obligatorio: <code>CANALES_FLUJO</code> en <code>lib/order-channels.ts</code> (b2b_mayorista + muestra). Toda pantalla nueva del flujo operativo usa <code>.in("channel", CANALES_FLUJO)</code>; los dashboards financieros y las comisiones usan solo <code>b2b_mayorista</code> a propósito.</p>
+
+<h3>despacho_info (JSONB en orders)</h3>
+<p>Se guarda al despachar si se ingresan datos del reparto. El remito lo muestra.</p>
+<pre>
+{
+  <span class="str">"repartidor"</span>:    <span class="str">"Juan García"</span>,
+  <span class="str">"fecha_entrega"</span>: <span class="str">"2026-09-25"</span>,
+  <span class="str">"hora_entrega"</span>:  <span class="str">"10:30"</span>,
+  <span class="str">"patente"</span>:       <span class="str">"AB123CD"</span>
+}
+</pre>
+
+<h3>product_snapshot (JSONB en order_lines)</h3>
+<p>Captura del producto y su precio al momento del pedido: <code>name</code>, <code>unit_label</code>, <code>bolsas_caja</code>, <code>canal</code> y <code>precio</code> (desglose de <code>calcularPrecio</code>, incluido <code>flete</code>). Es la fuente para cualquier análisis histórico: el precio de catálogo no se guarda en ningún otro lado.</p>
+
+<h3>delivered_snapshot (JSONB en orders)</h3>
+<p>Solo en entregas parciales: <code>{ lineas: [{lineId, productId, name, pedido, entregado}], motivo, total_original }</code>. Ver sección Entrega parcial.</p>
+
+<h3>Campos que se congelan al crear el pedido</h3>
+<ul>
+  <li><code>flete_pct</code> — % de flete CIF vigente (cliente o zona). La comisión lo saca de su divisor</li>
+  <li><code>comision_pct</code> — % del pool de comisión del cliente. NULL = se usa el % vigente del cliente</li>
+  <li><code>cargo_adicional_monto/concepto</code> — cargo manual opcional (flete extra, IIBB, etc.). Entra en <code>total</code> pero <strong>no</strong> en la base de comisión</li>
+</ul>
+
+<h3>Métodos de pago</h3>
+<p>Valores usados en <code>orders.payment_method</code>: <code>transferencia</code>, <code>efectivo</code>, <code>cuenta_corriente</code> y <code>muestra</code> (para muestras). <code>mercadopago</code> y <code>cheque</code> existen en el código pero no en los datos. Solo <code>cuenta_corriente</code> genera cargo automático en <code>cc_movimientos</code> al despachar.</p>
+
+<h3>Montos con IVA</h3>
+<p><code>orders.total</code> y <code>order_lines.line_total</code> son <strong>con IVA</strong>. Convención de la app para "sin IVA": <code>total / 1.21</code>. Nota: <code>orders</code> no tiene <code>total_amount</code> (es <code>total</code>).</p>
+</section>
+
+<!-- ──────────────────── DB STOCK ──────────────────── -->
+<section>
+<h2 id="db-stock">Stock y Lotes</h2>
+
+<div class="callout danger">
+  <span class="callout-icon">🔴</span>
+  <div><strong>Dos sistemas de stock coexisten. Manda el de lotes.</strong> La UI y las decisiones usan <code>lotes.cantidad_actual</code>. <code>products.stock_cajas</code> es un acumulado legacy que las funciones RPC mantienen en sync, pero puede diferir: ante diferencias, mandan los lotes. No actualizar <code>stock_cajas</code> directamente.</div>
+</div>
+
+<h3>Vista de stock (qué muestra el sistema)</h3>
+<ul>
+  <li><strong>Disponible</strong> = SUM de <code>lotes.cantidad_actual</code> donde <code>activo = true</code> y no vencido</li>
+  <li><strong>Comprometido</strong> = SUM de <code>order_lines.quantity</code> de pedidos en curso (aprobado, enviado_prod, despachado, en_distribucion; no entregados ni cancelados)</li>
+  <li><strong>Neto</strong> = Disponible − Comprometido. <em>Puede ser negativo</em> si hay pedidos comprometidos sin stock en lotes. No es un error, es una alerta de gestión.</li>
+</ul>
+
+<h3>Funciones RPC (SECURITY DEFINER, GRANT a service_role)</h3>
+<pre>
+<span class="cm">-- consume_lote_stock(p_product_id uuid, p_qty numeric)</span>
+<span class="cm">--   Consume en orden FEFO (primero vence, primero sale). Actualiza lotes.cantidad_actual</span>
+<span class="cm">--   y products.stock_cajas. Se llama al despachar.</span>
+<span class="cm">-- reintegrar_lote_stock(...)  (migración 20260923010000)</span>
+<span class="cm">--   Devuelve stock a los lotes (entrega parcial, cancelación de pedido despachado).</span>
+</pre>
+
+<p>El stock insuficiente <em>no bloquea el despacho</em>: se despacha igual y el neto queda negativo.</p>
+
+<h3>Origen de los lotes</h3>
+<p>Los lotes nacen de <strong>Cocina → Producción</strong> (número de lote global correlativo generado automáticamente, vencimiento = fecha + <code>vida_util_dias</code> de la receta) y también se pueden <strong>dar de alta a mano</strong> desde <code>/admin/lotes</code> ("Nuevo lote"). Producción y carga manual usan la misma unidad de stock. Índice único <code>idx_lotes_numero_unico</code> sobre <code>(producto_id, numero_lote)</code>; el duplicado (error <code>23505</code>) se informa en español.</p>
+</section>
+
+<!-- ──────────────────── DB CLIENTS ──────────────────── -->
+<section>
+<h2 id="db-clients">Clientes B2B y Cuentas Corrientes</h2>
+
+<h3>Estructura real</h3>
+<ul>
+  <li><code>auth.users</code> — cuenta de autenticación con <code>app_metadata.role = "customer_b2b"</code></li>
+  <li><code>profiles</code> — <strong>fuente de verdad del cliente</strong>: nombre, teléfono, <code>canal_id</code>, <code>zona_id</code>, <code>vendedor_id</code> (preventista), <code>descuento_extra_pct</code>, <code>comision_pct_override</code>, <code>flete_pct_override</code>, <code>b2b_status</code></li>
+  <li><code>direcciones_entrega</code> — varias por cliente, una principal</li>
+  <li><code>b2b_accounts</code> — <strong>vacía y sin uso real</strong> (ver alerta en Esquema general)</li>
+</ul>
+
+<div class="callout warning">
+  <span class="callout-icon">⚠</span>
+  <div><strong>Cómo identificar clientes B2B.</strong> NO filtrar por <code>profiles.role</code>: está desincronizado y deja clientes afuera (verificado: hay clientes con pedidos cuyo <code>profiles.role</code> no es <code>customer_b2b</code>). <code>b2b_status IS NOT NULL</code> y <code>canal_id IS NOT NULL</code> son buenas aproximaciones para <em>listar</em> clientes (47 y 46 de 65 perfiles el 26/9; los 36 con pedidos tienen ambos), pero no son exactas. Lo más seguro: partir de <code>orders WHERE channel = 'b2b_mayorista'</code> y unir por <code>customer_id</code>.</div>
+</div>
+
+<h3>Cobranzas y cuenta corriente</h3>
+<ul>
+  <li><strong>Deuda por pedido</strong> = <code>orders.total − SUM(pagos.monto WHERE order_id = pedido)</code>. Es "deuda según lo registrado": los cobros no cargados no aparecen.</li>
+  <li>Un pago puede imputarse a un pedido, a una factura o <strong>a cuenta</strong>; se puede repartir entre varios pedidos a la vez (proporcional, <code>grupo_id</code>), con recibo combinado imprimible (<code>/admin/clientes-b2b/recibo/[pagoId]</code>).</li>
+  <li>Opción <strong>"Sin factura — cobrar neto (s/IVA)"</strong> para clientes que no facturan: perdona la diferencia de IVA y marca liquidado.</li>
+  <li>Un pago solo pasa el pedido a <code>liquidado</code> si el pedido ya está <code>delivered</code> o <code>entrega_parcial</code> (<code>liquidarSiEntregado</code>); antes sacaba pedidos en camino del circuito.</li>
+  <li><code>cc_movimientos</code> es un libro con pocos registros (24): cargo automático al despachar pedidos <code>cuenta_corriente</code>, y ajuste cuando cambia el total (entrega parcial, cancelación). No usarlo solo para saldos.</li>
+  <li>Estado <code>liquidado</code>: entregado y cerrado administrativamente (cobrado). Es posterior a <code>delivered</code>.</li>
+</ul>
+</section>
+
+<!-- ──────────────────── DB ENUM ──────────────────── -->
+<section>
+<h2 id="db-enum">ENUM order_status — crítico</h2>
+
+<div class="callout danger">
+  <span class="callout-icon">🔴</span>
+  <div><strong>order_status es un ENUM de PostgreSQL, no un varchar.</strong> Agregar un nuevo estado requiere una migración <code>ALTER TYPE order_status ADD VALUE 'nuevo_estado'</code>. Sin la migración, las queries con <code>.in("status", [...])</code> que incluyen el nuevo valor fallan silenciosamente y los reportes muestran $0.</div>
+</div>
+
+<h3>Estados en uso</h3>
+<div class="flow">
+  <span class="flow-step active">aprobado</span>
+  <span class="flow-arrow">→</span>
+  <span class="flow-step">enviado_prod</span>
+  <span class="flow-arrow">→</span>
+  <span class="flow-step active">despachado</span>
+  <span class="flow-arrow">→</span>
+  <span class="flow-step">en_distribucion</span>
+  <span class="flow-arrow">→</span>
+  <span class="flow-step success">delivered</span>
+  <span class="flow-arrow">→</span>
+  <span class="flow-step success">liquidado</span>
+</div>
+<div class="flow">
+  <span class="flow-step special">entrega_parcial</span>
+  <span class="flow-arrow">→</span>
+  <span class="flow-step success">liquidado</span>
+  <span class="flow-step special">cancelled</span>
+  <span class="flow-step">pending_payment</span>
+</div>
+
+<p><code>pending_payment</code> es el estado inicial de los pedidos del portal B2B (y de las muestras solicitadas por un vendedor) hasta que el admin los aprueba. <strong>El estado de cancelación se llama <code>cancelled</code></strong> (no "cancelado").</p>
+<p>El enum conserva valores <strong>heredados de la etapa B2C</strong> sin uso: <code>payment_review</code>, <code>paid</code>, <code>preparing</code>, <code>ready</code>, <code>in_delivery</code>, <code>shipped</code>, <code>refunded</code>. Si algún pedido aparece ahí es una anomalía.</p>
+
+<h3>Conjuntos de estados (definidos en <code>lib/order-status.ts</code>)</h3>
+<div class="tbl">
+<table>
+  <thead><tr><th>Constante</th><th>Estados</th><th>Uso</th></tr></thead>
+  <tbody>
+    <tr><td>VENTAS_STATUSES</td><td>aprobado, enviado_prod, despachado, en_distribucion, entrega_parcial, delivered, liquidado</td><td>"Ventas firmes": dashboard, reportes, cartera de pedidos</td></tr>
+    <tr><td>COMISION_STATUSES</td><td>delivered, entrega_parcial, liquidado</td><td>"Entregado": devenga comisión y se considera facturación real</td></tr>
+  </tbody>
+</table>
+</div>
+<p>Nunca contar como venta: <code>cancelled</code> ni los estados heredados. Regla por defecto: "ventas" sin aclarar = entregado; "pedidos"/"cartera" = ventas firmes.</p>
+
+<h3>Transiciones válidas</h3>
+<div class="tbl">
+<table>
+  <thead><tr><th>De</th><th>A</th><th>Acción</th><th>Quién</th></tr></thead>
+  <tbody>
+    <tr><td>pending_payment</td><td>aprobado</td><td>aprobarPedidoB2B</td><td>admin</td></tr>
+    <tr><td>aprobado</td><td>enviado_prod</td><td>marcarEnviadoProd</td><td>admin, produccion</td></tr>
+    <tr><td>enviado_prod</td><td>despachado</td><td>despacharPedido / despacharPedidoConAjuste</td><td>admin, produccion</td></tr>
+    <tr><td>despachado</td><td>en_distribucion</td><td>iniciarDistribucion</td><td>admin, distribucion</td></tr>
+    <tr><td>despachado / en_distribucion</td><td>delivered</td><td>confirmarEntrega</td><td>admin, distribucion</td></tr>
+    <tr><td>despachado / en_distribucion</td><td>entrega_parcial</td><td>confirmarEntregaParcial</td><td>admin, distribucion</td></tr>
+    <tr><td>despachado / en_distribucion</td><td>cancelled</td><td>cancelarPedidoDistribucion (reintegra stock, revierte cargo CC)</td><td>admin</td></tr>
+    <tr><td>delivered / entrega_parcial</td><td>liquidado</td><td>al registrar el pago que cubre el pedido (o manual)</td><td>admin</td></tr>
+    <tr><td>cualquiera</td><td>pending_payment · aprobado · cancelled · liquidado</td><td>updateOrderStatus (manual, excepcional)</td><td>admin</td></tr>
+  </tbody>
+</table>
+</div>
+
+<p>Las transiciones del workflow usan <strong>atomic guard</strong>: el UPDATE incluye <code>.eq("status", estado_esperado)</code>. Si devuelve 0 filas, el pedido ya fue procesado por otra sesión y se lanza error. También se puede cancelar un pedido en <code>enviado_prod</code>.</p>
+</section>
+
+<!-- ──────────────────── AUTH BUG ──────────────────── -->
+<section>
+<h2 id="auth-bug">Auth: roles y el hook del JWT</h2>
+
+<div class="callout warning">
+  <span class="callout-icon">⚠</span>
+  <div>
+    <strong>Estado actual (verificado en la base el 26/9/2026).</strong> El <code>custom_access_token_hook</code> ya <em>preserva</em> el rol si el usuario es <code>admin, vendedor, produccion, distribucion</code> o <code>repartidor</code>. Para los demás (clientes) el hook <strong>sobreescribe</strong> <code>app_metadata.role</code> con <code>profiles.role</code>, que está desincronizado en producción. Consecuencia: el claim del JWT es confiable para staff pero <strong>no para clientes B2B</strong> (un cliente con <code>profiles.role</code> mal cargado aparece como <code>customer_b2c</code> en el token). La versión original del hook (la que pisaba también al staff) era la de <code>supabase/migrations/20260101000200_auth_hook_claims.sql</code>; el arreglo se aplicó con un script legacy (<code>legacy/012_fix_auth_hook.sql</code>) y no está en <code>migrations/</code>.
+  </div>
+</div>
+
+<p>Por eso el criterio es siempre el mismo: <strong>decidir permisos con el rol real, nunca con el claim del JWT.</strong></p>
+
+<h3>Patrones correctos para obtener el rol real</h3>
+<pre>
+<span class="cm">// 1) Server Actions: requireRole() (lib/auth.ts).</span>
+<span class="cm">//    getUser() consulta el servidor de auth, así que app_metadata.role es el real.</span>
+<span class="kw">const</span> user = <span class="kw">await</span> <span class="fn">requireRole</span>(<span class="str">"admin"</span>);      <span class="cm">// lanza "No autorizado" si no corresponde</span>
+
+<span class="cm">// 2) Proxy / middleware: Admin API (lee auth.users.raw_app_meta_data)</span>
+<span class="kw">const</span> { data: { user } } = <span class="kw">await</span> adminClient.auth.admin.<span class="fn">getUserById</span>(userId);
+<span class="kw">const</span> role = user?.app_metadata?.role;
+
+<span class="cm">// ❌ INCORRECTO — leer el rol del claim del JWT para decidir seguridad</span>
+<span class="kw">const</span> role = (<span class="kw">await</span> supabase.auth.<span class="fn">getSession</span>()).data.session?.user.app_metadata.role;
+</pre>
+
+<div class="callout danger">
+  <span class="callout-icon">🔴</span>
+  <div><strong>Las Server Actions son alcanzables por POST directo.</strong> El chequeo de página o de proxy NO las cubre. Toda action debe llamar a <code>requireRole(...)</code> (o <code>requireAdmin()</code>) por su cuenta, antes de tocar la base con <code>createAdminClient()</code>. Auditoría del 21/9/2026: se agregó a todas. Nota: <code>pedidos/actions.ts</code> todavía tiene chequeos de rol propios (equivalentes, basados en <code>getUser()</code>); conviene unificarlos con <code>requireRole()</code> al tocar ese archivo.</div>
+</div>
+
+<div class="callout warning">
+  <span class="callout-icon">⚠</span>
+  <div><strong>NUNCA listar staff leyendo profiles.role, y NO usar <code>auth.admin.listUsers()</code> con <code>perPage</code> chico.</strong> La paginación de <code>listUsers</code> en este proyecto es no confiable (repite y saltea usuarios; solo una llamada de 1000 es exacta). Usar <code>listAllUsers()</code> de <code>lib/supabase/users.ts</code> y filtrar por <code>app_metadata.role</code>. Pendiente de migrar: <code>pedidos/actions.ts</code> y <code>pedidos/nuevo/page.tsx</code> todavía usan <code>listUsers</code>.</div>
+</div>
+</section>
+
+<!-- ──────────────────── MIDDLEWARE ──────────────────── -->
+<section>
+<h2 id="middleware">Proxy (src/proxy.ts → src/lib/supabase/middleware.ts)</h2>
+
+<p>En Next 16 el archivo se llama <code>src/proxy.ts</code> (antes <code>middleware.ts</code>). Exporta <code>proxy()</code>, que llama a <code>updateSession()</code> de <code>src/lib/supabase/middleware.ts</code>. Usa el Admin API para verificar el rol real (no el claim del JWT).</p>
+
+<h3>Lógica de protección</h3>
+<pre>
+<span class="cm">// /admin — requiere sesión y rol de staff (Admin API)</span>
+<span class="kw">const</span> STAFF_ROLES = [<span class="str">"admin"</span>, <span class="str">"vendedor"</span>, <span class="str">"produccion"</span>, <span class="str">"distribucion"</span>];
+
+<span class="cm">// Solo admin (el resto vuelve a /admin/dashboard):</span>
+<span class="kw">const</span> ADMIN_ONLY_PREFIXES = [<span class="str">"/admin/productos"</span>, <span class="str">"/admin/categorias"</span>, <span class="str">"/admin/zonas"</span>, <span class="str">"/admin/staff"</span>];
+
+<span class="cm">// produccion solo puede acceder a (si no, redirige a /admin/produccion):</span>
+<span class="kw">const</span> PRODUCCION_ALLOWED = [<span class="str">"/admin/dashboard"</span>, <span class="str">"/admin/produccion"</span>, <span class="str">"/admin/cocina"</span>,
+  <span class="str">"/admin/stock"</span>, <span class="str">"/admin/lotes"</span>, <span class="str">"/admin/muestras"</span>, <span class="str">"/admin/ayuda"</span>];
+
+<span class="cm">// distribucion solo puede acceder a (si no, redirige a /admin/distribucion):</span>
+<span class="kw">const</span> DISTRIBUCION_ALLOWED = [<span class="str">"/admin/dashboard"</span>, <span class="str">"/admin/distribucion"</span>, <span class="str">"/admin/ayuda"</span>];
+
+<span class="cm">// /b2b — requiere role = "customer_b2b" (Admin API)</span>
+<span class="cm">// /repartidor, /mi-cuenta — solo exigen sesión; /repartidor valida rol admin|distribucion en la página</span>
+<span class="cm">// /login con sesión activa — redirige según rol; el sitio público es navegable estando logueado</span>
+</pre>
+
+<div class="callout warning">
+  <span class="callout-icon">⚠</span>
+  <div><strong>Al agregar una nueva ruta en /admin para produccion o distribucion:</strong> sincronizar <code>PRODUCCION_ALLOWED</code> o <code>DISTRIBUCION_ALLOWED</code>, o el usuario es redirigido silenciosamente a su ruta por defecto sin mensaje de error.</div>
+</div>
+
+<div class="callout warning">
+  <span class="callout-icon">⚠</span>
+  <div>Las rutas de admin que el menú oculta al vendedor (Reportes, Comisiones, Cuentas corrientes…) <strong>no están en <code>ADMIN_ONLY_PREFIXES</code></strong>: la protección la hace cada página (<code>redirect</code> si el rol no es admin) y cada action (<code>requireRole</code>). Al crear una pantalla solo-admin, validar el rol en la página <em>y</em> en sus actions. Excepciones conocidas (verificadas 26/9/2026): <code>/admin/contenido</code>, <code>/admin/descuentos</code> y <code>/admin/configuracion</code> no validan el rol en la página, solo en las actions; un vendedor que escriba la URL puede <em>ver</em> (no modificar) los descuentos por volumen y los textos del sitio.</div>
+</div>
+</section>
+
+<!-- ──────────────────── ROLES ──────────────────── -->
+<section>
+<h2 id="roles">Roles y permisos</h2>
+
+<div class="tbl">
+<table>
+  <thead><tr><th>Role (app_metadata)</th><th>Accede a</th><th>Acciones principales</th></tr></thead>
+  <tbody>
+    <tr><td>admin</td><td>Todo /admin/*</td><td>Aprobar pedidos, productos/canales/zonas/staff, reportes, comisiones, cobranzas, cancelar, crear pedido con faltante</td></tr>
+    <tr><td>vendedor (= preventista)</td><td>Dashboard, Pedidos, Clientes, Preventista, Pipeline, Muestras, Ayuda</td><td>Crear pedidos y muestras (solicita; el admin aprueba), registrar contactos, simulador y lista de precios, ver sus clientes y sus comisiones</td></tr>
+    <tr><td>produccion</td><td>Solo PRODUCCION_ALLOWED (incluye Cocina, Stock, Lotes, Muestras)</td><td>Marcar enviado_prod, despachar (con o sin ajuste), producir lotes, insumos, recetas, recepciones</td></tr>
+    <tr><td>distribucion</td><td>Solo DISTRIBUCION_ALLOWED + <code>/repartidor</code></td><td>Iniciar distribución, confirmar entrega (total o parcial), hoja de ruta; ve los pedidos de su zona (<code>profiles.zona_id</code>)</td></tr>
+    <tr><td>customer_b2b</td><td>/b2b/*</td><td>Catálogo con precios de su canal, pedidos, plantillas, historial, remito, cambiar su contraseña</td></tr>
+    <tr><td>customer_b2c</td><td>Tienda pública (sin uso)</td><td>—</td></tr>
+  </tbody>
+</table>
+</div>
+
+<p>Los roles viven en <code>auth.users.raw_app_meta_data.role</code>. <code>profiles.role</code> existe pero está desincronizado: ignorarlo. No existe un rol "preventista" propio: es un <code>vendedor</code> con <code>comision_preventista_pct</code> cargado. La <strong>comercializadora</strong> no es un rol: es un perfil con <code>profiles.es_comercializadora = true</code> (hay uno solo).</p>
+
+<h3>Acceso de solo lectura para BI (rol de Postgres <code>javier_ro</code>)</h3>
+<p>Existe un rol de <strong>base de datos</strong> (no de la app) con LOGIN y solo SELECT sobre las tablas de <code>public</code>, para que la comercializadora arme informes desde Claude Desktop. Sin acceso a <code>auth</code>, con <code>statement_timeout</code> de 30 s. El kit para su proyecto está en <code>docs/proyecto-javier/</code> (regenerar el esquema tras migraciones grandes). La contraseña no va en el repo. Revocar: <code>DROP OWNED BY javier_ro; DROP ROLE javier_ro;</code>.</p>
+
+<h3>Remito (<code>/remito/[id]</code>)</h3>
+<p><strong>Requiere login.</strong> Lo puede ver el staff o el cliente dueño del pedido; cualquier otro recibe 404. Las notas del pedido se muestran al cliente solo si <code>notes_visible_cliente = true</code>.</p>
+</section>
+
+<!-- ──────────────────── GRANTS ──────────────────── -->
+<section>
+<h2 id="grants">GRANT en tablas creadas via SQL Editor</h2>
+
+<div class="callout warning">
+  <span class="callout-icon">⚠</span>
+  <div><strong>Las tablas y secuencias creadas directamente en el SQL Editor de Supabase no heredan permisos automáticamente.</strong> Requieren GRANT explícito o las queries desde la aplicación fallan con "permission denied".</div>
+</div>
+
+<pre>
+<span class="cm">-- Para cada tabla nueva:</span>
+<span class="kw">GRANT ALL ON</span> tabla <span class="kw">TO</span> anon, authenticated, service_role;
+
+<span class="cm">-- Para sequences (si la tabla tiene id serial/sequence manual):</span>
+<span class="kw">GRANT USAGE, SELECT, UPDATE ON SEQUENCE</span> nombre_seq <span class="kw">TO</span> service_role, authenticated, anon;
+</pre>
+
+<p>Caso concreto: <code>lineas_producto</code> no era SERIAL. Se creó una sequence manual con <code>CREATE SEQUENCE lineas_producto_id_seq</code> y se necesitó el GRANT por separado para que los inserts funcionaran.</p>
+</section>
+
+<!-- ──────────────────── PEDIDOS ──────────────────── -->
+<section>
+<h2 id="pedidos">Módulo de Pedidos — flujo completo</h2>
+
+<h3>Numeración</h3>
+<p>Pedidos B2B: <code>B2B-AAAA-NNNN</code> (ej. <code>B2B-2026-0104</code>), generado por <code>insertarPedidoB2B()</code> en <code>lib/order-number.ts</code>, que reintenta si dos pedidos chocan en el UNIQUE. Muestras: <code>MST-AAAA-NNNN</code> (misma técnica, en <code>muestras/nueva/actions.ts</code>).</p>
+
+<h3>Creación</h3>
+<ul>
+  <li><strong>Admin / vendedor:</strong> <code>/admin/pedidos/nuevo</code> → <code>crearPedidoAdmin()</code> (recalcula precios en el servidor con zona, comisión y flete del cliente). Permite <strong>cargo adicional</strong> manual opcional (flete, IIBB, etc.). Envía <code>emailPedidoAdminCreado</code> al cliente.</li>
+  <li><strong>Cliente:</strong> portal <code>/b2b/catalogo</code> → pedido en <code>pending_payment</code>; el admin lo aprueba.</li>
+  <li>El pedido congela <code>flete_pct</code> y <code>comision_pct</code> y guarda en cada línea el <code>product_snapshot.precio</code>.</li>
+</ul>
+
+<h3>Flujo de estados con acciones (<code>admin/pedidos/actions.ts</code>)</h3>
+<div class="tbl">
+<table>
+  <thead><tr><th>Acción</th><th>Transición / efecto</th><th>Efecto secundario</th></tr></thead>
+  <tbody>
+    <tr><td>aprobarPedidoB2B</td><td>pending_payment → aprobado</td><td>logOrderEvent. Intenta validar límite de crédito (hoy inoperante, ver alerta en Esquema)</td></tr>
+    <tr><td>marcarEnviadoProd</td><td>aprobado → enviado_prod</td><td>logOrderEvent</td></tr>
+    <tr><td>despacharPedido</td><td>enviado_prod → despachado</td><td>consume_lote_stock (FEFO), cargo en cc_movimientos si es cuenta_corriente</td></tr>
+    <tr><td>despacharPedidoConAjuste</td><td>enviado_prod → despachado con cantidades reducidas</td><td>Recalcula total (conserva el cargo adicional), consume stock, cargo CC con el total ajustado, email a admin + preventista + cliente si hubo diferencias</td></tr>
+    <tr><td>iniciarDistribucion</td><td>despachado → en_distribucion</td><td>logOrderEvent</td></tr>
+    <tr><td>confirmarEntrega</td><td>despachado / en_distribucion → delivered</td><td>Setea entregado_at. Desde ahí el pedido devenga comisión</td></tr>
+    <tr><td>confirmarEntregaParcial</td><td>→ entrega_parcial</td><td>Ver sección Entrega parcial</td></tr>
+    <tr><td>cancelarPedidoDistribucion</td><td>despachado / en_distribucion → cancelled</td><td>Reintegra stock a lotes; revierte cargo CC si era cuenta_corriente</td></tr>
+    <tr><td>editarCantidadesPedido · agregarLineaPedido · eliminarLineaPedido</td><td>Solo admin, en pedidos aprobados o en producción</td><td>Recalculan totales conservando cargo adicional; una línea agregada usa el flete y la comisión guardados del pedido</td></tr>
+    <tr><td>agregarNota(orderId, nota, visibleCliente)</td><td>—</td><td>Nota interna; con <code>visibleCliente</code> también la ve el cliente en el remito</td></tr>
+    <tr><td>crearPedidoConFaltante</td><td>Solo admin, sobre un pedido con entrega parcial</td><td>Crea un pedido nuevo aprobado con el faltante (ver Entrega parcial)</td></tr>
+    <tr><td>confirmarPago</td><td>B2C heredado</td><td>emailPagoConfirmado</td></tr>
+    <tr><td>updateOrderStatus</td><td>Manual (solo admin): pending_payment, aprobado, cancelled, liquidado</td><td>Excepcional, no ejecuta efectos secundarios (no toca stock ni CC)</td></tr>
+  </tbody>
+</table>
+</div>
+
+<h3>Despacho con ajuste de cantidades</h3>
+<p>Al despachar, producción puede reducir la cantidad de cualquier ítem (no aumentar). El sistema captura las cantidades originales, actualiza <code>order_lines.quantity</code> y <code>line_total</code>, recalcula <code>subtotal</code> y <code>total</code>, guarda <code>despacho_info</code>, consume stock por lote, registra el cargo CC con el total ajustado y avisa por email si hubo diferencias.</p>
+</section>
+
+<!-- ──────────────────── ENTREGA PARCIAL ──────────────────── -->
+<section>
+<h2 id="entrega-parcial">Entrega parcial (modelo vigente desde 23/9/2026)</h2>
+
+<p>Cálculo puro en <code>lib/entrega-parcial.ts</code> (con tests). Reglas:</p>
+<ul>
+  <li>Al confirmar un parcial, <code>order_lines.quantity/line_total</code> y <code>orders.subtotal/total</code> <strong>quedan con lo ENTREGADO</strong>. Lo pedido queda solo en <code>orders.delivered_snapshot</code>.</li>
+  <li><strong>El faltante se cierra</strong>: no queda pedido pendiente ni backorder. El <strong>motivo es obligatorio</strong>: <code>sin_stock</code>, <code>rechazado</code>, <code>danado</code> u <code>otro</code> (se guarda en el snapshot junto con <code>total_original</code>).</li>
+  <li>El stock no entregado se reintegra a los lotes con <code>reintegrar_lote_stock</code>. Si el pedido era de cuenta corriente, se registra un <code>ajuste</code> para llevar el cargo al total entregado.</li>
+  <li>Opcional (solo admin): <strong>"Crear pedido con el faltante"</strong> genera UN pedido nuevo, aprobado, al precio original, enlazado por <code>orders.origen_order_id</code> y con <code>fecha_compromiso</code> (por defecto +7 días). Si vence sin despacharse aparece en <code>/admin/alertas</code>. Ese pedido <strong>no es demanda nueva</strong>: no contarlo como cliente ni sumarlo a "lo pedido" del original.</li>
+  <li>Consecuencia: para ventas y comisiones se usa <code>orders.total</code> tal cual. Para medir faltantes (fill rate) se compara <code>pedido</code> vs <code>entregado</code> en <code>delivered_snapshot.lineas</code>.</li>
+  <li>Los 15 parciales anteriores al 23/9 solo tienen <code>lineas</code> y <code>timestamp</code> (sin motivo ni total_original); se les hizo un backfill de las líneas.</li>
+</ul>
+</section>
+
+<!-- ──────────────────── PRICING ──────────────────── -->
+<section>
+<h2 id="pricing">Precios B2B — fórmula v5 + flete CIF</h2>
+
+<p>Los precios no se guardan en la base: se calculan en el momento. <code>calcularPrecio()</code> en <code>src/lib/b2b-pricing.ts</code> es la fuente de verdad. Lo efectivamente cobrado queda en <code>order_lines.unit_price / line_total</code> y en <code>product_snapshot.precio</code>. Las columnas de precio de <code>products</code> son heredadas.</p>
+
+<h3>Fórmula completa</h3>
+<pre>
+<span class="cm">// Paso 1 — margen según categoría del producto y canal del cliente</span>
+margen = categoria === <span class="str">'Premium'</span>       ? canal.margen_premium
+       : categoria === <span class="str">'Venta directa'</span> ? canal.margen_venta_directa
+       :                                    canal.margen_std
+
+<span class="cm">// Paso 2 — Lista s/IVA (por caja). costo es POR BOLSA</span>
+lista_siva = round2( (costo × bolsas_caja) / (1 - margen)
+                   + pkg_unitario × bolsas_caja + pkg_bulto )
+
+<span class="cm">// Paso 3 — Lista c/IVA (IVA solo sobre lista_siva)</span>
+lista_civa = round2( lista_siva × (1 + iva_pct) )
+
+<span class="cm">// Paso 4 — Comisión (SIN IVA adicional). comision_pct = override del cliente o global</span>
+comision = round2( lista_siva × comision_pct )
+
+<span class="cm">// Paso 5 — Flete CIF: % de lista_siva por zona, con IVA, incluido en el precio</span>
+flete = round2( lista_siva × flete_pct × (1 + iva_pct) )
+
+<span class="cm">// Paso 6 — FINAL que paga el cliente por caja</span>
+final_civa = round0( lista_civa + comision + flete )
+
+<span class="cm">// Paso 7 — Precio por unidad (divisiones_display solo en casos especiales, ej. Chipa Panecillo)</span>
+div_unidades  = divisiones_display != null ? u_bolsa × divisiones_display : u_bolsa × bolsas_caja
+precio_unidad = round0( final_civa / div_unidades )
+pvp_unidad    = round0( final_civa × (1 + markup_pvp) / div_unidades )
+</pre>
+
+<div class="callout danger">
+  <span class="callout-icon">🔴</span>
+  <div><strong>El IVA se aplica SOLO sobre lista_siva y el flete, NO sobre la comisión.</strong> Fue un punto de discusión: una versión que aplicaba IVA sobre todo se implementó y se revirtió explícitamente. Está documentado con comentarios en el código.</div>
+</div>
+
+<h3>Flete CIF por zona (decisión 21/9/2026)</h3>
+<ul>
+  <li>El flete va <strong>incluido en el precio</strong> como % de <code>lista_siva</code>, según la zona de destino (<code>delivery_zones.flete_pct</code>, fracción: 0.02 = 2%). Se descartó el modelo por km/transportistas ("Módulo de Flete v2"): el flete real va compartido con mercadería de terceros y un costo promedio es mejor que ninguno. Zona local = 0%.</li>
+  <li><strong>Override por cliente:</strong> <code>profiles.flete_pct_override</code> (NULL = usa la zona, 0 = sin flete, x = % propio). Se edita en la ficha del cliente (solo admin).</li>
+  <li>Se aplica en nuevo pedido, agregarLineaPedido, catálogo del portal B2B y CSV de precios. El simulador del preventista y la lista imprimible usan solo la zona.</li>
+  <li>El flete <strong>queda fuera de la base de comisión</strong> (<code>orders.flete_pct</code> se congela al crear el pedido).</li>
+  <li><strong>Regla de documentos:</strong> lo impreso o enviado al cliente (lista de precios, simulador impreso, remito) <strong>nunca debe decir "flete"</strong>; va embebido en el precio.</li>
+  <li>Pendientes: el chat (<code>api/chat</code>) usa precio base sin zona; falta crear la zona "La Plata"; confirmar con el contador el IVA sobre el flete embebido.</li>
+</ul>
+
+<h3>Otras capas de precio</h3>
+<ul>
+  <li><strong>Comisión por cliente:</strong> <code>profiles.comision_pct_override</code> (NULL = global 15%; 0 = sin comisión). Es el "pool" que ese cliente lleva dentro del precio.</li>
+  <li><code>profiles.descuento_extra_pct</code>, <code>canales.descuento_pct</code> y <code>volume_discounts</code> (por cantidad de cajas). Lo aplicado queda en <code>orders.discount</code> y en los precios de línea.</li>
+  <li>Las líneas con <code>lineas_producto.canal_exclusivo_id</code> se ocultan a los demás canales en el catálogo. Los productos con <code>es_muestra = true</code> no se venden ni aparecen en catálogos, listas ni simulador.</li>
+</ul>
+
+<h3>Variables que vienen de la base</h3>
+<div class="tbl">
+<table>
+  <thead><tr><th>Variable</th><th>Tabla</th><th>Campo</th></tr></thead>
+  <tbody>
+    <tr><td>costo (por bolsa), bolsas_caja, u_bolsa, pkg_unitario, pkg_bulto, divisiones_display, categoria</td><td>products</td><td>mismo nombre</td></tr>
+    <tr><td>margen_std, margen_premium, margen_venta_directa, markup_pvp</td><td>canales</td><td>por <code>profiles.canal_id</code></td></tr>
+    <tr><td>iva_pct, comision_pct</td><td>parametros_globales</td><td>filas clave/valor (0.21, 0.15)</td></tr>
+    <tr><td>flete_pct</td><td>delivery_zones / profiles</td><td>zona del cliente o <code>flete_pct_override</code></td></tr>
+  </tbody>
+</table>
+</div>
+
+<h3>Importación de costos por CSV</h3>
+<p>El admin sube un CSV con código y costo nuevo; mapea a <code>products.codigo</code> y <code>products.costo</code>. Al actualizar el costo, todos los precios se recalculan solos en la próxima renderización. En Recetas se compara el costo de la receta con <code>products.costo × bolsas_caja</code> y se marca la diferencia mayor al 2%.</p>
+</section>
+
+<!-- ──────────────────── COMISIONES ──────────────────── -->
+<section>
+<h2 id="comisiones">Comisiones de preventistas y comercializadora</h2>
+
+<p>Pantalla <code>/admin/comisiones</code> (solo admin) y export CSV. <strong>Único cálculo:</strong> <code>lib/comisiones-data.ts</code> (<code>cargarComisionesAnio</code>) + <code>lib/comisiones.ts</code> (<code>calcularComisionOrden</code>), compartido por la pantalla, el CSV y la tarjeta de <code>/admin/preventista</code>. Si un SQL no coincide con la pantalla, prevalece la pantalla.</p>
+
+<h3>Devengo</h3>
+<ul>
+  <li>Se genera <strong>al entregar</strong>: estados <code>delivered</code>, <code>entrega_parcial</code>, <code>liquidado</code>, canal <code>b2b_mayorista</code> (<code>COMISION_STATUSES</code>).</li>
+  <li>Cae en el <strong>mes de <code>entregado_at</code></strong> en hora argentina. Ya no cae a <code>created_at</code>: un pedido sin entrega confirmada no comisiona.</li>
+  <li>Pedidos "sin factura": la base es el total del pedido, igual que con factura (decisión 25/9; ya no se consulta <code>pagos.sin_factura</code>).</li>
+</ul>
+
+<h3>Fórmula por pedido</h3>
+<pre>
+pool               = comision_pct del pedido (o comision_pct_override del cliente, o global 15%)
+base               = orders.total − cargo_adicional_monto
+divisor            = 1 + iva_pct + pool + flete_pct(pedido) × (1 + iva_pct)   <span class="cm">// el flete sale de la base</span>
+comisión_total     = base × pool / divisor
+preventista        = base × min(comision_preventista_pct, pool) / divisor
+comercializadora   = comisión_total − preventista
+</pre>
+
+<ul>
+  <li><strong>Pool por cliente:</strong> es lo que ese cliente lleva dentro de su precio. Si es 0 (TANDA y las sucursales de Panadería Petri), nadie cobra sobre ese cliente.</li>
+  <li><strong>Reparto:</strong> el preventista asignado (<code>profiles.vendedor_id</code>) cobra su <code>comision_preventista_pct</code> (tope: el pool). La comercializadora (<code>es_comercializadora = true</code>) se queda con el resto de <strong>todos</strong> los clientes, tengan o no preventista.</li>
+  <li><strong>Devoluciones</strong> (aprobada/cerrada) descuentan comisión: ajuste negativo en el mes de <code>devoluciones.fecha</code> con el % vigente; no reabre meses pagados.</li>
+  <li>Excluir siempre pedidos <code>cancelled</code>. Filtrar clientes por <code>channel = 'b2b_mayorista'</code> en los pedidos, nunca por <code>profiles.role</code>.</li>
+</ul>
+
+<h3>Pago de comisión</h3>
+<p><code>comisiones_pagos</code>, una fila por <strong>vendedor + mes + cliente</strong>: se puede pagar cliente por cliente según el flujo de caja (decisión explícita: no se ata a que el cliente ya haya pagado). Al pagar se congelan <code>monto/pct/ventas</code>. <code>marcarComisionesPagadas</code> recalcula los montos en el servidor; si hubo entregas posteriores a un pago, el sistema calcula la diferencia y la muestra como "extra". Los meses pagados quedan congelados; los abiertos se recalculan.</p>
+
+<div class="callout info">
+  <span class="callout-icon">ℹ</span>
+  <div><strong>Evolución pendiente (no implementada):</strong> comisionar "sobre lo cobrado" (pago por pago desde <code>pagos</code>, en el mes de <code>pagos.fecha</code>, incluyendo pagos a cuenta y excluyendo cancelados). Ya está diseñado; el impacto medido del criterio "entregado" fue -11% de base en septiembre respecto del criterio viejo (desde aprobado).</div>
+</div>
+</section>
+
+<!-- ──────────────────── STOCK SYS ──────────────────── -->
+<section>
+<h2 id="stock-sys">Sistema de stock — detalle operativo</h2>
+
+<h3>Ingreso de stock</h3>
+<p>Dos vías: <strong>Cocina → Producción</strong> (crea el lote con número correlativo global, vencimiento automático según <code>vida_util_dias</code> de la receta, descuenta insumos y registra kardex) y <strong>alta manual</strong> en <code>/admin/lotes</code>. Al crear, <code>cantidad_actual = cantidad_inicial</code> y <code>activo = true</code>. Se admiten fracciones de lote menores a 1.</p>
+
+<h3>Egreso de stock</h3>
+<p>Al despachar, <code>consume_lote_stock(p_product_id, p_qty)</code> consume por FEFO: lotes activos no vencidos ordenados por <code>fecha_vencimiento ASC NULLS LAST, created_at ASC</code>; cuando un lote llega a 0 se marca <code>activo = false</code>; también resta de <code>products.stock_cajas</code>. Las muestras consumen stock por el mismo camino (son pedidos).</p>
+
+<h3>Ajuste manual</h3>
+<p>Se edita el lote (<code>ajustarCantidad</code>) o se da de baja (<code>darDeBajaLote</code>) desde <code>/admin/lotes</code>. Para insumos hay botón de ajuste manual con kardex (<code>insumos_movimientos</code>).</p>
+
+<h3>Control de vencimientos</h3>
+<p>Lotes con vencimiento a 7 días o menos se marcan en amarillo; vencidos en rojo.</p>
+</section>
+
+<!-- ──────────────────── EMAIL ──────────────────── -->
+<section>
+<h2 id="email">Sistema de Emails (Resend)</h2>
+
+<p>Archivo: <code>src/lib/email.ts</code>. Si no hay <code>RESEND_API_KEY</code>, <code>getResend()</code> devuelve <code>null</code> y los emails simplemente no se envían (sin error). Con un dominio de prueba (<code>resend.dev</code>) los emails a clientes se redirigen al admin; con <code>enminutas.com.ar</code> verificado van al destinatario real.</p>
+
+<pre>
+<span class="cm">// Los emails son NO BLOQUEANTES — nunca fallan el flujo principal</span>
+<span class="fn">emailAlgunaFuncion</span>({ ... }).<span class="fn">catch</span>(() => {});
+<span class="cm">// Múltiples destinatarios con Promise.allSettled</span>
+</pre>
+
+<div class="tbl">
+<table>
+  <thead><tr><th>Función</th><th>Trigger</th><th>Destinatarios</th></tr></thead>
+  <tbody>
+    <tr><td>emailNuevoPedidoB2B</td><td>Pedido creado desde el portal B2B</td><td>Admin</td></tr>
+    <tr><td>emailPedidoAdminCreado</td><td>Pedido creado por admin/vendedor</td><td>Cliente</td></tr>
+    <tr><td>emailPedidoModificadoDespacho</td><td>despacharPedidoConAjuste() con diferencias</td><td>Admin + preventista + cliente</td></tr>
+    <tr><td>emailNuevoRegistroB2B</td><td>Solicitud de alta desde el sitio (<code>/api/auth/registro</code>)</td><td>Admin</td></tr>
+    <tr><td>emailClienteAprobado</td><td>Aprobación de cliente B2B</td><td>Cliente (acceso al portal)</td></tr>
+    <tr><td>emailPagoConfirmado</td><td>confirmarPago() (B2C heredado)</td><td>Cliente</td></tr>
+    <tr><td>emailNuevoPedidoB2CAdmin · emailPedidoB2CRecibido · emailPagoDeclarado</td><td>Tienda B2C (heredada, sin uso)</td><td>Admin / cliente</td></tr>
+  </tbody>
+</table>
+</div>
+</section>
+
+<!-- ──────────────────── PRODUCCION ──────────────────── -->
+<section>
+<h2 id="produccion">Producción, despacho y Cocina</h2>
+
+<h3>Cola de producción (<code>/admin/produccion</code>)</h3>
+<p>Accesible para <code>admin</code> y <code>produccion</code>. Muestra los pedidos <code>aprobado</code> y <code>enviado_prod</code> (incluye las muestras <code>MST-</code>) como tarjetas con el detalle de ítems y botones para iniciar preparación, despachar normal o despachar con ajuste. El modal de ajuste muestra inputs con máximo igual a la cantidad original y campos opcionales de <code>repartidor</code>, <code>fecha_entrega</code>, <code>hora_entrega</code> y <code>patente</code> (van a <code>orders.despacho_info</code>).</p>
+
+<h3>Cocina (<code>/admin/cocina</code>, roles admin y produccion)</h3>
+<p>Es un conjunto de pantallas, no una sola vista:</p>
+<div class="tbl">
+<table>
+  <thead><tr><th>Ruta</th><th>Qué hace</th></tr></thead>
+  <tbody>
+    <tr><td>/admin/cocina</td><td>Panel: productos, pedidos pendientes, stock por lote y recetas</td></tr>
+    <tr><td>/cocina/insumos</td><td>Catálogo de insumos (48): CRUD inline, categorías, importador CSV (separador <code>;</code> para Excel AR), ajuste de stock manual, sugerencias al escribir un nombre nuevo (nombre único case-insensitive)</td></tr>
+    <tr><td>/cocina/recetas</td><td>Recetas con ingredientes tomados de insumos (cantidad decimal), pasos, rendimiento (<code>yield_cajas</code>), <code>vida_util_dias</code> y costo. Una receta puede tener <strong>varias presentaciones</strong> (un mismo batch sale en distintos productos) y crear una nueva ya vinculada</td></tr>
+    <tr><td>/cocina/produccion</td><td>Registra la producción: input por lotes, número de lote automático, vencimiento automático, descuenta insumos (kardex) y crea el lote de producto terminado. Se puede elegir la presentación a producir</td></tr>
+    <tr><td>/cocina/planificador</td><td>Qué producir según pedidos comprometidos y stock real de lotes</td></tr>
+    <tr><td>/cocina/compras</td><td>Lista de compras según planificación e insumos en stock</td></tr>
+    <tr><td>/cocina/recepciones</td><td>Recepción de mercadería: factura o remito de proveedor. Precio neto por ítem + IVA (0 / 10,5 / 21%) + vencimiento + "otros impuestos". <strong>Se puede subir una foto</strong>: la IA (Groq visión, fallback OpenRouter) lee la factura, sugiere el insumo por similitud y por CUIT del proveedor, y alerta precios anómalos. Al confirmar: suma stock, actualiza <code>precio_unitario</code> (neto) del insumo y registra kardex</td></tr>
+    <tr><td>/cocina/historial</td><td>Historial de producciones</td></tr>
+  </tbody>
+</table>
+</div>
+<p>Las pantallas de cocina leen el stock desde <code>lotes</code>, no desde <code>products.stock_cajas</code>.</p>
+</section>
+
+<!-- ──────────────────── DISTRIBUCION ──────────────────── -->
+<section>
+<h2 id="distribucion">Distribución y App Repartidor</h2>
+
+<h3>Panel distribución (<code>/admin/distribucion</code>)</h3>
+<p>Pedidos en <code>despachado</code> y <code>en_distribucion</code> (canales del flujo: B2B y muestras). El rol <code>distribucion</code> ve solo los de su zona (<code>profiles.zona_id</code> contra <code>orders.delivery_zone_id</code>); el admin ve todos y puede filtrar por zona. Subpantallas: <strong>hoja de ruta</strong> imprimible, <strong>ordenar ruta</strong> (orden manual guardado en <code>orders.orden_ruta</code>, sin optimización automática) e <strong>historial de entregas</strong>. Permite cancelar un pedido en distribución (reintegra stock y revierte el cargo CC).</p>
+
+<h3>App Repartidor (<code>/repartidor</code>)</h3>
+<p>Solo roles <code>admin</code> y <code>distribucion</code>. Optimizada para móvil:</p>
+<ul>
+  <li>Lista de pedidos de la zona ordenada por <code>orden_ruta</code></li>
+  <li>Botón a Google Maps y WhatsApp del cliente</li>
+  <li>Confirmar entrega total (<code>confirmarEntrega</code>) o parcial (<code>confirmarEntregaParcial</code>, con motivo obligatorio)</li>
+  <li>Firma digital del receptor (canvas táctil) guardada en <code>orders.firma_*</code></li>
+</ul>
+
+<div class="callout warning">
+  <span class="callout-icon">⚠</span>
+  <div><strong>PWA incompleta.</strong> <code>public/manifest.json</code> usa <code>/globe.svg</code> como ícono placeholder y no hay service worker. Para instalarse bien en iOS/Android necesita PNG 192×192 y 512×512 con el logo real (pendiente que se provea el archivo). La app del preventista tiene su propio manifest (<code>preventista-manifest.json</code>, "EM Preventista").</div>
+</div>
+</section>
+
+<!-- ──────────────────── B2B PORTAL ──────────────────── -->
+<section>
+<h2 id="b2b-portal">Portal B2B (/b2b)</h2>
+
+<p>Para clientes mayoristas con <code>app_metadata.role = "customer_b2b"</code>. Un cliente no aprobado va a <code>/b2b/pendiente</code>.</p>
+<ul>
+  <li><strong>Catálogo</strong> (<code>/b2b/catalogo</code>): productos activos con precio calculado en el servidor por <code>calcularPrecio()</code> según el canal, la zona y los overrides (comisión y flete) del cliente. Las líneas exclusivas de otro canal se ocultan; los productos <code>es_muestra</code> no aparecen.</li>
+  <li><strong>Pedido</strong>: carrito, método de pago, confirmación. Crea la orden en <code>pending_payment</code> y avisa al admin (<code>emailNuevoPedidoB2B</code>).</li>
+  <li><strong>Pedidos</strong> (<code>/b2b/pedidos</code>, <code>[id]</code>): historial con estado, fecha de pedido y de entrega; descarga del remito.</li>
+  <li><strong>Plantillas</strong> (<code>/b2b/plantillas</code>) y <strong>Mi cuenta</strong> (cambiar contraseña). El admin también puede fijar o resetear la contraseña y cambiar el email de acceso desde la ficha del cliente.</li>
+</ul>
+</section>
+
+<!-- ──────────────────── CC ──────────────────── -->
+<section>
+<h2 id="cc">Cuentas corrientes y cobranzas</h2>
+
+<p>La lógica está descrita en <em>Clientes B2B y Cuentas Corrientes</em>. Pantallas:</p>
+<ul>
+  <li><strong>Ficha del cliente</strong> (<code>/admin/clientes-b2b/[id]</code>, <code>pagos-client.tsx</code>): registrar pagos (a pedido, a factura, a cuenta, varios pedidos a la vez, sin factura), saldo, historial y link al recibo. Es el flujo de cobranza que realmente se usa. Aquí también se editan la comisión y el flete personalizados del cliente (solo admin).</li>
+  <li><strong>Recibo</strong> (<code>/admin/clientes-b2b/recibo/[pagoId]</code>): imprimible, con datos legales de la cooperativa (Coop. de Trabajo Il Pane Nostro Ltda., CUIT 30-71858060-5, Ruta 12, Garupá, Misiones, Responsable Inscripto). Usar esos datos —no "En Minutas" ni "IDEIA"— en cualquier documento imprimible.</li>
+  <li><strong><code>/admin/cuentas-corrientes</code></strong>: listado de saldos, aging (0–30 / 31–60 / 61–90 / +90 días desde la fecha del cargo) y límite de crédito. <strong>Hoy sale vacío</strong> porque lee la lista de clientes desde <code>b2b_accounts</code> (vacía). Ver alerta en Esquema general.</li>
+</ul>
+<p>Al registrar un pago, <code>liquidarSiEntregado</code> pasa el pedido a <code>liquidado</code> solo si ya fue entregado.</p>
+</section>
+
+<!-- ──────────────────── OTROS ──────────────────── -->
+<section>
+<h2 id="otros">Otros módulos</h2>
+
+<h3>Muestras (<code>/admin/muestras</code>) — rediseño 24/9/2026</h3>
+<p>Una muestra es un <strong>pedido de canal <code>muestra</code></strong> (<code>MST-AAAA-NNNN</code>, sin precio) dentro del flujo normal, no una tabla aparte (las tablas <code>muestras</code> y <code>muestra_items</code> ya no existen). El vendedor la <em>solicita</em> (queda <code>pending_payment</code>); el admin la crea ya <code>aprobado</code> o la aprueba desde Pedidos. Después sigue Producción → despacho (descuenta lotes FEFO) → Distribución → entrega. Datos del contacto en <code>orders.muestra_destinatario/muestra_contacto/guest_phone/shipping_snapshot/delivery_zone_id</code>; <code>muestra_prospecto_id</code> la enlaza al Pipeline; <code>solicitado_por</code> registra quién la pidió (el vendedor ve sus muestras por eso). Se vende una <strong>presentación de muestra</strong> (<code>products.es_muestra = true</code>, no se vende ni figura en catálogos), que el admin crea desde la receta y produce como lote. Helper: <code>normalizarMuestra()</code> arma un "customer" falso para que Producción/Distribución muestren nombre, teléfono y zona.</p>
+
+<h3>Preventista (<code>/admin/preventista</code>) y Pipeline</h3>
+<p>Lista de precios imprimible por canal y zona, simulador (calcula el precio con IIBB provincial), log de contactos (<code>contact_logs</code>), tarjeta de comisiones y app instalable propia. <code>/admin/pipeline</code> (<code>pipeline_prospectos</code>) es el seguimiento de prospectos; hoy sin registros.</p>
+
+<h3>Dashboard y Reportes</h3>
+<p>El dashboard se arma por rol: <code>dashboard/_views/{admin,vendedor,produccion,distribucion}.tsx</code>, con las consultas en <code>_data/</code>. Reportes sigue la misma separación (<code>reportes/_data</code>, <code>_components</code>). Las pantallas con <code>?mes=&amp;anio=</code> validan con <code>mesValido/anioValido</code> de <code>lib/fecha.ts</code> (un valor inválido daba error 500). Ventas = <code>VENTAS_STATUSES</code>. Rentabilidad y Objetivos son solo admin.</p>
+<div class="callout warning">
+  <span class="callout-icon">⚠</span>
+  <div><code>/admin/objetivos</code> usa su propia lista de estados (heredada, sin aprobado/enviado_prod/despachado/en_distribucion) y <code>objetivos_ventas</code> está vacía. Pendiente decidir si se alinea con <code>VENTAS_STATUSES</code> o se retira.</div>
+</div>
+
+<h3>Alertas (<code>/admin/alertas</code>, solo admin)</h3>
+<p>"Centro de alertas" con niveles crítico / urgente / aviso (por ejemplo, faltantes con fecha de compromiso vencida). El contador se muestra en el menú.</p>
+
+<h3>Sitio web y CMS</h3>
+<p>El sitio público (<code>(marketing)</code>) es <strong>100% editable</strong> desde Admin → Contenido web (<code>contenido_web</code>, 66 claves) y Categorías (imagen, descripción, <code>visible_en_tienda</code>). Los componentes usan <code>||</code> (no <code>??</code>) para el fallback de textos vacíos. Marca: logo real, tipografía Montserrat (sustituto web de Gotham), patrón de íconos del manual de marca. Regla de diseño del dueño: <strong>simplicidad sobre decoración</strong>; no agregar elementos decorativos sin consultar.</p>
+
+<h3>Chat interno (<code>/api/chat</code>)</h3>
+<p>Asistente flotante en el panel con un prompt por rol y 7 tools <strong>de solo lectura</strong> (buscar_producto, consultar_pedido, pedidos_activos, buscar_cliente, pedidos_cliente, ver_stock, ver_pipeline). Usa modelos gratuitos de OpenRouter con lista de fallbacks en <code>lib/openrouter.ts</code>.</p>
+
+<h3>Configuración global (<code>/admin/configuracion</code>)</h3>
+<p>Hub hacia: Productos, Líneas (con canal exclusivo), Categorías, Canales B2B (márgenes std/premium/venta directa, markup PVP, descuento), Zonas (con <code>flete_pct</code>), Depósitos, Descuentos por volumen, Clientes B2B, Staff, Parámetros globales (IVA y comisión).</p>
+
+<h3>Módulos administrativos apenas usados</h3>
+<p>Facturación interna (1 factura, sin integración ARCA/AFIP), cheques, devoluciones y liquidaciones: existen las pantallas pero prácticamente sin datos.</p>
+
+<h3>Keep-alive cron</h3>
+<p>Supabase pausa proyectos inactivos en el plan gratuito. <code>vercel.json</code> corre <code>/api/ping</code> con <code>"0 12 */3 * *"</code> (cada 3 días) y fija las funciones en <code>gru1</code>. El endpoint hace una query mínima y se autentica con <code>CRON_SECRET</code> (compartido con kioscos-ideia). Aviso de Supabase (22/9/2026): la organización excedió la cuota y el <strong>18/10/2026</strong> pueden restringir los proyectos si sigue así.</p>
+</section>
+
+<!-- ──────────────────── PATTERNS ──────────────────── -->
+<section>
+<h2 id="patterns">Convenciones — Server Actions</h2>
+
+<h3>Estructura de una action</h3>
+<pre>
+<span class="kw">export async function</span> <span class="fn">miAccion</span>(args: ...): Promise&lt;{ error?: <span class="ty">string</span> }&gt; {
+  <span class="kw">await</span> <span class="fn">requireRole</span>(<span class="str">"admin"</span>);            <span class="cm">// 1) SIEMPRE primero. No confiar en el chequeo de la página</span>
+  <span class="kw">const</span> db = <span class="fn">createAdminClient</span>();
+  <span class="kw">const</span> { error } = <span class="kw">await</span> db.<span class="fn">from</span>(<span class="str">"tabla"</span>).<span class="fn">update</span>(payload).<span class="fn">eq</span>(<span class="str">"status"</span>, estadoEsperado); <span class="cm">// 2) guarda atómica</span>
+  <span class="kw">if</span> (error) <span class="kw">return</span> { error: error.message };
+  <span class="fn">revalidatePath</span>(<span class="str">"/admin/ruta"</span>);          <span class="cm">// 3) invalidar todas las rutas afectadas (3–4 es normal)</span>
+}
+</pre>
+<p>Los errores de usuario se devuelven como <code>{ error }</code> (algunas actions antiguas, como las de <code>pedidos</code>, lanzan <code>throw new Error</code>; ambas convenciones conviven).</p>
+
+<h3>Atomic updates</h3>
+<p>Las transiciones de estado usan <code>.eq("status", estado_esperado)</code> en el UPDATE para detectar conflictos; si devuelve 0 filas, otro proceso ya lo procesó.</p>
+
+<h3>Fechas y montos</h3>
+<ul>
+  <li>Zona horaria <strong>America/Argentina/Buenos_Aires (UTC-3, sin horario de verano)</strong>. Los <code>timestamptz</code> están en UTC. <code>new Date("YYYY-MM-DD")</code> es medianoche UTC y en Argentina muestra el día anterior: usar <code>T12:00:00</code> y los helpers de <code>lib/fecha.ts</code> (<code>hoy()</code>, <code>fmtFechaSolo</code>).</li>
+  <li>Moneda ARS con <code>lib/format.ts</code>. Montos con IVA salvo que se aclare.</li>
+</ul>
+
+<h3>Client Components</h3>
+<p>Mínimos: solo cuando hay interactividad (formularios con estado, modales). Patrón: Server Component que trae los datos → los pasa como props → Client Component llama Server Actions. Las pantallas nuevas del admin usan las primitivas de <code>components/ui</code> y los tokens <code>n-*</code>/<code>brand-*</code>, sin hex sueltos.</p>
+
+<h3>Tests</h3>
+<p><code>npm test</code> (Vitest). Al tocar comisiones, estados, fechas, entrega parcial o formato, correr y ampliar los tests.</p>
+</section>
+
+<!-- ──────────────────── GOTCHAS ──────────────────── -->
+<section>
+<h2 id="gotchas">Gotchas y trampas conocidas</h2>
+
+<div class="callout danger">
+  <span class="callout-icon">🔴</span>
+  <div><strong>PRODUCCIÓN REAL.</strong> El sistema tiene pedidos y clientes reales desde junio 2026. Nunca generar SQL de borrado masivo ni migraciones destructivas sin confirmación explícita. Antes de hacer pruebas en producción, avisar o usar datos con valores conocidos y limpiar después (una prueba dejó stock negativo de insumos).</div>
+</div>
+
+<div class="callout danger">
+  <span class="callout-icon">🔴</span>
+  <div><strong>profiles.role está desincronizado.</strong> Usar <code>auth.users.app_metadata.role</code> (Admin API, <code>requireRole()</code> o <code>listAllUsers()</code>). Para "es cliente B2B", partir de <code>orders.channel = 'b2b_mayorista'</code> o <code>profiles.canal_id IS NOT NULL</code>. Esto ya dejó a 17 de 42 clientes afuera de comisiones, dashboard y un selector de muestras.</div>
+</div>
+
+<div class="callout danger">
+  <span class="callout-icon">🔴</span>
+  <div><strong>order_status es ENUM.</strong> Nuevo estado = migración <code>ALTER TYPE order_status ADD VALUE '...'</code>. Sin ella, las queries con <code>.in("status", [nuevo])</code> fallan (0 filas, sin error) y los reportes dan $0. Además hay que agregarlo a <code>lib/order-status.ts</code> si corresponde.</div>
+</div>
+
+<div class="callout danger">
+  <span class="callout-icon">🔴</span>
+  <div><strong>Server Actions sin <code>requireRole()</code> son públicas.</strong> Toda action nueva debe validar el rol adentro (ver Auth).</div>
+</div>
+
+<div class="callout warning">
+  <span class="callout-icon">⚠</span>
+  <div><strong>Tablas/sequences creadas vía SQL Editor requieren GRANT explícito</strong> a <code>anon, authenticated, service_role</code>; si no, "permission denied".</div>
+</div>
+
+<div class="callout warning">
+  <span class="callout-icon">⚠</span>
+  <div><strong>PRODUCCION_ALLOWED / DISTRIBUCION_ALLOWED.</strong> Ruta nueva para esos roles = sincronizar la lista del proxy, o redirige sin mensaje.</div>
+</div>
+
+<div class="callout warning">
+  <span class="callout-icon">⚠</span>
+  <div><strong>Canales del flujo.</strong> Las pantallas operativas usan <code>CANALES_FLUJO</code> (b2b_mayorista + muestra), no <code>.eq("channel","b2b_mayorista")</code>. Los productos <code>es_muestra = true</code> se filtran de todo lo que se vende. Las muestras nunca cuentan como venta.</div>
+</div>
+
+<div class="callout warning">
+  <span class="callout-icon">⚠</span>
+  <div><strong><code>order_lines.quantity</code> no siempre son cajas.</strong> Cada producto se vende en su unidad (<code>product_snapshot.unit_label</code>: "caja 4 bolsas x 30u", "Bolsas x 10kg"…). No sumar cantidades de productos distintos sin agrupar por unidad; usar <code>line_total</code> para comparar.</div>
+</div>
+
+<div class="callout warning">
+  <span class="callout-icon">⚠</span>
+  <div><strong>Precios históricos:</strong> antes de afirmar algo sobre precios de pedidos pasados, verificar con <code>order_lines.product_snapshot.precio</code>; no inferirlo por ratios de precios (otro canal o lista puede dar el mismo número).</div>
+</div>
+
+<div class="callout warning">
+  <span class="callout-icon">⚠</span>
+  <div><strong>Modelos de IA gratuitos se caen.</strong> Ante fallos, revisar los logs de Vercel y consultar la lista actual (<code>GET openrouter.ai/api/v1/models</code>; <code>GET /openai/v1/models</code> de Groq) y actualizar <code>FALLBACKS</code> en <code>lib/openrouter.ts</code> y <code>MODELO_VISION</code> en <code>lib/groq.ts</code>.</div>
+</div>
+
+<div class="callout warning">
+  <span class="callout-icon">⚠</span>
+  <div><strong>Trabajo en curso sin commitear.</strong> El árbol de trabajo suele tener cambios del dueño en curso. Al commitear, usar <code>git add</code> con rutas explícitas, nunca <code>-A</code>.</div>
+</div>
+
+<div class="callout warning">
+  <span class="callout-icon">⚠</span>
+  <div><strong>Devoluciones:</strong> el formulario manda <code>pedidoId</code> como texto libre a una columna uuid; falla si se escribe un número de pedido.</div>
+</div>
+
+<div class="callout warning">
+  <span class="callout-icon">⚠</span>
+  <div><strong>IVA solo sobre lista_siva y flete, NO sobre la comisión.</strong> Confirmado explícitamente por el dueño.</div>
+</div>
+
+<div class="callout info">
+  <span class="callout-icon">ℹ</span>
+  <div><strong>lineas_producto.id usa sequence manual</strong> (<code>lineas_producto_id_seq</code>, no SERIAL). <strong>despacho_info es JSONB</strong> dentro de <code>orders</code>, no una tabla. <strong>Documentos al cliente:</strong> nunca decir "flete"; datos legales de la cooperativa, no de "En Minutas".</div>
+</div>
+</section>
+
+<!-- ──────────────────── MIGRATIONS ──────────────────── -->
+<section>
+<h2 id="migrations">Migraciones</h2>
+
+<h3>Reglas (ver <code>supabase/README.md</code>)</h3>
+<ul>
+  <li>Las migraciones nuevas van en <code>supabase/migrations/</code> con nombre <code>YYYYMMDDHHMMSS_descripcion.sql</code> y se aplican con <code>apply_migration</code> (MCP de Supabase) usando el mismo nombre, para que el historial de la base y el repo coincidan.</li>
+  <li>Tabla nueva = <code>GRANT ALL</code> a <code>anon, authenticated, service_role</code>. Estado nuevo de pedido = <code>ALTER TYPE</code>.</li>
+  <li>Después de cambiar el esquema: regenerar <code>src/types/database.ts</code> y, si corresponde, <code>docs/proyecto-javier/03-esquema-tablas.md</code>.</li>
+  <li>Nunca commitear SQL de borrado masivo.</li>
+  <li><code>supabase/legacy/</code> tiene los scripts 002–048 que se corrían a mano: <strong>solo referencia, no volver a ejecutar</strong> (varios son seeds demo). Los scripts de borrado se eliminaron del repo.</li>
+</ul>
+
+<div class="callout warning">
+  <span class="callout-icon">⚠</span>
+  <div><strong>El repo no alcanza para reconstruir la base desde cero.</strong> El historial aplicado en la base (53 migraciones, la última <code>20260925175202</code>) arranca el 22/6/2026 y hay 14 migraciones aplicadas sin archivo: <code>fix_decrement_stock_return_boolean</code>, <code>fix_fk_contact_logs_sales_goals_to_profiles</code>, <code>rename_ideaia_to_ideia</code>, <code>rename_platform_settings_ideaia_col</code>, <code>depositos</code>, <code>muestras_enum_columns</code>, <code>muestras_index</code>, <code>despacho_info</code>, <code>muestra_observacion</code>, <code>cc_movimientos_order_id</code>, <code>profiles_comision_pct_override</code>, <code>contenido_web_cms</code>, <code>categories_image_description</code>, <code>lineas_canal_exclusivo</code> (más el fix del hook de auth, en <code>legacy/012</code>). La fuente de verdad es la base de producción. Pendiente: tomar un dump del esquema como línea base.</div>
+</div>
+
+<h3>Migraciones recientes (desde 19/8/2026)</h3>
+<div class="tbl">
+<table>
+  <thead><tr><th>Archivo</th><th>Contenido</th></tr></thead>
+  <tbody>
+    <tr><td>20260819010000_consume_lote_stock_fefo</td><td>RPC <code>consume_lote_stock</code> (FEFO)</td></tr>
+    <tr><td>20260826000000_insumos · 20260826010000_pagos</td><td>Catálogo de insumos; tabla <code>pagos</code></td></tr>
+    <tr><td>20260902000000…07 (9 archivos)</td><td>Stock de insumos por producción, categorías de insumos, <code>vida_util_dias</code> en products y recipes, recepciones de mercadería (+IVA/vencimiento), nombre de insumo único, <code>orders.notes_visible_cliente</code></td></tr>
+    <tr><td>20260903000000_canales_margen_venta_directa</td><td>Margen "Venta directa" por canal</td></tr>
+    <tr><td>20260909000000…040000 (5 archivos)</td><td>Pagos sin factura, <code>pagos.grupo_id</code>, <code>comisiones_pagos</code> (por cliente), <code>profiles.es_comercializadora</code></td></tr>
+    <tr><td>20260915000000_orders_cargo_adicional</td><td>Cargo adicional manual en pedidos</td></tr>
+    <tr><td>20260916000000 · 010000</td><td>Recepciones: evidencia de IA y CUIT del proveedor</td></tr>
+    <tr><td>20260921000000_delivery_zones_flete_pct</td><td>Flete CIF por zona</td></tr>
+    <tr><td>20260923000000_recetas_presentaciones</td><td>Varias presentaciones por receta</td></tr>
+    <tr><td>20260923010000_entrega_parcial_lineas</td><td>RPC <code>reintegrar_lote_stock</code> + backfill de líneas de parciales</td></tr>
+    <tr><td>20260923020000_orders_faltante_reprogramado</td><td><code>origen_order_id</code>, <code>fecha_compromiso</code></td></tr>
+    <tr><td>20260924000000_muestras_en_pedidos</td><td>Muestras como pedidos (canal <code>muestra</code>)</td></tr>
+    <tr><td>20260925000000_profiles_flete_pct_override</td><td>Flete personalizado por cliente</td></tr>
+    <tr><td>20260925010000_orders_flete_pct · 020000_orders_comision_pct</td><td>Flete y % de comisión congelados en el pedido</td></tr>
+  </tbody>
+</table>
+</div>
+<p>Las migraciones anteriores (schema inicial, RLS, hook de auth, <code>en_distribucion</code>, precios v5, facturas, cc_movimientos, lotes, devoluciones, cheques, objetivos, pipeline, firma digital, orden_ruta, plantillas, muestras, yield/stock numéricos) están en <code>supabase/migrations/</code> desde <code>20260101000000</code> hasta <code>20260814010000</code>.</p>
+</section>
+
+<!-- ──────────────────── ROADMAP ──────────────────── -->
+<section>
+<h2 id="roadmap">Estado actual y roadmap</h2>
+
+<h3>Implementado y en producción</h3>
+<ul>
+  <li>Pedidos B2B con guardas atómicas, edición de líneas en pedidos aprobados, notas visibles al cliente, cargo adicional</li>
+  <li>Entrega parcial con cierre de faltante y pedido opcional con el faltante</li>
+  <li>Portal B2B (catálogo por canal/zona, pedidos, plantillas, cambio de contraseña)</li>
+  <li>Producción y despacho con ajuste; Distribución con hoja de ruta y orden manual; App repartidor con firma</li>
+  <li>Cocina completa: insumos, recetas con presentaciones, producción de lotes, planificador, compras, recepciones con lectura de facturas por IA</li>
+  <li>Stock por lotes FEFO con RPC de consumo y reintegro</li>
+  <li>Precios dinámicos v5 con flete CIF por zona, comisión y flete personalizados por cliente</li>
+  <li>Cobranzas: pagos a pedido/factura/cuenta, multipedido, sin factura, recibos imprimibles</li>
+  <li>Comisiones de preventistas y comercializadora al entregar, con pago por cliente y devoluciones</li>
+  <li>Muestras como pedidos; Preventista (lista, simulador, contactos, app instalable)</li>
+  <li>Sitio público con CMS; rediseño visual del panel (Índigo); chat interno; export CSV; tests (Vitest)</li>
+</ul>
+
+<h3>Pendiente / bugs conocidos</h3>
+<ul>
+  <li><strong>Módulo de crédito roto:</strong> <code>b2b_accounts</code> vacía (pantalla Cuentas corrientes sin clientes, límite de crédito sin efecto). Decidir: mover a <code>profiles</code> o retirar</li>
+  <li><strong>Comisión "sobre lo cobrado"</strong>: diseñada, no implementada</li>
+  <li>Ícono PWA del repartidor (PNG 192/512) y service worker</li>
+  <li>Facturación electrónica AFIP/CAE (sin implementación de API)</li>
+  <li>Historial de precios; alertas de stock bajo por email; remito con firma física; optimización automática de ruta</li>
+  <li>Tests de <code>calcularPrecio</code>; migrar <code>listUsers</code> restantes; unificar chequeos de rol en <code>pedidos/actions.ts</code>; ~460 <code>as any</code>; partir <code>pedidos/actions.ts</code> (816+ líneas)</li>
+  <li>Objetivos con lista de estados propia; dump de esquema como línea base de migraciones</li>
+  <li>Zona "La Plata" por crear; IVA sobre flete embebido por confirmar con el contador; chat sin zona en el precio</li>
+  <li>Proyecto <code>kioscos-ideia</code> (sistema separado para kioscos que compran a Minutas): scaffold en <code>c:\claude-proyecto\kioscos-ideia</code>, pendiente credenciales</li>
+</ul>
+</section>
+
+<!-- ──────────────────── CHANGELOG ──────────────────── -->
+<section>
+<h2 id="changelog">Registro de cambios del documento</h2>
+<div class="tbl">
+<table>
+  <thead><tr><th>Versión</th><th>Fecha</th><th>Cambios</th></tr></thead>
+  <tbody>
+    <tr><td>2.0</td><td>26/9/2026</td><td>Revisión completa contra código y base. Correcciones: Next.js 16 y <code>proxy.ts</code>; el hook del JWT ya preserva el rol de staff; el remito requiere login; estado <code>cancelled</code>; el cliente B2B vive en <code>profiles</code> (no en <code>b2b_accounts</code>, que está vacía); tablas <code>muestras/muestra_items</code>, <code>zonas</code>, <code>contactos_preventista</code> no existen (son <code>orders</code> canal muestra, <code>delivery_zones</code>, <code>contact_logs</code>); no hay rol "preventista" propio; <code>parametros_globales</code> es clave/valor. Nuevo: entrega parcial, flete CIF, comisiones, cocina completa, muestras como pedidos, cobranzas, CMS, IA, tests, rediseño Índigo, alerta del módulo de crédito.</td></tr>
+    <tr><td>1.0</td><td>25/8/2026</td><td>Versión inicial.</td></tr>
+  </tbody>
+</table>
+</div>
+</section>
+
+
+</main>
+</div>
