@@ -106,7 +106,7 @@ export async function crearProducto(formData: FormData): Promise<{ error: string
   redirect("/admin/productos");
 }
 
-export async function actualizarProducto(productId: string, formData: FormData) {
+export async function actualizarProducto(productId: string, formData: FormData): Promise<{ error: string } | void> {
   await requireAdmin();
   const supabase = createAdminClient();
 
@@ -122,7 +122,11 @@ export async function actualizarProducto(productId: string, formData: FormData) 
     .from("products")
     .update(payload)
     .eq("id", productId);
-  if (error) throw new Error(error.message);
+  if (error) {
+    if (error.code === "23505" && error.message?.includes("sku"))
+      return { error: `El SKU "${payload.sku}" ya existe. Usá otro código.` };
+    return { error: error.message };
+  }
 
   revalidatePath("/admin/productos");
   revalidatePath("/tienda");

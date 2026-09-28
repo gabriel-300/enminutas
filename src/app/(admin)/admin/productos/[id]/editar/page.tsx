@@ -37,7 +37,7 @@ export default async function EditarProductoPage({ params }: { params: Promise<{
 
   async function handleUpdate(formData: FormData) {
     "use server";
-    await actualizarProducto(id, formData);
+    return actualizarProducto(id, formData);
   }
 
   return (
