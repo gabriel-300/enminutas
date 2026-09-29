@@ -16,7 +16,13 @@ export async function generateMetadata(): Promise<Metadata> {
   const role = (user?.app_metadata?.role as string | undefined) ?? null;
 
   if (role === "vendedor") {
-    return { title: "Dashboard — Admin En Minutas", manifest: "/preventista-manifest.json" };
+    return {
+      title: "Dashboard — Admin En Minutas",
+      manifest: "/preventista-manifest.json",
+      // iOS ignora los íconos del manifest y usa apple-touch-icon.
+      icons: { apple: "/apple-touch-icon.png" },
+      appleWebApp: { capable: true, title: "EM Preventista", statusBarStyle: "default" },
+    };
   }
   return { title: "Dashboard — Admin En Minutas" };
 }
