@@ -364,7 +364,7 @@ section { margin-bottom: 4px; }
 <nav class="sidebar no-print">
   <div class="sidebar-logo">
     <div class="sidebar-logo-em">EnMinutas / contexto técnico</div>
-    <div class="sidebar-logo-sub">v2.0 · Septiembre 2026</div>
+    <div class="sidebar-logo-sub">v2.1 · Septiembre 2026</div>
   </div>
 
   <div class="nav-section">
@@ -423,7 +423,7 @@ section { margin-bottom: 4px; }
 <h1>Contexto técnico completo — En Minutas</h1>
 <div class="doc-meta">
   Repositorio: github.com/gabriel-300/minutas · Producción: enminutas.vercel.app<br>
-  Versión 2.0 · Actualizado: 26 de septiembre de 2026 (verificado contra el código y la base de producción) · Para uso interno — pasar a Claude como contexto de sesión
+  Versión 2.1 · Actualizado: 30 de septiembre de 2026 (verificado contra el código y la base de producción) · Para uso interno — pasar a Claude como contexto de sesión
 </div>
 
 <div class="callout info">
@@ -596,10 +596,10 @@ vercel.json                 <span class="cm"># región gru1 + cron /api/ping</sp
   <thead><tr><th>Tabla</th><th>Descripción</th><th>Columnas / notas clave</th></tr></thead>
   <tbody>
     <tr><td>profiles</td><td>Perfil de cada usuario. Los <strong>clientes B2B viven acá</strong> (no en b2b_accounts)</td><td>id (= auth.users.id), full_name, phone, role (⚠ desincronizado), <strong>canal_id → canales</strong>, zona_id, vendedor_id (preventista asignado), b2b_status, descuento_extra_pct, <strong>comision_pct_override</strong>, <strong>flete_pct_override</strong>, comision_preventista_pct, es_comercializadora. <code>profiles.canal</code> (enum) es heredada: no usar</td></tr>
-    <tr><td>direcciones_entrega</td><td>Direcciones de entrega de clientes B2B</td><td>profile_id, alias, calle, numero, ciudad, zona_id, es_principal, activo</td></tr>
+    <tr><td>direcciones_entrega</td><td>Puntos de entrega de clientes B2B (varios por cliente)</td><td>profile_id, alias (nombre de la sucursal), calle, numero, ciudad, zona_id, es_principal, activo, telefono, notas_entrega</td></tr>
     <tr><td>products</td><td>Catálogo</td><td>sku, name, codigo, linea_id, categoria ('Estándar'|'Premium'|'Venta directa'), costo (<em>por bolsa</em>), bolsas_caja, u_bolsa, kg_caja, pkg_unitario, pkg_bulto, divisiones_display, stock_minimo, is_active, <strong>es_muestra</strong>, vida_util_dias, receta_producto_id. Las columnas de precio (precio_lista, precio_dist, price_b2b, margen_*) son <strong>heredadas</strong></td></tr>
     <tr><td>lineas_producto</td><td>Líneas (Empanadas, Chipas…)</td><td>id (int, sequence manual), nombre, orden, <strong>canal_exclusivo_id</strong> (línea visible solo para ese canal)</td></tr>
-    <tr><td>orders</td><td>Pedidos y muestras</td><td>order_number, channel, status (ENUM), customer_id, payment_method, subtotal, discount, total (c/IVA), <code>cargo_adicional_monto/concepto</code>, <code>flete_pct</code>, <code>comision_pct</code>, aprobado_at, despachado_at, entregado_at, despacho_info (JSONB), delivered_snapshot (JSONB), firma_*, orden_ruta, origen_order_id, fecha_compromiso, notes_visible_cliente, campos muestra_*, solicitado_por, delivery_zone_id</td></tr>
+    <tr><td>orders</td><td>Pedidos y muestras</td><td>order_number, channel, status (ENUM), customer_id, payment_method, subtotal, discount, total (c/IVA), <code>cargo_adicional_monto/concepto</code>, <code>flete_pct</code>, <code>comision_pct</code>, aprobado_at, despachado_at, entregado_at, despacho_info (JSONB), delivered_snapshot (JSONB), firma_*, orden_ruta, origen_order_id, fecha_compromiso, notes_visible_cliente, campos muestra_*, solicitado_por, delivery_zone_id, <code>direccion_entrega_id</code> (punto de entrega elegido)</td></tr>
     <tr><td>order_lines</td><td>Ítems del pedido</td><td>order_id, product_id, quantity, unit_price, line_total, product_snapshot (JSONB con nombre, unit_label, precio…)</td></tr>
     <tr><td>order_events</td><td>Historial de cambios de estado</td><td>order_id, status, message, actor_id, created_at</td></tr>
     <tr><td>lotes</td><td>Stock real de producto terminado</td><td>producto_id, numero_lote, fecha_vencimiento, cantidad_inicial, cantidad_actual, activo, deposito_id, costo_unitario</td></tr>
@@ -714,7 +714,7 @@ vercel.json                 <span class="cm"># región gru1 + cron /api/ping</sp
 <ul>
   <li><code>auth.users</code> — cuenta de autenticación con <code>app_metadata.role = "customer_b2b"</code></li>
   <li><code>profiles</code> — <strong>fuente de verdad del cliente</strong>: nombre, teléfono, <code>canal_id</code>, <code>zona_id</code>, <code>vendedor_id</code> (preventista), <code>descuento_extra_pct</code>, <code>comision_pct_override</code>, <code>flete_pct_override</code>, <code>b2b_status</code></li>
-  <li><code>direcciones_entrega</code> — varias por cliente, una principal</li>
+  <li><code>direcciones_entrega</code> — <strong>puntos de entrega</strong>: varios por cliente, uno principal. El cliente (<code>profiles</code>) es la razón social: un CUIT y una cuenta corriente para todas sus sucursales. Al crear un pedido se elige el punto; el servidor valida que sea del cliente y de ahí toma zona, dirección y flete. El pedido guarda <code>direccion_entrega_id</code>, <code>delivery_zone_id</code> y un snapshot de la dirección (con <code>label</code> = sucursal). Distribución, hoja de ruta, repartidor y remito usan la zona y sucursal <strong>del pedido</strong>, no <code>profiles.zona_id</code> (que queda como dato heredado del cliente; ver <code>normalizarMuestra</code> en <code>lib/order-channels.ts</code>). Un cliente con varias sucursales no se carga como varios clientes.</li>
   <li><code>b2b_accounts</code> — <strong>vacía y sin uso real</strong> (ver alerta en Esquema general)</li>
 </ul>
 
@@ -1437,6 +1437,7 @@ comercializadora   = comisión_total − preventista
 <table>
   <thead><tr><th>Versión</th><th>Fecha</th><th>Cambios</th></tr></thead>
   <tbody>
+    <tr><td>2.1</td><td>30/9/2026</td><td>Clientes con varios puntos de entrega. Nueva columna <code>orders.direccion_entrega_id</code>; <code>direcciones_entrega</code> gana <code>telefono</code> y <code>notas_entrega</code>. Regla: un cliente = una razón social (un CUIT, una cuenta corriente); sus sucursales son puntos de entrega, no clientes distintos. La zona y la sucursal que ven Distribución/Repartidor/remito salen del pedido. Fusión de duplicados existentes (YPF Sartori, etc.) hecha con scripts en <code>supabase/scripts/</code>.</td></tr>
     <tr><td>2.0</td><td>26/9/2026</td><td>Revisión completa contra código y base. Correcciones: Next.js 16 y <code>proxy.ts</code>; el hook del JWT ya preserva el rol de staff; el remito requiere login; estado <code>cancelled</code>; el cliente B2B vive en <code>profiles</code> (no en <code>b2b_accounts</code>, que está vacía); tablas <code>muestras/muestra_items</code>, <code>zonas</code>, <code>contactos_preventista</code> no existen (son <code>orders</code> canal muestra, <code>delivery_zones</code>, <code>contact_logs</code>); no hay rol "preventista" propio; <code>parametros_globales</code> es clave/valor. Nuevo: entrega parcial, flete CIF, comisiones, cocina completa, muestras como pedidos, cobranzas, CMS, IA, tests, rediseño Índigo, alerta del módulo de crédito.</td></tr>
     <tr><td>1.0</td><td>25/8/2026</td><td>Versión inicial.</td></tr>
   </tbody>

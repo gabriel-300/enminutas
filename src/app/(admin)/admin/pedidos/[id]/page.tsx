@@ -38,6 +38,7 @@ export default async function AdminPedidoDetailPage({
       shipping_method, shipping_snapshot, delivered_snapshot, origen_order_id, fecha_compromiso, notes, notes_visible_cliente, created_at,
       guest_email, guest_phone, muestra_destinatario, muestra_contacto, muestra_observacion, muestra_prospecto_id, solicitado_por,
       customer:profiles!customer_id (full_name, phone, canal, canal_id, vendedor_id),
+      punto:direcciones_entrega!direccion_entrega_id (alias),
       lines:order_lines (
         id, quantity, unit_price, line_total,
         product_snapshot
@@ -266,6 +267,9 @@ export default async function AdminPedidoDetailPage({
           <p className="text-sm font-medium text-neutral-900">
             {shippingLabel[o.shipping_method] ?? o.shipping_method}
           </p>
+          {o.punto?.alias && (
+            <p className="text-xs font-medium text-neutral-800 mt-1">{o.punto.alias}</p>
+          )}
           {o.shipping_snapshot && (
             <p className="text-xs text-neutral-600 mt-1">
               {[

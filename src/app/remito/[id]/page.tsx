@@ -48,6 +48,7 @@ export default async function RemitoPage({
       customer_id, guest_email, guest_phone, muestra_destinatario, muestra_contacto, shipping_snapshot,
       firma_data, firma_fecha, firma_aclaracion, despacho_info, delivered_snapshot,
       customer:profiles!customer_id (full_name, phone),
+      punto:direcciones_entrega!direccion_entrega_id (alias),
       lines:order_lines (
         id, product_id, quantity, unit_price, line_total, product_snapshot
       )
@@ -66,9 +67,12 @@ export default async function RemitoPage({
 
   const esMuestra     = o.channel === "muestra";
   const customerName  = o.customer?.full_name ?? o.muestra_destinatario ?? o.guest_email ?? "Cliente";
-  const direccionEntrega = o.shipping_snapshot
+  const direccionCalle = o.shipping_snapshot
     ? [o.shipping_snapshot.street, o.shipping_snapshot.number, o.shipping_snapshot.city].filter(Boolean).join(", ")
     : "";
+  // Un cliente puede tener varias sucursales: el remito indica a cuál se entrega
+  const sucursal = (o.punto?.alias as string | undefined)?.trim() ?? "";
+  const direccionEntrega = [sucursal, direccionCalle].filter(Boolean).join(" — ");
   const customerPhone = o.customer?.phone ?? o.guest_phone ?? "";
 
   const paymentLabel: Record<string, string> = {

@@ -180,7 +180,8 @@ export function NuevoPedidoClient({
     startTransition(async () => {
       const result = await crearPedidoAdmin({
         clientId: cliente.id, canal: cliente.canal_nombre,
-        zonaId: direccion?.zona_id ?? null, items, notes, paymentMethod,
+        zonaId: direccion?.zona_id ?? null, direccionEntregaId: direccion?.id ?? null,
+        items, notes, paymentMethod,
         initialStatus, discountPct: descuentoPct, discountAmount: montoDescuento,
         cargoAdicionalConcepto: cargoMontoNum > 0 ? (cargoConcepto.trim() || null) : null,
         cargoAdicionalMonto: cargoMontoNum,

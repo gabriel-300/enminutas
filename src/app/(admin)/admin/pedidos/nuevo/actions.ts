@@ -31,10 +31,14 @@ type CrearPedidoPayload = {
   cargoAdicionalConcepto?: string | null;
   cargoAdicionalMonto?:    number;
   shippingAddress?: { calle: string | null; numero: string | null; piso: string | null; ciudad: string | null } | null;
+  /** Punto de entrega elegido (direcciones_entrega). Si viene, zona/flete/dirección se toman de acá. */
+  direccionEntregaId?: string | null;
 };
 
 export async function crearPedidoAdmin(payload: CrearPedidoPayload): Promise<{ orderId: string } | { error: string }> {
-  const { clientId, canal, zonaId, items, notes, paymentMethod, initialStatus, shippingAddress } = payload;
+  const { clientId, canal, items, notes, paymentMethod, initialStatus } = payload;
+  let zonaId          = payload.zonaId;
+  let shippingAddress = payload.shippingAddress;
   const cargoAdicionalMonto = Math.max(0, Number(payload.cargoAdicionalMonto ?? 0));
   if (isNaN(cargoAdicionalMonto)) return { error: "Monto de cargo adicional inválido" };
 
@@ -69,6 +73,25 @@ export async function crearPedidoAdmin(payload: CrearPedidoPayload): Promise<{ o
     if (!perfil || perfil.vendedor_id !== user.id) {
       return { error: "No autorizado: el cliente no te pertenece" };
     }
+  }
+
+  // Punto de entrega: debe ser del cliente y estar activo; de acá salen zona y dirección
+  // (no se confía en lo que mande el navegador).
+  let direccionEntregaId: string | null = null;
+  let puntoLabel: string | null = null;
+  if (payload.direccionEntregaId) {
+    const { data: punto } = await (adminClient as any)
+      .from("direcciones_entrega")
+      .select("id, alias, calle, numero, piso, ciudad, zona_id, profile_id, activo")
+      .eq("id", payload.direccionEntregaId)
+      .maybeSingle();
+    if (!punto || punto.profile_id !== clientId || !punto.activo) {
+      return { error: "El punto de entrega no corresponde a este cliente" };
+    }
+    direccionEntregaId = punto.id;
+    puntoLabel         = punto.alias ?? null;
+    zonaId             = punto.zona_id ?? null;
+    shippingAddress    = { calle: punto.calle, numero: punto.numero, piso: punto.piso, ciudad: punto.ciudad };
   }
 
   const productIds = items.map((i) => i.productId);
@@ -145,12 +168,13 @@ export async function crearPedidoAdmin(payload: CrearPedidoPayload): Promise<{ o
   const descuento      = Math.max(0, Math.min(subtotalBruto, validDiscount?.amount ?? 0));
   const total          = subtotalBruto - descuento + cargoAdicionalMonto;
 
-  const shippingSnapshot = (shippingAddress?.calle || shippingAddress?.ciudad)
+  const shippingSnapshot = (shippingAddress?.calle || shippingAddress?.ciudad || puntoLabel)
     ? {
-        street: shippingAddress.calle  ?? null,
-        number: shippingAddress.numero ?? null,
-        floor:  shippingAddress.piso   ?? null,
-        city:   shippingAddress.ciudad ?? null,
+        label:  puntoLabel,
+        street: shippingAddress?.calle  ?? null,
+        number: shippingAddress?.numero ?? null,
+        floor:  shippingAddress?.piso   ?? null,
+        city:   shippingAddress?.ciudad ?? null,
       }
     : null;
 
@@ -170,6 +194,7 @@ export async function crearPedidoAdmin(payload: CrearPedidoPayload): Promise<{ o
     payment_method:          paymentMethod,
     notes:                   notes || null,
     delivery_zone_id:        zonaId ?? null,
+    direccion_entrega_id:    direccionEntregaId,
     flete_pct:               fletePct,
     comision_pct:            comisionPctCliente,
     shipping_snapshot:       shippingSnapshot,

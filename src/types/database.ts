@@ -717,9 +717,11 @@ export type Database = {
           created_at: string | null
           es_principal: boolean
           id: string
+          notas_entrega: string | null
           numero: string | null
           piso: string | null
           profile_id: string
+          telefono: string | null
           zona_id: string | null
         }
         Insert: {
@@ -730,9 +732,11 @@ export type Database = {
           created_at?: string | null
           es_principal?: boolean
           id?: string
+          notas_entrega?: string | null
           numero?: string | null
           piso?: string | null
           profile_id: string
+          telefono?: string | null
           zona_id?: string | null
         }
         Update: {
@@ -743,9 +747,11 @@ export type Database = {
           created_at?: string | null
           es_principal?: boolean
           id?: string
+          notas_entrega?: string | null
           numero?: string | null
           piso?: string | null
           profile_id?: string
+          telefono?: string | null
           zona_id?: string | null
         }
         Relationships: [
@@ -1396,6 +1402,7 @@ export type Database = {
           customer_id: string | null
           delivered_snapshot: Json | null
           delivery_zone_id: string | null
+          direccion_entrega_id: string | null
           flete_pct: number
           comision_pct: number | null
           despachado_at: string | null
@@ -1444,6 +1451,7 @@ export type Database = {
           customer_id?: string | null
           delivered_snapshot?: Json | null
           delivery_zone_id?: string | null
+          direccion_entrega_id?: string | null
           flete_pct?: number
           comision_pct?: number | null
           despachado_at?: string | null
@@ -1492,6 +1500,7 @@ export type Database = {
           customer_id?: string | null
           delivered_snapshot?: Json | null
           delivery_zone_id?: string | null
+          direccion_entrega_id?: string | null
           flete_pct?: number
           comision_pct?: number | null
           despachado_at?: string | null

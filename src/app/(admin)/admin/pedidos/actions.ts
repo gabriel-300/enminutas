@@ -747,7 +747,7 @@ export async function crearPedidoConFaltante(
 
   const { data: original } = await (supabase as any)
     .from("orders")
-    .select("id, order_number, status, channel, customer_id, payment_method, delivery_zone_id, flete_pct, comision_pct, shipping_snapshot, delivered_snapshot")
+    .select("id, order_number, status, channel, customer_id, payment_method, delivery_zone_id, direccion_entrega_id, flete_pct, comision_pct, shipping_snapshot, delivered_snapshot")
     .eq("id", orderId)
     .single();
   if (!original) return { error: "Pedido no encontrado" };
@@ -796,6 +796,7 @@ export async function crearPedidoConFaltante(
     payment_method:          original.payment_method,
     notes:                   `Faltante del pedido ${original.order_number}`,
     delivery_zone_id:        original.delivery_zone_id,
+    direccion_entrega_id:    original.direccion_entrega_id ?? null, // el faltante va al mismo punto de entrega
     flete_pct:               Number(original.flete_pct ?? 0), // el faltante va al mismo precio, con el mismo flete incluido
     comision_pct:            original.comision_pct ?? null,   // y con la misma comisión incluida
     shipping_snapshot:       original.shipping_snapshot,
