@@ -17,6 +17,8 @@ type Order = {
   payment_method: string;
   created_at:     string;
   customer_name:  string | null;
+  /** Punto de entrega del pedido (un cliente puede tener varias sucursales) */
+  sucursal:       string | null;
   customer_email: string | null;
   canal:          string | null;
   vendedor_name:  string | null;
@@ -102,6 +104,7 @@ export function PedidosClient({ orders, esAdmin = false }: { orders: Order[]; es
       if (
         !o.order_number.toLowerCase().includes(q) &&
         !(o.customer_name ?? "").toLowerCase().includes(q) &&
+        !(o.sucursal ?? "").toLowerCase().includes(q) &&
         !(o.customer_email ?? "").toLowerCase().includes(q)
       ) return false;
     }
@@ -181,6 +184,9 @@ export function PedidosClient({ orders, esAdmin = false }: { orders: Order[]; es
             <p className="text-sm text-neutral-700">
               {order.customer_name ?? order.customer_email ?? "Invitado"}
             </p>
+            {order.sucursal && (
+              <p className="text-xs text-neutral-600">Entrega: {order.sucursal}</p>
+            )}
             {order.vendedor_name && (
               <p className="text-xs text-neutral-600 mb-1">Vendedor: {order.vendedor_name}</p>
             )}
@@ -258,6 +264,9 @@ export function PedidosClient({ orders, esAdmin = false }: { orders: Order[]; es
                   <span className="text-neutral-800">
                     {order.customer_name ?? order.customer_email ?? "Invitado"}
                   </span>
+                  {order.sucursal && (
+                    <span className="block text-xs text-neutral-600">{order.sucursal}</span>
+                  )}
                 </td>
                 <td className="px-4 py-3 text-neutral-600 text-xs">
                   {order.vendedor_name ?? <span className="text-neutral-500">—</span>}

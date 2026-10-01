@@ -222,6 +222,7 @@ export default async function AdminPedidoDetailPage({
         <div className="bg-white rounded-xl border border-neutral-200 shadow-sm p-5">
           <p className="text-xs font-medium text-neutral-600 mb-3">Cliente</p>
           <p className="text-sm font-medium text-neutral-900">{customerName}</p>
+          {o.punto?.alias && <p className="text-sm text-neutral-600 mt-1">Entrega: {o.punto.alias}</p>}
           {esMuestra && o.muestra_contacto && <p className="text-sm text-neutral-600 mt-1">Contacto: {o.muestra_contacto}</p>}
           {customerEmail && <p className="text-sm text-neutral-600 mt-1">{customerEmail}</p>}
           {customerPhone && <p className="text-sm text-neutral-600 mt-1">{customerPhone}</p>}

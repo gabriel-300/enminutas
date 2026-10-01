@@ -34,7 +34,8 @@ export default async function AdminPedidosPage() {
     .select(`
       id, order_number, channel, status, total, payment_method, created_at,
       customer_id, guest_email, origen_order_id, muestra_destinatario, solicitado_por,
-      customer:profiles!customer_id (full_name, canal, vendedor_id)
+      customer:profiles!customer_id (full_name, canal, vendedor_id),
+      punto:direcciones_entrega!direccion_entrega_id (alias)
     `)
     .order("created_at", { ascending: false })
     .limit(200);
@@ -106,8 +107,9 @@ export default async function AdminPedidosPage() {
     payment_method: o.payment_method,
     created_at: o.created_at,
     customer_name:  o.customer?.full_name ?? (o.customer_id ? emailMap[o.customer_id] : null) ?? o.muestra_destinatario ?? null,
+    sucursal:       (o.punto?.alias as string | undefined)?.trim() || null,
     customer_email: o.guest_email ?? null,
-    canal:          (o.customer as any)?.canal ?? null,
+    canal:         (o.customer as any)?.canal ?? null,
     vendedor_name:  o.customer?.vendedor_id ? (vendedorNombreMap[o.customer.vendedor_id] ?? null) : null,
   }));
 
