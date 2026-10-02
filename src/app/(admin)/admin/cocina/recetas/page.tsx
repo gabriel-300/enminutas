@@ -3,7 +3,7 @@ import Link from "next/link";
 import { createClient, createAdminClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { CostoCajaEdit } from "./costo-edit";
-import { factorABase, cajasPorLote } from "@/lib/receta-base";
+import { armarRecetaMap } from "@/lib/receta-costos";
 
 const fmtRinde = (n: number) => new Intl.NumberFormat("es-AR", { maximumFractionDigits: 2 }).format(n);
 
@@ -44,47 +44,11 @@ export default async function RecetasPage() {
     adminClient.from("products").select("id, name, kg_caja"),
   ]);
 
-  const recipeMap: Record<string, {
-    yieldCajas:   number | null;
-    totalMinutos: number;
-    pasos:        number;
-    costoCaja:    number;
-    /** producto dueño de la receta, si este producto es una presentación */
-    baseId?:      string;
-  }> = {};
-
-  for (const r of (rawRecipes ?? []) as any[]) {
-    const totalMinutos = (r.steps ?? []).reduce((s: number, st: any) => s + Number(st.minutes), 0);
-    const costoLote    = (r.ingredients ?? []).reduce((s: number, ing: any) => {
-      const precio = Number(ing.insumo?.precio_unitario ?? 0);
-      return s + Number(ing.cantidad) * precio;
-    }, 0);
-    const costoCaja = r.yield_cajas > 0 ? costoLote / r.yield_cajas : 0;
-    recipeMap[r.product_id] = {
-      yieldCajas: r.yield_cajas,
-      totalMinutos,
-      pasos: r.steps?.length ?? 0,
-      costoCaja,
-    };
-  }
-
   const products  = (rawProducts ?? []) as any[];
   const todos     = (todosKg ?? []) as { id: string; name: string; kg_caja: number | null }[];
-  const kgCajaDe  = (id: string) => todos.find((p) => p.id === id)?.kg_caja;
 
   // Presentaciones: heredan pasos/tiempo de la receta base; rendimiento y costo se prorratean por peso
-  for (const p of products) {
-    const base = p.receta_producto_id ? recipeMap[p.receta_producto_id] : null;
-    if (!base || recipeMap[p.id]) continue;
-    const factor = factorABase(p.kg_caja, kgCajaDe(p.receta_producto_id));
-    recipeMap[p.id] = {
-      yieldCajas:   cajasPorLote(base.yieldCajas, factor),
-      totalMinutos: base.totalMinutos,
-      pasos:        base.pasos,
-      costoCaja:    factor !== null ? base.costoCaja * factor : 0,
-      baseId:       p.receta_producto_id,
-    };
-  }
+  const recipeMap = armarRecetaMap(products, (rawRecipes ?? []) as any[], todos);
 
   const conReceta = products.filter((p) => recipeMap[p.id]);
   const sinReceta = products.filter((p) => !recipeMap[p.id]);
