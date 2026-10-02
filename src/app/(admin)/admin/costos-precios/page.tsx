@@ -1,3 +1,4 @@
+import { Fragment } from "react";
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { createClient, createAdminClient } from "@/lib/supabase/server";
@@ -87,8 +88,8 @@ export default async function CostosPreciosPage() {
       <div className="mb-6">
         <h1 className="text-2xl font-semibold font-display text-neutral-900">Costos vs precios</h1>
         <p className="text-sm text-neutral-600 mt-1">
-          Cómo quedaría el precio de cada canal si el costo del producto fuera el costo de la receta.
-          Debajo de cada precio simulado se muestra el precio de hoy.
+          Precio por caja de cada canal: el que se cobra actualmente y cómo quedaría si el costo del producto
+          fuera el costo real de su receta.
         </p>
       </div>
 
@@ -96,13 +97,21 @@ export default async function CostosPreciosPage() {
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-neutral-100 text-left">
-                <th className="px-5 py-3 text-xs font-semibold text-neutral-600">Producto</th>
-                <th className="px-5 py-3 text-xs font-semibold text-neutral-600 text-right">Costo receta / caja</th>
+              <tr className="text-left">
+                <th rowSpan={2} className="px-5 py-3 text-xs font-semibold text-neutral-600 border-b border-neutral-100">Producto</th>
                 {CANALES.map((c) => (
-                  <th key={c.slug} className="px-5 py-3 text-xs font-semibold text-neutral-600 text-right">
+                  <th key={c.slug} colSpan={2}
+                    className="px-5 pt-3 pb-1 text-sm font-semibold text-neutral-900 text-center border-l border-neutral-100">
                     {c.label}
                   </th>
+                ))}
+              </tr>
+              <tr className="border-b border-neutral-100 text-left">
+                {CANALES.map((c) => (
+                  <Fragment key={c.slug}>
+                    <th className="px-5 pb-3 text-xs font-medium text-neutral-600 text-right border-l border-neutral-100">Precio actual</th>
+                    <th className="px-5 pb-3 text-xs font-medium text-neutral-600 text-right">Con costo de receta</th>
+                  </Fragment>
                 ))}
               </tr>
             </thead>
@@ -113,20 +122,15 @@ export default async function CostosPreciosPage() {
                     <p className="font-medium text-neutral-900">{f.name}</p>
                     <p className="text-xs text-neutral-600 font-mono">{f.sku}</p>
                   </td>
-                  <td className="px-5 py-3 text-right tabular-nums text-neutral-800">
-                    {f.costoReceta !== null ? fmtPeso(f.costoReceta) : <span className="text-neutral-500">—</span>}
-                  </td>
                   {CANALES.map((c) => (
-                    <td key={c.slug} className="px-5 py-3 text-right tabular-nums">
-                      {f.simulado ? (
-                        <>
-                          <p className="font-medium text-neutral-800">{fmtPeso(f.simulado[c.slug])}</p>
-                          {f.actual && (
-                            <p className="text-xs text-neutral-600">hoy {fmtPeso(f.actual[c.slug])}</p>
-                          )}
-                        </>
-                      ) : <span className="text-neutral-500">—</span>}
-                    </td>
+                    <Fragment key={c.slug}>
+                      <td className="px-5 py-3 text-right tabular-nums text-neutral-700 border-l border-neutral-100">
+                        {f.actual ? fmtPeso(f.actual[c.slug]) : <span className="text-neutral-500">—</span>}
+                      </td>
+                      <td className="px-5 py-3 text-right tabular-nums font-semibold text-neutral-900">
+                        {f.simulado ? fmtPeso(f.simulado[c.slug]) : <span className="text-neutral-500 font-normal">—</span>}
+                      </td>
+                    </Fragment>
                   ))}
                 </tr>
               ))}
@@ -136,8 +140,9 @@ export default async function CostosPreciosPage() {
       </div>
 
       <p className="text-xs text-neutral-600 mt-4 px-1">
-        Precio final por caja con IVA y comisión incluidos, sin flete de zona. Misma fórmula y márgenes que la lista de precios.
-        Los productos sin receta no tienen simulación.
+        Precios finales por caja con IVA y comisión incluidos, sin flete de zona, con la misma fórmula y márgenes que la lista de precios.
+        "Precio actual" usa el costo cargado en el producto; "Con costo de receta" usa el costo calculado desde los insumos de la receta.
+        Los productos sin receta no tienen esa simulación.
       </p>
     </div>
   );
