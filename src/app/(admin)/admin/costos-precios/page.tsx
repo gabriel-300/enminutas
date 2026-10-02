@@ -88,7 +88,7 @@ export default async function CostosPreciosPage() {
       <div className="mb-6">
         <h1 className="text-2xl font-semibold font-display text-neutral-900">Costos vs precios</h1>
         <p className="text-sm text-neutral-600 mt-1">
-          Precio por caja de cada canal: el que se cobra actualmente y cómo quedaría si el costo del producto
+          Precio por caja de cada canal: el que se cobra actualmente y el sugerido si el costo del producto
           fuera el costo real de su receta.
         </p>
       </div>
@@ -110,7 +110,7 @@ export default async function CostosPreciosPage() {
                 {CANALES.map((c) => (
                   <Fragment key={c.slug}>
                     <th className="px-5 pb-3 text-xs font-medium text-neutral-600 text-right border-l border-neutral-100">Precio actual</th>
-                    <th className="px-5 pb-3 text-xs font-medium text-neutral-600 text-right">Con costo de receta</th>
+                    <th className="px-5 pb-3 text-xs font-medium text-neutral-600 text-right">Precio sugerido</th>
                   </Fragment>
                 ))}
               </tr>
@@ -141,7 +141,7 @@ export default async function CostosPreciosPage() {
 
       <p className="text-xs text-neutral-600 mt-4 px-1">
         Precios finales por caja con IVA y comisión incluidos, sin flete de zona, con la misma fórmula y márgenes que la lista de precios.
-        "Precio actual" usa el costo cargado en el producto; "Con costo de receta" usa el costo calculado desde los insumos de la receta.
+        "Precio actual" usa el costo cargado en el producto; "Precio sugerido" usa el costo calculado desde los insumos de la receta.
         Los productos sin receta no tienen esa simulación.
       </p>
     </div>
