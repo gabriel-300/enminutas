@@ -11,7 +11,7 @@ import {
   Users, UserCheck, GitBranch, BarChart2, TrendingUp, Target, Tag, Gift,
   Package, Layers, BookOpen, Calendar, ShoppingCart, Clock, Database,
   FileText, CreditCard, RotateCcw, CheckSquare, DollarSign, Wallet,
-  Settings, HelpCircle, ChefHat, Factory, Globe,
+  Settings, HelpCircle, ChefHat, Factory, Globe, Scale,
   ChevronLeft, ChevronRight, ChevronDown, Menu, X,
 } from "lucide-react";
 
@@ -58,6 +58,7 @@ const SECTIONS: { label?: string; key?: string; items: NavEntry[] }[] = [
       { href: "/admin/rentabilidad",    label: "Rentabilidad",    icon: TrendingUp, roles: ["admin"] },
       { href: "/admin/objetivos",       label: "Objetivos",       icon: Target,    roles: ["admin"] },
       { href: "/admin/precios-cliente", label: "Precios cliente", icon: Tag,       roles: ["admin"] },
+      { href: "/admin/costos-precios",  label: "Costos vs precios", icon: Scale,   roles: ["admin"] },
     ],
   },
   {
