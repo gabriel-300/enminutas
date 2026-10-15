@@ -15,6 +15,7 @@ type Movimiento = {
   monto: number;
   referencia: string | null;
   order_id: string | null;
+  soloLectura?: boolean; // viene de la tabla pagos: se elimina desde Clientes B2B
 };
 
 type PedidoPendiente = {
@@ -436,14 +437,16 @@ export function CcClient({
                         {fmt(m.acum)}
                       </td>
                       <td className="px-5 py-3 text-right">
-                        <button
-                          onClick={() => handleDelete(m.id)}
-                          disabled={pending}
-                          className="p-1.5 rounded-lg text-neutral-500 hover:text-danger hover:bg-danger-bg transition-colors disabled:opacity-30"
-                          title="Eliminar"
-                        >
-                          <Trash2 className="size-3.5" />
-                        </button>
+                        {!m.soloLectura && (
+                          <button
+                            onClick={() => handleDelete(m.id)}
+                            disabled={pending}
+                            className="p-1.5 rounded-lg text-neutral-500 hover:text-danger hover:bg-danger-bg transition-colors disabled:opacity-30"
+                            title="Eliminar"
+                          >
+                            <Trash2 className="size-3.5" />
+                          </button>
+                        )}
                       </td>
                     </tr>
                   );

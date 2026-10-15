@@ -23,36 +23,19 @@ export default async function CuentasCorrientesPage() {
 
   const db = createAdminClient() as any;
 
-  // Clientes B2B aprobados
-  const { data: cuentas } = await db
-    .from("b2b_accounts")
-    .select("profile_id, business_name, cuit, credit_limit")
-    .eq("status", "approved")
-    .order("business_name");
+  // saldo = Σ cc_movimientos − Σ pagos, en una sola consulta (migración 20261015120000)
+  const { data: saldos, error: errSaldos } = await db.rpc("cc_saldos_clientes");
 
-  const clienteIds = ((cuentas ?? []) as any[]).map((c: any) => c.profile_id);
-
-  // Todos los movimientos de esos clientes
-  let movimientosPorCliente: Record<string, number> = {};
-  if (clienteIds.length > 0) {
-    const { data: movs } = await db
-      .from("cc_movimientos")
-      .select("cliente_id, monto")
-      .in("cliente_id", clienteIds);
-
-    for (const m of (movs ?? []) as any[]) {
-      movimientosPorCliente[m.cliente_id] =
-        (movimientosPorCliente[m.cliente_id] ?? 0) + Number(m.monto);
-    }
-  }
-
-  const filas = ((cuentas ?? []) as any[]).map((c: any) => ({
-    ...c,
-    saldo:  movimientosPorCliente[c.profile_id] ?? 0,
-    limite: Number(c.credit_limit ?? 0),
+  const filas = ((saldos ?? []) as any[]).map((c: any) => ({
+    profile_id:    c.cliente_id as string,
+    business_name: (c.nombre ?? "Sin nombre") as string,
+    cuit:          (c.cuit ?? "—") as string,
+    saldo:         Number(c.saldo),
+    limite:        Number(c.credit_limit ?? 0),
   }));
 
   const totalDeuda    = filas.reduce((s, f) => s + Math.max(0, f.saldo), 0);
+  const totalNeto     = filas.reduce((s, f) => s + f.saldo, 0);
   const clientesDeuda = filas.filter(f => f.saldo > 0).length;
   const enRiesgo      = filas.filter(f => f.limite > 0 && f.saldo >= f.limite * 0.9).length;
 
@@ -60,14 +43,21 @@ export default async function CuentasCorrientesPage() {
     <div className="p-4 md:px-10 md:py-8 md:pb-16">
       <div className="mb-6">
         <h1 className="text-2xl font-bold font-display text-neutral-900">Cuentas Corrientes</h1>
-        <p className="text-sm text-neutral-600 mt-1">Saldos y límites de crédito por cliente B2B</p>
+        <p className="text-sm text-neutral-600 mt-1">Saldo = movimientos de cuenta corriente − pagos registrados</p>
       </div>
+
+      {errSaldos && (
+        <div className="mb-6 rounded-xl border border-danger-border bg-danger-bg px-4 py-3 text-sm text-danger">
+          No se pudieron calcular los saldos: {errSaldos.message}. ¿Se ejecutó la migración 20261015120000_cc_saldos_clientes?
+        </div>
+      )}
 
       {/* KPIs */}
       <div className="grid grid-cols-3 gap-4 mb-8">
         <div className="bg-white rounded-xl border border-neutral-200 shadow-sm p-5">
           <p className="text-xs text-neutral-600 mb-1">Deuda total</p>
           <p className="text-2xl font-bold text-neutral-900 tabular-nums">{fmt(totalDeuda)}</p>
+          <p className="text-xs text-neutral-600 mt-0.5 tabular-nums">Neto con saldos a favor: {fmt(totalNeto)}</p>
         </div>
         <div className="bg-white rounded-xl border border-neutral-200 shadow-sm p-5">
           <p className="text-xs text-neutral-600 mb-1 flex items-center gap-1">
@@ -101,7 +91,7 @@ export default async function CuentasCorrientesPage() {
             {filas.length === 0 && (
               <tr>
                 <td colSpan={6} className="px-5 py-10 text-center text-sm text-neutral-600">
-                  No hay clientes B2B aprobados aún.
+                  No hay clientes con movimientos ni pagos registrados.
                 </td>
               </tr>
             )}

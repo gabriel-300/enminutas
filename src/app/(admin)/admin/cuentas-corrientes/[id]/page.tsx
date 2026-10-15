@@ -38,31 +38,57 @@ export default async function CcDetailPage({
   const db = createAdminClient() as any;
 
   // Datos del cliente
+  // La cuenta B2B es opcional: el cliente puede tener movimientos sin fila en b2b_accounts.
   const { data: cuenta } = await db
     .from("b2b_accounts")
-    .select("profile_id, business_name, cuit, iva_condition, credit_limit, domicilio_fiscal")
+    .select("profile_id, business_name, cuit, credit_limit")
     .eq("profile_id", id)
-    .single();
-
-  if (!cuenta) notFound();
+    .maybeSingle();
 
   const { data: perfil } = await db
     .from("profiles")
-    .select("full_name, phone")
+    .select("full_name, document_number")
     .eq("id", id)
-    .single();
+    .maybeSingle();
+
+  if (!cuenta && !perfil) notFound();
+
+  const nombre = cuenta?.business_name ?? perfil?.full_name ?? "Sin nombre";
+  const cuit   = cuenta?.cuit ?? perfil?.document_number ?? "—";
 
   // Movimientos ordenados desc
   const { data: movData } = await db
     .from("cc_movimientos")
-    .select("id, fecha, tipo, descripcion, monto, referencia, order_id")
+    .select("id, fecha, tipo, descripcion, monto, referencia, order_id, created_at")
     .eq("cliente_id", id)
     .order("fecha", { ascending: false })
     .order("created_at", { ascending: false });
 
-  const movimientos = (movData ?? []) as any[];
+  // Pagos del circuito clientes-b2b: restan del saldo y se muestran como movimientos (solo lectura acá).
+  const { data: pagosData } = await db
+    .from("pagos")
+    .select("id, fecha, monto, metodo, referencia, notas, order_id, created_at, order:orders!order_id(order_number)")
+    .eq("cliente_id", id);
+
+  const pagosComoMov = ((pagosData ?? []) as any[]).map((p: any) => ({
+    id:          `pago-${p.id}`,
+    fecha:       p.fecha,
+    tipo:        "pago",
+    descripcion: `Pago registrado${p.order?.order_number ? ` — Pedido ${p.order.order_number}` : ""} (${p.metodo})${p.notas ? ` · ${p.notas}` : ""}`,
+    monto:       -Math.abs(Number(p.monto)),
+    referencia:  p.referencia ?? null,
+    order_id:    p.order_id ?? null,
+    created_at:  p.created_at,
+    soloLectura: true,
+  }));
+
+  const movimientos = [...((movData ?? []) as any[]), ...pagosComoMov].sort((a, b) =>
+    a.fecha === b.fecha
+      ? String(b.created_at).localeCompare(String(a.created_at))
+      : String(b.fecha).localeCompare(String(a.fecha))
+  );
   const saldo  = movimientos.reduce((s, m) => s + Number(m.monto), 0);
-  const limite = Number(cuenta.credit_limit ?? 0);
+  const limite = Number(cuenta?.credit_limit ?? 0);
   const ag     = aging(movimientos);
 
   // Pedidos en CC con saldo pendiente
@@ -78,13 +104,10 @@ export default async function CcDetailPage({
   const pedidoIds = (pedidosCC ?? []).map((p: any) => p.id);
   let pagosPorPedido: Record<string, number> = {};
   if (pedidoIds.length > 0) {
-    const { data: pagos } = await db
-      .from("cc_movimientos")
-      .select("order_id, monto")
-      .in("order_id", pedidoIds)
-      .in("tipo", ["pago", "nota_credito"]);
-    for (const p of (pagos ?? []) as any[]) {
-      pagosPorPedido[p.order_id] = (pagosPorPedido[p.order_id] ?? 0) + Math.abs(Number(p.monto));
+    for (const m of movimientos) {
+      if (m.order_id && pedidoIds.includes(m.order_id) && (m.tipo === "pago" || m.tipo === "nota_credito")) {
+        pagosPorPedido[m.order_id] = (pagosPorPedido[m.order_id] ?? 0) + Math.abs(Number(m.monto));
+      }
     }
   }
 
@@ -108,8 +131,8 @@ export default async function CcDetailPage({
           <ChevronLeft className="size-5" />
         </Link>
         <div className="flex-1">
-          <h1 className="text-xl font-semibold font-display text-neutral-900">{cuenta.business_name}</h1>
-          <p className="text-sm text-neutral-600 mt-0.5">CUIT: {cuenta.cuit}</p>
+          <h1 className="text-xl font-semibold font-display text-neutral-900">{nombre}</h1>
+          <p className="text-sm text-neutral-600 mt-0.5">CUIT: {cuit}</p>
         </div>
         {/* Saldo en header */}
         <div className="text-right">
