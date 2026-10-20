@@ -101,7 +101,7 @@ export async function crearPedidoAdmin(payload: CrearPedidoPayload): Promise<{ o
     getParametros(),
     (adminClient as any)
       .from("profiles")
-      .select("comision_pct_override, flete_pct_override, canal:canales!canal_id (margen_std, margen_premium, markup_pvp)")
+      .select("comision_pct_override, flete_pct_override, descuento_extra_pct, canal:canales!canal_id (margen_std, margen_premium, markup_pvp)")
       .eq("id", clientId)
       .single(),
     (adminClient as any)
@@ -165,7 +165,11 @@ export async function crearPedidoAdmin(payload: CrearPedidoPayload): Promise<{ o
   const subtotalBruto = items.reduce((s, i) => s + (serverPrices.get(i.productId) ?? 0) * i.quantity, 0);
 
   const validDiscount  = calcVolumeDiscount(volumeDiscounts, totalQty, subtotalBruto);
-  const descuento      = Math.max(0, Math.min(subtotalBruto, validDiscount?.amount ?? 0));
+  // Descuento extra del cliente: % sobre el neto s/IVA, que como el IVA es proporcional
+  // equivale al mismo % del subtotal c/IVA. Se suma al de volumen.
+  const extraPct       = Math.max(0, Number(clientProfileRes.data?.descuento_extra_pct ?? 0));
+  const descuentoExtra = subtotalBruto * extraPct / 100;
+  const descuento      = Math.max(0, Math.min(subtotalBruto, (validDiscount?.amount ?? 0) + descuentoExtra));
   const total          = subtotalBruto - descuento + cargoAdicionalMonto;
 
   const shippingSnapshot = (shippingAddress?.calle || shippingAddress?.ciudad || puntoLabel)

@@ -18,6 +18,7 @@ type ClienteB2B = {
   markup_pvp:            number;
   comision_pct_override: number | null;
   flete_pct_override:    number | null;   // fracción; pisa el % de la zona (0 = sin flete)
+  descuento_extra_pct:   number;          // % sobre el neto s/IVA (= % del subtotal c/IVA)
 };
 
 type DireccionB2B = {
@@ -163,9 +164,11 @@ export function NuevoPedidoClient({
 
   const tierAplicado   = [...tiers].sort((a, b) => b.minCajas - a.minCajas).find((t) => totalQty >= t.minCajas) ?? null;
   const descuentoPct   = tierAplicado?.descuentoPct ?? 0;
-  const montoDescuento = Math.round(subtotal * descuentoPct / 100 * 100) / 100;
-  const totalConDesc   = subtotal - montoDescuento;
-  const totalFinal     = tierAplicado ? totalConDesc : subtotal;
+  const montoVolumen   = Math.round(subtotal * descuentoPct / 100 * 100) / 100;
+  const extraPct       = cliente?.descuento_extra_pct ?? 0;
+  const montoExtra     = Math.round(subtotal * extraPct / 100 * 100) / 100;
+  const montoDescuento = Math.min(subtotal, montoVolumen + montoExtra);
+  const totalFinal     = subtotal - montoDescuento;
   const cargoMontoNum  = Math.max(0, parseFloat(cargoMonto.replace(",", ".")) || 0);
   const totalConCargo  = totalFinal + cargoMontoNum;
 
@@ -444,7 +447,13 @@ export function NuevoPedidoClient({
                 {tierAplicado && (
                   <div className="flex items-center justify-between px-3 py-2 rounded-xl bg-success-bg border border-success-border text-success text-xs font-medium">
                     <span>{tierAplicado.label}</span>
-                    <span className="tabular-nums">− {fmt(montoDescuento)}</span>
+                    <span className="tabular-nums">− {fmt(montoVolumen)}</span>
+                  </div>
+                )}
+                {montoExtra > 0 && (
+                  <div className="flex items-center justify-between px-3 py-2 rounded-xl bg-success-bg border border-success-border text-success text-xs font-medium">
+                    <span>Descuento cliente {extraPct}%</span>
+                    <span className="tabular-nums">− {fmt(montoExtra)}</span>
                   </div>
                 )}
                 {!tierAplicado && tiers.length > 0 && (() => {
@@ -455,7 +464,7 @@ export function NuevoPedidoClient({
                     </div>
                   ) : null;
                 })()}
-                {tierAplicado && (
+                {montoDescuento > 0 && (
                   <div className="flex justify-between text-sm text-neutral-600">
                     <span>Subtotal</span>
                     <span className="tabular-nums line-through">{fmt(subtotal)}</span>

@@ -364,7 +364,7 @@ section { margin-bottom: 4px; }
 <nav class="sidebar no-print">
   <div class="sidebar-logo">
     <div class="sidebar-logo-em">EnMinutas / contexto técnico</div>
-    <div class="sidebar-logo-sub">v2.2 · Octubre 2026</div>
+    <div class="sidebar-logo-sub">v2.3 · Octubre 2026</div>
   </div>
 
   <div class="nav-section">
@@ -1031,7 +1031,7 @@ pvp_unidad    = round0( final_civa × (1 + markup_pvp) / div_unidades )
 <h3>Otras capas de precio</h3>
 <ul>
   <li><strong>Comisión por cliente:</strong> <code>profiles.comision_pct_override</code> (NULL = global 15%; 0 = sin comisión). Es el "pool" que ese cliente lleva dentro del precio.</li>
-  <li><code>profiles.descuento_extra_pct</code>, <code>canales.descuento_pct</code> y <code>volume_discounts</code> (por cantidad de cajas). Lo aplicado queda en <code>orders.discount</code> y en los precios de línea.</li>
+  <li><code>profiles.descuento_extra_pct</code>: % sobre el neto s/IVA del pedido (equivale al mismo % del subtotal c/IVA); se suma al descuento de <code>volume_discounts</code> (por cantidad de cajas) y queda en <code>orders.discount</code>. Se calcula en el servidor al crear el pedido desde Nuevo pedido. <code>canales.descuento_pct</code> está sin uso (los márgenes por canal lo reemplazan).</li>
   <li>Las líneas con <code>lineas_producto.canal_exclusivo_id</code> se ocultan a los demás canales en el catálogo. Los productos con <code>es_muestra = true</code> no se venden ni aparecen en catálogos, listas ni simulador.</li>
 </ul>
 
@@ -1437,6 +1437,7 @@ comercializadora   = comisión_total − preventista
 <table>
   <thead><tr><th>Versión</th><th>Fecha</th><th>Cambios</th></tr></thead>
   <tbody>
+    <tr><td>2.3</td><td>20/10/2026</td><td>Descuento extra del cliente (<code>profiles.descuento_extra_pct</code>) vuelve a aplicarse: desde la fórmula v5 se guardaba pero ningún cálculo lo leía. Es un % sobre el neto s/IVA (= mismo % del subtotal c/IVA), se suma al descuento por volumen y queda en <code>orders.discount</code>; el remito lo muestra s/IVA. Aplica en Nuevo pedido (admin/vendedor). <code>canales.descuento_pct</code> sigue sin aplicarse (los márgenes por canal ya lo reemplazan). Pendiente: portal B2B (<code>b2b/catalogo</code>) sigue guardando <code>discount = 0</code>.</td></tr>
     <tr><td>2.2</td><td>15/10/2026</td><td>Saldo de cuenta corriente = <code>Σ cc_movimientos.monto − Σ pagos.monto</code> por cliente (los pagos/NC de <code>cc_movimientos</code> van con monto negativo; <code>pagos</code> es el circuito de cobros de Clientes B2B). Nueva función <code>cc_saldos_clientes()</code> (migración 20261015120000). La pantalla Ctas. corrientes ya no depende de <code>b2b_accounts</code>; el límite de crédito es opcional. Pendiente: alertas y chequeo de límite al aprobar pedidos aún suman solo <code>cc_movimientos</code>.</td></tr>
     <tr><td>2.1</td><td>30/9/2026</td><td>Clientes con varios puntos de entrega. Nueva columna <code>orders.direccion_entrega_id</code>; <code>direcciones_entrega</code> gana <code>telefono</code> y <code>notas_entrega</code>. Regla: un cliente = una razón social (un CUIT, una cuenta corriente); sus sucursales son puntos de entrega, no clientes distintos. La zona y la sucursal que ven Distribución/Repartidor/remito salen del pedido. Fusión de duplicados existentes (YPF Sartori, etc.) hecha con scripts en <code>supabase/scripts/</code>.</td></tr>
     <tr><td>2.0</td><td>26/9/2026</td><td>Revisión completa contra código y base. Correcciones: Next.js 16 y <code>proxy.ts</code>; el hook del JWT ya preserva el rol de staff; el remito requiere login; estado <code>cancelled</code>; el cliente B2B vive en <code>profiles</code> (no en <code>b2b_accounts</code>, que está vacía); tablas <code>muestras/muestra_items</code>, <code>zonas</code>, <code>contactos_preventista</code> no existen (son <code>orders</code> canal muestra, <code>delivery_zones</code>, <code>contact_logs</code>); no hay rol "preventista" propio; <code>parametros_globales</code> es clave/valor. Nuevo: entrega parcial, flete CIF, comisiones, cocina completa, muestras como pedidos, cobranzas, CMS, IA, tests, rediseño Índigo, alerta del módulo de crédito.</td></tr>

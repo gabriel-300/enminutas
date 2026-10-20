@@ -33,7 +33,7 @@ export default async function NuevoPedidoPage({
           let q = adminClient
             .from("profiles")
             .select(`
-              id, full_name, comision_pct_override, flete_pct_override,
+              id, full_name, comision_pct_override, flete_pct_override, descuento_extra_pct,
               canal:canales!canal_id (nombre, slug, margen_std, margen_premium, markup_pvp)
             `)
             .in("id", b2bIds)
@@ -84,6 +84,7 @@ export default async function NuevoPedidoPage({
     markup_pvp:            Number(c.canal?.markup_pvp     ?? 0.80),
     comision_pct_override: c.comision_pct_override != null ? Number(c.comision_pct_override) : null,
     flete_pct_override:    c.flete_pct_override != null ? Number(c.flete_pct_override) : null,
+    descuento_extra_pct:   Number(c.descuento_extra_pct ?? 0),
   }));
 
   const direccionesMap: Record<string, any[]> = {};

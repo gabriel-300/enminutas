@@ -300,8 +300,8 @@ export default async function RemitoPage({
             )}
             {descuento > 0 && (
               <div style={{ display: "flex", justifyContent: "space-between", padding: "4px 0", color: "#166534" }}>
-                <span>Descuento</span>
-                <span style={{ fontFamily: "monospace" }}>− {fmt(descuento)}</span>
+                <span>Descuento s/IVA</span>
+                <span style={{ fontFamily: "monospace" }}>− {fmt(Math.round(descuento / 1.21))}</span>
               </div>
             )}
             {cargoAdicional > 0 && (
