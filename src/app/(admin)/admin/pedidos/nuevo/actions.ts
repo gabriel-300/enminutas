@@ -130,7 +130,6 @@ export async function crearPedidoAdmin(payload: CrearPedidoPayload): Promise<{ o
   // Validar cantidades mínimas y recalcular precios server-side
   const productMap  = new Map<string, any>((productsRes.data ?? []).map((p: any) => [p.id, p]));
   const serverPrices = new Map<string, number>();
-  const serverListaSiva = new Map<string, number>();
 
   for (const item of items) {
     const prod = productMap.get(item.productId);
@@ -158,7 +157,6 @@ export async function crearPedidoAdmin(payload: CrearPedidoPayload): Promise<{ o
       flete_pct:          fletePct,
     });
     serverPrices.set(item.productId, precio.final_civa);
-    serverListaSiva.set(item.productId, precio.lista_siva);
   }
 
   // Calcular totales con precios server-side y descuento validado contra DB
@@ -167,11 +165,10 @@ export async function crearPedidoAdmin(payload: CrearPedidoPayload): Promise<{ o
   const subtotalBruto = items.reduce((s, i) => s + (serverPrices.get(i.productId) ?? 0) * i.quantity, 0);
 
   const validDiscount  = calcVolumeDiscount(volumeDiscounts, totalQty, subtotalBruto);
-  // Descuento extra del cliente: % sobre el neto (lista s/IVA, sin la comisión incluida en el
-  // precio), expresado c/IVA porque subtotal y total del pedido son c/IVA. Se suma al de volumen.
+  // Descuento extra del cliente: % sobre el neto s/IVA, que como el IVA es proporcional
+  // equivale al mismo % del subtotal c/IVA. Se suma al de volumen.
   const extraPct       = Math.max(0, Number(clientProfileRes.data?.descuento_extra_pct ?? 0));
-  const netoLista      = items.reduce((s, i) => s + (serverListaSiva.get(i.productId) ?? 0) * i.quantity, 0);
-  const descuentoExtra = netoLista * extraPct / 100 * (1 + params.iva_pct);
+  const descuentoExtra = subtotalBruto * extraPct / 100;
   const descuento      = Math.max(0, Math.min(subtotalBruto, (validDiscount?.amount ?? 0) + descuentoExtra));
   const total          = subtotalBruto - descuento + cargoAdicionalMonto;
 
