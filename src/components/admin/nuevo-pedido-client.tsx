@@ -166,7 +166,9 @@ export function NuevoPedidoClient({
   const descuentoPct   = tierAplicado?.descuentoPct ?? 0;
   const montoVolumen   = Math.round(subtotal * descuentoPct / 100 * 100) / 100;
   const extraPct       = cliente?.descuento_extra_pct ?? 0;
-  const montoExtra     = Math.round(subtotal * extraPct / 100 * 100) / 100;
+  // % sobre la lista s/IVA (neto, sin comisión), expresado c/IVA como el resto del pedido
+  const netoLista      = cartItems.reduce((s, p) => s + p.precio!.lista_siva * cart[p.id], 0);
+  const montoExtra     = Math.round(netoLista * extraPct / 100 * (1 + iva_pct) * 100) / 100;
   const montoDescuento = Math.min(subtotal, montoVolumen + montoExtra);
   const totalFinal     = subtotal - montoDescuento;
   const cargoMontoNum  = Math.max(0, parseFloat(cargoMonto.replace(",", ".")) || 0);
