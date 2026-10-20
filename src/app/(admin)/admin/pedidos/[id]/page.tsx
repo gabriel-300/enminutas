@@ -435,14 +435,14 @@ export default async function AdminPedidoDetailPage({
             <div className="space-y-2 text-sm">
               {Number(o.discount) > 0 && (
                 <div className="flex justify-between text-neutral-600">
-                  <span>Bruto</span>
-                  <span>{fmt(Number(o.subtotal))}</span>
+                  <span>Neto s/IVA</span>
+                  <span>{fmt(Number(o.subtotal) / 1.21)}</span>
                 </div>
               )}
               {Number(o.discount) > 0 && (
                 <div className="flex justify-between text-success">
-                  <span>Descuento</span>
-                  <span>− {fmt(Number(o.discount))}</span>
+                  <span>Descuento s/neto</span>
+                  <span>− {fmt(Number(o.discount) / 1.21)}</span>
                 </div>
               )}
               {Number(o.shipping_fee) > 0 && (
