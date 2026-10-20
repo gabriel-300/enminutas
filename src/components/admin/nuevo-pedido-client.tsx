@@ -447,13 +447,13 @@ export function NuevoPedidoClient({
                 {tierAplicado && (
                   <div className="flex items-center justify-between px-3 py-2 rounded-xl bg-success-bg border border-success-border text-success text-xs font-medium">
                     <span>{tierAplicado.label}</span>
-                    <span className="tabular-nums">− {fmt(montoVolumen)}</span>
+                    <span className="tabular-nums">− {fmt(montoVolumen / (1 + iva_pct))}</span>
                   </div>
                 )}
                 {montoExtra > 0 && (
                   <div className="flex items-center justify-between px-3 py-2 rounded-xl bg-success-bg border border-success-border text-success text-xs font-medium">
                     <span>Descuento cliente {extraPct}%</span>
-                    <span className="tabular-nums">− {fmt(montoExtra)}</span>
+                    <span className="tabular-nums">− {fmt(montoExtra / (1 + iva_pct))}</span>
                   </div>
                 )}
                 {!tierAplicado && tiers.length > 0 && (() => {
@@ -465,10 +465,20 @@ export function NuevoPedidoClient({
                   ) : null;
                 })()}
                 {montoDescuento > 0 && (
-                  <div className="flex justify-between text-sm text-neutral-600">
-                    <span>Subtotal</span>
-                    <span className="tabular-nums line-through">{fmt(subtotal)}</span>
-                  </div>
+                  <>
+                    <div className="flex justify-between text-sm text-neutral-600">
+                      <span>Neto s/IVA</span>
+                      <span className="tabular-nums">{fmt(subtotal / (1 + iva_pct))}</span>
+                    </div>
+                    <div className="flex justify-between text-sm text-neutral-600">
+                      <span>Neto con descuento</span>
+                      <span className="tabular-nums">{fmt(totalFinal / (1 + iva_pct))}</span>
+                    </div>
+                    <div className="flex justify-between text-sm text-neutral-600">
+                      <span>IVA ({Math.round(iva_pct * 100)}%)</span>
+                      <span className="tabular-nums">{fmt(totalFinal - totalFinal / (1 + iva_pct))}</span>
+                    </div>
+                  </>
                 )}
                 <div className="flex justify-between font-semibold text-neutral-900">
                   <span>Total c/IVA</span>
