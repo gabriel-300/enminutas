@@ -14,6 +14,37 @@ function parseDireccion(fd: FormData) {
   };
 }
 
+type EntregaInput = {
+  alias?: string; calle?: string; numero?: string; piso?: string; ciudad?: string; zona_id?: string;
+};
+
+// Direcciones de entrega cargadas en el alta (JSON en el campo "entregas").
+// La primera con datos queda como principal.
+function parseEntregas(fd: FormData) {
+  let raw: EntregaInput[] = [];
+  try { raw = JSON.parse((fd.get("entregas") as string | null) || "[]"); } catch { raw = []; }
+  const clean = (v?: string) => v?.trim() || null;
+  return raw
+    .map((e) => ({
+      alias:   clean(e.alias),
+      calle:   clean(e.calle),
+      numero:  clean(e.numero),
+      piso:    clean(e.piso),
+      ciudad:  clean(e.ciudad),
+      zona_id: clean(e.zona_id),
+    }))
+    .filter((e) => e.calle || e.numero || e.ciudad || e.alias)
+    .map((e, i) => ({ ...e, alias: e.alias ?? `Dirección ${i + 1}`, es_principal: i === 0 }));
+}
+
+async function guardarEntregas(supabase: any, profileId: string, entregas: ReturnType<typeof parseEntregas>) {
+  if (entregas.length === 0) return null;
+  const { error } = await supabase
+    .from("direcciones_entrega")
+    .insert(entregas.map((e) => ({ ...e, profile_id: profileId })));
+  return error ? "El cliente se creó, pero falló el guardado de direcciones de entrega: " + error.message : null;
+}
+
 export async function crearClienteB2B(formData: FormData): Promise<{ error?: string }> {
   try {
     const email    = (formData.get("email") as string).trim().toLowerCase();
@@ -24,6 +55,7 @@ export async function crearClienteB2B(formData: FormData): Promise<{ error?: str
     const phone    = (formData.get("phone") as string | null)?.trim() || null;
     const cuit     = (formData.get("cuit") as string | null)?.trim() || null;
     const dir      = parseDireccion(formData);
+    const entregas = parseEntregas(formData);
 
     if (!email)                          return { error: "El email es requerido" };
     if (!password || password.length < 8) return { error: "La contraseña debe tener al menos 8 caracteres" };
@@ -65,7 +97,9 @@ export async function crearClienteB2B(formData: FormData): Promise<{ error?: str
     });
     if (profileError) return { error: "Error al guardar el perfil: " + profileError.message };
 
+    const entregasError = await guardarEntregas(supabase, data.user.id, entregas);
     revalidatePath("/admin/clientes-b2b");
+    if (entregasError) return { error: entregasError };
     return {};
   } catch (err: any) {
     return { error: err.message ?? "Error inesperado al crear el cliente" };
@@ -81,6 +115,7 @@ export async function invitarClienteB2B(formData: FormData): Promise<{ error?: s
     const phone   = (formData.get("phone") as string | null)?.trim() || null;
     const cuit    = (formData.get("cuit") as string | null)?.trim() || null;
     const dir     = parseDireccion(formData);
+    const entregas = parseEntregas(formData);
 
     if (!email) return { error: "El email es requerido" };
 
@@ -125,7 +160,9 @@ export async function invitarClienteB2B(formData: FormData): Promise<{ error?: s
     });
     if (profileError) return { error: "Error al guardar el perfil: " + profileError.message };
 
+    const entregasError = await guardarEntregas(supabase, data.user.id, entregas);
     revalidatePath("/admin/clientes-b2b");
+    if (entregasError) return { error: entregasError };
     return {};
   } catch (err: any) {
     return { error: err.message ?? "Error inesperado al enviar la invitación" };

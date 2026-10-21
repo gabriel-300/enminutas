@@ -496,18 +496,31 @@ function ClienteRow({ cliente, zonas, vendedores, canales, esAdmin }: {
 
 // ── Crear cliente form ────────────────────────────────────────────────────────
 
+type EntregaDraft = {
+  key: number; alias: string; calle: string; numero: string; piso: string; ciudad: string; zona_id: string;
+};
+let entregaSeq = 0;
+const nuevaEntrega = (): EntregaDraft =>
+  ({ key: ++entregaSeq, alias: "", calle: "", numero: "", piso: "", ciudad: "", zona_id: "" });
+
 function CrearClienteB2BForm({ zonas, canales }: { zonas: Zona[]; canales: Canal[] }) {
   const [isPending, startTransition] = useTransition();
   const [open,    setOpen]    = useState(false);
   const [mode,    setMode]    = useState<"password" | "invite">("password");
   const [error,   setError]   = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  const [entregas, setEntregas] = useState<EntregaDraft[]>([nuevaEntrega()]);
+
+  function setEntrega(key: number, campo: keyof EntregaDraft, valor: string) {
+    setEntregas((prev) => prev.map((e) => (e.key === key ? { ...e, [campo]: valor } : e)));
+  }
 
   function handleSubmit(e: React.SyntheticEvent<HTMLFormElement>) {
     e.preventDefault();
     const fd   = new FormData(e.currentTarget);
     const form = e.currentTarget;
     setError(null); setSuccess(null);
+    fd.set("entregas", JSON.stringify(entregas.map(({ key: _k, ...resto }) => resto)));
 
     const pw  = fd.get("password") as string;
     const pw2 = fd.get("password_confirm") as string;
@@ -523,6 +536,7 @@ function CrearClienteB2BForm({ zonas, canales }: { zonas: Zona[]; canales: Canal
       } else {
         setSuccess(mode === "password" ? "Cliente B2B creado correctamente." : "Invitación enviada al email del cliente.");
         form.reset();
+        setEntregas([nuevaEntrega()]);
       }
     });
   }
@@ -599,6 +613,55 @@ function CrearClienteB2BForm({ zonas, canales }: { zonas: Zona[]; canales: Canal
                 <input name="direccion_piso"   placeholder="Piso/Dpto" className={inputCls} disabled={isPending} />
               </div>
               <input name="direccion_ciudad" placeholder="Ciudad / Barrio" className={`${inputCls} mt-2`} disabled={isPending} />
+            </div>
+            <div>
+              <div className="flex items-center justify-between mb-1.5">
+                <label className="block text-[13px] font-medium text-neutral-800">
+                  Direcciones de entrega
+                  <span className="ml-2 text-xs font-normal text-neutral-600">la primera queda como principal</span>
+                </label>
+                <button type="button" onClick={() => setEntregas((p) => [...p, nuevaEntrega()])} disabled={isPending}
+                  className="text-xs text-tierra-700 hover:underline disabled:opacity-50">
+                  + Agregar otra dirección
+                </button>
+              </div>
+              <div className="space-y-3">
+                {entregas.map((en, i) => (
+                  <div key={en.key} className="rounded-lg border border-neutral-200 bg-neutral-50 p-3 space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-medium text-neutral-700">
+                        Dirección {i + 1}{i === 0 && " (principal)"}
+                      </span>
+                      {entregas.length > 1 && (
+                        <button type="button" disabled={isPending}
+                          onClick={() => setEntregas((p) => p.filter((x) => x.key !== en.key))}
+                          className="text-xs text-danger hover:underline disabled:opacity-50">
+                          Quitar
+                        </button>
+                      )}
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                      <input value={en.alias} onChange={(e) => setEntrega(en.key, "alias", e.target.value)}
+                        placeholder="Nombre (ej: Sucursal Centro)" className={inputCls} disabled={isPending} />
+                      <select value={en.zona_id} onChange={(e) => setEntrega(en.key, "zona_id", e.target.value)}
+                        className={`${inputCls} bg-white`} disabled={isPending}>
+                        <option value="">Sin zona</option>
+                        {zonas.map((z) => <option key={z.id} value={z.id}>{z.name}</option>)}
+                      </select>
+                    </div>
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                      <input value={en.calle} onChange={(e) => setEntrega(en.key, "calle", e.target.value)}
+                        placeholder="Calle" className={`${inputCls} col-span-2`} disabled={isPending} />
+                      <input value={en.numero} onChange={(e) => setEntrega(en.key, "numero", e.target.value)}
+                        placeholder="Número" className={inputCls} disabled={isPending} />
+                      <input value={en.piso} onChange={(e) => setEntrega(en.key, "piso", e.target.value)}
+                        placeholder="Piso/Dpto" className={inputCls} disabled={isPending} />
+                    </div>
+                    <input value={en.ciudad} onChange={(e) => setEntrega(en.key, "ciudad", e.target.value)}
+                      placeholder="Ciudad / Barrio" className={inputCls} disabled={isPending} />
+                  </div>
+                ))}
+              </div>
             </div>
             {mode === "password" && (
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
