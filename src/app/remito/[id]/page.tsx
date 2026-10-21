@@ -229,8 +229,8 @@ export default async function RemitoPage({
           </div>
         )}
 
-        {/* Notas — siempre visibles para staff; para el cliente solo si se marcaron como visibles */}
-        {o.notes && (STAFF.includes(role ?? "") || o.notes_visible_cliente) && (
+        {/* Notas — solo si se marcaron como visibles en el remito (también para staff; la nota interna se ve en el detalle del pedido) */}
+        {o.notes && o.notes_visible_cliente && (
           <div style={{ marginBottom: 24 }}>
             <p style={{ fontSize: 10, fontWeight: 600, color: "#999", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 6 }}>
               Observaciones
