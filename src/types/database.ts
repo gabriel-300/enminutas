@@ -1343,6 +1343,7 @@ export type Database = {
           product_id: string
           product_snapshot: Json
           quantity: number
+          quantity_original: number
           unit_price: number
           variant_id: string | null
         }
@@ -1353,6 +1354,7 @@ export type Database = {
           product_id: string
           product_snapshot: Json
           quantity: number
+          quantity_original?: number
           unit_price: number
           variant_id?: string | null
         }
@@ -1363,6 +1365,7 @@ export type Database = {
           product_id?: string
           product_snapshot?: Json
           quantity?: number
+          quantity_original?: number
           unit_price?: number
           variant_id?: string | null
         }

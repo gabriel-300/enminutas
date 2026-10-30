@@ -622,7 +622,7 @@
       Documento confidencial — uso interno
     </div>
     <div class="cover-footer-right">
-      v2.3 · Octubre 2026<br>
+      v2.4 · Octubre 2026<br>
       admin@enminutas.com.ar
     </div>
   </div>
@@ -630,7 +630,7 @@
 
 <!-- PRINT BAR -->
 <div class="print-bar no-print">
-  <span class="version-tag">v2.3 · Octubre 2026</span>
+  <span class="version-tag">v2.4 · Octubre 2026</span>
   <button class="btn-print" onclick="window.print()">⎙ Imprimir / Guardar PDF</button>
 </div>
 
@@ -778,7 +778,7 @@
     <p>Módulo central del sistema. Los pedidos se generan desde el portal B2B (lo crea el cliente), desde el panel (lo crea un vendedor o el administrador) o como muestra. Cada pedido tiene estado, canal, cliente, productos, precios, método de pago y un historial de eventos con usuario y hora.</p>
     <ul style="margin: 12px 0 16px 20px; color: var(--text-2); font-size: 14px; line-height: 2;">
       <li>Cargo adicional manual opcional al crear el pedido (flete extra, IIBB, etc.)</li>
-      <li>Agregar, quitar y cambiar cantidades en pedidos aprobados o en producción</li>
+      <li>Un pedido aprobado no se puede editar (cantidades ni productos): conserva lo que se pidió. Si hay un error, se cancela y se vuelve a cargar. La única variación posible es el ajuste al despachar, y la cantidad original queda guardada en cada línea</li>
       <li>Notas internas, con opción de hacerlas visibles para el cliente en el remito</li>
       <li>Cancelación mientras el pedido no esté entregado, con reintegro de stock y de cuenta corriente</li>
     </ul>

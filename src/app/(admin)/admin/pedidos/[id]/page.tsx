@@ -6,7 +6,6 @@ import { PedidoStatusBadge } from "@/components/ui";
 import { OrderStatusSelect } from "@/components/admin/order-status-select";
 import { AprobarPedidoButton } from "@/components/admin/aprobar-pedido-button";
 import { NotasPedidoForm } from "@/components/admin/notas-pedido-form";
-import { EditarCantidadesForm } from "@/components/admin/editar-cantidades-form";
 import { fmtFechaHora, fmtFecha, fmtFechaSolo } from "@/lib/fecha";
 import { MOTIVOS_FALTANTE } from "@/lib/entrega-parcial";
 import { ReprogramarFaltanteButton } from "@/components/admin/reprogramar-faltante-button";
@@ -40,7 +39,7 @@ export default async function AdminPedidoDetailPage({
       customer:profiles!customer_id (full_name, phone, canal, canal_id, vendedor_id),
       punto:direcciones_entrega!direccion_entrega_id (alias),
       lines:order_lines (
-        id, quantity, unit_price, line_total,
+        id, quantity, quantity_original, unit_price, line_total,
         product_snapshot
       )
     `)
@@ -61,7 +60,12 @@ export default async function AdminPedidoDetailPage({
   const esMuestra = o.channel === "muestra";
   // Tras una entrega parcial las líneas sin nada entregado no se muestran (el faltante va en el bloque de entrega parcial)
   const lineasVisibles = ((o.lines ?? []) as any[]).filter((l) => !o.delivered_snapshot?.lineas || Number(l.quantity) > 0);
-  const motivoFaltante = MOTIVOS_FALTANTE.find((m) => m.value === o.delivered_snapshot?.motivo)?.label ?? null;
+  // Si el despacho o la entrega cambió la cantidad, se muestra también la que se pidió originalmente
+  const cantidadOriginal = (l: any) =>
+    l.quantity_original != null && Number(l.quantity_original) !== Number(l.quantity)
+      ? ` (pedido: ${l.quantity_original})`
+      : "";
+  const motivoFaltante =MOTIVOS_FALTANTE.find((m) => m.value === o.delivered_snapshot?.motivo)?.label ?? null;
   const fmtMonto = (n: number) => `$ ${Math.round(n).toLocaleString("es-AR")}`;
 
   // Faltante: pedido del que sale este (si es una reprogramación) y pedido al que se reprogramó el faltante de este
@@ -142,29 +146,6 @@ export default async function AdminPedidoDetailPage({
   const customerName  = o.customer?.full_name ?? o.muestra_destinatario ?? "Invitado";
   const customerPhone = o.customer?.phone ?? o.guest_phone;
   const customerEmail = o.guest_email;
-  const customerCanal = o.customer?.canal ?? "dist";
-
-  // Productos activos para el form de edición (solo cuando el pedido es editable)
-  const ESTADOS_EDITABLES = ["aprobado", "enviado_prod"];
-  let productosDisponibles: { id: string; name: string; sku: string | null; costo: number | null; bolsas_caja: number; u_bolsa: number; pkg_unitario: number; pkg_bulto: number; categoria: string | null; divisiones_display: any }[] = [];
-  if (esAdmin && ESTADOS_EDITABLES.includes(o.status)) {
-    const { data: prods } = await (adminClient as any)
-      .from("products")
-      .select("id, name, sku, costo, bolsas_caja, u_bolsa, pkg_unitario, pkg_bulto, categoria, divisiones_display")
-      .eq("is_active", true)
-      .eq("es_muestra", false)
-      .order("name");
-    productosDisponibles = (prods ?? []).map((p: any) => ({
-      id: p.id, name: p.name, sku: p.sku,
-      costo: p.costo ? Number(p.costo) : null,
-      bolsas_caja: Number(p.bolsas_caja ?? 1),
-      u_bolsa: Number(p.u_bolsa ?? 1),
-      pkg_unitario: Number(p.pkg_unitario ?? 0),
-      pkg_bulto: Number(p.pkg_bulto ?? 0),
-      categoria: p.categoria ?? null,
-      divisiones_display: p.divisiones_display ?? null,
-    }));
-  }
 
   return (
     <div className="p-4 md:px-10 md:py-8 md:pb-16">
@@ -289,21 +270,6 @@ export default async function AdminPedidoDetailPage({
       <div className="bg-white rounded-xl border border-neutral-200 shadow-sm overflow-hidden mb-4">
         <div className="px-5 py-4 border-b border-neutral-100 flex items-center justify-between gap-3">
           <p className="text-sm font-medium text-neutral-700">Productos</p>
-          {esAdmin && !esMuestra && (
-            <EditarCantidadesForm
-              orderId={o.id}
-              status={o.status}
-              canal={customerCanal}
-              lines={(o.lines ?? []).map((l: any) => ({
-                id:               l.id,
-                quantity:         l.quantity,
-                unit_price:       Number(l.unit_price),
-                line_total:       Number(l.line_total),
-                product_snapshot: l.product_snapshot,
-              }))}
-              productos={productosDisponibles}
-            />
-          )}
         </div>
 
         {/* Mobile: cards */}
@@ -319,7 +285,7 @@ export default async function AdminPedidoDetailPage({
                 )}
                 {!esMuestra && (
                   <p className="text-xs text-neutral-600 mt-0.5">
-                    {line.quantity} × $ {Number(line.unit_price).toLocaleString("es-AR")}
+                    {line.quantity}{cantidadOriginal(line)} × $ {Number(line.unit_price).toLocaleString("es-AR")}
                   </p>
                 )}
               </div>
@@ -356,7 +322,7 @@ export default async function AdminPedidoDetailPage({
                     $ {Number(line.unit_price).toLocaleString("es-AR")}
                   </td>
                 )}
-                <td className="px-5 py-3 text-right text-neutral-600">{line.quantity}</td>
+                <td className="px-5 py-3 text-right text-neutral-600">{line.quantity}{cantidadOriginal(line)}</td>
                 {!esMuestra && (
                   <td className="px-5 py-3 text-right font-medium text-neutral-900">
                     $ {Number(line.line_total).toLocaleString("es-AR")}

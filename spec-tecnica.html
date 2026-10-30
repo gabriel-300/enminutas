@@ -364,7 +364,7 @@ section { margin-bottom: 4px; }
 <nav class="sidebar no-print">
   <div class="sidebar-logo">
     <div class="sidebar-logo-em">EnMinutas / contexto técnico</div>
-    <div class="sidebar-logo-sub">v2.3 · Octubre 2026</div>
+    <div class="sidebar-logo-sub">v2.4 · Octubre 2026</div>
   </div>
 
   <div class="nav-section">
@@ -423,7 +423,7 @@ section { margin-bottom: 4px; }
 <h1>Contexto técnico completo — En Minutas</h1>
 <div class="doc-meta">
   Repositorio: github.com/gabriel-300/minutas · Producción: enminutas.vercel.app<br>
-  Versión 2.2 · Actualizado: 15 de octubre de 2026 (verificado contra el código y la base de producción) · Para uso interno — pasar a Claude como contexto de sesión
+  Versión 2.4 · Actualizado: 30 de octubre de 2026 (verificado contra el código y la base de producción) · Para uso interno — pasar a Claude como contexto de sesión
 </div>
 
 <div class="callout info">
@@ -600,7 +600,7 @@ vercel.json                 <span class="cm"># región gru1 + cron /api/ping</sp
     <tr><td>products</td><td>Catálogo</td><td>sku, name, codigo, linea_id, categoria ('Estándar'|'Premium'|'Venta directa'), costo (<em>por bolsa</em>), bolsas_caja, u_bolsa, kg_caja, pkg_unitario, pkg_bulto, divisiones_display, stock_minimo, is_active, <strong>es_muestra</strong>, vida_util_dias, receta_producto_id. Las columnas de precio (precio_lista, precio_dist, price_b2b, margen_*) son <strong>heredadas</strong></td></tr>
     <tr><td>lineas_producto</td><td>Líneas (Empanadas, Chipas…)</td><td>id (int, sequence manual), nombre, orden, <strong>canal_exclusivo_id</strong> (línea visible solo para ese canal)</td></tr>
     <tr><td>orders</td><td>Pedidos y muestras</td><td>order_number, channel, status (ENUM), customer_id, payment_method, subtotal, discount, total (c/IVA), <code>cargo_adicional_monto/concepto</code>, <code>flete_pct</code>, <code>comision_pct</code>, aprobado_at, despachado_at, entregado_at, despacho_info (JSONB), delivered_snapshot (JSONB), firma_*, orden_ruta, origen_order_id, fecha_compromiso, notes_visible_cliente, campos muestra_*, solicitado_por, delivery_zone_id, <code>direccion_entrega_id</code> (punto de entrega elegido)</td></tr>
-    <tr><td>order_lines</td><td>Ítems del pedido</td><td>order_id, product_id, quantity, unit_price, line_total, product_snapshot (JSONB con nombre, unit_label, precio…)</td></tr>
+    <tr><td>order_lines</td><td>Ítems del pedido</td><td>order_id, product_id, quantity (despachado/entregado), quantity_original (lo pedido; la fija un trigger al insertar y no se modifica), unit_price, line_total, product_snapshot (JSONB con nombre, unit_label, precio…)</td></tr>
     <tr><td>order_events</td><td>Historial de cambios de estado</td><td>order_id, status, message, actor_id, created_at</td></tr>
     <tr><td>lotes</td><td>Stock real de producto terminado</td><td>producto_id, numero_lote, fecha_vencimiento, cantidad_inicial, cantidad_actual, activo, deposito_id, costo_unitario</td></tr>
     <tr><td>stock_movements</td><td>Movimientos de producto terminado</td><td>product_id, qty, type ('produccion'|'despacho'|'ajuste'|'muestra'), order_id</td></tr>
@@ -950,7 +950,6 @@ vercel.json                 <span class="cm"># región gru1 + cron /api/ping</sp
     <tr><td>confirmarEntrega</td><td>despachado / en_distribucion → delivered</td><td>Setea entregado_at. Desde ahí el pedido devenga comisión</td></tr>
     <tr><td>confirmarEntregaParcial</td><td>→ entrega_parcial</td><td>Ver sección Entrega parcial</td></tr>
     <tr><td>cancelarPedidoDistribucion</td><td>despachado / en_distribucion → cancelled</td><td>Reintegra stock a lotes; revierte cargo CC si era cuenta_corriente</td></tr>
-    <tr><td>editarCantidadesPedido · agregarLineaPedido · eliminarLineaPedido</td><td>Solo admin, en pedidos aprobados o en producción</td><td>Recalculan totales conservando cargo adicional; una línea agregada usa el flete y la comisión guardados del pedido</td></tr>
     <tr><td>agregarNota(orderId, nota, visibleCliente)</td><td>—</td><td>Nota interna; con <code>visibleCliente</code> también la ve el cliente en el remito</td></tr>
     <tr><td>crearPedidoConFaltante</td><td>Solo admin, sobre un pedido con entrega parcial</td><td>Crea un pedido nuevo aprobado con el faltante (ver Entrega parcial)</td></tr>
     <tr><td>confirmarPago</td><td>B2C heredado</td><td>emailPagoConfirmado</td></tr>
@@ -960,7 +959,7 @@ vercel.json                 <span class="cm"># región gru1 + cron /api/ping</sp
 </div>
 
 <h3>Despacho con ajuste de cantidades</h3>
-<p>Al despachar, producción puede reducir la cantidad de cualquier ítem (no aumentar). El sistema captura las cantidades originales, actualiza <code>order_lines.quantity</code> y <code>line_total</code>, recalcula <code>subtotal</code> y <code>total</code>, guarda <code>despacho_info</code>, consume stock por lote, registra el cargo CC con el total ajustado y avisa por email si hubo diferencias.</p>
+<p>Al despachar, producción puede reducir la cantidad de cualquier ítem (no aumentar). El sistema captura las cantidades originales, actualiza <code>order_lines.quantity</code> y <code>line_total</code> (<code>quantity_original</code> conserva lo pedido), recalcula <code>subtotal</code> y <code>total</code>, guarda <code>despacho_info</code>, consume stock por lote, registra el cargo CC con el total ajustado y avisa por email si hubo diferencias.</p>
 </section>
 
 <!-- ──────────────────── ENTREGA PARCIAL ──────────────────── -->
@@ -969,7 +968,7 @@ vercel.json                 <span class="cm"># región gru1 + cron /api/ping</sp
 
 <p>Cálculo puro en <code>lib/entrega-parcial.ts</code> (con tests). Reglas:</p>
 <ul>
-  <li>Al confirmar un parcial, <code>order_lines.quantity/line_total</code> y <code>orders.subtotal/total</code> <strong>quedan con lo ENTREGADO</strong>. Lo pedido queda solo en <code>orders.delivered_snapshot</code>.</li>
+  <li>Al confirmar un parcial, <code>order_lines.quantity/line_total</code> y <code>orders.subtotal/total</code> <strong>quedan con lo ENTREGADO</strong>. Lo pedido queda en <code>order_lines.quantity_original</code> y en <code>orders.delivered_snapshot</code>.</li>
   <li><strong>El faltante se cierra</strong>: no queda pedido pendiente ni backorder. El <strong>motivo es obligatorio</strong>: <code>sin_stock</code>, <code>rechazado</code>, <code>danado</code> u <code>otro</code> (se guarda en el snapshot junto con <code>total_original</code>).</li>
   <li>El stock no entregado se reintegra a los lotes con <code>reintegrar_lote_stock</code>. Si el pedido era de cuenta corriente, se registra un <code>ajuste</code> para llevar el cargo al total entregado.</li>
   <li>Opcional (solo admin): <strong>"Crear pedido con el faltante"</strong> genera UN pedido nuevo, aprobado, al precio original, enlazado por <code>orders.origen_order_id</code> y con <code>fecha_compromiso</code> (por defecto +7 días). Si vence sin despacharse aparece en <code>/admin/alertas</code>. Ese pedido <strong>no es demanda nueva</strong>: no contarlo como cliente ni sumarlo a "lo pedido" del original.</li>
@@ -1437,6 +1436,7 @@ comercializadora   = comisión_total − preventista
 <table>
   <thead><tr><th>Versión</th><th>Fecha</th><th>Cambios</th></tr></thead>
   <tbody>
+    <tr><td>2.4</td><td>30/10/2026</td><td>Los pedidos aprobados ya no se editan: se eliminaron <code>editarCantidadesPedido</code>, <code>agregarLineaPedido</code> y <code>eliminarLineaPedido</code> y el formulario del detalle (si hay un error: cancelar y recargar). Nueva columna <code>order_lines.quantity_original</code> (NOT NULL, la completa un trigger BEFORE INSERT; migración 20261030120000) para no perder lo pedido cuando el despacho o la entrega parcial pisan <code>quantity</code>. En pedidos anteriores es igual a la cantidad actual (el original real de los ajustes previos no se recupera). El detalle del pedido muestra "(pedido: N)" cuando difiere.</td></tr>
     <tr><td>2.3</td><td>20/10/2026</td><td>Descuento extra del cliente (<code>profiles.descuento_extra_pct</code>) vuelve a aplicarse: desde la fórmula v5 se guardaba pero ningún cálculo lo leía. Es un % sobre el neto s/IVA (= mismo % del subtotal c/IVA), se suma al descuento por volumen y queda en <code>orders.discount</code>; el remito lo muestra s/IVA. Aplica en Nuevo pedido (admin/vendedor). <code>canales.descuento_pct</code> sigue sin aplicarse (los márgenes por canal ya lo reemplazan). Pendiente: portal B2B (<code>b2b/catalogo</code>) sigue guardando <code>discount = 0</code>.</td></tr>
     <tr><td>2.2</td><td>15/10/2026</td><td>Saldo de cuenta corriente = <code>Σ cc_movimientos.monto − Σ pagos.monto</code> por cliente (los pagos/NC de <code>cc_movimientos</code> van con monto negativo; <code>pagos</code> es el circuito de cobros de Clientes B2B). Nueva función <code>cc_saldos_clientes()</code> (migración 20261015120000). La pantalla Ctas. corrientes ya no depende de <code>b2b_accounts</code>; el límite de crédito es opcional. Pendiente: alertas y chequeo de límite al aprobar pedidos aún suman solo <code>cc_movimientos</code>.</td></tr>
     <tr><td>2.1</td><td>30/9/2026</td><td>Clientes con varios puntos de entrega. Nueva columna <code>orders.direccion_entrega_id</code>; <code>direcciones_entrega</code> gana <code>telefono</code> y <code>notas_entrega</code>. Regla: un cliente = una razón social (un CUIT, una cuenta corriente); sus sucursales son puntos de entrega, no clientes distintos. La zona y la sucursal que ven Distribución/Repartidor/remito salen del pedido. Fusión de duplicados existentes (YPF Sartori, etc.) hecha con scripts en <code>supabase/scripts/</code>.</td></tr>
