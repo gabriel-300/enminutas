@@ -42,6 +42,11 @@ export function ahoraAR(): Date {
   return new Date(new Date().toLocaleString("en-US", { timeZone: TZ }));
 }
 
+/** "YYYY-MM-DD" de hoy en hora Argentina (el servidor de Vercel corre en UTC). */
+export function hoyAR(): string {
+  return new Date().toLocaleDateString("en-CA", { timeZone: TZ });
+}
+
 /** "YYYY-MM" del instante dado, en hora Argentina (no la del servidor, que en Vercel es UTC). */
 export function mesAR(date: string | Date): string {
   return new Date(date).toLocaleDateString("en-CA", { timeZone: TZ }).slice(0, 7);

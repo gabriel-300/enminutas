@@ -3,7 +3,8 @@
 import { useState, useTransition, useRef } from "react";
 import { createBrowserClient } from "@supabase/ssr";
 import { Plus, Trash2, FileText, ClipboardList, ChevronDown, ChevronRight, Camera } from "lucide-react";
-import { registrarRecepcion, leerRemitoRecepcion, type InsumoBasico, type RecepcionHistorial, type CandidatoInsumo } from "./actions";
+import { registrarRecepcion, leerRemitoRecepcion, type InsumoBasico, type RecepcionHistorial, type CandidatoInsumo, type ProveedorOpcion } from "./actions";
+import { claveProveedor, normalizarCuit, sumarDias } from "@/lib/proveedores";
 
 const fmtPrecio = (n: number) =>
   new Intl.NumberFormat("es-AR", { style: "currency", currency: "ARS", maximumFractionDigits: 2 }).format(n);
@@ -66,9 +67,10 @@ function variacionPrecio(precioNuevo: number, precioAnterior: number): { nivel: 
 type Props = {
   insumos:   InsumoBasico[];
   historial: RecepcionHistorial[];
+  proveedores: ProveedorOpcion[];
 };
 
-export function RecepcionesClient({ insumos, historial }: Props) {
+export function RecepcionesClient({ insumos, historial, proveedores }: Props) {
   const [formOpen, setFormOpen] = useState(false);
 
   // Cabecera
@@ -79,6 +81,13 @@ export function RecepcionesClient({ insumos, historial }: Props) {
   const [fecha,     setFecha]     = useState(hoy());
   const [notas,     setNotas]     = useState("");
   const [otrosImp,  setOtrosImp]  = useState("");
+  const [vencPagoManual, setVencPagoManual] = useState("");
+
+  // Proveedor ya cargado (por CUIT o por nombre unificado) → su plazo de pago da el vencimiento sugerido.
+  const cuitNorm = normalizarCuit(cuit);
+  const provMatch = proveedores.find(p => cuitNorm && p.cuit === cuitNorm)
+    ?? proveedores.find(p => proveedor.trim() && claveProveedor(p.nombre) === claveProveedor(proveedor));
+  const vencPago = vencPagoManual || sumarDias(fecha, provMatch?.dias ?? 0);
 
   // Ítems
   const [rows, setRows] = useState<ItemRow[]>([newRow()]);
@@ -221,7 +230,7 @@ export function RecepcionesClient({ insumos, historial }: Props) {
 
   function resetForm() {
     setTipo("factura"); setNumero(""); setProveedor(""); setCuit("");
-    setFecha(hoy()); setNotas(""); setOtrosImp(""); setRows([newRow()]);
+    setFecha(hoy()); setNotas(""); setOtrosImp(""); setVencPagoManual(""); setRows([newRow()]);
     setError(null); setOcrWarnings([]); setImagenUrl(null);
   }
 
@@ -245,7 +254,7 @@ export function RecepcionesClient({ insumos, historial }: Props) {
 
     start(async () => {
       const res = await registrarRecepcion(
-        tipo, numero, proveedor, fecha, notas || null, otrosNum, items, imagenUrl, cuit || null,
+        tipo, numero, proveedor, fecha, notas || null, otrosNum, items, imagenUrl, cuit || null, vencPago,
       );
       if ("error" in res) { setError(res.error); return; }
       setOk(`${tipo === "factura" ? "Factura" : "Remito"} ${numero} registrado. Stock y precios actualizados.`);
@@ -355,10 +364,11 @@ export function RecepcionesClient({ insumos, historial }: Props) {
                   placeholder="Nombre del proveedor" className={inputCls} disabled={isPending}
                   list="proveedores-list" />
                 <datalist id="proveedores-list">
-                  {[...new Set(insumos.map(i => i.proveedor).filter(Boolean))].map(p => (
-                    <option key={p!} value={p!} />
-                  ))}
+                  {proveedores.map(p => <option key={p.id} value={p.nombre} />)}
                 </datalist>
+                {proveedor.trim() && !provMatch && (
+                  <p className="text-xs text-neutral-600 mt-1">Proveedor nuevo: se da de alta al guardar.</p>
+                )}
               </div>
               <div>
                 <label className="block text-[13px] font-medium text-neutral-800 mb-1.5">Fecha</label>
@@ -371,6 +381,14 @@ export function RecepcionesClient({ insumos, historial }: Props) {
                 </label>
                 <input value={cuit} onChange={e => setCuit(e.target.value)}
                   placeholder="XX-XXXXXXXX-X" className={inputCls} disabled={isPending} />
+              </div>
+              <div>
+                <label className="block text-[13px] font-medium text-neutral-800 mb-1.5">Vence el pago</label>
+                <input type="date" value={vencPago} onChange={e => setVencPagoManual(e.target.value)}
+                  className={inputCls} disabled={isPending} />
+                <p className="text-xs text-neutral-600 mt-1">
+                  {provMatch && provMatch.dias > 0 ? `Plazo del proveedor: ${provMatch.dias} días` : "Sin plazo cargado: contado"}
+                </p>
               </div>
             </div>
 

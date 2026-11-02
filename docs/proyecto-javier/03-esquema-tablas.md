@@ -135,7 +135,13 @@ id uuid PK, producto_id uuid ->products, receta_id uuid ->recipes, cantidad_caja
 id uuid PK, nombre text, valor text, color text, orden int4, created_at timestamptz
 
 ### recepciones (16 filas)
-id uuid PK, tipo text CHECK[tipo = ANY 'factura', 'remito'], numero text, proveedor text, fecha date, notas text, total numeric, created_by uuid ->profiles, created_at timestamptz, otros_impuestos numeric, imagen_url text, proveedor_cuit text
+id uuid PK, tipo text CHECK[tipo = ANY 'factura', 'remito'], numero text, proveedor text, fecha date, notas text, total numeric, created_by uuid ->profiles, created_at timestamptz, otros_impuestos numeric, imagen_url text, proveedor_cuit text, proveedor_id uuid ->proveedores, fecha_vencimiento_pago date, genera_deuda boolean
+
+### proveedores
+id uuid PK, nombre text, cuit text, condicion_pago_dias int4, contacto text, telefono text, email text, notas text, activo boolean, created_at timestamptz
+
+### pagos_proveedores
+id uuid PK, proveedor_id uuid ->proveedores, recepcion_id uuid ->recepciones (null = a cuenta), monto numeric CHECK[monto > 0], fecha date, metodo text, referencia text, notas text, grupo_id uuid, created_by uuid, created_at timestamptz
 
 ### recepciones_items (31 filas)
 id uuid PK, recepcion_id uuid ->recepciones, insumo_id uuid ->insumos, cantidad numeric CHECK[cantidad > 0::numeric], unidad text, precio_unitario numeric, subtotal numeric, iva_pct numeric, fecha_vencimiento date

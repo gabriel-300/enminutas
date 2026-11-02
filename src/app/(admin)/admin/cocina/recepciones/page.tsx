@@ -1,12 +1,13 @@
-import { getInsumos, getHistorialRecepciones } from "./actions";
+import { getInsumos, getHistorialRecepciones, getProveedoresOpciones } from "./actions";
 import { RecepcionesClient } from "./recepciones-client";
 
 export const metadata = { title: "Recepciones de mercadería" };
 
 export default async function RecepcionesPage() {
-  const [insumos, historial] = await Promise.all([
+  const [insumos, historial, proveedores] = await Promise.all([
     getInsumos(),
     getHistorialRecepciones(30),
+    getProveedoresOpciones(),
   ]);
 
   return (
@@ -17,7 +18,7 @@ export default async function RecepcionesPage() {
           Registrá facturas o remitos. El sistema suma el stock y actualiza el precio del insumo automáticamente.
         </p>
       </div>
-      <RecepcionesClient insumos={insumos} historial={historial} />
+      <RecepcionesClient insumos={insumos} historial={historial} proveedores={proveedores} />
     </div>
   );
 }

@@ -4,6 +4,7 @@ import { createAdminClient, createClient } from "@/lib/supabase/server";
 import { requireRole } from "@/lib/auth";
 import { revalidatePath } from "next/cache";
 import { leerComprobanteConGroq, validarComprobante } from "@/lib/groq";
+import { claveProveedor, normalizarCuit } from "@/lib/proveedores";
 
 type Result = { error: string } | { ok: true; id: string };
 
@@ -11,6 +12,7 @@ function revalidateAll() {
   revalidatePath("/admin/cocina/recepciones");
   revalidatePath("/admin/cocina/insumos");
   revalidatePath("/admin/cocina/recetas");
+  revalidatePath("/admin/proveedores");
 }
 
 export type InsumoBasico = {
@@ -37,6 +39,44 @@ export async function getInsumos(): Promise<InsumoBasico[]> {
     stock_actual:    Number(i.stock_actual ?? 0),
     proveedor:       i.proveedor ?? null,
   }));
+}
+
+export type ProveedorOpcion = { id: string; nombre: string; cuit: string | null; dias: number };
+
+export async function getProveedoresOpciones(): Promise<ProveedorOpcion[]> {
+  await requireRole("admin", "produccion");
+  const db = createAdminClient() as any;
+  const { data } = await db
+    .from("proveedores").select("id, nombre, cuit, condicion_pago_dias").eq("activo", true).order("nombre");
+  return ((data ?? []) as any[]).map(p => ({
+    id: p.id, nombre: p.nombre, cuit: p.cuit ?? null, dias: Number(p.condicion_pago_dias ?? 0),
+  }));
+}
+
+// Busca el proveedor por CUIT y, si no, por nombre unificado (sin mayúsculas/acentos/"SRL");
+// si no existe lo da de alta. Así "El Abasto" y "el Abasto srl" son el mismo proveedor.
+async function resolverProveedor(
+  db: any, nombre: string, cuitCrudo: string | null,
+): Promise<{ id: string; nombre: string; cuit: string | null } | { error: string }> {
+  const cuit = normalizarCuit(cuitCrudo);
+  const { data } = await db.from("proveedores").select("id, nombre, cuit");
+  const todos = (data ?? []) as { id: string; nombre: string; cuit: string | null }[];
+
+  const existente = (cuit && todos.find(p => p.cuit === cuit))
+    || todos.find(p => claveProveedor(p.nombre) === claveProveedor(nombre));
+  if (existente) {
+    // Si el proveedor no tenía CUIT y esta factura lo trae, se completa.
+    if (!existente.cuit && cuit) {
+      await db.from("proveedores").update({ cuit }).eq("id", existente.id);
+      existente.cuit = cuit;
+    }
+    return existente;
+  }
+
+  const { data: nuevo, error } = await db
+    .from("proveedores").insert({ nombre: nombre.trim(), cuit }).select("id, nombre, cuit").single();
+  if (error) return { error: error.message };
+  return nuevo;
 }
 
 export type ItemInput = {
@@ -193,6 +233,7 @@ export async function registrarRecepcion(
   items:            ItemInput[],
   imagenUrl:        string | null = null,
   proveedorCuit:    string | null = null,
+  vencimientoPago:  string | null = null,
 ): Promise<Result> {
   const db       = createAdminClient() as any;
 
@@ -209,19 +250,28 @@ export async function registrarRecepcion(
   const totalIva  = items.reduce((s, i) => s + i.cantidad * i.precio_unitario * (i.iva_pct / 100), 0);
   const total     = totalNeto + totalIva + (otros_impuestos || 0);
 
-  // 1. Insertar cabecera
+  if (vencimientoPago && !/^\d{4}-\d{2}-\d{2}$/.test(vencimientoPago))
+    return { error: "Fecha de vencimiento de pago inválida" };
+
+  const prov = await resolverProveedor(db, proveedor, proveedorCuit);
+  if ("error" in prov) return { error: prov.error };
+
+  // 1. Insertar cabecera (factura y remito generan deuda con el proveedor por defecto)
   const { data: rec, error: errRec } = await db
     .from("recepciones")
     .insert({
       tipo,
       numero:          numero.trim(),
-      proveedor:       proveedor.trim(),
+      proveedor:       prov.nombre,
+      proveedor_id:    prov.id,
       fecha,
       notas,
       total,
       otros_impuestos: otros_impuestos || 0,
       imagen_url:      imagenUrl,
-      proveedor_cuit:  proveedorCuit?.trim() || null,
+      proveedor_cuit:  normalizarCuit(proveedorCuit),
+      fecha_vencimiento_pago: vencimientoPago || fecha,
+      genera_deuda:    true,
       created_by:      user.id,
     })
     .select("id")
@@ -261,7 +311,7 @@ export async function registrarRecepcion(
       cantidad:      item.cantidad,
       motivo:        "compra",
       referencia_id: rec.id,
-      notas:         `${tipo === "factura" ? "Factura" : "Remito"} ${numero} — ${proveedor}`,
+      notas:         `${tipo === "factura" ? "Factura" : "Remito"} ${numero} — ${prov.nombre}`,
       created_by:    user.id,
     });
   }
