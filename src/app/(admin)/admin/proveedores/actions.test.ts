@@ -1,0 +1,235 @@
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import { FakeDb } from "@/test/fake-db";
+
+const state = vi.hoisted(() => ({ db: null as any, admin: true }));
+
+vi.mock("@/lib/supabase/server", () => ({ createAdminClient: () => state.db }));
+vi.mock("@/lib/auth", () => ({
+  requireAdmin: async () => {
+    if (!state.admin) throw new Error("No autorizado");
+    return { id: "admin-1" };
+  },
+  requireRole: async () => ({ id: "admin-1" }),
+}));
+vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
+
+import {
+  actualizarProveedor, crearProveedor, eliminarPagoProveedor, registrarGasto,
+  registrarPagoProveedor, setGeneraDeuda, setVencimientoPago,
+} from "./actions";
+
+let db: FakeDb;
+beforeEach(() => {
+  db = new FakeDb();
+  db.unique = { proveedores: [["nombre"], ["cuit"]] };
+  state.db = db;
+  state.admin = true;
+});
+
+const hoy = "2026-11-02";
+const err = (r: any) => ("error" in r ? r.error : null);
+
+describe("permisos: todas las actions exigen admin", () => {
+  it("rechazan a un usuario sin rol admin", async () => {
+    state.admin = false;
+    const rs = await Promise.all([
+      crearProveedor({ nombre: "X", condicion_pago_dias: 0 }),
+      actualizarProveedor("id", { nombre: "X", condicion_pago_dias: 0 }),
+      registrarPagoProveedor({ proveedorId: "p", monto: 10, fecha: hoy, metodo: "efectivo", recepcionIds: [] }),
+      eliminarPagoProveedor("g", "p"),
+      setGeneraDeuda("r", false, "p"),
+      setVencimientoPago("r", hoy, "p"),
+      registrarGasto({ proveedor: "X", categoria: "luz", numero: "1", fecha: hoy, vencimientoPago: hoy, total: 10 }),
+    ]);
+    for (const r of rs) expect(err(r)).toBe("No autorizado");
+    expect(db.rows("pagos_proveedores")).toHaveLength(0);
+    expect(db.rows("proveedores")).toHaveLength(0);
+  });
+});
+
+describe("crearProveedor / actualizarProveedor", () => {
+  it("exige nombre y normaliza CUIT y plazo", async () => {
+    expect(err(await crearProveedor({ nombre: "  ", condicion_pago_dias: 0 }))).toMatch(/nombre/i);
+    const r = await crearProveedor({ nombre: " Molino ", cuit: "30555181619", condicion_pago_dias: -5 });
+    expect("ok" in r).toBe(true);
+    expect(db.rows("proveedores")[0]).toMatchObject({ nombre: "Molino", cuit: "30-55518161-9", condicion_pago_dias: 0 });
+  });
+
+  it("traduce nombre o CUIT duplicado a un mensaje claro", async () => {
+    await crearProveedor({ nombre: "Molino", cuit: "30-55518161-9", condicion_pago_dias: 0 });
+    expect(err(await crearProveedor({ nombre: "MOLINO", condicion_pago_dias: 0 }))).toMatch(/mismo nombre|ese nombre/i);
+    expect(err(await crearProveedor({ nombre: "Otro", cuit: "30555181619", condicion_pago_dias: 0 }))).toMatch(/CUIT/i);
+  });
+
+  it("al editar sincroniza el nombre en las recepciones del proveedor", async () => {
+    const [p] = db.seed("proveedores", [{ nombre: "Viejo", cuit: null }]);
+    db.seed("recepciones", [{ proveedor_id: p.id, proveedor: "Viejo" }, { proveedor_id: "otro", proveedor: "Otro" }]);
+    await actualizarProveedor(p.id, { nombre: "Nuevo", cuit: "20-12345678-6", condicion_pago_dias: 15 });
+    expect(db.rows("recepciones").map(r => r.proveedor)).toEqual(["Nuevo", "Otro"]);
+  });
+});
+
+describe("registrarPagoProveedor", () => {
+  function escenario() {
+    const [p] = db.seed("proveedores", [{ nombre: "A" }]);
+    const [q] = db.seed("proveedores", [{ nombre: "B" }]);
+    const [r1, r2, r3, rOtro, rSinDeuda] = db.seed("recepciones", [
+      { proveedor_id: p.id, total: 1000, fecha: "2026-10-01", fecha_vencimiento_pago: "2026-10-31", genera_deuda: true },
+      { proveedor_id: p.id, total: 500,  fecha: "2026-10-05", fecha_vencimiento_pago: "2026-10-10", genera_deuda: true },
+      { proveedor_id: p.id, total: 300,  fecha: "2026-10-20", fecha_vencimiento_pago: "2026-11-20", genera_deuda: true },
+      { proveedor_id: q.id, total: 999,  fecha: "2026-10-01", genera_deuda: true },
+      { proveedor_id: p.id, total: 700,  fecha: "2026-10-01", genera_deuda: false },
+    ]);
+    return { p, q, r1, r2, r3, rOtro, rSinDeuda };
+  }
+  const base = { fecha: hoy, metodo: "transferencia" };
+
+  it("valida monto y fecha", async () => {
+    const { p } = escenario();
+    for (const monto of [0, -5, NaN, Infinity]) {
+      expect(err(await registrarPagoProveedor({ ...base, proveedorId: p.id, monto, recepcionIds: [] }))).toMatch(/monto/i);
+    }
+    expect(err(await registrarPagoProveedor({ ...base, fecha: "2026-13-45", proveedorId: p.id, monto: 10, recepcionIds: [] }))).toMatch(/fecha/i);
+    expect(db.rows("pagos_proveedores")).toHaveLength(0);
+  });
+
+  it("reparte por vencimiento (no por el orden en que se tildó) y deja el sobrante a cuenta", async () => {
+    const { p, r1, r2, r3 } = escenario();
+    const res = await registrarPagoProveedor({ ...base, proveedorId: p.id, monto: 1700, recepcionIds: [r3.id, r1.id, r2.id] });
+    expect("ok" in res && res.aCuenta).toBe(0);
+    const pagos = db.rows("pagos_proveedores");
+    expect(pagos.map(x => [x.recepcion_id, x.monto])).toEqual([[r2.id, 500], [r1.id, 1000], [r3.id, 200]]);
+    expect(new Set(pagos.map(x => x.grupo_id)).size).toBe(1);
+    expect(pagos.reduce((s, x) => s + x.monto, 0)).toBe(1700);
+  });
+
+  it("el sobrante queda a cuenta con el mismo grupo", async () => {
+    const { p, r2 } = escenario();
+    const res = await registrarPagoProveedor({ ...base, proveedorId: p.id, monto: 800, recepcionIds: [r2.id] });
+    expect("ok" in res && res.aCuenta).toBe(300);
+    const pagos = db.rows("pagos_proveedores");
+    expect(pagos).toHaveLength(2);
+    expect(pagos[1]).toMatchObject({ recepcion_id: null, monto: 300 });
+    expect(pagos[0].grupo_id).toBe(pagos[1].grupo_id);
+  });
+
+  it("descuenta lo ya pagado de cada comprobante", async () => {
+    const { p, r1 } = escenario();
+    db.seed("pagos_proveedores", [{ proveedor_id: p.id, recepcion_id: r1.id, monto: 900 }]);
+    await registrarPagoProveedor({ ...base, proveedorId: p.id, monto: 500, recepcionIds: [r1.id] });
+    const nuevos = db.rows("pagos_proveedores").slice(1);
+    expect(nuevos.map(x => [x.recepcion_id, x.monto])).toEqual([[r1.id, 100], [null, 400]]);
+  });
+
+  it("sin comprobantes tildados todo va a cuenta", async () => {
+    const { p } = escenario();
+    await registrarPagoProveedor({ ...base, proveedorId: p.id, monto: 250, recepcionIds: [] });
+    expect(db.rows("pagos_proveedores")).toMatchObject([{ recepcion_id: null, monto: 250 }]);
+  });
+
+  it("rechaza comprobantes de otro proveedor o que no generan deuda", async () => {
+    const { p, rOtro, rSinDeuda, r1 } = escenario();
+    expect(err(await registrarPagoProveedor({ ...base, proveedorId: p.id, monto: 10, recepcionIds: [rOtro.id] }))).toMatch(/no pertenece/i);
+    expect(err(await registrarPagoProveedor({ ...base, proveedorId: p.id, monto: 10, recepcionIds: [rSinDeuda.id] }))).toMatch(/no pertenece|no genera/i);
+    expect(err(await registrarPagoProveedor({ ...base, proveedorId: p.id, monto: 10, recepcionIds: [r1.id, "inexistente"] }))).toBeTruthy();
+    expect(db.rows("pagos_proveedores")).toHaveLength(0);
+  });
+
+  it("no pierde centavos con montos decimales", async () => {
+    const { p, r2 } = escenario();
+    await registrarPagoProveedor({ ...base, proveedorId: p.id, monto: 100.1 + 0.2, recepcionIds: [r2.id] });
+    expect(db.rows("pagos_proveedores")[0].monto).toBe(100.3);
+  });
+});
+
+describe("eliminarPagoProveedor / setGeneraDeuda / setVencimientoPago", () => {
+  it("elimina solo el grupo del proveedor indicado", async () => {
+    const [p, q] = db.seed("proveedores", [{ nombre: "A" }, { nombre: "B" }]);
+    db.seed("pagos_proveedores", [
+      { proveedor_id: p.id, grupo_id: "g1", monto: 1 }, { proveedor_id: p.id, grupo_id: "g1", monto: 2 },
+      { proveedor_id: p.id, grupo_id: "g2", monto: 3 }, { proveedor_id: q.id, grupo_id: "g1", monto: 4 },
+    ]);
+    await eliminarPagoProveedor("g1", p.id);
+    expect(db.rows("pagos_proveedores").map(x => x.monto)).toEqual([3, 4]);
+  });
+
+  it("no deja sacar de la deuda un comprobante con pagos, pero sí volver a ponerlo", async () => {
+    const [r] = db.seed("recepciones", [{ genera_deuda: true }]);
+    db.seed("pagos_proveedores", [{ recepcion_id: r.id, monto: 5 }]);
+    expect(err(await setGeneraDeuda(r.id, false, "p"))).toMatch(/pagos imputados/i);
+    expect(r.genera_deuda).toBe(true);
+    db.tables.pagos_proveedores = [];
+    await setGeneraDeuda(r.id, false, "p");
+    expect(r.genera_deuda).toBe(false);
+    await setGeneraDeuda(r.id, true, "p");
+    expect(r.genera_deuda).toBe(true);
+  });
+
+  it("valida la fecha de vencimiento y permite limpiarla", async () => {
+    const [r] = db.seed("recepciones", [{ fecha_vencimiento_pago: "2026-10-01" }]);
+    expect(err(await setVencimientoPago(r.id, "2026-02-30", "p"))).toMatch(/fecha/i);
+    expect(r.fecha_vencimiento_pago).toBe("2026-10-01");
+    await setVencimientoPago(r.id, "2026-12-01", "p");
+    expect(r.fecha_vencimiento_pago).toBe("2026-12-01");
+    await setVencimientoPago(r.id, null, "p");
+    expect(r.fecha_vencimiento_pago).toBeNull();
+  });
+});
+
+describe("registrarGasto", () => {
+  const gasto = { proveedor: "Energía", categoria: "luz", numero: "0001-123", fecha: hoy, vencimientoPago: "2026-11-20", total: 15000 };
+
+  it("valida los campos", async () => {
+    expect(err(await registrarGasto({ ...gasto, proveedor: " " }))).toMatch(/proveedor/i);
+    expect(err(await registrarGasto({ ...gasto, numero: "" }))).toMatch(/comprobante/i);
+    expect(err(await registrarGasto({ ...gasto, categoria: "combustible" }))).toMatch(/categor/i);
+    expect(err(await registrarGasto({ ...gasto, total: 0 }))).toMatch(/importe/i);
+    expect(err(await registrarGasto({ ...gasto, total: NaN }))).toMatch(/importe/i);
+    expect(err(await registrarGasto({ ...gasto, fecha: "2026-13-01" }))).toMatch(/fecha/i);
+    expect(err(await registrarGasto({ ...gasto, vencimientoPago: "mañana" }))).toMatch(/fecha/i);
+    expect(db.rows("recepciones")).toHaveLength(0);
+    expect(db.rows("proveedores")).toHaveLength(0);
+  });
+
+  it("a pagar: crea proveedor y gasto con deuda, sin pago", async () => {
+    const r = await registrarGasto(gasto);
+    expect("ok" in r && r.grupoId).toBeNull();
+    expect(db.rows("proveedores")).toHaveLength(1);
+    expect(db.rows("recepciones")[0]).toMatchObject({
+      tipo: "gasto", categoria_gasto: "luz", total: 15000, genera_deuda: true, fecha_vencimiento_pago: "2026-11-20",
+    });
+    expect(db.rows("pagos_proveedores")).toHaveLength(0);
+  });
+
+  it("reutiliza el proveedor aunque cambie mayúsculas o SRL", async () => {
+    db.seed("proveedores", [{ nombre: "El Abasto", cuit: null }]);
+    await registrarGasto({ ...gasto, proveedor: "el abasto S.R.L." });
+    expect(db.rows("proveedores")).toHaveLength(1);
+    expect(db.rows("recepciones")[0].proveedor).toBe("El Abasto");
+  });
+
+  it("rechaza un número de comprobante repetido del mismo proveedor", async () => {
+    await registrarGasto(gasto);
+    expect(err(await registrarGasto(gasto))).toMatch(/Ya hay un gasto/);
+    expect(db.rows("recepciones")).toHaveLength(1);
+    // otro proveedor puede repetir el número
+    expect("ok" in (await registrarGasto({ ...gasto, proveedor: "Agua SA" }))).toBe(true);
+  });
+
+  it("contado: registra el pago por el total y no deja deuda", async () => {
+    const r = await registrarGasto({ ...gasto, pagoContado: { metodo: "efectivo", referencia: "rec 55" } });
+    expect("ok" in r && typeof r.grupoId).toBe("string");
+    const [g] = db.rows("recepciones");
+    expect(db.rows("pagos_proveedores")).toMatchObject([
+      { recepcion_id: g.id, monto: 15000, fecha: hoy, metodo: "efectivo", referencia: "rec 55", notas: "Pagado al contado" },
+    ]);
+  });
+
+  it("contado: si falla el pago, borra el gasto (no queda deuda fantasma)", async () => {
+    db.failInsert.pagos_proveedores = "boom";
+    const r = await registrarGasto({ ...gasto, pagoContado: { metodo: "efectivo" } });
+    expect(err(r)).toBe("boom");
+    expect(db.rows("recepciones")).toHaveLength(0);
+    expect(db.rows("pagos_proveedores")).toHaveLength(0);
+  });
+});

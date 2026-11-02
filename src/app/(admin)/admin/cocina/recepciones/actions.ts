@@ -4,7 +4,7 @@ import { createAdminClient, createClient } from "@/lib/supabase/server";
 import { requireRole } from "@/lib/auth";
 import { revalidatePath } from "next/cache";
 import { leerComprobanteConGroq, validarComprobante } from "@/lib/groq";
-import { normalizarCuit } from "@/lib/proveedores";
+import { fechaValida, normalizarCuit } from "@/lib/proveedores";
 import { resolverProveedor } from "@/lib/proveedores-db";
 
 type Result = { error: string } | { ok: true; id: string };
@@ -230,6 +230,11 @@ export async function registrarRecepcion(
 
   const prov = await resolverProveedor(db, proveedor, proveedorCuit);
   if ("error" in prov) return { error: prov.error };
+
+  const { count: repetidos } = await db.from("recepciones").select("id", { count: "exact", head: true })
+    .eq("proveedor_id", prov.id).eq("tipo", tipo).eq("numero", numero.trim());
+  if ((repetidos ?? 0) > 0)
+    return { error: `Ya cargaste ${tipo === "factura" ? "la factura" : "el remito"} N° ${numero.trim()} de ${prov.nombre}` };
 
   // 1. Insertar cabecera (factura y remito generan deuda con el proveedor por defecto)
   const { data: rec, error: errRec } = await db

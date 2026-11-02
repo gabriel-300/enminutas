@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { claveProveedor, esCategoriaGasto, estadoVencimiento, etiquetaComprobante, imputarPago, normalizarCuit, sumarDias } from "./proveedores";
+import { claveProveedor, esCategoriaGasto, estadoVencimiento, etiquetaComprobante, fechaValida, imputarPago, normalizarCuit, parseMontoAR, sumarDias } from "./proveedores";
 
 describe("imputarPago", () => {
   const pend = [
@@ -77,5 +77,68 @@ describe("gastos", () => {
   it("valida la categoría", () => {
     expect(esCategoriaGasto("alquiler")).toBe(true);
     expect(esCategoriaGasto("combustible")).toBe(false);
+  });
+});
+
+describe("parseMontoAR", () => {
+  it("formato argentino con miles y decimales", () => {
+    expect(parseMontoAR("1.500,50")).toBe(1500.5);
+    expect(parseMontoAR("1.234.567,89")).toBe(1234567.89);
+    expect(parseMontoAR("$ 12.000")).toBe(12000);
+  });
+
+  it("decimal con coma o con punto", () => {
+    expect(parseMontoAR("1234,5")).toBe(1234.5);
+    expect(parseMontoAR("1234.56")).toBe(1234.56);
+    expect(parseMontoAR("0,5")).toBe(0.5);
+    expect(parseMontoAR("2.5")).toBe(2.5);
+  });
+
+  it("miles sin decimales", () => {
+    expect(parseMontoAR("1.500")).toBe(1500);
+    expect(parseMontoAR("1.500.000")).toBe(1500000);
+    expect(parseMontoAR("1500")).toBe(1500);
+  });
+
+  it("formato estadounidense", () => {
+    expect(parseMontoAR("1,234.56")).toBe(1234.56);
+    expect(parseMontoAR("1,500,000")).toBe(1500000);
+  });
+
+  it("rechaza lo que no es un importe", () => {
+    expect(parseMontoAR("")).toBeNull();
+    expect(parseMontoAR("abc")).toBeNull();
+    expect(parseMontoAR("12a")).toBeNull();
+    expect(parseMontoAR("1,2,3")).toBeNull();
+    expect(parseMontoAR("1..5")).toBeNull();
+    expect(parseMontoAR("--5")).toBeNull();
+    expect(parseMontoAR(null)).toBeNull();
+    expect(parseMontoAR(undefined)).toBeNull();
+    expect(parseMontoAR(NaN)).toBeNull();
+  });
+
+  it("el bug que evita: parseFloat('1.500,50') da 1.5", () => {
+    expect(parseFloat("1.500,50".replace(",", "."))).toBe(1.5);
+    expect(parseMontoAR("1.500,50")).toBe(1500.5);
+  });
+
+  it("acepta números y negativos explícitos", () => {
+    expect(parseMontoAR(250)).toBe(250);
+    expect(parseMontoAR("-100")).toBe(-100);
+  });
+});
+
+describe("fechaValida", () => {
+  it("acepta fechas reales", () => {
+    expect(fechaValida("2026-11-02")).toBe(true);
+    expect(fechaValida("2028-02-29")).toBe(true);
+  });
+  it("rechaza fechas imposibles o mal formadas", () => {
+    expect(fechaValida("2026-13-45")).toBe(false);
+    expect(fechaValida("2026-02-30")).toBe(false);
+    expect(fechaValida("2027-02-29")).toBe(false);
+    expect(fechaValida("02/11/2026")).toBe(false);
+    expect(fechaValida("")).toBe(false);
+    expect(fechaValida(null)).toBe(false);
   });
 });

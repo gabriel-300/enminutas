@@ -4,7 +4,7 @@ import { randomUUID } from "node:crypto";
 import { createAdminClient } from "@/lib/supabase/server";
 import { requireAdmin } from "@/lib/auth";
 import { revalidatePath } from "next/cache";
-import { esCategoriaGasto, imputarPago, normalizarCuit } from "@/lib/proveedores";
+import { esCategoriaGasto, fechaValida, imputarPago, normalizarCuit } from "@/lib/proveedores";
 import { resolverProveedor } from "@/lib/proveedores-db";
 
 type Result = { ok: true; id?: string } | { error: string };
@@ -94,7 +94,7 @@ export async function registrarPagoProveedor(
     const user = await requireAdmin();
     const monto = Math.round(Number(input.monto) * 100) / 100;
     if (!Number.isFinite(monto) || monto <= 0) return { error: "El monto debe ser mayor a cero" };
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(input.fecha)) return { error: "Fecha inválida" };
+    if (!fechaValida(input.fecha)) return { error: "Fecha inválida" };
 
     const db = createAdminClient() as any;
 
@@ -181,7 +181,7 @@ export async function setGeneraDeuda(recepcionId: string, generaDeuda: boolean, 
 export async function setVencimientoPago(recepcionId: string, fecha: string | null, proveedorId: string): Promise<Result> {
   try {
     await requireAdmin();
-    if (fecha && !/^\d{4}-\d{2}-\d{2}$/.test(fecha)) return { error: "Fecha inválida" };
+    if (fecha && !fechaValida(fecha)) return { error: "Fecha inválida" };
     const db = createAdminClient() as any;
     const { error } = await db.from("recepciones").update({ fecha_vencimiento_pago: fecha || null }).eq("id", recepcionId);
     if (error) return { error: error.message };
@@ -214,12 +214,16 @@ export async function registrarGasto(input: GastoInput): Promise<{ error: string
     if (!input.numero?.trim())    return { error: "El número de comprobante es obligatorio" };
     if (!esCategoriaGasto(input.categoria)) return { error: "Elegí una categoría" };
     if (!Number.isFinite(total) || total <= 0) return { error: "El importe debe ser mayor a cero" };
-    if (!/^d{4}-d{2}-d{2}$/.test(input.fecha) || !/^d{4}-d{2}-d{2}$/.test(input.vencimientoPago))
+    if (!fechaValida(input.fecha) || !fechaValida(input.vencimientoPago))
       return { error: "Fecha inválida" };
 
     const db = createAdminClient() as any;
     const prov = await resolverProveedor(db, input.proveedor, input.cuit ?? null);
     if ("error" in prov) return { error: prov.error };
+
+    const { count: repetidos } = await db.from("recepciones").select("id", { count: "exact", head: true })
+      .eq("proveedor_id", prov.id).eq("tipo", "gasto").eq("numero", input.numero.trim());
+    if ((repetidos ?? 0) > 0) return { error: `Ya hay un gasto N° ${input.numero.trim()} de ${prov.nombre}` };
 
     const { data: gasto, error } = await db.from("recepciones").insert({
       tipo:                   "gasto",

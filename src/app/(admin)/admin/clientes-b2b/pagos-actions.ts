@@ -3,6 +3,7 @@
 import type { User } from "@supabase/supabase-js";
 import { createAdminClient } from "@/lib/supabase/server";
 import { requireRole } from "@/lib/auth";
+import { parseMontoAR } from "@/lib/proveedores";
 import { revalidatePath } from "next/cache";
 
 type Result = { error: string } | { ok: true; pagoId: string };
@@ -38,8 +39,7 @@ async function autorizarCliente(clienteId: string): Promise<{ error: string } | 
 
 export async function registrarPago(formData: FormData): Promise<Result> {
   const clienteId      = (formData.get("cliente_id") as string)?.trim();
-  const montoStr       = (formData.get("monto") as string)?.replace(",", ".").replace(/\s/g, "");
-  const monto          = parseFloat(montoStr);
+  const monto          = parseMontoAR((formData.get("monto") as string) ?? "") ?? NaN;
   const fecha          = (formData.get("fecha") as string)?.trim();
   const metodo         = (formData.get("metodo") as string)?.trim() || "transferencia";
   const referencia     = (formData.get("referencia") as string)?.trim() || null;

@@ -2,7 +2,7 @@
 
 import { fmt } from "@/lib/format";
 import { fmtFechaSolo } from "@/lib/fecha";
-import { estadoVencimiento, etiquetaComprobante } from "@/lib/proveedores";
+import { estadoVencimiento, etiquetaComprobante, parseMontoAR } from "@/lib/proveedores";
 import { useState, useTransition } from "react";
 import { registrarPagoProveedor, eliminarPagoProveedor, setGeneraDeuda, setVencimientoPago } from "../actions";
 
@@ -85,8 +85,8 @@ export function FichaClient({
   function guardar(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
-    const montoNum = parseFloat(monto.replace(",", "."));
-    if (isNaN(montoNum) || montoNum <= 0) return setError("El monto debe ser mayor a cero");
+    const montoNum = parseMontoAR(monto);
+    if (montoNum == null || montoNum <= 0) return setError("El monto debe ser mayor a cero");
     start(async () => {
       const res = await registrarPagoProveedor({
         proveedorId, monto: montoNum, fecha, metodo, referencia, notas, recepcionIds: elegidos,

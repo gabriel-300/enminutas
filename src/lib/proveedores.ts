@@ -80,3 +80,43 @@ export function etiquetaComprobante(tipo: string, categoria?: string | null): st
   const cat = CATEGORIAS_GASTO.find(c => c.value === categoria)?.label;
   return cat ? `Gasto (${cat})` : "Gasto";
 }
+
+// Interpreta un importe tipeado a la argentina: "1.234,56", "1234,56", "1234.56", "$ 1.500".
+// Devuelve null si no es un número. Convención: con un solo "." seguido de exactamente 3 dígitos
+// ("1.500", "1.500.000") es separador de miles; un solo "," es decimal. parseFloat("1.500,50")
+// da 1.5, por eso no se usa directo con importes.
+export function parseMontoAR(texto: string | number | null | undefined): number | null {
+  if (typeof texto === "number") return Number.isFinite(texto) ? texto : null;
+  const t = (texto ?? "").replace(/[\s$ ]/g, "");
+  if (!t || /[^0-9.,-]/.test(t) || t.indexOf("-") > 0 || (t.match(/-/g)?.length ?? 0) > 1) return null;
+
+  const tienePunto = t.includes(".");
+  const tieneComa  = t.includes(",");
+  let normal: string;
+
+  if (tienePunto && tieneComa) {
+    normal = t.lastIndexOf(",") > t.lastIndexOf(".")
+      ? t.replace(/\./g, "").replace(",", ".")   // 1.234,56
+      : t.replace(/,/g, "");                      // 1,234.56
+  } else if (tieneComa) {
+    const comas = t.match(/,/g)!.length;
+    if (comas === 1) normal = t.replace(",", ".");                       // 1234,5
+    else if (/^-?\d{1,3}(,\d{3})+$/.test(t)) normal = t.replace(/,/g, ""); // 1,500,000
+    else return null;
+  } else if (tienePunto) {
+    normal = /^-?\d{1,3}(\.\d{3})+$/.test(t) ? t.replace(/\./g, "") : t;  // 1.500 → 1500; 2.5 → 2.5
+  } else {
+    normal = t;
+  }
+
+  if (!/^-?\d+(\.\d+)?$/.test(normal)) return null;
+  const n = Number(normal);
+  return Number.isFinite(n) ? n : null;
+}
+
+// YYYY-MM-DD que existe en el calendario (rechaza 2026-13-45 y 2026-02-30).
+export function fechaValida(s: string | null | undefined): s is string {
+  if (!s || !/^\d{4}-\d{2}-\d{2}$/.test(s)) return false;
+  const d = new Date(`${s}T12:00:00Z`);
+  return !Number.isNaN(d.getTime()) && d.toISOString().slice(0, 10) === s;
+}

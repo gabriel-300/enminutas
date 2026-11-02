@@ -4,6 +4,7 @@ import { fmt } from "@/lib/format";
 import { useState, useTransition } from "react";
 import { registrarPago, registrarPagoPedidos, eliminarPago } from "../pagos-actions";
 import { fmtFechaSolo } from "@/lib/fecha";
+import { parseMontoAR } from "@/lib/proveedores";
 
 export type Pago = {
   id: string;

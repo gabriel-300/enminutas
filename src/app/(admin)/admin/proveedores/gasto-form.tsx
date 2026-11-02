@@ -3,7 +3,7 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { registrarGasto } from "./actions";
-import { CATEGORIAS_GASTO, claveProveedor, normalizarCuit, sumarDias } from "@/lib/proveedores";
+import { CATEGORIAS_GASTO, claveProveedor, normalizarCuit, parseMontoAR, sumarDias } from "@/lib/proveedores";
 
 export type ProveedorOpcion = { id: string; nombre: string; cuit: string | null; dias: number };
 
@@ -43,8 +43,8 @@ export function GastoForm({ proveedores }: { proveedores: ProveedorOpcion[] }) {
   function guardar(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
-    const importe = parseFloat(total.replace(",", "."));
-    if (isNaN(importe) || importe <= 0) return setError("El importe debe ser mayor a cero");
+    const importe = parseMontoAR(total);
+    if (importe == null || importe <= 0) return setError("El importe debe ser mayor a cero");
     start(async () => {
       const res = await registrarGasto({
         proveedor, cuit: cuit || null, categoria, numero, fecha, vencimientoPago: contado ? fecha : vencimiento, total: importe, notas: notas || null,
