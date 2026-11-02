@@ -1,0 +1,149 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Manual: Cobranzas y deuda de clientes</title>
+<style>
+  :root { --ink:#1a1a18; --mute:#5c5c57; --line:#e3e1dc; --soft:#f6f5f2; --accent:#8a4b24; }
+  * { box-sizing: border-box; }
+  body { font-family: "Segoe UI", Arial, sans-serif; color: var(--ink); background:#fff; margin:0; line-height:1.55; }
+  main { max-width: 760px; margin: 0 auto; padding: 40px 24px 80px; }
+  h1 { font-size: 28px; margin: 0 0 4px; }
+  .sub { color: var(--mute); margin: 0 0 32px; }
+  h2 { font-size: 20px; margin: 40px 0 8px; padding-top: 16px; border-top: 2px solid var(--ink); }
+  h3 { font-size: 16px; margin: 24px 0 6px; }
+  p, li { font-size: 15px; }
+  ol, ul { padding-left: 22px; }
+  li { margin: 4px 0; }
+  .box { background: var(--soft); border-left: 4px solid var(--accent); padding: 12px 16px; margin: 16px 0; border-radius: 4px; }
+  .box strong:first-child { display:block; margin-bottom:2px; }
+  .menu { font-weight: 600; background: var(--soft); border: 1px solid var(--line); padding: 1px 7px; border-radius: 4px; white-space: nowrap; }
+  table { border-collapse: collapse; width: 100%; margin: 12px 0; font-size: 14px; }
+  th, td { border: 1px solid var(--line); padding: 8px 10px; text-align: left; vertical-align: top; }
+  th { background: var(--soft); }
+  @media print { main { padding: 0; } h2 { break-after: avoid; } .box, tr { break-inside: avoid; } }
+</style>
+</head>
+<body>
+<main>
+
+<h1>Cobranzas y deuda de clientes</h1>
+<p class="sub">Manual de procedimiento · Il Pane Nostro · Noviembre 2026</p>
+
+<h2>1. Para qué sirve</h2>
+<p>Este procedimiento sirve para saber cuánto debe cada cliente, qué ya venció, y para registrar los cobros que se reciben. Tiene dos partes:</p>
+<ul>
+  <li><b>Deuda clientes</b>: una pantalla con el panorama de todos los clientes (cuánto debe cada uno y qué está vencido).</li>
+  <li><b>Ficha del cliente</b>: donde se registra cada cobro, se ve el historial y se imprime el recibo.</li>
+</ul>
+
+<h2>2. Quién puede hacer qué</h2>
+<table>
+  <tr><th>Tarea</th><th>Administrador</th><th>Vendedor</th></tr>
+  <tr><td>Ver la pantalla Deuda clientes</td><td>Sí</td><td>No</td></tr>
+  <tr><td>Registrar y eliminar cobros en la ficha</td><td>Sí, de cualquier cliente</td><td>Solo de los clientes que tiene asignados</td></tr>
+  <tr><td>Cambiar el plazo de pago de un cliente</td><td>Sí</td><td>No</td></tr>
+</table>
+
+<h2>3. Cómo se calcula la deuda</h2>
+<p>La deuda de un cliente es lo que se le entregó y todavía no pagó, <b>según lo que está registrado en el sistema</b>:</p>
+<ul>
+  <li>Cuentan los pedidos <b>entregados</b>, <b>despachados</b> o con <b>entrega parcial</b>. No cuentan los pedidos cancelados, los todavía no entregados ni los ya <b>liquidados</b> (cobrados).</li>
+  <li>A cada pedido se le restan los cobros registrados.</li>
+  <li>Si el pedido se cobró <b>"sin factura"</b>, vale lo que se cobró: la diferencia del IVA se perdona y no queda como deuda.</li>
+  <li>Los cobros <b>a cuenta</b> (sin pedido) se restan del total del cliente.</li>
+</ul>
+<div class="box"><strong>Importante: es deuda "según lo registrado"</strong>Si se recibió un cobro y nadie lo cargó, el sistema lo sigue mostrando como deuda. Por eso es clave cargar todos los cobros. Si al empezar ves cifras altas, probablemente haya cobros viejos sin cargar.</div>
+
+<h3>¿Cuándo vence?</h3>
+<p>Un pedido vence a los <b>30 días de la entrega</b>. Ese plazo se puede cambiar cliente por cliente (sección 8).</p>
+
+<h2>4. La pantalla Deuda clientes</h2>
+<p>En el menú de la izquierda: <span class="menu">Administración</span> → <span class="menu">Deuda clientes</span>.</p>
+<table>
+  <tr><th>Dato</th><th>Qué significa</th></tr>
+  <tr><td>Deuda de clientes</td><td>Suma de lo que deben todos los clientes.</td></tr>
+  <tr><td>Vencido</td><td>La parte de esa deuda cuyo plazo ya pasó. Aparece en rojo.</td></tr>
+  <tr><td>Clientes con deuda</td><td>Cuántos clientes tienen saldo pendiente.</td></tr>
+  <tr><td>Plazo</td><td>Días de plazo de ese cliente ("contado" si es 0).</td></tr>
+  <tr><td>Pedidos</td><td>Cantidad de pedidos con saldo pendiente.</td></tr>
+  <tr><td>Saldo</td><td>Lo que debe ese cliente. Si pagó de más, dice "a favor".</td></tr>
+  <tr><td>Próx. vencimiento</td><td>La fecha en que vence el próximo pedido a cobrar.</td></tr>
+  <tr><td>Último pago</td><td>Fecha del último cobro registrado.</td></tr>
+</table>
+<p>Los clientes están ordenados de mayor a menor deuda. Tocá <b>Ver →</b> para abrir la ficha del cliente.</p>
+
+<h2>5. Registrar un cobro</h2>
+<ol>
+  <li>Abrí la ficha del cliente (desde <b>Ver →</b> en Deuda clientes, o desde la lista de clientes).</li>
+  <li>En el bloque <b>Cuenta corriente</b>, tocá <span class="menu">+ Registrar pago</span>.</li>
+  <li>Elegí a qué se imputa el cobro (ver abajo).</li>
+  <li>Completá el <b>monto</b>, la <b>fecha</b>, el <b>método</b> (transferencia, efectivo, cheque u otro) y, si querés, una referencia (por ejemplo, el número de transferencia) y notas.</li>
+  <li>Tocá <span class="menu">Confirmar pago</span>.</li>
+</ol>
+
+<h3>A qué se imputa el cobro</h3>
+<table>
+  <tr><th>Opción</th><th>Cuándo usarla</th></tr>
+  <tr><td><b>Pedido</b></td><td>El cliente paga uno o varios pedidos concretos. Tildá los pedidos; el monto se completa solo con la suma. Es la opción más usada.</td></tr>
+  <tr><td><b>Factura</b></td><td>El cliente paga una factura. Escribí el número de factura.</td></tr>
+  <tr><td><b>A cuenta</b></td><td>Un adelanto o un pago que no corresponde a un pedido en particular. Baja la deuda general del cliente.</td></tr>
+</table>
+
+<h3>Cobrar varios pedidos juntos</h3>
+<p>Si tildás varios pedidos y el monto no alcanza para todos, el sistema <b>reparte el monto proporcionalmente</b> al total de cada pedido. Se genera <b>un solo recibo</b> para todos.</p>
+
+<h3>Cobro "sin factura"</h3>
+<p>Si el cliente paga <b>sin factura</b>, tildá <b>"Sin factura — cobrar neto (s/IVA)"</b>. El monto se recalcula sin el 21% de IVA. Esa diferencia queda perdonada: <b>no figura como deuda</b>.</p>
+
+<h3>Marcar el pedido como liquidado</h3>
+<p>La casilla <b>"Marcar como liquidado"</b> pasa el pedido a estado <i>liquidado</i> (cobrado), pero <b>solo si ya fue entregado</b>. Si el pedido todavía no se entregó, el cobro se registra igual y el pedido sigue su curso normal.</p>
+<div class="box"><strong>Cuidado con liquidar de más</strong>Un pedido liquidado <b>sale de la deuda por completo</b>, aunque se haya cobrado menos que el total. Tildá "liquidado" solo cuando el pedido quedó saldado. Si el cobro es parcial, dejalo sin tildar para que el resto siga figurando.</div>
+
+<h2>6. Imprimir el recibo</h2>
+<p>Al confirmar el cobro aparece un cartel verde con <span class="menu">Imprimir recibo</span>. Si se cobraron varios pedidos juntos, es un único recibo combinado. También se puede abrir después desde el historial de pagos de la ficha, con el link <b>Recibo</b>.</p>
+<p>Se abre una hoja lista para imprimir con los datos del cliente, el detalle del cobro, el total y espacio para las firmas. Tocá <span class="menu">Imprimir</span> arriba a la derecha.</p>
+
+<h2>7. Situaciones frecuentes</h2>
+
+<h3>El cliente pagó una parte de un pedido</h3>
+<p>Registrá el cobro imputado al pedido con el monto real y <b>no marques liquidado</b>. El pedido queda con el saldo que falta y sigue en la deuda. Cuando pague el resto, registrá otro cobro y ahí sí podés liquidarlo.</p>
+
+<h3>El cliente pagó por adelantado, antes de la entrega</h3>
+<p>Registrá el cobro imputado al pedido. Como todavía no se entregó, el pedido sigue su curso y no se liquida solo. Al entregarse, ya figura como cobrado.</p>
+
+<h3>El cliente pagó de más</h3>
+<p>La diferencia queda a favor y en la pantalla Deuda clientes aparece como "a favor". Para que se aplique a un pedido futuro, registrala como cobro <b>a cuenta</b>.</p>
+
+<h3>Me equivoqué en un cobro</h3>
+<p>En el historial de pagos de la ficha, tocá <b>Eliminar</b> en ese cobro y registralo de nuevo, bien cargado.</p>
+<div class="box"><strong>Ojo con los pedidos ya liquidados</strong>Eliminar un cobro no devuelve el pedido al estado anterior: si ya estaba <i>liquidado</i>, sigue así y no vuelve a figurar como deuda. Si fuera necesario, hay que corregir el estado del pedido aparte.</div>
+
+<h3>Un cliente figura con mucha deuda pero ya pagó</h3>
+<p>Probablemente falten cargar sus cobros. Abrí la ficha, revisá el historial de pagos y registrá los que falten, con su fecha real.</p>
+
+<h2>8. Plazo de pago por cliente</h2>
+<p>Por defecto, todo pedido vence a los 30 días de la entrega. Para cambiarlo en un cliente (solo administradores):</p>
+<ol>
+  <li>Abrí la ficha del cliente.</li>
+  <li>Buscá <b>"Plazo de pago (desde la entrega)"</b> y tocá el lápiz ✏.</li>
+  <li>Escribí los días (por ejemplo 15 o 45). Con <b>0</b> el cliente es de contado. Si lo dejás vacío vuelve a los 30 días por defecto.</li>
+  <li>Tocá <span class="menu">Guardar</span>.</li>
+</ol>
+<p>El cambio se aplica a todos los pedidos del cliente, incluso los ya entregados.</p>
+
+<h2>9. Preguntas rápidas</h2>
+<table>
+  <tr><th>Pregunta</th><th>Respuesta</th></tr>
+  <tr><td>¿Un pedido aprobado pero no entregado cuenta como deuda?</td><td>No. La deuda empieza cuando el pedido se entrega o se despacha.</td></tr>
+  <tr><td>¿Qué pasa con los pedidos cancelados?</td><td>No cuentan para la deuda.</td></tr>
+  <tr><td>¿Puedo cobrar un cheque?</td><td>Sí, elegí "Cheque" como método y anotá el número en la referencia.</td></tr>
+  <tr><td>¿Un cobro "a cuenta" se aplica solo a un pedido?</td><td>No. Baja el saldo general del cliente, pero no se asigna a un pedido en particular.</td></tr>
+  <tr><td>¿Dónde veo cuánto me debe un cliente puntual?</td><td>En su ficha, bloque Cuenta corriente (facturado, pagado y saldo), o en la tabla de Deuda clientes.</td></tr>
+  <tr><td>¿Hay un límite de crédito por cliente?</td><td>Todavía no está implementado.</td></tr>
+</table>
+
+</main>
+</body>
+</html>

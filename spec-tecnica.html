@@ -364,7 +364,7 @@ section { margin-bottom: 4px; }
 <nav class="sidebar no-print">
   <div class="sidebar-logo">
     <div class="sidebar-logo-em">EnMinutas / contexto técnico</div>
-    <div class="sidebar-logo-sub">v2.7 · Noviembre 2026</div>
+    <div class="sidebar-logo-sub">v2.8 · Noviembre 2026</div>
   </div>
 
   <div class="nav-section">
@@ -1439,6 +1439,7 @@ comercializadora   = comisión_total − preventista
 <table>
   <thead><tr><th>Versión</th><th>Fecha</th><th>Cambios</th></tr></thead>
   <tbody>
+    <tr><td>2.8</td><td>2/11/2026</td><td>Los gastos pueden cargarse «ya pagados» (contado) o «a pagar» (cuenta corriente). Contado: <code>registrarGasto</code> crea el gasto y un pago por el total en <code>pagos_proveedores</code> (grupo propio, <code>notas = 'Pagado al contado'</code>), por lo que no queda deuda y hay orden de pago; si el pago falla se borra el gasto. Sin cambios de esquema.</td></tr>
     <tr><td>2.7</td><td>2/11/2026</td><td>Pantalla «Deuda clientes» (<code>/admin/cuentas-corrientes</code>) reescrita: la deuda sale por pedido (nueva función <code>deuda_clientes()</code>) y no del libro <code>cc_movimientos</code>, que solo tenía cargos de una parte de los pedidos y restaba todos los pagos (mostraba saldo neto −4,1 M cuando lo pendiente por pedido era 58 M). Nueva columna <code>profiles.plazo_pago_dias</code> y vencimientos. Migración 20261102160000. El libro <code>cc_movimientos</code> sigue existiendo pero ya no define el saldo.</td></tr>
     <tr><td>2.6</td><td>2/11/2026</td><td>Gastos sin mercadería en pagos a proveedores. <code>recepciones.tipo</code> admite <code>'gasto'</code> y nueva columna <code>categoria_gasto</code> (luz, agua, gas, internet_telefono, alquiler, impuestos, servicios, otros). El gasto genera deuda y se paga igual que una factura, pero no tiene ítems ni mueve stock; se carga solo desde Proveedores (admin) y el historial de Cocina → Recepciones lo excluye. El helper de alta de proveedor se movió a <code>lib/proveedores-db.ts</code>. Migración 20261102140000.</td></tr>
     <tr><td>2.5</td><td>2/11/2026</td><td>Módulo de pagos a proveedores. Nuevas tablas <code>proveedores</code> y <code>pagos_proveedores</code> (RLS activa, solo service_role); <code>recepciones</code> gana <code>proveedor_id</code>, <code>fecha_vencimiento_pago</code> y <code>genera_deuda</code>; función <code>proveedores_saldos()</code>. Reglas: facturas <strong>y remitos</strong> generan deuda (hay proveedores que no facturan); <code>genera_deuda</code> se destilda en un remito ya facturado para no duplicar; vencimiento = fecha + plazo del proveedor, editable; un pago se reparte entre los comprobantes elegidos por vencimiento y el sobrante queda a cuenta; saldo = Σ total de recepciones con genera_deuda − Σ pagos. Al cargar una recepción el proveedor se busca por CUIT y luego por nombre unificado (sin mayúsculas, acentos ni SRL/SA/SAS) y se crea si no existe. Migración 20261102120000: unificó los proveedores existentes (26) y dejó las 89 recepciones previas con <code>genera_deuda = false</code> (historial asumido pagado).</td></tr>

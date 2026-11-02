@@ -201,10 +201,12 @@ export type GastoInput = {
   vencimientoPago: string;        // YYYY-MM-DD
   total:           number;
   notas?:          string | null;
+  // Si viene, el gasto se paga en el acto (contado) y no queda deuda.
+  pagoContado?:    { metodo: string; referencia?: string | null };
 };
 
 // Gasto sin mercadería (luz, alquiler…): genera deuda con el proveedor, no toca stock.
-export async function registrarGasto(input: GastoInput): Promise<{ error: string } | { ok: true; proveedorId: string }> {
+export async function registrarGasto(input: GastoInput): Promise<{ error: string } | { ok: true; proveedorId: string; grupoId: string | null }> {
   try {
     const user = await requireAdmin();
     const total = Math.round(Number(input.total) * 100) / 100;
@@ -219,7 +221,7 @@ export async function registrarGasto(input: GastoInput): Promise<{ error: string
     const prov = await resolverProveedor(db, input.proveedor, input.cuit ?? null);
     if ("error" in prov) return { error: prov.error };
 
-    const { error } = await db.from("recepciones").insert({
+    const { data: gasto, error } = await db.from("recepciones").insert({
       tipo:                   "gasto",
       categoria_gasto:        input.categoria,
       numero:                 input.numero.trim(),
@@ -232,11 +234,32 @@ export async function registrarGasto(input: GastoInput): Promise<{ error: string
       notas:                  input.notas?.trim() || null,
       genera_deuda:           true,
       created_by:             user.id,
-    });
+    }).select("id").single();
     if (error) return { error: error.message };
 
+    // Contado: se registra el pago por el total, así no queda deuda y hay orden de pago.
+    let grupoId: string | null = null;
+    if (input.pagoContado) {
+      grupoId = randomUUID();
+      const { error: errPago } = await db.from("pagos_proveedores").insert({
+        proveedor_id: prov.id,
+        recepcion_id: gasto.id,
+        monto:        total,
+        fecha:        input.fecha,
+        metodo:       input.pagoContado.metodo || "efectivo",
+        referencia:   input.pagoContado.referencia?.trim() || null,
+        notas:        "Pagado al contado",
+        grupo_id:     grupoId,
+        created_by:   user.id,
+      });
+      if (errPago) {
+        await db.from("recepciones").delete().eq("id", gasto.id); // sin pago no se deja el gasto a medias
+        return { error: errPago.message };
+      }
+    }
+
     revalidar(prov.id);
-    return { ok: true, proveedorId: prov.id };
+    return { ok: true, proveedorId: prov.id, grupoId };
   } catch (e: any) {
     return { error: e.message };
   }

@@ -24,6 +24,9 @@ export function GastoForm({ proveedores }: { proveedores: ProveedorOpcion[] }) {
   const [total,     setTotal]     = useState("");
   const [vencManual, setVencManual] = useState("");
   const [notas,     setNotas]     = useState("");
+  const [contado,   setContado]   = useState(false);
+  const [metodo,    setMetodo]    = useState("efectivo");
+  const [referencia, setReferencia] = useState("");
   const [error,     setError]     = useState<string | null>(null);
   const [pending,   start]        = useTransition();
 
@@ -34,7 +37,7 @@ export function GastoForm({ proveedores }: { proveedores: ProveedorOpcion[] }) {
 
   function cerrar() {
     setAbierto(false); setProveedor(""); setCuit(""); setCategoria("luz"); setNumero("");
-    setFecha(hoy()); setTotal(""); setVencManual(""); setNotas(""); setError(null);
+    setFecha(hoy()); setTotal(""); setVencManual(""); setNotas(""); setContado(false); setMetodo("efectivo"); setReferencia(""); setError(null);
   }
 
   function guardar(e: React.FormEvent) {
@@ -44,10 +47,13 @@ export function GastoForm({ proveedores }: { proveedores: ProveedorOpcion[] }) {
     if (isNaN(importe) || importe <= 0) return setError("El importe debe ser mayor a cero");
     start(async () => {
       const res = await registrarGasto({
-        proveedor, cuit: cuit || null, categoria, numero, fecha, vencimientoPago: vencimiento, total: importe, notas: notas || null,
+        proveedor, cuit: cuit || null, categoria, numero, fecha, vencimientoPago: contado ? fecha : vencimiento, total: importe, notas: notas || null,
+        pagoContado: contado ? { metodo, referencia: referencia || null } : undefined,
       });
       if ("error" in res) { setError(res.error); return; }
       cerrar();
+      // Pagado al contado: se abre directo la orden de pago para imprimir.
+      if (res.grupoId) window.open(`/admin/proveedores/orden-pago/${res.grupoId}`, "_blank");
       router.push(`/admin/proveedores/${res.proveedorId}`);
     });
   }
@@ -65,7 +71,23 @@ export function GastoForm({ proveedores }: { proveedores: ProveedorOpcion[] }) {
     <form onSubmit={guardar} className="w-full bg-white rounded-xl border border-neutral-200 shadow-sm p-5 space-y-4 text-left">
       <div>
         <p className="text-sm font-semibold text-neutral-800">Cargar gasto</p>
-        <p className="text-xs text-neutral-600">Servicios, alquiler, impuestos… Quedan como deuda con el proveedor; no mueven stock.</p>
+        <p className="text-xs text-neutral-600">Servicios, alquiler, impuestos… No mueven stock.</p>
+      </div>
+      <div>
+        <p className={labelCls}>Cómo se paga</p>
+        <div className="flex gap-2 flex-wrap">
+          {[
+            { v: false, t: "Queda a pagar", d: "cuenta corriente: se paga después" },
+            { v: true,  t: "Ya pagado",     d: "contado: se pagó en el momento" },
+          ].map(o => (
+            <button key={o.t} type="button" onClick={() => setContado(o.v)} disabled={pending}
+              className={`py-2 px-3 text-sm rounded-lg border text-left transition-colors ${
+                contado === o.v ? "border-tierra-700 bg-tierra-700/5 text-tierra-700" : "border-neutral-200 text-neutral-600 hover:border-neutral-300"}`}>
+              <span className="font-medium">{o.t}</span>
+              <span className="block text-xs opacity-80">{o.d}</span>
+            </button>
+          ))}
+        </div>
       </div>
       <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
         <div className="md:col-span-2">
@@ -100,14 +122,32 @@ export function GastoForm({ proveedores }: { proveedores: ProveedorOpcion[] }) {
           <label className={labelCls}>Fecha del comprobante</label>
           <input type="date" value={fecha} onChange={e => setFecha(e.target.value)} className={inputCls} disabled={pending} required />
         </div>
-        <div>
-          <label className={labelCls}>Vence el pago</label>
-          <input type="date" value={vencimiento} onChange={e => setVencManual(e.target.value)} className={inputCls} disabled={pending} required />
-          <p className="text-xs text-neutral-600 mt-1">
-            {match && match.dias > 0 ? `Plazo del proveedor: ${match.dias} días` : "Sin plazo cargado: contado"}
-          </p>
-        </div>
-        <div>
+        {contado ? (
+          <>
+            <div>
+              <label className={labelCls}>Método de pago</label>
+              <select value={metodo} onChange={e => setMetodo(e.target.value)} className={inputCls} disabled={pending}>
+                <option value="efectivo">Efectivo</option>
+                <option value="transferencia">Transferencia</option>
+                <option value="cheque">Cheque</option>
+                <option value="otro">Otro</option>
+              </select>
+            </div>
+            <div>
+              <label className={labelCls}>Referencia</label>
+              <input value={referencia} onChange={e => setReferencia(e.target.value)} className={inputCls} disabled={pending} placeholder="Nro. de transferencia, recibo…" />
+            </div>
+          </>
+        ) : (
+          <div>
+            <label className={labelCls}>Vence el pago</label>
+            <input type="date" value={vencimiento} onChange={e => setVencManual(e.target.value)} className={inputCls} disabled={pending} required />
+            <p className="text-xs text-neutral-600 mt-1">
+              {match && match.dias > 0 ? `Plazo del proveedor: ${match.dias} días` : "Sin plazo cargado: contado"}
+            </p>
+          </div>
+        )}
+        <div className="md:col-span-3">
           <label className={labelCls}>Notas</label>
           <input value={notas} onChange={e => setNotas(e.target.value)} className={inputCls} disabled={pending} placeholder="Ej: período oct/2026" />
         </div>
@@ -116,7 +156,7 @@ export function GastoForm({ proveedores }: { proveedores: ProveedorOpcion[] }) {
       <div className="flex gap-2">
         <button type="submit" disabled={pending}
           className="px-4 py-2 text-sm font-medium rounded-lg bg-tierra-700 text-white hover:bg-tierra-800 disabled:opacity-50 transition-colors">
-          {pending ? "Guardando…" : "Guardar gasto"}
+          {pending ? "Guardando…" : contado ? "Guardar y registrar pago" : "Guardar gasto"}
         </button>
         <button type="button" onClick={cerrar} disabled={pending} className="text-sm text-neutral-600 hover:text-neutral-700 px-2">
           Cancelar
