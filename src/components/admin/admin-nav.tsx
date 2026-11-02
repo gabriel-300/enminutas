@@ -90,7 +90,7 @@ const SECTIONS: { label?: string; key?: string; items: NavEntry[] }[] = [
     key:   "administracion",
     items: [
       { href: "/admin/facturacion",         label: "Facturación",      icon: FileText,    roles: ["admin"] },
-      { href: "/admin/cuentas-corrientes",  label: "Ctas. corrientes", icon: CreditCard,  roles: ["admin"] },
+      { href: "/admin/cuentas-corrientes",  label: "Deuda clientes", icon: CreditCard,  roles: ["admin"] },
       { href: "/admin/proveedores",         label: "Proveedores",      icon: Building2,   roles: ["admin"] },
       { href: "/admin/comisiones",          label: "Comisiones",       icon: Wallet,      roles: ["admin"] },
       { href: "/admin/devoluciones",        label: "Devoluciones",     icon: RotateCcw,   roles: ["admin"] },

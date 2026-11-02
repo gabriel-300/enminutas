@@ -622,7 +622,7 @@
       Documento confidencial — uso interno
     </div>
     <div class="cover-footer-right">
-      v2.6 · Noviembre 2026<br>
+      v2.7 · Noviembre 2026<br>
       admin@enminutas.com.ar
     </div>
   </div>
@@ -630,7 +630,7 @@
 
 <!-- PRINT BAR -->
 <div class="print-bar no-print">
-  <span class="version-tag">v2.6 · Noviembre 2026</span>
+  <span class="version-tag">v2.7 · Noviembre 2026</span>
   <button class="btn-print" onclick="window.print()">⎙ Imprimir / Guardar PDF</button>
 </div>
 
@@ -861,7 +861,7 @@
       <li>Cargo automático en cuenta corriente al despachar pedidos con ese método de pago, ajustado en las entregas parciales y cancelaciones</li>
     </ul>
     <p>Cuando un pedido entregado queda cobrado, pasa al estado Liquidado.</p>
-    <div class="note">Nota: el control de límite de crédito y el listado de saldos por cliente de la pantalla "Cuentas corrientes" están pendientes de reconexión con la ficha del cliente; hoy la gestión de cobranzas se hace desde la ficha de cada cliente.</div>
+    <div class="note">Nota: la pantalla «Deuda clientes» muestra lo que cada cliente debe según los pedidos entregados y los cobros registrados, con vencimientos (30 días desde la entrega por defecto, ajustable por cliente). El control de límite de crédito sigue sin implementarse. La gestión de cobros se hace desde la ficha de cada cliente.</div>
 
     <h3>Comisiones</h3>
     <p>Pantalla para calcular y registrar el pago de comisiones del equipo comercial, con exportación a planilla. Reglas principales:</p>
@@ -1220,7 +1220,7 @@
           <tr><td>Alertas, emails automáticos y chat interno</td><td><span class="tag tag-green">Completo</span></td></tr>
           <tr><td>Reportes y rentabilidad</td><td><span class="tag tag-green">Completo</span></td></tr>
           <tr><td>Firma digital en remito</td><td><span class="tag tag-green">Completo</span></td></tr>
-          <tr><td>Pantalla Cuentas corrientes y límite de crédito</td><td><span class="tag tag-amber">Por reconectar</span></td></tr>
+          <tr><td>Pantalla Deuda clientes (saldos y vencimientos)</td><td><span class="tag tag-green">Operativa</span></td></tr>
         </tbody>
       </table>
     </div>
@@ -1230,7 +1230,7 @@
       <table>
         <thead><tr><th>Feature</th><th>Descripción</th></tr></thead>
         <tbody>
-          <tr><td>Cuentas corrientes y límite de crédito</td><td>Reconectar el listado de saldos y el control de límite de crédito con los datos reales de clientes</td></tr>
+          <tr><td>Límite de crédito por cliente</td><td>Definir dónde vive el límite y bloquear pedidos al superarlo</td></tr>
           <tr><td>Comisión sobre lo cobrado</td><td>Calcular la comisión a medida que el cliente paga, en lugar de al entregar. Ya está diseñado</td></tr>
           <tr><td>Facturación electrónica (AFIP/CAE)</td><td>Generación de comprobantes fiscales con CAE para clientes que lo requieren</td></tr>
           <tr><td>Remito con firma física</td><td>Versión del remito apta para firma en papel + registro de recepción</td></tr>
