@@ -4,7 +4,8 @@ import { randomUUID } from "node:crypto";
 import { createAdminClient } from "@/lib/supabase/server";
 import { requireAdmin } from "@/lib/auth";
 import { revalidatePath } from "next/cache";
-import { imputarPago, normalizarCuit } from "@/lib/proveedores";
+import { esCategoriaGasto, imputarPago, normalizarCuit } from "@/lib/proveedores";
+import { resolverProveedor } from "@/lib/proveedores-db";
 
 type Result = { ok: true; id?: string } | { error: string };
 
@@ -186,6 +187,56 @@ export async function setVencimientoPago(recepcionId: string, fecha: string | nu
     if (error) return { error: error.message };
     revalidar(proveedorId);
     return { ok: true };
+  } catch (e: any) {
+    return { error: e.message };
+  }
+}
+
+export type GastoInput = {
+  proveedor:       string;
+  cuit?:           string | null;
+  categoria:       string;
+  numero:          string;
+  fecha:           string;        // YYYY-MM-DD
+  vencimientoPago: string;        // YYYY-MM-DD
+  total:           number;
+  notas?:          string | null;
+};
+
+// Gasto sin mercadería (luz, alquiler…): genera deuda con el proveedor, no toca stock.
+export async function registrarGasto(input: GastoInput): Promise<{ error: string } | { ok: true; proveedorId: string }> {
+  try {
+    const user = await requireAdmin();
+    const total = Math.round(Number(input.total) * 100) / 100;
+    if (!input.proveedor?.trim()) return { error: "El proveedor es obligatorio" };
+    if (!input.numero?.trim())    return { error: "El número de comprobante es obligatorio" };
+    if (!esCategoriaGasto(input.categoria)) return { error: "Elegí una categoría" };
+    if (!Number.isFinite(total) || total <= 0) return { error: "El importe debe ser mayor a cero" };
+    if (!/^d{4}-d{2}-d{2}$/.test(input.fecha) || !/^d{4}-d{2}-d{2}$/.test(input.vencimientoPago))
+      return { error: "Fecha inválida" };
+
+    const db = createAdminClient() as any;
+    const prov = await resolverProveedor(db, input.proveedor, input.cuit ?? null);
+    if ("error" in prov) return { error: prov.error };
+
+    const { error } = await db.from("recepciones").insert({
+      tipo:                   "gasto",
+      categoria_gasto:        input.categoria,
+      numero:                 input.numero.trim(),
+      proveedor:              prov.nombre,
+      proveedor_id:           prov.id,
+      proveedor_cuit:         normalizarCuit(input.cuit) ?? prov.cuit,
+      fecha:                  input.fecha,
+      fecha_vencimiento_pago: input.vencimientoPago,
+      total,
+      notas:                  input.notas?.trim() || null,
+      genera_deuda:           true,
+      created_by:             user.id,
+    });
+    if (error) return { error: error.message };
+
+    revalidar(prov.id);
+    return { ok: true, proveedorId: prov.id };
   } catch (e: any) {
     return { error: e.message };
   }

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { claveProveedor, estadoVencimiento, imputarPago, normalizarCuit, sumarDias } from "./proveedores";
+import { claveProveedor, esCategoriaGasto, estadoVencimiento, etiquetaComprobante, imputarPago, normalizarCuit, sumarDias } from "./proveedores";
 
 describe("imputarPago", () => {
   const pend = [
@@ -63,5 +63,19 @@ describe("unificación de proveedores", () => {
     expect(normalizarCuit("30-55518161-9")).toBe("30-55518161-9");
     expect(normalizarCuit("")).toBeNull();
     expect(normalizarCuit(null)).toBeNull();
+  });
+});
+
+describe("gastos", () => {
+  it("nombra los comprobantes", () => {
+    expect(etiquetaComprobante("factura")).toBe("Factura");
+    expect(etiquetaComprobante("remito", "luz")).toBe("Remito");
+    expect(etiquetaComprobante("gasto", "luz")).toBe("Gasto (Luz)");
+    expect(etiquetaComprobante("gasto", null)).toBe("Gasto");
+  });
+
+  it("valida la categoría", () => {
+    expect(esCategoriaGasto("alquiler")).toBe(true);
+    expect(esCategoriaGasto("combustible")).toBe(false);
   });
 });

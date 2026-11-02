@@ -6,6 +6,7 @@ import { createClient, createAdminClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { AlertCircle, Building2, CalendarClock } from "lucide-react";
 import { ProveedorForm } from "./proveedor-form";
+import { GastoForm } from "./gasto-form";
 
 export const metadata: Metadata = { title: "Proveedores — Admin" };
 export const revalidate = 0;
@@ -29,20 +30,23 @@ export default async function ProveedoresPage() {
     proximo: (p.proximo_vencimiento ?? null) as string | null,
   }));
 
+  const opciones = filas.map(f => ({ id: f.id, nombre: f.nombre, cuit: f.cuit === "—" ? null : f.cuit, dias: f.dias }));
+
   const deudaTotal  = filas.reduce((s, f) => s + Math.max(0, f.saldo), 0);
   const vencidoTot  = filas.reduce((s, f) => s + f.vencido, 0);
   const conDeuda    = filas.filter(f => f.saldo > 0.5).length;
 
   return (
     <div className="p-4 md:px-10 md:py-8 md:pb-16">
-      <div className="mb-6 flex items-start justify-between gap-4 flex-wrap">
-        <div>
+      <div className="mb-4">
           <h1 className="text-2xl font-bold font-display text-neutral-900">Proveedores</h1>
           <p className="text-sm text-neutral-600 mt-1">
-            Saldo = facturas y remitos que generan deuda − pagos registrados. Se cargan desde Cocina → Recepciones.
+            Saldo = facturas y remitos que generan deuda − pagos registrados. Las compras se cargan en Cocina → Recepciones; los gastos (luz, alquiler…) acá.
           </p>
-        </div>
+      </div>
+      <div className="mb-6 flex flex-wrap items-start gap-3">
         <ProveedorForm etiqueta="+ Nuevo proveedor" />
+        <GastoForm proveedores={opciones} />
       </div>
 
       {error && (

@@ -4,7 +4,8 @@ import { createAdminClient, createClient } from "@/lib/supabase/server";
 import { requireRole } from "@/lib/auth";
 import { revalidatePath } from "next/cache";
 import { leerComprobanteConGroq, validarComprobante } from "@/lib/groq";
-import { claveProveedor, normalizarCuit } from "@/lib/proveedores";
+import { normalizarCuit } from "@/lib/proveedores";
+import { resolverProveedor } from "@/lib/proveedores-db";
 
 type Result = { error: string } | { ok: true; id: string };
 
@@ -51,32 +52,6 @@ export async function getProveedoresOpciones(): Promise<ProveedorOpcion[]> {
   return ((data ?? []) as any[]).map(p => ({
     id: p.id, nombre: p.nombre, cuit: p.cuit ?? null, dias: Number(p.condicion_pago_dias ?? 0),
   }));
-}
-
-// Busca el proveedor por CUIT y, si no, por nombre unificado (sin mayúsculas/acentos/"SRL");
-// si no existe lo da de alta. Así "El Abasto" y "el Abasto srl" son el mismo proveedor.
-async function resolverProveedor(
-  db: any, nombre: string, cuitCrudo: string | null,
-): Promise<{ id: string; nombre: string; cuit: string | null } | { error: string }> {
-  const cuit = normalizarCuit(cuitCrudo);
-  const { data } = await db.from("proveedores").select("id, nombre, cuit");
-  const todos = (data ?? []) as { id: string; nombre: string; cuit: string | null }[];
-
-  const existente = (cuit && todos.find(p => p.cuit === cuit))
-    || todos.find(p => claveProveedor(p.nombre) === claveProveedor(nombre));
-  if (existente) {
-    // Si el proveedor no tenía CUIT y esta factura lo trae, se completa.
-    if (!existente.cuit && cuit) {
-      await db.from("proveedores").update({ cuit }).eq("id", existente.id);
-      existente.cuit = cuit;
-    }
-    return existente;
-  }
-
-  const { data: nuevo, error } = await db
-    .from("proveedores").insert({ nombre: nombre.trim(), cuit }).select("id, nombre, cuit").single();
-  if (error) return { error: error.message };
-  return nuevo;
 }
 
 export type ItemInput = {
@@ -355,6 +330,7 @@ export async function getHistorialRecepciones(limit = 30): Promise<RecepcionHist
   const { data } = await db
     .from("recepciones")
     .select("id, tipo, numero, proveedor, fecha, notas, total, otros_impuestos, imagen_url, proveedor_cuit, created_at")
+    .in("tipo", ["factura", "remito"])
     .order("fecha", { ascending: false })
     .order("created_at", { ascending: false })
     .limit(limit);

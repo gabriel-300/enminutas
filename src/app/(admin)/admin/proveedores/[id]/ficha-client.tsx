@@ -2,13 +2,14 @@
 
 import { fmt } from "@/lib/format";
 import { fmtFechaSolo } from "@/lib/fecha";
-import { estadoVencimiento } from "@/lib/proveedores";
+import { estadoVencimiento, etiquetaComprobante } from "@/lib/proveedores";
 import { useState, useTransition } from "react";
 import { registrarPagoProveedor, eliminarPagoProveedor, setGeneraDeuda, setVencimientoPago } from "../actions";
 
 export type Comprobante = {
   id:          string;
   tipo:        string;
+  categoria:   string | null;
   numero:      string;
   fecha:       string;
   vencimiento: string;
@@ -166,7 +167,7 @@ export function FichaClient({
                         <input type="checkbox" checked={elegidos.includes(c.id)} onChange={() => toggle(c.id)}
                           disabled={pending} className="rounded border-neutral-300 text-tierra-700 shrink-0" />
                         <span className="text-sm text-neutral-700 flex-1 min-w-0 truncate">
-                          {c.tipo === "factura" ? "Factura" : "Remito"} {c.numero} · vence {fmtFechaSolo(c.vencimiento)}
+                          {etiquetaComprobante(c.tipo, c.categoria)} {c.numero} · vence {fmtFechaSolo(c.vencimiento)}
                         </span>
                         <span className={`text-[11px] px-2 py-0.5 rounded-full shrink-0 ${ESTADO_CLS[est]}`}>{ESTADO_TXT[est]}</span>
                         <span className="text-sm font-medium text-neutral-900 tabular-nums shrink-0">{fmt(c.saldo)}</span>
@@ -254,7 +255,7 @@ export function FichaClient({
       {/* Comprobantes */}
       <div className="bg-white rounded-xl border border-neutral-200 shadow-sm overflow-x-auto">
         <div className="px-5 py-4">
-          <p className="text-sm font-semibold text-neutral-700">Facturas y remitos</p>
+          <p className="text-sm font-semibold text-neutral-700">Facturas, remitos y gastos</p>
           <p className="text-xs text-neutral-600 mt-0.5">
             Destildá «Genera deuda» en un remito que después se facturó (para no contarlo dos veces) o en una compra ya pagada.
             {sinDeuda > 0 && ` Hay ${sinDeuda} sin deuda, incluido el historial anterior al módulo.`}
@@ -281,7 +282,7 @@ export function FichaClient({
               return (
                 <tr key={c.id} className={c.generaDeuda ? "" : "text-neutral-500"}>
                   <td className="px-5 py-3">
-                    <span className="font-medium">{c.tipo === "factura" ? "Factura" : "Remito"} {c.numero}</span>
+                    <span className="font-medium">{etiquetaComprobante(c.tipo, c.categoria)} {c.numero}</span>
                   </td>
                   <td className="px-5 py-3 tabular-nums">{fmtFechaSolo(c.fecha)}</td>
                   <td className="px-5 py-3">

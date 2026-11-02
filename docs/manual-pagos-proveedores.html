@@ -1,0 +1,151 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Manual: Pagos a proveedores</title>
+<style>
+  :root { --ink:#1a1a18; --mute:#5c5c57; --line:#e3e1dc; --soft:#f6f5f2; --accent:#8a4b24; }
+  * { box-sizing: border-box; }
+  body { font-family: "Segoe UI", Arial, sans-serif; color: var(--ink); background:#fff; margin:0; line-height:1.55; }
+  main { max-width: 760px; margin: 0 auto; padding: 40px 24px 80px; }
+  h1 { font-size: 28px; margin: 0 0 4px; }
+  .sub { color: var(--mute); margin: 0 0 32px; }
+  h2 { font-size: 20px; margin: 40px 0 8px; padding-top: 16px; border-top: 2px solid var(--ink); }
+  h3 { font-size: 16px; margin: 24px 0 6px; }
+  p, li { font-size: 15px; }
+  ol, ul { padding-left: 22px; }
+  li { margin: 4px 0; }
+  .box { background: var(--soft); border-left: 4px solid var(--accent); padding: 12px 16px; margin: 16px 0; border-radius: 4px; }
+  .box strong:first-child { display:block; margin-bottom:2px; }
+  .menu { font-weight: 600; background: var(--soft); border: 1px solid var(--line); padding: 1px 7px; border-radius: 4px; white-space: nowrap; }
+  table { border-collapse: collapse; width: 100%; margin: 12px 0; font-size: 14px; }
+  th, td { border: 1px solid var(--line); padding: 8px 10px; text-align: left; vertical-align: top; }
+  th { background: var(--soft); }
+  @media print { main { padding: 0; } h2 { break-after: avoid; } .box, tr { break-inside: avoid; } }
+</style>
+</head>
+<body>
+<main>
+
+<h1>Pagos a proveedores</h1>
+<p class="sub">Manual de uso · Il Pane Nostro · Noviembre 2026</p>
+
+<h2>1. Para qué sirve</h2>
+<p>El módulo lleva la cuenta de lo que se le debe a cada proveedor. Cada vez que se carga una factura o un remito de compra, el sistema suma esa deuda. Cuando se registra un pago, la deuda baja. Así se puede ver en cualquier momento:</p>
+<ul>
+  <li>cuánto se le debe a cada proveedor,</li>
+  <li>qué facturas ya vencieron y cuáles vencen pronto,</li>
+  <li>qué se pagó, cuándo y cómo, con una orden de pago para imprimir.</li>
+</ul>
+<div class="box"><strong>Importante</strong>Los pagos solo los puede registrar un usuario <b>administrador</b>. El personal de producción puede cargar compras en Recepciones, pero no ve ni toca los pagos.</div>
+
+<h2>2. Dónde está</h2>
+<p>En el menú de la izquierda, sección <b>Administración</b> → <span class="menu">Proveedores</span>.</p>
+<p>Las compras se cargan en otro lugar: <span class="menu">Cocina</span> → <span class="menu">Recepciones</span>.</p>
+
+<h2>3. Cómo funciona, en resumen</h2>
+<ol>
+  <li>Se carga la compra en <b>Recepciones</b> (como siempre). Ahí se indica cuándo hay que pagarla.</li>
+  <li>La compra aparece como deuda en <b>Proveedores</b>.</li>
+  <li>Cuando se paga, se registra el pago en la <b>ficha del proveedor</b>.</li>
+</ol>
+<p>Tanto las <b>facturas</b> como los <b>remitos</b> generan deuda, porque hay proveedores que no facturan. Los <b>gastos</b> (luz, agua, alquiler…) también, y se cargan aparte.</p>
+
+<h2>4. Alta de un proveedor</h2>
+<p>No hace falta darlo de alta antes: al cargar una recepción con un proveedor nuevo, el sistema lo crea solo. Pero conviene completar sus datos, sobre todo el <b>plazo de pago</b>.</p>
+<ol>
+  <li>Entrá a <span class="menu">Proveedores</span> y tocá <span class="menu">+ Nuevo proveedor</span>. Para uno que ya existe, abrilo con <b>Ver →</b> y tocá <span class="menu">Editar datos</span>.</li>
+  <li>Completá el nombre, el CUIT y el <b>plazo de pago en días</b>. Ponele 0 si se paga al contado, 30 si se paga a 30 días, etc.</li>
+  <li>Opcionalmente agregá contacto, teléfono, email y notas (por ejemplo, los datos bancarios).</li>
+  <li>Tocá <span class="menu">Guardar</span>.</li>
+</ol>
+<div class="box"><strong>Proveedores repetidos</strong>El sistema reconoce el mismo proveedor aunque cambie una mayúscula, un acento o el "SRL" (por ejemplo "El Abasto" y "el Abasto S.R.L."). También lo reconoce por el CUIT. Si aun así ves dos fichas del mismo proveedor, avisá para unificarlas.</div>
+
+<h2>5. Cargar una compra</h2>
+<ol>
+  <li>Andá a <span class="menu">Cocina</span> → <span class="menu">Recepciones</span> y tocá <span class="menu">Nueva recepción</span>.</li>
+  <li>Elegí <b>Factura</b> o <b>Remito</b>, completá el número, el proveedor y la fecha (o subí la foto para que se lea sola).</li>
+  <li>Revisá el campo <b>Vence el pago</b>. Se completa solo sumando a la fecha el plazo del proveedor. Si esta compra tiene otro plazo, cambiá la fecha.</li>
+  <li>Cargá los ítems y guardá. Sigue sumando el stock igual que antes.</li>
+</ol>
+<p>Si el proveedor es nuevo, aparece el aviso <i>"Proveedor nuevo: se da de alta al guardar"</i>.</p>
+
+<h2>6. Cargar un gasto (luz, agua, alquiler…)</h2>
+<p>Las boletas de servicios y otros gastos que no son mercadería <b>no se cargan en Recepciones</b>, sino en Proveedores. Quedan como deuda igual que una factura, pero no tocan el stock.</p>
+<ol>
+  <li>Entrá a <span class="menu">Proveedores</span> y tocá <span class="menu">+ Cargar gasto</span>.</li>
+  <li>Escribí el proveedor (por ejemplo, la empresa de energía). Si es la primera vez, se da de alta solo.</li>
+  <li>Elegí la <b>categoría</b>: luz, agua, gas, internet / teléfono, alquiler, impuestos y tasas, otros servicios u otros.</li>
+  <li>Completá el número de comprobante, el <b>importe total</b> y la fecha.</li>
+  <li>Revisá <b>Vence el pago</b>. Es la fecha de vencimiento de la boleta: cambiala por la que figura en el papel.</li>
+  <li>Tocá <span class="menu">Guardar gasto</span>. Te lleva a la ficha del proveedor, donde ya figura la deuda.</li>
+</ol>
+<p>Para pagarlo se hace igual que con cualquier factura (sección 8). En la ficha aparece como <i>"Gasto (Luz)"</i>, <i>"Gasto (Alquiler)"</i>, etc.</p>
+
+<h2>7. Ver lo que se debe</h2>
+<p>En <span class="menu">Proveedores</span> se ve la lista con:</p>
+<table>
+  <tr><th>Dato</th><th>Qué significa</th></tr>
+  <tr><td>Deuda con proveedores</td><td>Suma de lo que se debe a todos.</td></tr>
+  <tr><td>Vencido</td><td>La parte de la deuda cuya fecha de pago ya pasó. Aparece en rojo.</td></tr>
+  <tr><td>Saldo</td><td>Lo que se le debe a ese proveedor. Si pagaste de más, dice "a favor".</td></tr>
+  <tr><td>Próx. vencimiento</td><td>La fecha de la próxima factura a pagar.</td></tr>
+</table>
+<p>Tocá <b>Ver →</b> para abrir la ficha del proveedor.</p>
+
+<h2>8. Registrar un pago</h2>
+<ol>
+  <li>Abrí la ficha del proveedor y tocá <span class="menu">+ Registrar pago</span>.</li>
+  <li>Tildá las <b>facturas o remitos</b> que estás pagando. Podés tildar varios. Se ordenan por vencimiento y cada uno indica si está Vencida, Por vencer o Al día.</li>
+  <li>El <b>monto</b> se completa solo con la suma de lo tildado. Si pagás menos, escribí el monto real.</li>
+  <li>Completá la fecha, el método (transferencia, efectivo, cheque u otro) y, si querés, la referencia (por ejemplo, el número de transferencia).</li>
+  <li>Tocá <span class="menu">Confirmar pago</span>.</li>
+</ol>
+
+<h3>Cómo se reparte el monto</h3>
+<ul>
+  <li>El monto se aplica primero al comprobante que <b>vence antes</b>, hasta cubrirlo, y sigue con el siguiente.</li>
+  <li>Si pagás <b>menos</b> que el total, el último comprobante queda con saldo pendiente.</li>
+  <li>Si pagás <b>más</b> que lo tildado, lo que sobra queda <b>a cuenta</b> y se descuenta de la deuda general del proveedor.</li>
+  <li>Si <b>no tildás ninguno</b>, todo el pago queda a cuenta (por ejemplo, un adelanto).</li>
+</ul>
+
+<h2>9. Imprimir la orden de pago</h2>
+<p>Al confirmar un pago aparece un cartel verde con <span class="menu">Imprimir orden de pago</span>. También se puede abrir después desde el historial de pagos de la ficha, con el link <b>Orden de pago</b>.</p>
+<p>Se abre una hoja lista para imprimir, con los datos del proveedor, el detalle de lo pagado, el total y espacio para las firmas. Tocá <span class="menu">Imprimir</span> arriba a la derecha.</p>
+
+<h2>10. Situaciones frecuentes</h2>
+
+<h3>Cargué un remito y después llegó la factura de lo mismo</h3>
+<p>Si cargás también la factura, la compra se contaría dos veces. Para evitarlo: en la ficha del proveedor, en la tabla <b>Facturas y remitos</b>, <b>destildá "Genera deuda"</b> en uno de los dos (normalmente el remito). Ese comprobante deja de sumar deuda.</p>
+
+<h3>Compras anteriores a este módulo</h3>
+<p>Todo lo cargado antes del 2 de noviembre quedó con "Genera deuda" <b>destildado</b>, porque se asume que ya está pagado. Si alguna de esas compras sigue sin pagarse, entrá a la ficha del proveedor y <b>tildá "Genera deuda"</b> en esa factura. Desde ese momento cuenta como deuda.</p>
+
+<h3>Cambiar la fecha de vencimiento de una factura</h3>
+<p>En la tabla <b>Facturas y remitos</b> de la ficha, cambiá la fecha de la columna <b>Vence</b>. Se guarda al salir del campo.</p>
+
+<h3>Me equivoqué en un pago</h3>
+<p>En el historial de pagos de la ficha tocá <b>Eliminar</b>. Si ese pago estaba repartido entre varias facturas, se eliminan todas juntas y las facturas vuelven a quedar con su saldo pendiente. Después registrá el pago de nuevo, bien cargado.</p>
+
+<h3>No me deja destildar "Genera deuda"</h3>
+<p>Ese comprobante ya tiene pagos aplicados. Primero eliminá esos pagos y después destildalo.</p>
+
+<h3>Los datos del proveedor cambiaron (CUIT, razón social)</h3>
+<p>Editá los datos desde la ficha. El nombre y el CUIT se actualizan también en todas sus compras anteriores.</p>
+
+<h2>11. Preguntas rápidas</h2>
+<table>
+  <tr><th>Pregunta</th><th>Respuesta</th></tr>
+  <tr><td>¿Quién ve este módulo?</td><td>Solo los administradores.</td></tr>
+  <tr><td>¿Se pueden pagar facturas de distintos proveedores juntas?</td><td>No. Cada pago es a un solo proveedor.</td></tr>
+  <tr><td>¿Dónde cargo la boleta de luz?</td><td>En Proveedores → + Cargar gasto (sección 6), no en Recepciones.</td></tr>
+  <tr><td>¿El pago modifica el stock?</td><td>No. El stock se mueve solo al cargar la recepción.</td></tr>
+  <tr><td>¿Qué pasa si un proveedor no tiene plazo cargado?</td><td>Se toma como contado: vence el mismo día de la compra.</td></tr>
+  <tr><td>¿Qué quiere decir "a cuenta"?</td><td>Plata entregada que no está aplicada a ninguna factura en particular; igual baja la deuda total.</td></tr>
+</table>
+
+</main>
+</body>
+</html>

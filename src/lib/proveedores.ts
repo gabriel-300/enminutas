@@ -55,3 +55,28 @@ export function normalizarCuit(cuit: string | null | undefined): string | null {
   if (!dig) return null;
   return dig.length === 11 ? `${dig.slice(0, 2)}-${dig.slice(2, 10)}-${dig.slice(10)}` : dig;
 }
+
+export const CATEGORIAS_GASTO = [
+  { value: "luz",               label: "Luz" },
+  { value: "agua",              label: "Agua" },
+  { value: "gas",               label: "Gas" },
+  { value: "internet_telefono", label: "Internet / teléfono" },
+  { value: "alquiler",          label: "Alquiler" },
+  { value: "impuestos",         label: "Impuestos y tasas" },
+  { value: "servicios",         label: "Otros servicios" },
+  { value: "otros",             label: "Otros" },
+] as const;
+
+export type CategoriaGasto = (typeof CATEGORIAS_GASTO)[number]["value"];
+
+export function esCategoriaGasto(v: unknown): v is CategoriaGasto {
+  return CATEGORIAS_GASTO.some(c => c.value === v);
+}
+
+// "Factura", "Remito" o "Gasto (Luz)": cómo se nombra un comprobante en pantalla y en la orden de pago.
+export function etiquetaComprobante(tipo: string, categoria?: string | null): string {
+  if (tipo === "factura") return "Factura";
+  if (tipo === "remito")  return "Remito";
+  const cat = CATEGORIAS_GASTO.find(c => c.value === categoria)?.label;
+  return cat ? `Gasto (${cat})` : "Gasto";
+}

@@ -5,6 +5,7 @@ import Link from "next/link";
 import { createClient, createAdminClient } from "@/lib/supabase/server";
 import { redirect, notFound } from "next/navigation";
 import { ChevronLeft } from "lucide-react";
+import { etiquetaComprobante } from "@/lib/proveedores";
 import { ProveedorForm } from "../proveedor-form";
 import { FichaClient, type Comprobante, type PagoGrupo } from "./ficha-client";
 
@@ -26,12 +27,12 @@ export default async function ProveedorFichaPage({ params }: { params: Promise<{
 
   const [{ data: recs }, { data: pagosRaw }] = await Promise.all([
     db.from("recepciones")
-      .select("id, tipo, numero, fecha, total, fecha_vencimiento_pago, genera_deuda")
+      .select("id, tipo, categoria_gasto, numero, fecha, total, fecha_vencimiento_pago, genera_deuda")
       .eq("proveedor_id", id)
       .order("fecha", { ascending: false })
       .order("created_at", { ascending: false }),
     db.from("pagos_proveedores")
-      .select("id, recepcion_id, monto, fecha, metodo, referencia, notas, grupo_id, created_at, recepcion:recepciones!recepcion_id(tipo, numero)")
+      .select("id, recepcion_id, monto, fecha, metodo, referencia, notas, grupo_id, created_at, recepcion:recepciones!recepcion_id(tipo, categoria_gasto, numero)")
       .eq("proveedor_id", id)
       .order("fecha", { ascending: false })
       .order("created_at", { ascending: false }),
@@ -47,6 +48,7 @@ export default async function ProveedorFichaPage({ params }: { params: Promise<{
     return {
       id:          r.id,
       tipo:        r.tipo,
+      categoria:   r.categoria_gasto ?? null,
       numero:      r.numero,
       fecha:       r.fecha,
       vencimiento: r.fecha_vencimiento_pago ?? r.fecha,
@@ -65,7 +67,7 @@ export default async function ProveedorFichaPage({ params }: { params: Promise<{
       grupoId: key, fecha: p.fecha, metodo: p.metodo, referencia: p.referencia, notas: p.notas, monto: 0, destinos: [],
     };
     g.monto += Number(p.monto);
-    g.destinos.push(p.recepcion ? `${p.recepcion.tipo === "factura" ? "Fact." : "Rem."} ${p.recepcion.numero}` : "A cuenta");
+    g.destinos.push(p.recepcion ? `${etiquetaComprobante(p.recepcion.tipo, p.recepcion.categoria_gasto)} ${p.recepcion.numero}` : "A cuenta");
     grupos.set(key, g);
   }
   const pagosGrupo = [...grupos.values()];

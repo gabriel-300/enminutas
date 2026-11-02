@@ -1,6 +1,7 @@
 import { fmt2 as fmt } from "@/lib/format";
 import { createAdminClient, createClient } from "@/lib/supabase/server";
 import { redirect, notFound } from "next/navigation";
+import { etiquetaComprobante } from "@/lib/proveedores";
 import { PrintButton } from "./print-button";
 
 export const revalidate = 0;
@@ -29,7 +30,7 @@ export default async function OrdenPagoPage({ params }: { params: Promise<{ grup
   const db = createAdminClient() as any;
   const cols = `id, monto, fecha, metodo, referencia, notas, proveedor_id, created_at,
     proveedor:proveedores!proveedor_id(id, nombre, cuit, contacto, telefono, email),
-    recepcion:recepciones!recepcion_id(tipo, numero, fecha, total)`;
+    recepcion:recepciones!recepcion_id(tipo, categoria_gasto, numero, fecha, total)`;
 
   let { data: pagos } = await db.from("pagos_proveedores").select(cols).eq("grupo_id", grupoId).order("created_at");
   if (!pagos?.length) {
@@ -94,7 +95,7 @@ export default async function OrdenPagoPage({ params }: { params: Promise<{ grup
               <div>
                 <div style={{ fontSize: "14px", fontWeight: 600, color: "#1a1a18" }}>
                   {p.recepcion
-                    ? `Pago — ${p.recepcion.tipo === "factura" ? "Factura" : "Remito"} ${p.recepcion.numero}`
+                    ? `Pago — ${etiquetaComprobante(p.recepcion.tipo, p.recepcion.categoria_gasto)} ${p.recepcion.numero}`
                     : "Pago a cuenta"}
                 </div>
                 {p.referencia && <div style={{ fontSize: "12px", color: "#888", marginTop: "3px", fontFamily: "monospace" }}>Ref: {p.referencia}</div>}
