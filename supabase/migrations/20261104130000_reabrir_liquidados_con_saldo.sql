@@ -30,17 +30,17 @@ order by o.order_number;
 --   from public.pagos where order_id is not null group by order_id
 -- ), a_reabrir as (
 --   select o.id,
---          case when o.delivered_snapshot is not null then 'entrega_parcial' else 'delivered' end as nuevo
+--          (case when o.delivered_snapshot is not null then 'entrega_parcial' else 'delivered' end)::public.order_status as nuevo
 --   from public.orders o
 --   left join cobros c on c.order_id = o.id
 --   where o.status = 'liquidado'
 --     and (case when c.sf then o.total / 1.21 else o.total end) - coalesce(c.cobrado, 0) > 1
 -- ), ev as (
 --   insert into public.order_events (order_id, status, message)
---   select id, nuevo::text, 'Reabierto por cobranza: estaba liquidado con saldo sin cobrar (2026-11-04)' from a_reabrir
+--   select id, nuevo, 'Reabierto por cobranza: estaba liquidado con saldo sin cobrar (2026-11-04)' from a_reabrir
 --   returning order_id
 -- )
 -- update public.orders o
--- set status = a.nuevo::public.order_status, payment_confirmed_at = null
+-- set status = a.nuevo, payment_confirmed_at = null
 -- from a_reabrir a where a.id = o.id;
 -- commit;
