@@ -4,22 +4,31 @@ import type { User } from "@supabase/supabase-js";
 import { createAdminClient } from "@/lib/supabase/server";
 import { requireRole } from "@/lib/auth";
 import { parseMontoAR } from "@/lib/proveedores";
+import { saldoPedidoDb } from "@/lib/cobranza";
 import { revalidatePath } from "next/cache";
 
-type Result = { error: string } | { ok: true; pagoId: string };
+type Result = { error: string } | { ok: true; pagoId: string; aviso?: string };
 
 // Un pedido solo pasa a "liquidado" (cobrado) si ya se entregó. Si se paga por adelantado, el pago
 // queda registrado pero el pedido sigue su curso: pasar a liquidado antes de entregarse lo saca del
 // circuito de distribución (no se puede confirmar la entrega) y hacía que comisionara sin entregarse.
-async function liquidarSiEntregado(db: any, orderId: string): Promise<boolean> {
-  const { data } = await db
+// Tampoco se liquida si todavía queda saldo por cobrar: la deuda desaparecería de las pantallas.
+// Devuelve un aviso (para mostrar al usuario) cuando no se pudo liquidar por saldo.
+async function liquidarSiEntregado(db: any, orderId: string): Promise<string | null> {
+  const info = await saldoPedidoDb(db, orderId);
+  if (info && info.saldo > 1) {
+    return `El pedido no se liquidó: todavía queda un saldo de ${fmtPesos(info.saldo)}.`;
+  }
+  await db
     .from("orders")
     .update({ status: "liquidado", payment_confirmed_at: new Date().toISOString() })
     .eq("id", orderId)
-    .in("status", ["delivered", "entrega_parcial"])
-    .select("id");
-  return (data?.length ?? 0) > 0;
+    .in("status", ["delivered", "entrega_parcial"]);
+  return null;
 }
+
+const fmtPesos = (n: number) =>
+  new Intl.NumberFormat("es-AR", { style: "currency", currency: "ARS", maximumFractionDigits: 0 }).format(n);
 
 // Admin: cualquier cliente. Vendedor: sólo los clientes que tiene asignados.
 async function autorizarCliente(clienteId: string): Promise<{ error: string } | { user: User }> {
@@ -72,14 +81,15 @@ export async function registrarPago(formData: FormData): Promise<Result> {
 
   if (error) return { error: error.message };
 
-  // Cambiar estado del pedido a liquidado si corresponde (solo si ya fue entregado)
+  // Cambiar estado del pedido a liquidado si corresponde (solo si ya fue entregado y sin saldo)
+  let aviso: string | undefined;
   if (orderId && marcarLiquidado) {
-    await liquidarSiEntregado(db, orderId);
+    aviso = (await liquidarSiEntregado(db, orderId)) ?? undefined;
     revalidatePath(`/admin/pedidos/${orderId}`);
   }
 
   revalidatePath(`/admin/clientes-b2b/${clienteId}`);
-  return { ok: true, pagoId: pago.id };
+  return { ok: true, pagoId: pago.id, aviso };
 }
 
 export type PagoPedidoItem = { orderId: string; monto: number; marcarLiquidado: boolean };
@@ -92,7 +102,7 @@ export async function registrarPagoPedidos(payload: {
   notas:      string | null;
   sinFactura: boolean;
   items:      PagoPedidoItem[];
-}): Promise<{ error: string } | { ok: true; pagoIds: string[] }> {
+}): Promise<{ error: string } | { ok: true; pagoIds: string[]; avisos: string[] }> {
   const { clienteId, fecha, metodo, referencia, notas, sinFactura, items } = payload;
 
   if (!clienteId) return { error: "Cliente requerido" };
@@ -105,8 +115,13 @@ export async function registrarPagoPedidos(payload: {
   if ("error" in auth) return { error: auth.error };
   const { user } = auth;
 
+  // Un cobro "sin factura" implica un descuento (se cobra neto de IVA): lo decide un administrador.
+  if (sinFactura && user.app_metadata?.role !== "admin")
+    return { error: "Solo un administrador puede registrar un cobro sin factura" };
+
   const db = createAdminClient() as any;
   const pagoIds: string[] = [];
+  const avisos: string[] = [];
   // Varios pedidos en la misma tanda comparten grupo_id → un solo recibo combinado.
   const grupoId = items.length > 1 ? crypto.randomUUID() : null;
 
@@ -128,25 +143,54 @@ export async function registrarPagoPedidos(payload: {
     pagoIds.push(pago.id);
 
     if (item.marcarLiquidado) {
-      await liquidarSiEntregado(db, item.orderId);
+      const aviso = await liquidarSiEntregado(db, item.orderId);
+      if (aviso) avisos.push(aviso);
       revalidatePath(`/admin/pedidos/${item.orderId}`);
     }
   }
 
   revalidatePath(`/admin/clientes-b2b/${clienteId}`);
-  return { ok: true, pagoIds };
+  return { ok: true, pagoIds, avisos };
 }
 
+// Solo un administrador borra cobros. Si el pedido estaba liquidado y al borrar vuelve a quedar saldo,
+// el pedido vuelve a "entregado" para que la deuda reaparezca.
 export async function eliminarPago(pagoId: string, clienteId: string): Promise<{ error: string } | { ok: true }> {
+  let user: User;
+  try {
+    user = await requireRole("admin");
+  } catch {
+    return { error: "Solo un administrador puede eliminar cobros" };
+  }
+
   const db = createAdminClient() as any;
-  // El cliente se toma del pago en la base, no del parámetro (que controla el llamador).
-  const { data: pago } = await db.from("pagos").select("cliente_id").eq("id", pagoId).single();
+  const { data: pago } = await db.from("pagos").select("cliente_id, order_id, monto").eq("id", pagoId).single();
   if (!pago) return { error: "Pago no encontrado" };
-  const auth = await autorizarCliente(pago.cliente_id);
-  if ("error" in auth) return { error: auth.error };
 
   const { error } = await db.from("pagos").delete().eq("id", pagoId);
   if (error) return { error: error.message };
-  revalidatePath(`/admin/clientes-b2b/${clienteId}`);
+
+  if (pago.order_id) {
+    const { data: order } = await db
+      .from("orders").select("status, order_number, delivered_snapshot").eq("id", pago.order_id).single();
+    if (order?.status === "liquidado") {
+      const info = await saldoPedidoDb(db, pago.order_id);
+      if (info && info.saldo > 1) {
+        const vuelve = order.delivered_snapshot ? "entrega_parcial" : "delivered";
+        await db.from("orders").update({ status: vuelve, payment_confirmed_at: null }).eq("id", pago.order_id);
+        await db.from("order_events").insert({
+          order_id: pago.order_id,
+          status:   vuelve,
+          message:  `Se eliminó un cobro de ${fmtPesos(Number(pago.monto))}: el pedido deja de estar liquidado (saldo ${fmtPesos(info.saldo)})`,
+          actor_id: user.id,
+        });
+      }
+    }
+    revalidatePath(`/admin/pedidos/${pago.order_id}`);
+  }
+
+  revalidatePath(`/admin/clientes-b2b/${pago.cliente_id}`);
+  revalidatePath("/admin/cuentas-corrientes");
+  revalidatePath("/admin/pedidos");
   return { ok: true };
 }

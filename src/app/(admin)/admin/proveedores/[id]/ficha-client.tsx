@@ -4,7 +4,22 @@ import { fmt } from "@/lib/format";
 import { fmtFechaSolo } from "@/lib/fecha";
 import { estadoVencimiento, etiquetaComprobante, parseMontoAR } from "@/lib/proveedores";
 import { useState, useTransition } from "react";
-import { registrarPagoProveedor, eliminarPagoProveedor, setGeneraDeuda, setVencimientoPago } from "../actions";
+import {
+  crearOrdenPago, aprobarOrdenPago, pagarOrdenPago, anularOrdenPago,
+  eliminarPagoProveedor, setGeneraDeuda, setVencimientoPago,
+} from "../actions";
+import { ESTADO_ORDEN_PAGO, type EstadoOrdenPago } from "@/lib/proveedores-ficha";
+
+export type OrdenPendiente = {
+  id:         string;
+  monto:      number;
+  fecha:      string;
+  metodo:     string;
+  referencia: string | null;
+  notas:      string | null;
+  estado:     EstadoOrdenPago;
+  aprobadoAt: string | null;
+};
 
 export type Comprobante = {
   id:          string;
@@ -14,6 +29,9 @@ export type Comprobante = {
   fecha:       string;
   vencimiento: string;
   total:       number;
+  neto:         number | null;
+  iva:          number | null;
+  percepciones: number | null;
   pagado:      number;
   saldo:       number;
   generaDeuda: boolean;
@@ -47,12 +65,13 @@ const ESTADO_CLS = {
 const ESTADO_TXT = { vencida: "Vencida", por_vencer: "Por vencer", al_dia: "Al día" } as const;
 
 export function FichaClient({
-  proveedorId, hoy, comprobantes, pagos,
+  proveedorId, hoy, comprobantes, pagos, ordenes,
 }: {
   proveedorId:  string;
   hoy:          string;
   comprobantes: Comprobante[];
   pagos:        PagoGrupo[];
+  ordenes:      OrdenPendiente[];
 }) {
   const [mostrarForm, setMostrarForm] = useState(false);
   const [elegidos,    setElegidos]    = useState<string[]>([]);
@@ -63,6 +82,7 @@ export function FichaClient({
   const [notas,       setNotas]       = useState("");
   const [error,       setError]       = useState<string | null>(null);
   const [guardado,    setGuardado]    = useState<{ grupoId: string; aCuenta: number } | null>(null);
+  const [errorOrden,  setErrorOrden]  = useState<string | null>(null);
   const [pending,     start]          = useTransition();
 
   // Pendientes por vencimiento: se paga primero lo que antes vence.
@@ -88,12 +108,25 @@ export function FichaClient({
     const montoNum = parseMontoAR(monto);
     if (montoNum == null || montoNum <= 0) return setError("El monto debe ser mayor a cero");
     start(async () => {
-      const res = await registrarPagoProveedor({
+      const res = await crearOrdenPago({
         proveedorId, monto: montoNum, fecha, metodo, referencia, notas, recepcionIds: elegidos,
       });
       if ("error" in res) { setError(res.error); return; }
-      setGuardado({ grupoId: res.grupoId, aCuenta: res.aCuenta });
+      setGuardado({ grupoId: res.ordenId, aCuenta: res.aCuenta });
       reset();
+    });
+  }
+
+  // Aprobar, pagar o anular una orden. Cada paso lo hace un click explícito.
+  function avanzarOrden(o: OrdenPendiente, accion: "aprobar" | "pagar" | "anular") {
+    if (accion === "pagar" && !confirm(`¿Registrar el pago de ${fmt(o.monto)}? Desde este momento baja la deuda con el proveedor.`)) return;
+    if (accion === "anular" && !confirm("¿Descartar esta orden de pago?")) return;
+    setErrorOrden(null);
+    start(async () => {
+      const res = accion === "aprobar" ? await aprobarOrdenPago(o.id, proveedorId)
+        : accion === "pagar" ? await pagarOrdenPago(o.id, proveedorId)
+        : await anularOrdenPago(o.id, proveedorId);
+      if ("error" in res) setErrorOrden(res.error);
     });
   }
 
@@ -133,19 +166,58 @@ export function FichaClient({
           <p className="text-sm font-semibold text-neutral-700">Pagos al proveedor</p>
           <button type="button" onClick={() => (mostrarForm ? reset() : setMostrarForm(true))} disabled={pending}
             className="px-4 py-2 text-sm font-medium rounded-lg bg-tierra-700 text-white hover:bg-tierra-800 disabled:opacity-50 transition-colors">
-            {mostrarForm ? "Cancelar" : "+ Registrar pago"}
+            {mostrarForm ? "Cancelar" : "+ Nueva orden de pago"}
           </button>
         </div>
+
+        {/* Órdenes de pago sin pagar: borrador → aprobada → pagada */}
+        {ordenes.length > 0 && (
+          <div className="border-t border-neutral-100 divide-y divide-neutral-50">
+            <p className="px-5 pt-3 pb-1 text-xs font-semibold text-neutral-600 uppercase tracking-wide">Órdenes de pago pendientes</p>
+            {errorOrden && <p className="px-5 py-2 text-sm text-danger">{errorOrden}</p>}
+            {ordenes.map(o => (
+              <div key={o.id} className="px-5 py-3 flex items-center gap-3 flex-wrap">
+                <div className="flex-1 min-w-48">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="text-sm font-semibold tabular-nums">{fmt(o.monto)}</span>
+                    <span className={`text-[11px] px-2 py-0.5 rounded-full ${o.estado === "aprobada" ? "bg-success-bg text-success" : "bg-warning-bg text-warning"}`}>
+                      {ESTADO_ORDEN_PAGO[o.estado]}
+                    </span>
+                    <span className="text-xs text-neutral-600">{fmtFechaSolo(o.fecha)}</span>
+                    {o.referencia && <span className="text-xs text-neutral-600 font-mono">{o.referencia}</span>}
+                  </div>
+                  <p className="text-xs text-neutral-600 mt-0.5">
+                    {o.estado === "borrador" ? "Falta la aprobación antes de pagar" : "Aprobada: lista para pagar"}
+                    {o.notas && ` — ${o.notas}`}
+                  </p>
+                </div>
+                <div className="flex items-center gap-3 shrink-0">
+                  <a href={`/admin/proveedores/orden-pago/${o.id}`} target="_blank" className="text-xs text-tierra-700 hover:underline font-medium">Ver / imprimir</a>
+                  {o.estado === "borrador" && (
+                    <button type="button" disabled={pending} onClick={() => avanzarOrden(o, "aprobar")}
+                      className="px-3 py-1.5 text-xs font-medium rounded-lg bg-tierra-700 text-white hover:bg-tierra-800 disabled:opacity-50">Aprobar</button>
+                  )}
+                  {o.estado === "aprobada" && (
+                    <button type="button" disabled={pending} onClick={() => avanzarOrden(o, "pagar")}
+                      className="px-3 py-1.5 text-xs font-medium rounded-lg bg-success text-white disabled:opacity-50">Registrar pago</button>
+                  )}
+                  <button type="button" disabled={pending} onClick={() => avanzarOrden(o, "anular")}
+                    className="text-xs text-neutral-500 hover:text-danger disabled:opacity-40">Descartar</button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
 
         {guardado && (
           <div className="px-5 py-3 bg-success-bg border-t border-success-border flex items-center justify-between gap-3 flex-wrap">
             <p className="text-sm text-success font-medium">
-              ✓ Pago registrado{guardado.aCuenta > 0 ? ` (${fmt(guardado.aCuenta)} quedaron a cuenta)` : ""}
+              ✓ Orden de pago creada en borrador{guardado.aCuenta > 0 ? ` (${fmt(guardado.aCuenta)} quedarían a cuenta)` : ""}. Falta aprobarla y registrar el pago.
             </p>
             <div className="flex items-center gap-3">
               <a href={`/admin/proveedores/orden-pago/${guardado.grupoId}`} target="_blank"
                 className="px-3 py-1.5 text-sm font-medium rounded-lg border border-success-border text-success hover:bg-success-bg transition-colors">
-                Imprimir orden de pago
+                Ver orden
               </a>
               <button type="button" onClick={() => setGuardado(null)} className="text-xs text-success">✕</button>
             </div>
@@ -206,12 +278,13 @@ export function FichaClient({
             </div>
             <p className="text-xs text-neutral-600">
               El monto se reparte entre los comprobantes tildados, el que vence primero antes. Si sobra, queda a cuenta.
+              La orden se crea en borrador: no baja la deuda hasta que se apruebe y se registre el pago.
             </p>
             {error && <p className="text-sm text-danger">{error}</p>}
             <div className="flex gap-2">
               <button type="submit" disabled={pending}
                 className="px-4 py-2 text-sm font-medium rounded-lg bg-tierra-700 text-white hover:bg-tierra-800 disabled:opacity-50 transition-colors">
-                {pending ? "Guardando…" : "Confirmar pago"}
+                {pending ? "Guardando…" : "Crear orden (borrador)"}
               </button>
               <button type="button" onClick={reset} disabled={pending} className="text-sm text-neutral-600 hover:text-neutral-700 px-2">
                 Cancelar
@@ -267,6 +340,9 @@ export function FichaClient({
               <th className="px-5 py-2.5 text-left text-xs font-semibold text-neutral-600">Comprobante</th>
               <th className="px-5 py-2.5 text-left text-xs font-semibold text-neutral-600">Fecha</th>
               <th className="px-5 py-2.5 text-left text-xs font-semibold text-neutral-600">Vence</th>
+              <th className="px-5 py-2.5 text-right text-xs font-semibold text-neutral-600">Neto</th>
+              <th className="px-5 py-2.5 text-right text-xs font-semibold text-neutral-600">IVA</th>
+              <th className="px-5 py-2.5 text-right text-xs font-semibold text-neutral-600">Percep.</th>
               <th className="px-5 py-2.5 text-right text-xs font-semibold text-neutral-600">Total</th>
               <th className="px-5 py-2.5 text-right text-xs font-semibold text-neutral-600">Pagado</th>
               <th className="px-5 py-2.5 text-right text-xs font-semibold text-neutral-600">Saldo</th>
@@ -275,7 +351,7 @@ export function FichaClient({
           </thead>
           <tbody className="divide-y divide-neutral-50">
             {comprobantes.length === 0 && (
-              <tr><td colSpan={7} className="px-5 py-8 text-center text-sm text-neutral-600">Sin comprobantes cargados.</td></tr>
+              <tr><td colSpan={10}className="px-5 py-8 text-center text-sm text-neutral-600">Sin comprobantes cargados.</td></tr>
             )}
             {comprobantes.map(c => {
               const est = c.generaDeuda && c.saldo > 0.5 ? estadoVencimiento(c.vencimiento, hoy) : null;
@@ -293,6 +369,9 @@ export function FichaClient({
                       {est && <span className={`text-[11px] px-2 py-0.5 rounded-full ${ESTADO_CLS[est]}`}>{ESTADO_TXT[est]}</span>}
                     </div>
                   </td>
+                  <td className="px-5 py-3 text-right tabular-nums">{c.neto == null ? "—" : fmt(c.neto)}</td>
+                  <td className="px-5 py-3 text-right tabular-nums">{c.iva == null ? "—" : fmt(c.iva)}</td>
+                  <td className="px-5 py-3 text-right tabular-nums">{c.percepciones == null ? "—" : fmt(c.percepciones)}</td>
                   <td className="px-5 py-3 text-right tabular-nums">{fmt(c.total)}</td>
                   <td className="px-5 py-3 text-right tabular-nums">{c.pagado > 0 ? fmt(c.pagado) : "—"}</td>
                   <td className="px-5 py-3 text-right tabular-nums font-semibold">{c.generaDeuda ? fmt(c.saldo) : "—"}</td>

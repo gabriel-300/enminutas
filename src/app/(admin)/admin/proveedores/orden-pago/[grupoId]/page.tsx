@@ -2,6 +2,7 @@ import { fmt2 as fmt } from "@/lib/format";
 import { createAdminClient, createClient } from "@/lib/supabase/server";
 import { redirect, notFound } from "next/navigation";
 import { etiquetaComprobante } from "@/lib/proveedores";
+import { etiquetaCondicionIva } from "@/lib/proveedores-ficha";
 import { PrintButton } from "./print-button";
 
 export const revalidate = 0;
@@ -28,16 +29,32 @@ export default async function OrdenPagoPage({ params }: { params: Promise<{ grup
   if (user.app_metadata?.role !== "admin") redirect("/admin/dashboard");
 
   const db = createAdminClient() as any;
+  const provCols = "id, nombre, cuit, contacto, telefono, email, condicion_iva, cbu, alias_bancario";
   const cols = `id, monto, fecha, metodo, referencia, notas, proveedor_id, created_at,
-    proveedor:proveedores!proveedor_id(id, nombre, cuit, contacto, telefono, email),
+    proveedor:proveedores!proveedor_id(${provCols}),
     recepcion:recepciones!recepcion_id(tipo, categoria_gasto, numero, fecha, total)`;
 
-  let { data: pagos } = await db.from("pagos_proveedores").select(cols).eq("grupo_id", grupoId).order("created_at");
-  if (!pagos?.length) {
-    const { data: uno } = await db.from("pagos_proveedores").select(cols).eq("id", grupoId).limit(1);
-    pagos = uno;
+  // Una orden todavía no pagada vive en ordenes_pago; recién pagada pasa a pagos_proveedores (mismo id).
+  const { data: orden } = await db.from("ordenes_pago")
+    .select(`id, monto, fecha, metodo, referencia, notas, estado, aprobado_at, proveedor:proveedores!proveedor_id(${provCols})`)
+    .eq("id", grupoId).maybeSingle();
+
+  let pagos: any[] | null = null;
+  if (orden && orden.estado !== "pagada") {
+    pagos = [{
+      id: orden.id, monto: orden.monto, fecha: orden.fecha, metodo: orden.metodo, referencia: orden.referencia,
+      notas: orden.notas, proveedor: orden.proveedor, recepcion: null,
+    }];
+  } else {
+    const r1 = await db.from("pagos_proveedores").select(cols).eq("grupo_id", grupoId).order("created_at");
+    pagos = r1.data;
+    if (!pagos?.length) {
+      const { data: uno } = await db.from("pagos_proveedores").select(cols).eq("id", grupoId).limit(1);
+      pagos = uno;
+    }
   }
   if (!pagos?.length) notFound();
+  const pendiente = orden && orden.estado !== "pagada" ? (orden.estado as "borrador" | "aprobada") : null;
 
   const prov  = pagos[0].proveedor;
   const total = pagos.reduce((s: number, p: any) => s + Number(p.monto), 0);
@@ -82,7 +99,18 @@ export default async function OrdenPagoPage({ params }: { params: Promise<{ grup
           <div style={{ fontSize: "18px", fontWeight: 600, color: "#1a1a18", marginBottom: "6px" }}>{prov?.nombre ?? "Proveedor"}</div>
           {prov?.cuit && <div style={{ fontSize: "13px", color: "#555" }}>CUIT: {prov.cuit}</div>}
           {prov?.contacto && <div style={{ fontSize: "13px", color: "#555" }}>{prov.contacto}</div>}
+          {prov?.condicion_iva && <div style={{ fontSize: "13px", color: "#555" }}>IVA: {etiquetaCondicionIva(prov.condicion_iva)}</div>}
+          {prov?.cbu && <div style={{ fontSize: "13px", color: "#555", fontFamily: "monospace" }}>CBU: {prov.cbu}</div>}
+          {prov?.alias_bancario && <div style={{ fontSize: "13px", color: "#555" }}>Alias: {prov.alias_bancario}</div>}
         </div>
+
+        {pendiente && (
+          <div style={{ border: "2px dashed #b45309", color: "#b45309", borderRadius: "8px", padding: "12px 16px", marginBottom: "24px", fontSize: "13px", fontWeight: 600 }}>
+            {pendiente === "borrador"
+              ? "BORRADOR — pendiente de aprobación. Todavía no se pagó."
+              : "APROBADA — pendiente de pago. Todavía no se registró el pago."}
+          </div>
+        )}
 
         <div style={{ border: "1px solid #e5e5e3", borderRadius: "8px", overflow: "hidden", marginBottom: "32px" }}>
           <div style={{ background: "#f7f6f4", padding: "12px 20px", display: "grid", gridTemplateColumns: "1fr auto auto", gap: "16px", fontSize: "10px", fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", color: "#999" }}>
@@ -108,7 +136,7 @@ export default async function OrdenPagoPage({ params }: { params: Promise<{ grup
             </div>
           ))}
           <div style={{ background: "#1a1a18", padding: "14px 20px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-            <span style={{ fontSize: "12px", fontWeight: 600, letterSpacing: "0.06em", textTransform: "uppercase", color: "#aaa" }}>Total pagado</span>
+            <span style={{ fontSize: "12px", fontWeight: 600, letterSpacing: "0.06em", textTransform: "uppercase", color: "#aaa" }}>{pendiente ? "Total a pagar" : "Total pagado"}</span>
             <span style={{ fontSize: "22px", fontWeight: 700, color: "#fff", fontVariantNumeric: "tabular-nums" }}>{fmt(total)}</span>
           </div>
         </div>

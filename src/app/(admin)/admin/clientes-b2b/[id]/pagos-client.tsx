@@ -45,9 +45,11 @@ type Props = {
   pagos:          Pago[];
   totalFacturado: number;
   ordenes:        OrdenResumen[];
+  esAdmin:        boolean;
 };
 
-export function PagosClient({ clienteId, pagos, totalFacturado, ordenes }: Props) {
+export function PagosClient({ clienteId, pagos, totalFacturado, ordenes, esAdmin }: Props) {
+  const [avisos, setAvisos] = useState<string[]>([]);
   const [mostrarForm, setMostrarForm] = useState(false);
   const [monto,       setMonto]       = useState("");
   const [fecha,       setFecha]       = useState(hoy());
@@ -144,6 +146,7 @@ export function PagosClient({ clienteId, pagos, totalFacturado, ordenes }: Props
         });
         if ("error" in res) { setError(res.error); return; }
         setPagosGuardados(res.pagoIds);
+        setAvisos(res.avisos);
         setMostrarForm(false);
       });
       return;
@@ -164,6 +167,7 @@ export function PagosClient({ clienteId, pagos, totalFacturado, ordenes }: Props
       const res = await registrarPago(fd);
       if ("error" in res) { setError(res.error); return; }
       setPagosGuardados([res.pagoId]);
+      setAvisos(res.aviso ? [res.aviso] : []);
       setMostrarForm(false);
     });
   }
@@ -266,6 +270,7 @@ export function PagosClient({ clienteId, pagos, totalFacturado, ordenes }: Props
               )}
               {orderIds.length > 0 && (
                 <div className="space-y-1.5 pt-1">
+                  {esAdmin && (
                   <label className="flex items-center gap-2 cursor-pointer select-none">
                     <input type="checkbox" checked={sinFactura}
                       onChange={e => toggleSinFactura(e.target.checked)}
@@ -275,6 +280,7 @@ export function PagosClient({ clienteId, pagos, totalFacturado, ordenes }: Props
                       Sin factura — cobrar <strong>neto (s/IVA)</strong>
                     </span>
                   </label>
+                  )}
                   {sinFactura && (
                     <p className="text-xs text-neutral-600 pl-6">
                       El monto se recalcula sin el 21% de IVA — la diferencia queda como descuento, no como saldo pendiente.
@@ -372,11 +378,16 @@ export function PagosClient({ clienteId, pagos, totalFacturado, ordenes }: Props
               className="px-3 py-1.5 text-sm font-medium rounded-lg border border-success-border text-success hover:bg-success-bg transition-colors">
               Imprimir recibo
             </a>
-            <button type="button" onClick={() => setPagosGuardados(null)}
+            <button type="button" onClick={() => { setPagosGuardados(null); setAvisos([]); }}
               className="text-xs text-success hover:text-success">
               ✕
             </button>
           </div>
+        </div>
+      )}
+      {avisos.length > 0 && (
+        <div className="px-5 py-3 bg-warning-bg border-b border-warning-border">
+          {avisos.map((a, i) => <p key={i} className="text-sm text-warning font-medium">⚠ {a}</p>)}
         </div>
       )}
 
@@ -424,10 +435,12 @@ export function PagosClient({ clienteId, pagos, totalFacturado, ordenes }: Props
                   className="text-xs text-tierra-700 hover:underline font-medium">
                   Recibo
                 </a>
+                {esAdmin && (
                 <button type="button" onClick={() => handleEliminar(p.id)} disabled={isPending}
                   className="text-xs text-neutral-500 hover:text-danger disabled:opacity-40 transition-colors">
                   Eliminar
                 </button>
+                )}
               </div>
             </div>
           ))}

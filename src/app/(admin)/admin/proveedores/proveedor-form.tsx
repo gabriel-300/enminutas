@@ -3,6 +3,7 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { crearProveedor, actualizarProveedor } from "./actions";
+import { CONDICIONES_IVA } from "@/lib/proveedores-ficha";
 
 export type ProveedorDatos = {
   id?:                 string;
@@ -13,6 +14,9 @@ export type ProveedorDatos = {
   telefono:            string | null;
   email:               string | null;
   notas:               string | null;
+  condicion_iva:       string | null;
+  cbu:                 string | null;
+  alias_bancario:      string | null;
 };
 
 const inputCls = "w-full px-3 py-2 text-sm border border-neutral-400 rounded-lg focus:outline-none focus:ring-[3px] focus:ring-brand-500/30 focus:border-brand-700 disabled:opacity-50";
@@ -29,7 +33,10 @@ export function ProveedorForm({ inicial, etiqueta }: { inicial?: ProveedorDatos;
   const [telefono, setTelefono] = useState(inicial?.telefono ?? "");
   const [email,    setEmail]    = useState(inicial?.email ?? "");
   const [notas,    setNotas]    = useState(inicial?.notas ?? "");
-  const [error,    setError]    = useState<string | null>(null);
+  const [condIva,  setCondIva]  = useState(inicial?.condicion_iva ?? "");
+  const [cbu,      setCbu]      = useState(inicial?.cbu ?? "");
+  const [alias,    setAlias]    = useState(inicial?.alias_bancario ?? "");
+  const [error,   setError]    = useState<string | null>(null);
   const [pending,  start]       = useTransition();
 
   function guardar(e: React.FormEvent) {
@@ -38,6 +45,7 @@ export function ProveedorForm({ inicial, etiqueta }: { inicial?: ProveedorDatos;
     const payload = {
       nombre, cuit: cuit || null, condicion_pago_dias: Number(dias) || 0,
       contacto: contacto || null, telefono: telefono || null, email: email || null, notas: notas || null,
+      condicion_iva: condIva || null, cbu: cbu || null, alias_bancario: alias || null,
     };
     start(async () => {
       const res = inicial?.id ? await actualizarProveedor(inicial.id, payload) : await crearProveedor(payload);
@@ -84,8 +92,23 @@ export function ProveedorForm({ inicial, etiqueta }: { inicial?: ProveedorDatos;
           <label className={labelCls}>Email</label>
           <input type="email" value={email} onChange={e => setEmail(e.target.value)} className={inputCls} disabled={pending} />
         </div>
+        <div>
+          <label className={labelCls}>Condición de IVA</label>
+          <select value={condIva} onChange={e => setCondIva(e.target.value)} className={inputCls} disabled={pending}>
+            <option value="">Sin definir</option>
+            {CONDICIONES_IVA.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
+          </select>
+        </div>
+        <div className="md:col-span-2">
+          <label className={labelCls}>CBU <span className="font-normal text-neutral-600">(22 dígitos)</span></label>
+          <input value={cbu} onChange={e => setCbu(e.target.value)} inputMode="numeric" className={inputCls} disabled={pending} />
+        </div>
+        <div>
+          <label className={labelCls}>Alias</label>
+          <input value={alias} onChange={e => setAlias(e.target.value)} className={inputCls} disabled={pending} />
+        </div>
         <div className="md:col-span-3">
-          <label className={labelCls}>Notas (datos bancarios, observaciones…)</label>
+          <label className={labelCls}>Notas (observaciones)</label>
           <input value={notas} onChange={e => setNotas(e.target.value)} className={inputCls} disabled={pending} />
         </div>
       </div>

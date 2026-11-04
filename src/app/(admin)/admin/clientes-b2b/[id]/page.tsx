@@ -235,6 +235,7 @@ export default async function ClienteB2BDetailPage({
           pagos={pagos}
           totalFacturado={totalFacturado}
           ordenes={ordenes}
+          esAdmin={role === "admin"}
         />
       </div>
 

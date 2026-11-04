@@ -14,9 +14,18 @@ vi.mock("@/lib/auth", () => ({
 vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
 
 import {
-  actualizarProveedor, crearProveedor, eliminarPagoProveedor, registrarGasto,
-  registrarPagoProveedor, setGeneraDeuda, setVencimientoPago,
+  actualizarProveedor, anularOrdenPago, aprobarOrdenPago, crearOrdenPago, crearProveedor,
+  eliminarPagoProveedor, pagarOrdenPago, registrarGasto, setGeneraDeuda, setVencimientoPago,
 } from "./actions";
+
+// Camino completo de un pago: crear la orden, aprobarla y registrar el pago.
+async function registrarPagoProveedor(input: Parameters<typeof crearOrdenPago>[0]) {
+  const orden = await crearOrdenPago(input);
+  if ("error" in orden) return orden;
+  const aprobada = await aprobarOrdenPago(orden.ordenId, input.proveedorId);
+  if ("error" in aprobada) return aprobada;
+  return pagarOrdenPago(orden.ordenId, input.proveedorId);
+}
 
 let db: FakeDb;
 beforeEach(() => {
@@ -139,6 +148,110 @@ describe("registrarPagoProveedor", () => {
     const { p, r2 } = escenario();
     await registrarPagoProveedor({ ...base, proveedorId: p.id, monto: 100.1 + 0.2, recepcionIds: [r2.id] });
     expect(db.rows("pagos_proveedores")[0].monto).toBe(100.3);
+  });
+});
+
+describe("orden de pago: borrador → aprobada → pagada", () => {
+  function conFactura() {
+    const [p] = db.seed("proveedores", [{ nombre: "A" }]);
+    const [r] = db.seed("recepciones", [{ proveedor_id: p.id, total: 1000, fecha: "2026-10-01", genera_deuda: true }]);
+    return { p, r };
+  }
+  const base = { fecha: hoy, metodo: "transferencia" };
+
+  it("un borrador no baja la deuda: no crea pagos", async () => {
+    const { p, r } = conFactura();
+    const o = await crearOrdenPago({ ...base, proveedorId: p.id, monto: 1000, recepcionIds: [r.id] });
+    expect("ok" in o).toBe(true);
+    expect(db.rows("ordenes_pago")).toMatchObject([{ estado: "borrador", monto: 1000 }]);
+    expect(db.rows("pagos_proveedores")).toHaveLength(0);
+  });
+
+  it("no se puede pagar una orden que no fue aprobada", async () => {
+    const { p, r } = conFactura();
+    const o = await crearOrdenPago({ ...base, proveedorId: p.id, monto: 1000, recepcionIds: [r.id] });
+    if (!("ok" in o)) throw new Error("no se creó");
+    expect(err(await pagarOrdenPago(o.ordenId, p.id))).toMatch(/aprobada/i);
+    expect(db.rows("pagos_proveedores")).toHaveLength(0);
+  });
+
+  it("aprobada se puede pagar: inserta los pagos con grupo_id = id de la orden", async () => {
+    const { p, r } = conFactura();
+    const o = await crearOrdenPago({ ...base, proveedorId: p.id, monto: 1000, recepcionIds: [r.id] });
+    if (!("ok" in o)) throw new Error("no se creó");
+    await aprobarOrdenPago(o.ordenId, p.id);
+    expect(db.rows("ordenes_pago")[0]).toMatchObject({ estado: "aprobada", aprobado_por: "admin-1" });
+    const res = await pagarOrdenPago(o.ordenId, p.id);
+    expect("ok" in res).toBe(true);
+    expect(db.rows("ordenes_pago")[0].estado).toBe("pagada");
+    expect(db.rows("pagos_proveedores")).toMatchObject([{ recepcion_id: r.id, monto: 1000, grupo_id: o.ordenId }]);
+  });
+
+  it("no se paga dos veces la misma orden", async () => {
+    const { p, r } = conFactura();
+    const o = await crearOrdenPago({ ...base, proveedorId: p.id, monto: 1000, recepcionIds: [r.id] });
+    if (!("ok" in o)) throw new Error("no se creó");
+    await aprobarOrdenPago(o.ordenId, p.id);
+    await pagarOrdenPago(o.ordenId, p.id);
+    expect(err(await pagarOrdenPago(o.ordenId, p.id))).toBeTruthy();
+    expect(db.rows("pagos_proveedores")).toHaveLength(1);
+  });
+
+  it("solo aprueban los emails de APROBADORES_PAGOS cuando está definida", async () => {
+    const { p, r } = conFactura();
+    const o = await crearOrdenPago({ ...base, proveedorId: p.id, monto: 1000, recepcionIds: [r.id] });
+    if (!("ok" in o)) throw new Error("no se creó");
+    process.env.APROBADORES_PAGOS = "alex@empresa.com";
+    try {
+      expect(err(await aprobarOrdenPago(o.ordenId, p.id))).toMatch(/no está autorizado/i);
+      expect(db.rows("ordenes_pago")[0].estado).toBe("borrador");
+    } finally {
+      delete process.env.APROBADORES_PAGOS;
+    }
+  });
+
+  it("una orden pendiente se puede descartar, una pagada no", async () => {
+    const { p, r } = conFactura();
+    const o = await crearOrdenPago({ ...base, proveedorId: p.id, monto: 400, recepcionIds: [r.id] });
+    if (!("ok" in o)) throw new Error("no se creó");
+    expect("ok" in (await anularOrdenPago(o.ordenId, p.id))).toBe(true);
+    expect(db.rows("ordenes_pago")).toHaveLength(0);
+
+    const o2 = await registrarPagoProveedor({ ...base, proveedorId: p.id, monto: 400, recepcionIds: [r.id] });
+    if (!("ok" in o2)) throw new Error("no se pagó");
+    expect(err(await anularOrdenPago(o2.grupoId, p.id))).toMatch(/ya está pagada/i);
+  });
+
+  it("al eliminar el pago se descarta también su orden", async () => {
+    const { p, r } = conFactura();
+    const pago = await registrarPagoProveedor({ ...base, proveedorId: p.id, monto: 1000, recepcionIds: [r.id] });
+    if (!("ok" in pago)) throw new Error("no se pagó");
+    await eliminarPagoProveedor(pago.grupoId, p.id);
+    expect(db.rows("pagos_proveedores")).toHaveLength(0);
+    expect(db.rows("ordenes_pago")).toHaveLength(0);
+  });
+});
+
+describe("ficha del proveedor y desglose", () => {
+  it("guarda condición de IVA, CBU y alias; rechaza CBU o condición inválidos", async () => {
+    const ok = await crearProveedor({
+      nombre: "Molino", condicion_pago_dias: 0, condicion_iva: "responsable_inscripto",
+      cbu: "0170 0990 4000 0000 1234 56", alias_bancario: " molino.pagos ",
+    });
+    expect("ok" in ok).toBe(true);
+    expect(db.rows("proveedores")[0]).toMatchObject({
+      condicion_iva: "responsable_inscripto", cbu: "0170099040000000123456", alias_bancario: "molino.pagos",
+    });
+    expect(err(await crearProveedor({ nombre: "X", condicion_pago_dias: 0, cbu: "123" }))).toMatch(/CBU/);
+    expect(err(await crearProveedor({ nombre: "Y", condicion_pago_dias: 0, condicion_iva: "otra" }))).toMatch(/IVA/);
+  });
+
+  it("un gasto con desglose que no suma el total se rechaza", async () => {
+    const gasto = { proveedor: "Energía", categoria: "luz", numero: "1", fecha: hoy, vencimientoPago: hoy, total: 1210 };
+    expect(err(await registrarGasto({ ...gasto, neto: 1000, iva: 100 }))).toMatch(/no suman/);
+    expect(db.rows("recepciones")).toHaveLength(0);
+    await registrarGasto({ ...gasto, neto: 1000, iva: 210 });
+    expect(db.rows("recepciones")[0]).toMatchObject({ neto: 1000, iva: 210 });
   });
 });
 

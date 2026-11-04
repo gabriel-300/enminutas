@@ -24,6 +24,9 @@ export function GastoForm({ proveedores }: { proveedores: ProveedorOpcion[] }) {
   const [total,     setTotal]     = useState("");
   const [vencManual, setVencManual] = useState("");
   const [notas,     setNotas]     = useState("");
+  const [neto,      setNeto]      = useState("");
+  const [iva,       setIva]       = useState("");
+  const [percep,    setPercep]    = useState("");
   const [contado,   setContado]   = useState(false);
   const [metodo,    setMetodo]    = useState("efectivo");
   const [referencia, setReferencia] = useState("");
@@ -37,7 +40,7 @@ export function GastoForm({ proveedores }: { proveedores: ProveedorOpcion[] }) {
 
   function cerrar() {
     setAbierto(false); setProveedor(""); setCuit(""); setCategoria("luz"); setNumero("");
-    setFecha(hoy()); setTotal(""); setVencManual(""); setNotas(""); setContado(false); setMetodo("efectivo"); setReferencia(""); setError(null);
+    setFecha(hoy()); setTotal(""); setVencManual(""); setNotas(""); setNeto(""); setIva(""); setPercep(""); setContado(false); setMetodo("efectivo"); setReferencia(""); setError(null);
   }
 
   function guardar(e: React.FormEvent) {
@@ -45,9 +48,11 @@ export function GastoForm({ proveedores }: { proveedores: ProveedorOpcion[] }) {
     setError(null);
     const importe = parseMontoAR(total);
     if (importe == null || importe <= 0) return setError("El importe debe ser mayor a cero");
+    const num = (s: string) => (s.trim() ? parseMontoAR(s) : null);
     start(async () => {
       const res = await registrarGasto({
         proveedor, cuit: cuit || null, categoria, numero, fecha, vencimientoPago: contado ? fecha : vencimiento, total: importe, notas: notas || null,
+        neto: num(neto), iva: num(iva), percepciones: num(percep),
         pagoContado: contado ? { metodo, referencia: referencia || null } : undefined,
       });
       if ("error" in res) { setError(res.error); return; }
@@ -147,6 +152,21 @@ export function GastoForm({ proveedores }: { proveedores: ProveedorOpcion[] }) {
             </p>
           </div>
         )}
+        <div className="md:col-span-3 grid grid-cols-3 gap-3">
+          <div>
+            <label className={labelCls}>Neto <span className="font-normal text-neutral-600">(opcional)</span></label>
+            <input type="text" inputMode="decimal" value={neto} onChange={e => setNeto(e.target.value)} className={inputCls} disabled={pending} />
+          </div>
+          <div>
+            <label className={labelCls}>IVA <span className="font-normal text-neutral-600">(opcional)</span></label>
+            <input type="text" inputMode="decimal" value={iva} onChange={e => setIva(e.target.value)} className={inputCls} disabled={pending} />
+          </div>
+          <div>
+            <label className={labelCls}>Percepciones <span className="font-normal text-neutral-600">(opcional)</span></label>
+            <input type="text" inputMode="decimal" value={percep} onChange={e => setPercep(e.target.value)} className={inputCls} disabled={pending} />
+          </div>
+          <p className="col-span-3 text-xs text-neutral-600 -mt-1">Si cargás el desglose, neto + IVA + percepciones tienen que sumar el importe total.</p>
+        </div>
         <div className="md:col-span-3">
           <label className={labelCls}>Notas</label>
           <input value={notas} onChange={e => setNotas(e.target.value)} className={inputCls} disabled={pending} placeholder="Ej: período oct/2026" />

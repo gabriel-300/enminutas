@@ -2,7 +2,6 @@
 
 import { useState, useTransition } from "react";
 import { updateOrderStatus, cancelarPedidoDistribucion } from "@/app/(admin)/admin/pedidos/actions";
-
 // Solo los 3 estados que updateOrderStatus permite asignar manualmente.
 // Los otros (enviado_prod, despachado, etc.) se cambian desde producción/distribución.
 const B2B_OPTIONS = [
@@ -60,7 +59,14 @@ export function OrderStatusSelect({
         if (cancelandoEnDistribucion) {
           await cancelarPedidoDistribucion(orderId);
         } else {
-          await updateOrderStatus(orderId, newStatus);
+          const res = await updateOrderStatus(orderId, newStatus);
+          if (res && "saldoPendiente" in res) {
+            const ok = confirm(
+              `${res.saldoPendiente}\n\nSi lo liquidás igual, esa deuda dejará de aparecer. ¿Liquidar de todos modos?`
+            );
+            if (!ok) throw new Error("Liquidación cancelada: el pedido tiene saldo sin cobrar.");
+            await updateOrderStatus(orderId, newStatus, true);
+          }
         }
       } catch (err) {
         setLocalStatus(prevStatus);

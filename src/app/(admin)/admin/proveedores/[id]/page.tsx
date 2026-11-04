@@ -7,7 +7,8 @@ import { redirect, notFound } from "next/navigation";
 import { ChevronLeft } from "lucide-react";
 import { etiquetaComprobante } from "@/lib/proveedores";
 import { ProveedorForm } from "../proveedor-form";
-import { FichaClient, type Comprobante, type PagoGrupo } from "./ficha-client";
+import { etiquetaCondicionIva } from "@/lib/proveedores-ficha";
+import { FichaClient, type Comprobante, type OrdenPendiente, type PagoGrupo } from "./ficha-client";
 
 export const metadata: Metadata = { title: "Proveedor — Admin" };
 export const revalidate = 0;
@@ -25,9 +26,9 @@ export default async function ProveedorFichaPage({ params }: { params: Promise<{
   const { data: prov } = await db.from("proveedores").select("*").eq("id", id).maybeSingle();
   if (!prov) notFound();
 
-  const [{ data: recs }, { data: pagosRaw }] = await Promise.all([
+  const [{ data: recs }, { data: pagosRaw }, { data: ordenesRaw }] = await Promise.all([
     db.from("recepciones")
-      .select("id, tipo, categoria_gasto, numero, fecha, total, fecha_vencimiento_pago, genera_deuda")
+      .select("id, tipo, categoria_gasto, numero, fecha, total, neto, iva, percepciones, fecha_vencimiento_pago, genera_deuda")
       .eq("proveedor_id", id)
       .order("fecha", { ascending: false })
       .order("created_at", { ascending: false }),
@@ -36,8 +37,17 @@ export default async function ProveedorFichaPage({ params }: { params: Promise<{
       .eq("proveedor_id", id)
       .order("fecha", { ascending: false })
       .order("created_at", { ascending: false }),
+    db.from("ordenes_pago")
+      .select("id, monto, fecha, metodo, referencia, notas, estado, aprobado_at")
+      .eq("proveedor_id", id)
+      .in("estado", ["borrador", "aprobada"])
+      .order("creado_at", { ascending: false }),
   ]);
 
+  const ordenes: OrdenPendiente[] = ((ordenesRaw ?? []) as any[]).map(o => ({
+    id: o.id, monto: Number(o.monto), fecha: o.fecha, metodo: o.metodo, referencia: o.referencia,
+    notas: o.notas, estado: o.estado, aprobadoAt: o.aprobado_at ?? null,
+  }));
   const pagos = (pagosRaw ?? []) as any[];
   const pagadoPorRec: Record<string, number> = {};
   for (const p of pagos) if (p.recepcion_id) pagadoPorRec[p.recepcion_id] = (pagadoPorRec[p.recepcion_id] ?? 0) + Number(p.monto);
@@ -53,6 +63,9 @@ export default async function ProveedorFichaPage({ params }: { params: Promise<{
       fecha:       r.fecha,
       vencimiento: r.fecha_vencimiento_pago ?? r.fecha,
       total,
+      neto:         r.neto == null ? null : Number(r.neto),
+      iva:          r.iva == null ? null : Number(r.iva),
+      percepciones: r.percepciones == null ? null : Number(r.percepciones),
       pagado,
       saldo:       Math.max(0, total - pagado),
       generaDeuda: !!r.genera_deuda,
@@ -93,6 +106,9 @@ export default async function ProveedorFichaPage({ params }: { params: Promise<{
             CUIT: {prov.cuit ?? "—"} · Plazo: {prov.condicion_pago_dias > 0 ? `${prov.condicion_pago_dias} días` : "contado"}
             {prov.contacto && ` · ${prov.contacto}`}{prov.telefono && ` · ${prov.telefono}`}{prov.email && ` · ${prov.email}`}
           </p>
+          <p className="text-sm text-neutral-600">
+            IVA: {etiquetaCondicionIva(prov.condicion_iva)} · CBU: {prov.cbu ?? "—"} · Alias: {prov.alias_bancario ?? "—"}
+          </p>
           {prov.notas && <p className="text-xs text-neutral-600 mt-0.5">{prov.notas}</p>}
         </div>
         <div className="text-right">
@@ -110,6 +126,7 @@ export default async function ProveedorFichaPage({ params }: { params: Promise<{
           inicial={{
             id: prov.id, nombre: prov.nombre, cuit: prov.cuit, condicion_pago_dias: prov.condicion_pago_dias,
             contacto: prov.contacto, telefono: prov.telefono, email: prov.email, notas: prov.notas,
+            condicion_iva: prov.condicion_iva ?? null, cbu: prov.cbu ?? null, alias_bancario: prov.alias_bancario ?? null,
           }}
         />
       </div>
@@ -119,6 +136,7 @@ export default async function ProveedorFichaPage({ params }: { params: Promise<{
         hoy={hoy}
         comprobantes={comprobantes}
         pagos={pagosGrupo}
+        ordenes={ordenes}
       />
     </div>
   );

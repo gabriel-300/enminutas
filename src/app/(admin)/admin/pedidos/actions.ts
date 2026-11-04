@@ -6,6 +6,7 @@ import { emailPagoConfirmado, emailPedidoModificadoDespacho } from "@/lib/email"
 import { calcularEntregaParcial, calcularFaltante, esMotivoFaltante, type EntregaLineaInput } from "@/lib/entrega-parcial";
 import { insertarPedidoB2B } from "@/lib/order-number";
 import { requireAdmin } from "@/lib/auth";
+import { saldoPedidoDb } from "@/lib/cobranza";
 
 async function logOrderEvent(
   db: ReturnType<typeof createAdminClient>,
@@ -32,7 +33,7 @@ async function getCallerRole(): Promise<string | null> {
 // Estados que admin puede setear manualmente (casos excepcionales)
 const ALLOWED_MANUAL_STATUSES = ["pending_payment", "aprobado", "cancelled", "liquidado"] as const;
 
-export async function updateOrderStatus(orderId: string, status: string) {
+export async function updateOrderStatus(orderId: string, status: string, confirmarSaldo = false) {
   const role = await getCallerRole();
   if (role !== "admin") throw new Error("No autorizado");
 
@@ -40,6 +41,18 @@ export async function updateOrderStatus(orderId: string, status: string) {
     throw new Error(`Estado "${status}" no se puede asignar manualmente. Usá las acciones del workflow.`);
 
   const supabase = createAdminClient();
+
+  // Un pedido con saldo por cobrar no se liquida salvo que el administrador lo confirme expresamente.
+  if (status === "liquidado") {
+    const info = await saldoPedidoDb(supabase, orderId);
+    if (info && info.saldo > 1) {
+      const monto = new Intl.NumberFormat("es-AR", { style: "currency", currency: "ARS", maximumFractionDigits: 0 }).format(info.saldo);
+      if (!confirmarSaldo) return { saldoPendiente: `Este pedido tiene un saldo sin cobrar de ${monto}.` };
+      const { data: { user } } = await (await createClient()).auth.getUser();
+      await logOrderEvent(supabase, orderId, "liquidado", `Liquidado con saldo pendiente de ${monto} (confirmado por administrador)`, user?.id);
+    }
+  }
+
   const { error } = await supabase
     .from("orders")
     .update({ status: status as any })
