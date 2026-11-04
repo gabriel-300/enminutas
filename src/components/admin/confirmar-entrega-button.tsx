@@ -134,7 +134,7 @@ export function ConfirmarEntregaButton({
             ))}
           </select>
           <p className="text-xs text-neutral-600">
-            Lo que no se entrega se cierra: el pedido y la cuenta corriente quedan solo con lo entregado.
+            El pedido y la cuenta corriente quedan solo con lo entregado. El administrador decide después si el faltante se reprograma en un pedido nuevo o se da por cerrado.
           </p>
         </div>
       )}

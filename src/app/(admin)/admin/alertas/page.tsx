@@ -263,6 +263,46 @@ export default async function AlertasPage() {
     });
   }
 
+  // ── 10. FALTANTES SIN DECIDIR ────────────────────────────────────
+  // Entregas parciales (últimos 60 días, de hace +1 día) cuyo faltante no se reprogramó ni se dio por cerrado
+  const hace1dia  = new Date(hoy.getTime() - 86400000).toISOString();
+  const hace60dias = new Date(hoy.getTime() - 60 * 86400000).toISOString();
+  const { data: parciales } = await db
+    .from("orders")
+    .select("id, delivered_snapshot")
+    .not("delivered_snapshot", "is", null)
+    .not("customer_id", "is", null)
+    .neq("status", "cancelled")
+    .lt("entregado_at", hace1dia)
+    .gt("entregado_at", hace60dias);
+
+  const candidatos = ((parciales ?? []) as any[]).filter(
+    (p) =>
+      !p.delivered_snapshot?.faltante_cerrado &&
+      ((p.delivered_snapshot?.lineas ?? []) as any[]).some((l) => l.entregado < l.pedido),
+  );
+  let faltantesSinDecidir = 0;
+  if (candidatos.length > 0) {
+    const { data: hijos } = await db
+      .from("orders")
+      .select("origen_order_id")
+      .in("origen_order_id", candidatos.map((c) => c.id))
+      .neq("status", "cancelled");
+    const conHijo = new Set(((hijos ?? []) as any[]).map((h) => h.origen_order_id));
+    faltantesSinDecidir = candidatos.filter((c) => !conHijo.has(c.id)).length;
+  }
+
+  if (faltantesSinDecidir > 0) {
+    alertas.push({
+      nivel: "urgente",
+      categoria: "Faltantes",
+      titulo: `${faltantesSinDecidir} entrega${faltantesSinDecidir > 1 ? "s" : ""} parcial${faltantesSinDecidir > 1 ? "es" : ""} con faltante sin decidir`,
+      descripcion: "Entrá al pedido y reprogramá el faltante en un pedido nuevo o dalo por cerrado.",
+      href: "/admin/pedidos",
+      count: faltantesSinDecidir,
+    });
+  }
+
   // Ordenar: crítico → urgente → aviso
   const NIVEL_ORDEN = { critico: 0, urgente: 1, aviso: 2 };
   alertas.sort((a, b) => NIVEL_ORDEN[a.nivel] - NIVEL_ORDEN[b.nivel]);

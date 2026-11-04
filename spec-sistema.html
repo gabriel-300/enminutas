@@ -622,7 +622,7 @@
       Documento confidencial — uso interno
     </div>
     <div class="cover-footer-right">
-      v2.11 · Noviembre 2026<br>
+      v2.12 · Noviembre 2026<br>
       admin@enminutas.com.ar
     </div>
   </div>
@@ -630,7 +630,7 @@
 
 <!-- PRINT BAR -->
 <div class="print-bar no-print">
-  <span class="version-tag">v2.11 · Noviembre 2026</span>
+  <span class="version-tag">v2.12 · Noviembre 2026</span>
   <button class="btn-print" onclick="window.print()">⎙ Imprimir / Guardar PDF</button>
 </div>
 
@@ -985,7 +985,7 @@
         <tbody>
           <tr><td>Ajuste al despachar</td><td>Si no hay stock suficiente</td><td>Reduce cantidades → recalcula totales → email a preventista y cliente</td></tr>
           <tr><td>Entrega parcial</td><td>El cliente no recibe todo</td><td>El pedido y el remito quedan con lo realmente entregado, se exige el motivo (sin stock, rechazado, dañado, otro), se devuelve la diferencia al stock y se ajusta la cuenta corriente. El faltante se cierra</td></tr>
-          <tr><td>Pedido con el faltante</td><td>Si el administrador quiere reponer lo no entregado</td><td>Crea un pedido nuevo, aprobado y al precio original, vinculado al original y con fecha de compromiso; alerta si vence sin despacharse</td></tr>
+          <tr><td>Pedido con el faltante</td><td>Si el administrador quiere reponer lo no entregado</td><td>Crea un pedido nuevo, aprobado y al precio original, vinculado al original y con fecha de compromiso; alerta si vence sin despacharse. Si el administrador prefiere no reponerlo, lo da por cerrado y queda registrado; si pasa un día sin decidir, el sistema avisa en Alertas</td></tr>
           <tr><td>Cuenta corriente</td><td>Al despachar con ese método de pago</td><td>Cargo automático en la cuenta del cliente</td></tr>
           <tr><td>Firma digital</td><td>Al entregar</td><td>El receptor firma en pantalla y queda guardada en el remito</td></tr>
           <tr><td>Liquidado</td><td>Al registrarse el cobro de un pedido entregado</td><td>Marca el pedido como cobrado y cerrado</td></tr>

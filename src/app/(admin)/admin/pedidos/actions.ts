@@ -841,3 +841,43 @@ export async function crearPedidoConFaltante(
   revalidatePath("/admin/alertas");
   return { orderId: inserted.id, orderNumber: inserted.orderNumber };
 }
+
+// Dar por cerrado el faltante de una entrega parcial (decisión explícita del admin: no se vuelve a entregar).
+// Queda en delivered_snapshot.faltante_cerrado; sin esto, el faltante sin reprogramar genera una alerta.
+export async function cerrarFaltante(orderId: string): Promise<{ ok: true } | { error: string }> {
+  const user = await requireAdmin();
+  const supabase = createAdminClient();
+
+  const { data: order } = await (supabase as any)
+    .from("orders")
+    .select("status, order_number, delivered_snapshot")
+    .eq("id", orderId)
+    .single();
+  if (!order?.delivered_snapshot?.lineas) return { error: "El pedido no tiene una entrega parcial registrada" };
+  if (order.delivered_snapshot.faltante_cerrado) return { error: "El faltante ya fue dado por cerrado" };
+
+  const { data: reprogramado } = await (supabase as any)
+    .from("orders")
+    .select("order_number")
+    .eq("origen_order_id", orderId)
+    .neq("status", "cancelled")
+    .maybeSingle();
+  if (reprogramado) return { error: `El faltante ya fue reprogramado en ${reprogramado.order_number}` };
+
+  const { error } = await (supabase as any)
+    .from("orders")
+    .update({
+      delivered_snapshot: {
+        ...order.delivered_snapshot,
+        faltante_cerrado: { por: user.id, at: new Date().toISOString() },
+      },
+    })
+    .eq("id", orderId);
+  if (error) return { error: error.message };
+
+  await logOrderEvent(supabase, orderId, order.status, "Faltante dado por cerrado (no se reprograma)", user.id);
+
+  revalidatePath(`/admin/pedidos/${orderId}`);
+  revalidatePath("/admin/alertas");
+  return { ok: true };
+}

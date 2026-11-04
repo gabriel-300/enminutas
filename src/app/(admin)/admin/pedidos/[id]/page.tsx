@@ -9,6 +9,7 @@ import { NotasPedidoForm } from "@/components/admin/notas-pedido-form";
 import { fmtFechaHora, fmtFecha, fmtFechaSolo } from "@/lib/fecha";
 import { MOTIVOS_FALTANTE } from "@/lib/entrega-parcial";
 import { ReprogramarFaltanteButton } from "@/components/admin/reprogramar-faltante-button";
+import { CerrarFaltanteButton } from "@/components/admin/cerrar-faltante-button";
 import { esCanalFlujo } from "@/lib/order-channels";
 
 export const metadata: Metadata = { title: "Detalle de pedido — Admin En Minutas" };
@@ -70,6 +71,7 @@ export default async function AdminPedidoDetailPage({
 
   // Faltante: pedido del que sale este (si es una reprogramación) y pedido al que se reprogramó el faltante de este
   const faltantes = ((o.delivered_snapshot?.lineas ?? []) as any[]).filter((l) => l.entregado < l.pedido);
+  const faltanteCerrado = (o.delivered_snapshot?.faltante_cerrado ?? null) as { at: string } | null;
   const [{ data: pedidoOrigen }, { data: pedidoReprogramado }] = await Promise.all([
     o.origen_order_id
       ? (adminClient as any).from("orders").select("id, order_number").eq("id", o.origen_order_id).maybeSingle()
@@ -337,9 +339,14 @@ export default async function AdminPedidoDetailPage({
       {/* Detalle entrega parcial */}
       {o.delivered_snapshot?.lineas && (
         <div className="bg-warning-bg border border-warning-border rounded-xl p-5 mb-4">
-          <p className="text-sm font-medium text-warning mb-1">Entrega parcial — faltante cerrado</p>
+          <p className="text-sm font-medium text-warning mb-1">
+            Entrega parcial — {pedidoReprogramado ? "faltante reprogramado" : faltanteCerrado ? "faltante dado por cerrado" : "faltante sin decidir"}
+          </p>
           <p className="text-xs text-neutral-600 mb-3">
-            El pedido y la cuenta corriente quedaron solo con lo entregado. Lo que no se entregó no queda pendiente.
+            El pedido y la cuenta corriente quedaron solo con lo entregado.{" "}
+            {!pedidoReprogramado && !faltanteCerrado && faltantes.length > 0
+              ? "Falta decidir si el faltante se reprograma en un pedido nuevo o se da por cerrado."
+              : "Lo que no se entregó no queda en este pedido."}
           </p>
           <div className="space-y-2">
             {(o.delivered_snapshot.lineas as any[])
@@ -367,12 +374,19 @@ export default async function AdminPedidoDetailPage({
               <Link href={`/admin/pedidos/${pedidoReprogramado.id}`} className="font-mono font-medium underline">{pedidoReprogramado.order_number}</Link>
               {" "}<PedidoStatusBadge status={pedidoReprogramado.status} />
             </p>
+          ) : faltanteCerrado ? (
+            <p className="text-sm text-neutral-700 mt-3">
+              Faltante dado por cerrado el {new Date(faltanteCerrado.at).toLocaleDateString("es-AR")}: no se reprograma.
+            </p>
           ) : esAdmin && faltantes.length > 0 ? (
-            <ReprogramarFaltanteButton
-              orderId={o.id}
-              faltante={faltantes.map((l: any) => ({ name: l.name, cantidad: l.pedido - l.entregado }))}
-              yaPedido={yaPedido}
-            />
+            <div className="flex flex-wrap items-start">
+              <ReprogramarFaltanteButton
+                orderId={o.id}
+                faltante={faltantes.map((l: any) => ({ name: l.name, cantidad: l.pedido - l.entregado }))}
+                yaPedido={yaPedido}
+              />
+              <CerrarFaltanteButton orderId={o.id} />
+            </div>
           ) : null}
           {o.delivered_snapshot.timestamp && (
             <p className="text-xs text-neutral-600 mt-1">
