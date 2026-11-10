@@ -29,12 +29,12 @@ export default async function CostosPreciosPage() {
     getParametros(),
     db.from("canales").select("slug, margen_std, margen_premium, markup_pvp"),
     db.from("products")
-      .select("id, name, sku, costo, bolsas_caja, u_bolsa, pkg_unitario, pkg_bulto, categoria, divisiones_display, kg_caja, receta_producto_id")
+      .select("id, name, sku, costo, bolsas_caja, u_bolsa, categoria, divisiones_display, kg_caja, receta_producto_id")
       .eq("is_active", true)
       .eq("es_muestra", false)
       .order("name"),
     db.from("recipes")
-      .select("id, product_id, yield_cajas, steps:recipe_steps (id, minutes), ingredients:recipe_ingredients (cantidad, insumo:insumos!insumo_id (precio_unitario, packaging_uso))"),
+      .select("id, product_id, yield_cajas, steps:recipe_steps (id, minutes), ingredients:recipe_ingredients (cantidad, insumo:insumos!insumo_id (precio_unitario))"),
     // Incluye inactivos: el dueño de una receta compartida puede estar inactivo
     db.from("products").select("id, kg_caja"),
   ]);
@@ -54,8 +54,6 @@ export default async function CostosPreciosPage() {
     Object.fromEntries(CANALES.map((c) => [c.slug, calcularPrecio({
       costo:              costoBolsa,
       bolsas_caja:        Number(p.bolsas_caja),
-      pkg_unitario:       Number(p.pkg_unitario ?? 0),
-      pkg_bulto:          Number(p.pkg_bulto ?? 0),
       u_bolsa:            Number(p.u_bolsa),
       categoria:          p.categoria,
       divisiones_display: p.divisiones_display ?? null,

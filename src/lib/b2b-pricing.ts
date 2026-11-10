@@ -19,8 +19,6 @@ export type PrecioB2B = {
 export function calcularPrecio(p: {
   costo:              number;
   bolsas_caja:        number;
-  pkg_unitario:       number;
-  pkg_bulto:          number;
   u_bolsa:            number;
   categoria:          string;           // 'Estándar' | 'Premium'
   divisiones_display: number | null;
@@ -44,11 +42,8 @@ export function calcularPrecio(p: {
   const comision_pct = p.comision_pct ?? 0.15;
 
   // Paso 2 — Lista s/IVA
-  const lista_siva = r2(
-    (p.costo * p.bolsas_caja) / (1 - margen)
-    + p.pkg_unitario * p.bolsas_caja
-    + p.pkg_bulto,
-  );
+  // `costo` es el costo total por bolsa (materia prima + packaging), todo con el mismo margen.
+  const lista_siva = r2((p.costo * p.bolsas_caja) / (1 - margen));
 
   // Paso 3 — Lista c/IVA (IVA solo sobre lista_siva)
   const lista_civa = r2(lista_siva * (1 + iva));

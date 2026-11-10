@@ -15,8 +15,6 @@ type Product = {
   presentacion:       string | null;
   codigo:             number | null;
   costo:              number | null;
-  pkg_unitario:       number | null;
-  pkg_bulto:          number | null;
   u_bolsa:            number | null;
   bolsas_caja:        number | null;
   kg_caja:            number | null;
@@ -86,11 +84,9 @@ function ProductMobileCard({ p }: { p: Product }) {
         <ActiveToggle id={p.id} initial={p.is_active} />
       </div>
 
-      <div className="grid grid-cols-3 gap-2 mt-3">
+      <div className="grid grid-cols-1 gap-2 mt-3">
         {[
           { label: "Costo", val: p.costo },
-          { label: "Pkg U", val: p.pkg_unitario },
-          { label: "Pkg B", val: p.pkg_bulto },
         ].map(({ label, val }) => (
           <div key={label} className="bg-neutral-50 rounded-lg p-2 text-center">
             <p className="text-neutral-600 text-xs mb-0.5">{label}</p>
@@ -159,8 +155,6 @@ function ProductRow({ p }: { p: Product }) {
       <td className="px-3 py-[11px] text-right tabular-nums text-n-700">{num(p.bolsas_caja)}</td>
       <td className="px-3 py-[11px] text-right tabular-nums text-n-700">{num(p.kg_caja)}</td>
       <td className="px-3 py-[11px] text-right tabular-nums whitespace-nowrap font-semibold text-n-900">{money(p.costo)}</td>
-      <td className="px-3 py-[11px] text-right tabular-nums whitespace-nowrap text-n-700">{money(p.pkg_unitario)}</td>
-      <td className="px-3 py-[11px] text-right tabular-nums whitespace-nowrap text-n-700">{money(p.pkg_bulto)}</td>
       <td className="px-3 py-[11px]"><CategoriaBadge cat={p.categoria} /></td>
       <td className="px-3 py-[11px] text-sm text-n-700 tabular-nums whitespace-nowrap">
         {p.updated_at
@@ -238,9 +232,7 @@ export function ProductsAdminClient({ products }: { products: Product[] }) {
                 <th className="px-3 py-2.5 text-right text-xs font-semibold text-n-600 whitespace-nowrap sticky top-0">U/Bolsa</th>
                 <th className="px-3 py-2.5 text-right text-xs font-semibold text-n-600 whitespace-nowrap sticky top-0">Bols/Caja</th>
                 <th className="px-3 py-2.5 text-right text-xs font-semibold text-n-600 whitespace-nowrap sticky top-0">Kg/Caja</th>
-                <th className="px-3 py-2.5 text-right text-xs font-semibold text-n-600 whitespace-nowrap sticky top-0">Costo $</th>
-                <th className="px-3 py-2.5 text-right text-xs font-semibold text-n-600 whitespace-nowrap sticky top-0">Pkg U $</th>
-                <th className="px-3 py-2.5 text-right text-xs font-semibold text-n-600 whitespace-nowrap sticky top-0">Pkg B $</th>
+                <th className="px-3 py-2.5 text-right text-xs font-semibold text-n-600 whitespace-nowrap sticky top-0">Costo total $</th>
                 <th className="px-3 py-2.5 text-left text-xs font-semibold text-n-600 whitespace-nowrap sticky top-0">Categoría</th>
                 <th className="px-3 py-2.5 text-left text-xs font-semibold text-n-600 whitespace-nowrap sticky top-0">Última act.</th>
                 <th className="px-3 py-2.5 text-center text-xs font-semibold text-n-600 whitespace-nowrap sticky top-0">Activo</th>
@@ -251,7 +243,7 @@ export function ProductsAdminClient({ products }: { products: Product[] }) {
             <tbody>
               {filtered.length === 0 && (
                 <tr>
-                  <td colSpan={14} className="px-4 py-10 text-center text-neutral-600">Sin resultados.</td>
+                  <td colSpan={12} className="px-4 py-10 text-center text-neutral-600">Sin resultados.</td>
                 </tr>
               )}
               {filtered.map((p) => <ProductRow key={p.id} p={p} />)}

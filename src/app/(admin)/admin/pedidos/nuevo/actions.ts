@@ -106,7 +106,7 @@ export async function crearPedidoAdmin(payload: CrearPedidoPayload): Promise<{ o
       .single(),
     (adminClient as any)
       .from("products")
-      .select("id, costo, bolsas_caja, pkg_unitario, pkg_bulto, u_bolsa, categoria, divisiones_display, min_quantity_b2b")
+      .select("id, costo, bolsas_caja, u_bolsa, categoria, divisiones_display, min_quantity_b2b")
       .in("id", productIds),
     getActiveVolumeDiscounts(),
     // Flete CIF de la zona de entrega: mismo % que usó la pantalla para mostrar precios
@@ -144,8 +144,6 @@ export async function crearPedidoAdmin(payload: CrearPedidoPayload): Promise<{ o
     const precio = calcularPrecio({
       costo:              Number(prod.costo),
       bolsas_caja:        Number(prod.bolsas_caja),
-      pkg_unitario:       Number(prod.pkg_unitario ?? 0),
-      pkg_bulto:          Number(prod.pkg_bulto    ?? 0),
       u_bolsa:            Number(prod.u_bolsa),
       categoria:          prod.categoria,
       divisiones_display: prod.divisiones_display ?? null,

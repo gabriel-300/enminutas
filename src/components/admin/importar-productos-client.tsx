@@ -51,7 +51,7 @@ export function ImportarProductosClient() {
     if (!result) return;
     const changes = result.rows
       .filter((r) => r.cambia)
-      .map((r) => ({ id: r.id, costo: r.costo_nuevo, pkg_unitario: r.pkg_unitario_nuevo, pkg_bulto: r.pkg_bulto_nuevo }));
+      .map((r) => ({ id: r.id, costo: r.costo_nuevo }));
     if (!changes.length) return;
 
     setState("applying");
@@ -87,8 +87,8 @@ export function ImportarProductosClient() {
           <div>
             <p className="text-sm font-semibold text-neutral-900">1. Descargar plantilla</p>
             <p className="text-xs text-neutral-600 mt-1">
-              CSV con todos los productos activos: código, nombre, costo, pkg_unitario, pkg_bulto.
-              Editá solo las columnas que cambiaron.
+              CSV con todos los productos activos: código, nombre y costo por bolsa (materia prima + packaging).
+              Editá solo el costo de los que cambiaron.
             </p>
           </div>
           <a
@@ -187,8 +187,6 @@ export function ImportarProductosClient() {
                     <th className="text-xs px-4 py-2.5 text-right font-semibold text-warning">Costo nuevo</th>
                     <th className="px-4 py-2.5 text-right">Pkg unit. actual</th>
                     <th className="text-xs px-4 py-2.5 text-right font-semibold text-warning">Pkg unit. nuevo</th>
-                    <th className="px-4 py-2.5 text-right">Pkg bulto actual</th>
-                    <th className="text-xs px-4 py-2.5 text-right font-semibold text-warning">Pkg bulto nuevo</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-neutral-50">
@@ -198,10 +196,6 @@ export function ImportarProductosClient() {
                       <td className="px-4 py-2.5 font-medium text-neutral-900 max-w-xs truncate">{r.nombre}</td>
                       <td className="px-4 py-2.5 text-right text-neutral-600 tabular-nums line-through text-xs">{fmt(r.costo_actual)}</td>
                       <td className="px-4 py-2.5 text-right tabular-nums font-semibold text-neutral-900">{fmt(r.costo_nuevo)}</td>
-                      <td className="px-4 py-2.5 text-right text-neutral-600 tabular-nums line-through text-xs">{r.pkg_unitario_actual > 0 ? fmt(r.pkg_unitario_actual) : "—"}</td>
-                      <td className="px-4 py-2.5 text-right tabular-nums font-semibold text-neutral-900">{r.pkg_unitario_nuevo > 0 ? fmt(r.pkg_unitario_nuevo) : "—"}</td>
-                      <td className="px-4 py-2.5 text-right text-neutral-600 tabular-nums line-through text-xs">{r.pkg_bulto_actual > 0 ? fmt(r.pkg_bulto_actual) : "—"}</td>
-                      <td className="px-4 py-2.5 text-right tabular-nums font-semibold text-neutral-900">{r.pkg_bulto_nuevo > 0 ? fmt(r.pkg_bulto_nuevo) : "—"}</td>
                     </tr>
                   ))}
                 </tbody>

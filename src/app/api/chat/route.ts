@@ -216,13 +216,13 @@ async function executeTool(name: string, rawArgs: string, role: string): Promise
     const isCode = !isNaN(Number(query)) && query.trim() !== "";
 
     const { data: byName } = await db.from("products")
-      .select("id, name, sku, codigo, presentacion, u_bolsa, bolsas_caja, costo, pkg_unitario, pkg_bulto, categoria, divisiones_display")
+      .select("id, name, sku, codigo, presentacion, u_bolsa, bolsas_caja, costo, categoria, divisiones_display")
       .eq("is_active", true).ilike("name", `%${query}%`).limit(5);
 
     let extra: unknown[] = [];
     if (isCode) {
       const { data: byCode } = await db.from("products")
-        .select("id, name, sku, codigo, presentacion, u_bolsa, bolsas_caja, costo, pkg_unitario, pkg_bulto, categoria, divisiones_display")
+        .select("id, name, sku, codigo, presentacion, u_bolsa, bolsas_caja, costo, categoria, divisiones_display")
         .eq("is_active", true).eq("codigo", Number(query)).limit(3);
       extra = byCode ?? [];
     }
@@ -238,7 +238,6 @@ async function executeTool(name: string, rawArgs: string, role: string): Promise
       if (!p.costo || !canalData) return { nombre: p.name, codigo: p.codigo, precio: "Sin costo configurado" };
       const precio = calcularPrecio({
         costo: Number(p.costo), bolsas_caja: Number(p.bolsas_caja),
-        pkg_unitario: Number(p.pkg_unitario ?? 0), pkg_bulto: Number(p.pkg_bulto ?? 0),
         u_bolsa: Number(p.u_bolsa), categoria: p.categoria,
         divisiones_display: p.divisiones_display ?? null,
         margen_std: Number(canalData.margen_std), margen_premium: Number(canalData.margen_premium),

@@ -29,8 +29,6 @@ type ProductoValues = {
   bolsas_caja?:        number | null;
   u_bolsa?:            number | null;
   kg_caja?:            number | null;
-  pkg_unitario?:       number | null;
-  pkg_bulto?:          number | null;
   divisiones_display?: number | null;
   min_quantity_b2b?:   number | null;
   stock_minimo?:       number | null;
@@ -142,7 +140,7 @@ export function ProductoForm({ categorias, lineas, defaultValues: dv = {}, actio
         <div>
           <h2 className="text-base font-semibold text-neutral-900">B2B — Precio dinámico v5</h2>
           <p className="text-xs text-neutral-600 mt-1">
-            El precio se calcula como: <code className="bg-neutral-100 px-1 rounded">lista_siva = (costo × bolsas_caja) / (1 − margen_canal) + pkg_unitario × bolsas_caja + pkg_bulto</code>
+            El precio se calcula como: <code className="bg-neutral-100 px-1 rounded">lista_siva = (costo × bolsas_caja) / (1 − margen_canal), donde el costo es el total por bolsa (materia prima + packaging)</code>
           </p>
         </div>
 
@@ -174,25 +172,10 @@ export function ProductoForm({ categorias, lineas, defaultValues: dv = {}, actio
         <div>
           <p className="text-xs font-semibold text-neutral-600 mb-3">Estructura de caja</p>
           <div className="grid grid-cols-4 gap-3">
-            <Field label="Costo / bolsa ($) *" name="costo" type="number" defaultValue={dv.costo ?? ""} placeholder="1780" step="1" min="0" />
+            <Field label="Costo total / bolsa ($, con packaging) *" name="costo" type="number" defaultValue={dv.costo ?? ""} placeholder="1780" step="1" min="0" />
             <Field label="Bolsas / caja *" name="bolsas_caja" type="number" defaultValue={dv.bolsas_caja ?? ""} placeholder="10" min="1" />
             <Field label="u / bolsa *" name="u_bolsa" type="number" defaultValue={dv.u_bolsa ?? ""} placeholder="16" min="1" />
             <Field label="Kg / caja" name="kg_caja" type="number" defaultValue={dv.kg_caja ?? ""} placeholder="5" step="0.001" min="0" />
-          </div>
-        </div>
-
-        {/* Packaging */}
-        <div>
-          <p className="text-xs font-semibold text-neutral-600 mb-3">Packaging</p>
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <Field label="Pkg unitario ($ / bolsa)" name="pkg_unitario" type="number" defaultValue={dv.pkg_unitario ?? ""} placeholder="750" step="1" min="0" />
-              <p className="text-xs text-neutral-600 mt-1">Costo de empaque por bolsa (ej: cajita impresa)</p>
-            </div>
-            <div>
-              <Field label="Pkg bulto ($)" name="pkg_bulto" type="number" defaultValue={dv.pkg_bulto ?? ""} placeholder="900" step="1" min="0" />
-              <p className="text-xs text-neutral-600 mt-1">Costo de empaque por caja (ej: bolsa de poliprop.)</p>
-            </div>
           </div>
         </div>
 

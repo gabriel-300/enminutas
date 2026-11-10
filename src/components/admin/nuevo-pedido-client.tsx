@@ -46,8 +46,6 @@ type ProductoRaw = {
   bolsas_caja:        number;
   kg_caja:            number;
   costo:              number;
-  pkg_unitario:       number;
-  pkg_bulto:          number;
   categoria:          string;
   divisiones_display: number | null;
   linea:              string;
@@ -120,8 +118,6 @@ export function NuevoPedidoClient({
       precio: calcularPrecio({
         costo:              p.costo,
         bolsas_caja:        p.bolsas_caja,
-        pkg_unitario:       p.pkg_unitario,
-        pkg_bulto:          p.pkg_bulto,
         u_bolsa:            p.u_bolsa,
         categoria:          p.categoria,
         divisiones_display: p.divisiones_display,

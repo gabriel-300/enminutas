@@ -33,7 +33,7 @@ export default async function ImportarPreciosPage() {
         <p className="font-semibold text-neutral-800">¿Cómo funciona?</p>
         <ol className="list-decimal list-inside space-y-1">
           <li>Descargá la plantilla CSV con los precios actuales.</li>
-          <li>Abrila en Excel o Google Sheets y editá la columna <strong>costo</strong> (y opcionalmente <strong>pkg_unitario</strong> / <strong>pkg_bulto</strong>).</li>
+          <li>Abrila en Excel o Google Sheets y editá la columna <strong>costo</strong>.</li>
           <li>Guardá como CSV y subila acá.</li>
           <li>El sistema te muestra qué va a cambiar antes de confirmar.</li>
         </ol>

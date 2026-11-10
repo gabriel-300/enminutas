@@ -122,22 +122,6 @@ export async function actualizarCostoProducto(
   return { ok: true };
 }
 
-// Packaging del producto a mano (Pkg U = por bolsa/cajita, Pkg B = por caja). Se suma al precio sin margen.
-export async function actualizarPkgProducto(
-  productId: string,
-  pkgUnitario: number,
-  pkgBulto: number,
-): Promise<ActionResult> {
-  await requireRole("admin", "produccion");
-  if (!(pkgUnitario >= 0) || !(pkgBulto >= 0)) return { error: "El packaging no puede ser negativo" };
-  const db = createAdminClient() as any;
-  const { error } = await db.from("products").update({ pkg_unitario: pkgUnitario, pkg_bulto: pkgBulto }).eq("id", productId);
-  if (error) return { error: error.message };
-  revalidateAll();
-  revalidatePath("/admin/productos");
-  return { ok: true };
-}
-
 export async function eliminarReceta(productId: string): Promise<ActionResult> {
   await requireRole("admin", "produccion");
   const db = createAdminClient() as any;
@@ -210,37 +194,23 @@ export async function desvincularPresentacion(productId: string): Promise<Action
   return { ok: true };
 }
 
-// Costos de una presentación desde la receta del base: costo del lote dividido por su rinde y
-// prorrateado por peso (factor). Los insumos marcados como packaging (insumos.packaging_uso) NO entran
-// en `costo` (que lleva margen): van a pkgUnitario (por bolsa/cajita) y pkgBulto (por caja), que se
-// suman al precio sin margen. pkgUnitario/pkgBulto son null si la receta no tiene insumos marcados de
-// ese tipo (así no se pisa lo cargado a mano). null si no hay receta.
-type CostosReceta = { costo: number; pkgUnitario: number | null; pkgBulto: number | null };
-
-async function costosDesdeReceta(db: any, baseId: string, factor: number, bolsasCaja: number): Promise<CostosReceta | null> {
+// Costo de materia prima por unidad (bolsa/cajita) de una presentación: costo del lote de la receta base,
+// dividido por su rinde, prorrateado por peso (factor) y por bolsas de la caja. null si no hay receta.
+async function costoUnidadDesdeReceta(db: any, baseId: string, factor: number, bolsasCaja: number): Promise<number | null> {
   const { data: recipe } = await db
     .from("recipes")
-    .select("id, yield_cajas, ingredients:recipe_ingredients(cantidad, insumo:insumos!insumo_id(precio_unitario, packaging_uso))")
+    .select("id, yield_cajas, ingredients:recipe_ingredients(cantidad, insumo:insumos!insumo_id(precio_unitario))")
     .eq("product_id", baseId)
     .maybeSingle();
   if (!recipe) return null;
 
-  let lote = 0, loteBolsa = 0, loteCaja = 0, hayBolsa = false, hayCaja = false;
-  for (const ing of (recipe.ingredients ?? []) as any[]) {
-    const importe = Number(ing.cantidad) * Number(ing.insumo?.precio_unitario ?? 0);
-    const uso = ing.insumo?.packaging_uso;
-    if (uso === "bolsa")     { loteBolsa += importe; hayBolsa = true; }
-    else if (uso === "caja") { loteCaja  += importe; hayCaja  = true; }
-    else                     { lote      += importe; }
-  }
+  const costoLote = (recipe.ingredients ?? []).reduce((s: number, ing: any) => {
+    const precio = Number(ing.insumo?.precio_unitario ?? 0);
+    return s + Number(ing.cantidad) * precio;
+  }, 0);
 
-  const porCaja = (importeLote: number) => (importeLote / (Number(recipe.yield_cajas) || 1)) * factor;
-  const bolsas = bolsasCaja > 0 ? bolsasCaja : 1;
-  return {
-    costo:       porCaja(lote) / bolsas,
-    pkgUnitario: hayBolsa ? porCaja(loteBolsa) / bolsas : null,
-    pkgBulto:    hayCaja  ? porCaja(loteCaja) : null,
-  };
+  const yieldCajas = Number(recipe.yield_cajas) || 1;
+  return ((costoLote / yieldCajas) * factor) / (bolsasCaja > 0 ? bolsasCaja : 1);
 }
 
 export type NuevaPresentacion = {
@@ -251,8 +221,6 @@ export type NuevaPresentacion = {
   kg_caja:      number;
   bolsas_caja:  number;
   u_bolsa:      number;
-  pkg_unitario: number | null;
-  pkg_bulto:    number | null;
   /** costo de materia prima por unidad; si es null se calcula desde la receta */
   costo:        number | null;
   linea_id:     number | null;
@@ -287,10 +255,9 @@ export async function crearPresentacion(
   const factor = factorABase(input.kg_caja, base.kg_caja);
   if (factor === null) return { error: "Cargá el kg por caja del producto base (en Productos) para poder calcular equivalencias" };
 
-  const deReceta = await costosDesdeReceta(db, baseProductId, factor, input.bolsas_caja);
-  const costo = input.costo !== null && input.costo > 0 ? input.costo : (deReceta?.costo ?? null);
-  const pkgUnitario = input.pkg_unitario ?? deReceta?.pkgUnitario ?? null;
-  const pkgBulto    = input.pkg_bulto ?? deReceta?.pkgBulto ?? null;
+  const costo = input.costo !== null && input.costo > 0
+    ? input.costo
+    : await costoUnidadDesdeReceta(db, baseProductId, factor, input.bolsas_caja);
 
   const { data: creado, error } = await db
     .from("products")
@@ -303,8 +270,6 @@ export async function crearPresentacion(
       kg_caja:            input.kg_caja,
       bolsas_caja:        input.bolsas_caja,
       u_bolsa:            input.u_bolsa,
-      pkg_unitario:       pkgUnitario,
-      pkg_bulto:          pkgBulto,
       costo,
       linea_id:           input.linea_id ?? base.linea_id,
       receta_producto_id: baseProductId,
@@ -359,13 +324,10 @@ export async function sincronizarCostoProducto(productId: string): Promise<Actio
     factor = f;
   }
 
-  const costos = await costosDesdeReceta(db, baseId, factor, Number(product?.bolsas_caja ?? 1) || 1);
-  if (costos === null) return { error: "No hay receta cargada para este producto." };
+  const costoUnidad = await costoUnidadDesdeReceta(db, baseId, factor, Number(product?.bolsas_caja ?? 1) || 1);
+  if (costoUnidad === null) return { error: "No hay receta cargada para este producto." };
 
-  const cambios: Record<string, number> = { costo: costos.costo };
-  if (costos.pkgUnitario !== null) cambios.pkg_unitario = costos.pkgUnitario;
-  if (costos.pkgBulto !== null)    cambios.pkg_bulto    = costos.pkgBulto;
-  const { error } = await db.from("products").update(cambios).eq("id", productId);
+  const { error } = await db.from("products").update({ costo: costoUnidad }).eq("id", productId);
   if (error) return { error: error.message };
 
   revalidatePath("/admin/productos");

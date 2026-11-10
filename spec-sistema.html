@@ -916,7 +916,7 @@
       <table>
         <thead><tr><th>Sección</th><th>Qué configura</th></tr></thead>
         <tbody>
-          <tr><td>Productos</td><td>Catálogo completo: nombre, SKU, código, costo, packaging, bolsas por caja, unidades, línea, categoría de precio, stock mínimo, imagen</td></tr>
+          <tr><td>Productos</td><td>Catálogo completo: nombre, SKU, código, costo (con packaging), bolsas por caja, unidades, línea, categoría de precio, stock mínimo, imagen</td></tr>
           <tr><td>Líneas de producto</td><td>Agrupaciones del catálogo (Empanadas, Chipas, Bocaditos, Pizzas, etc.), con posibilidad de exclusividad por canal</td></tr>
           <tr><td>Canales B2B</td><td>Distribuidor, Gastronomía, Minorista y TANDA. Cada canal tiene margen estándar, premium y de venta directa, y markup de precio al público</td></tr>
           <tr><td>Zonas</td><td>Zonas de distribución y el porcentaje de flete incluido en el precio para cada una</td></tr>
@@ -1020,8 +1020,8 @@
 
     <h3>Fórmula de cálculo</h3>
     <div class="formula-box">
-      lista_siva = (costo × bolsas_caja) / (1 − margen_canal) + pkg_unitario × bolsas_caja + pkg_bulto<br>
-      <span>↳ precio de la caja sin IVA (el costo es por bolsa)</span><br><br>
+      lista_siva = (costo × bolsas_caja) / (1 − margen_canal)<br>
+      <span>↳ precio de la caja sin IVA (el costo es por bolsa e incluye el packaging)</span><br><br>
       lista_civa = lista_siva × 1,21<br>
       <span>↳ precio de la caja con IVA</span><br><br>
       comisión = lista_siva × % de comisión del cliente (15% si no tiene uno propio)<br>
@@ -1039,8 +1039,6 @@
         <thead><tr><th>Variable</th><th>Dónde se configura</th><th>Ejemplo</th></tr></thead>
         <tbody>
           <tr><td>costo</td><td>Ficha del producto</td><td>$39.300 por bolsa</td></tr>
-          <tr><td>pkg_unitario</td><td>Ficha del producto</td><td>$200 por bolsa</td></tr>
-          <tr><td>pkg_bulto</td><td>Ficha del producto</td><td>$1.100 por caja</td></tr>
           <tr><td>bolsas_caja</td><td>Ficha del producto</td><td>1 bolsa</td></tr>
           <tr><td>margen_canal</td><td>Configuración → Canales</td><td>Distribuidor 40% estándar / 45% premium</td></tr>
           <tr><td>IVA</td><td>Configuración → Parámetros</td><td>21%</td></tr>

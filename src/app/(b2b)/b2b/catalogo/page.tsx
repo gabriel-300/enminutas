@@ -66,8 +66,7 @@ export default async function CatalogoB2BPage() {
     .select(`
       id, name, unit_label, cover_image_url, min_quantity_b2b,
       codigo, presentacion, u_bolsa, bolsas_caja, kg_caja,
-      costo, pkg_unitario, pkg_bulto,
-      categoria, divisiones_display, linea_id,
+      costo, categoria, divisiones_display, linea_id,
       linea:lineas_producto!linea_id (nombre, orden)
     `)
     .eq("is_active", true)
@@ -90,8 +89,6 @@ export default async function CatalogoB2BPage() {
       precio: calcularPrecio({
         costo:              Number(p.costo),
         bolsas_caja:        Number(p.bolsas_caja),
-        pkg_unitario:       Number(p.pkg_unitario ?? 0),
-        pkg_bulto:          Number(p.pkg_bulto ?? 0),
         u_bolsa:            Number(p.u_bolsa),
         categoria:          p.categoria,
         divisiones_display: p.divisiones_display ?? null,

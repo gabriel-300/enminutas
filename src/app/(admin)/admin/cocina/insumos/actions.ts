@@ -52,13 +52,11 @@ export async function actualizarInsumo(id: string, formData: FormData): Promise<
   const proveed   = (formData.get("proveedor") as string)?.trim() || null;
   const notas     = (formData.get("notas") as string)?.trim() || null;
   const categoria = (formData.get("categoria") as string)?.trim() || "otros";
-  const uso       = (formData.get("packaging_uso") as string)?.trim();
-  const packaging_uso = uso === "bolsa" || uso === "caja" ? uso : null;
 
   if (!nombre) return { error: "El nombre es requerido" };
 
   const db = createAdminClient() as any;
-  const { error } = await db.from("insumos").update({ nombre, unidad, precio_unitario: precio, proveedor: proveed, notas, categoria, packaging_uso }).eq("id", id);
+  const { error } = await db.from("insumos").update({ nombre, unidad, precio_unitario: precio, proveedor: proveed, notas, categoria }).eq("id", id);
   if (error) {
     if (error.code === "23505") return { error: `Ya existe un insumo llamado "${nombre}".` };
     return { error: error.message };

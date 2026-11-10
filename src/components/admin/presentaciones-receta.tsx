@@ -22,7 +22,7 @@ export type LineaOpcion = { id: number; nombre: string };
 
 const FORM_VACIO = {
   name: "", sku: "", unit_label: "", presentacion: "",
-  kg_caja: "", bolsas_caja: "", u_bolsa: "", pkg_unitario: "", pkg_bulto: "", costo: "", linea_id: "",
+  kg_caja: "", bolsas_caja: "", u_bolsa: "", costo: "", linea_id: "",
 };
 
 const num = (s: string) => parseFloat(s.replace(",", "."));
@@ -64,8 +64,6 @@ export function PresentacionesReceta({
         kg_caja:      num(form.kg_caja),
         bolsas_caja:  num(form.bolsas_caja),
         u_bolsa:      num(form.u_bolsa),
-        pkg_unitario: form.pkg_unitario ? num(form.pkg_unitario) : null,
-        pkg_bulto:    form.pkg_bulto ? num(form.pkg_bulto) : null,
         costo:        form.costo ? num(form.costo) : null,
         linea_id:     form.linea_id ? Number(form.linea_id) : null,
       });
@@ -237,16 +235,8 @@ export function PresentacionesReceta({
                 <span className="block text-xs font-medium text-neutral-600 mb-1">Unidades por bolsa / cajita *</span>
                 <input className={inputCls} inputMode="numeric" placeholder="ej. 20" value={form.u_bolsa} onChange={e => setCampo("u_bolsa", e.target.value)} disabled={isPending} />
               </label>
-              <label className="block">
-                <span className="block text-xs font-medium text-neutral-600 mb-1">Envase por bolsa / cajita ($)</span>
-                <input className={inputCls} inputMode="decimal" placeholder="ej. 750" value={form.pkg_unitario} onChange={e => setCampo("pkg_unitario", e.target.value)} disabled={isPending} />
-              </label>
-              <label className="block">
-                <span className="block text-xs font-medium text-neutral-600 mb-1">Envase por caja ($)</span>
-                <input className={inputCls} inputMode="decimal" placeholder="ej. 900" value={form.pkg_bulto} onChange={e => setCampo("pkg_bulto", e.target.value)} disabled={isPending} />
-              </label>
               <label className="block sm:col-span-2">
-                <span className="block text-xs font-medium text-neutral-600 mb-1">Costo por bolsa / cajita ($)</span>
+                <span className="block text-xs font-medium text-neutral-600 mb-1">Costo total por bolsa / cajita ($, con packaging)</span>
                 <input className={inputCls} inputMode="decimal" placeholder="vacío = se calcula desde la receta por peso" value={form.costo} onChange={e => setCampo("costo", e.target.value)} disabled={isPending} />
               </label>
             </div>

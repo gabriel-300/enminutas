@@ -35,8 +35,7 @@ export async function GET(req: NextRequest) {
     .select(`
       id, name, sku, unit_label, codigo, presentacion,
       bolsas_caja, kg_caja, u_bolsa,
-      costo, pkg_unitario, pkg_bulto,
-      categoria, divisiones_display,
+      costo, categoria, divisiones_display,
       linea:lineas_producto!linea_id (nombre)
     `)
     .eq("is_active", true)
@@ -65,8 +64,6 @@ export async function GET(req: NextRequest) {
     const base = {
       costo:              Number(p.costo),
       bolsas_caja:        Number(p.bolsas_caja),
-      pkg_unitario:       Number(p.pkg_unitario ?? 0),
-      pkg_bulto:          Number(p.pkg_bulto ?? 0),
       u_bolsa:            Number(p.u_bolsa),
       categoria:          p.categoria,
       divisiones_display: p.divisiones_display ?? null,

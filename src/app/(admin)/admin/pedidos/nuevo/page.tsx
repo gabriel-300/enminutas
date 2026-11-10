@@ -49,8 +49,7 @@ export default async function NuevoPedidoPage({
       .select(`
         id, sku, name, unit_label, min_quantity_b2b,
         codigo, presentacion, u_bolsa, bolsas_caja, kg_caja,
-        costo, pkg_unitario, pkg_bulto,
-        categoria, divisiones_display,
+        costo, categoria, divisiones_display,
         linea:lineas_producto!linea_id (nombre)
       `)
       .eq("is_active", true)
@@ -116,8 +115,6 @@ export default async function NuevoPedidoPage({
     bolsas_caja:        Number(p.bolsas_caja ?? 1),
     kg_caja:            Number(p.kg_caja ?? 0),
     costo:              Number(p.costo ?? 0),
-    pkg_unitario:       Number(p.pkg_unitario ?? 0),
-    pkg_bulto:          Number(p.pkg_bulto ?? 0),
     categoria:          p.categoria ?? "Estándar",
     divisiones_display: p.divisiones_display ?? null,
     linea:              (p.linea as any)?.nombre ?? "Sin línea",

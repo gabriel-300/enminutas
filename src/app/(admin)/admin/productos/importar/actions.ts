@@ -10,10 +10,6 @@ export type ChangeRow = {
   nombre:              string;
   costo_actual:        number;
   costo_nuevo:         number;
-  pkg_unitario_actual: number;
-  pkg_unitario_nuevo:  number;
-  pkg_bulto_actual:    number;
-  pkg_bulto_nuevo:     number;
   cambia:              boolean;
 };
 
@@ -79,13 +75,11 @@ export async function parsearImport(formData: FormData): Promise<ParseResult | {
 
     const codigoIdx   = findCol("codigo", "cod", "code");
     const costoIdx    = findCol("costo_por_bolsa", "costo", "precio", "price", "cost");
-    const pkgUnitIdx  = findCol("empaque_unitario", "pkg_unitario", "pkg_unit");
-    const pkgBultoIdx = findCol("empaque_bulto", "pkg_bulto");
 
     if (codigoIdx === -1) return { error: 'El archivo no tiene la columna "Código".' };
     if (costoIdx  === -1) return { error: 'El archivo no tiene la columna "Costo por bolsa".' };
 
-    const csvRows: Record<number, { costo: number; pkg_unitario: number; pkg_bulto: number }> = {};
+    const csvRows: Record<number, { costo: number }> = {};
     const errores: string[] = [];
 
     for (let i = 1; i < lines.length; i++) {
@@ -104,13 +98,9 @@ export async function parsearImport(formData: FormData): Promise<ParseResult | {
       if (isNaN(codigo)) { errores.push(`Fila ${i + 1}: código inválido "${codigoRaw}"`); continue; }
       if (isNaN(costo) || costo < 0) { errores.push(`Fila ${i + 1}: costo inválido "${costoRaw}"`); continue; }
 
-      const pkgU = pkgUnitIdx  !== -1 ? parseFloat((cols[pkgUnitIdx]  ?? "0").replace(/\./g, "").replace(",", ".")) : 0;
-      const pkgB = pkgBultoIdx !== -1 ? parseFloat((cols[pkgBultoIdx] ?? "0").replace(/\./g, "").replace(",", ".")) : 0;
 
       csvRows[codigo] = {
         costo,
-        pkg_unitario: isNaN(pkgU) ? 0 : pkgU,
-        pkg_bulto:    isNaN(pkgB) ? 0 : pkgB,
       };
     }
 
@@ -120,7 +110,7 @@ export async function parsearImport(formData: FormData): Promise<ParseResult | {
 
     const { data: products } = await (createAdminClient() as any)
       .from("products")
-      .select("id, codigo, name, costo, pkg_unitario, pkg_bulto")
+      .select("id, codigo, name, costo")
       .not("codigo", "is", null);
 
     const rows: ChangeRow[] = [];
@@ -129,13 +119,7 @@ export async function parsearImport(formData: FormData): Promise<ParseResult | {
       if (!csv) continue;
 
       const costoActual = Number(p.costo ?? 0);
-      const pkgUActual  = Number(p.pkg_unitario ?? 0);
-      const pkgBActual  = Number(p.pkg_bulto ?? 0);
-
-      const cambia =
-        Math.round(costoActual * 100) !== Math.round(csv.costo * 100) ||
-        Math.round(pkgUActual  * 100) !== Math.round(csv.pkg_unitario * 100) ||
-        Math.round(pkgBActual  * 100) !== Math.round(csv.pkg_bulto * 100);
+      const cambia = Math.round(costoActual * 100) !== Math.round(csv.costo * 100);
 
       rows.push({
         id:                  p.id,
@@ -143,10 +127,6 @@ export async function parsearImport(formData: FormData): Promise<ParseResult | {
         nombre:              p.name,
         costo_actual:        costoActual,
         costo_nuevo:         csv.costo,
-        pkg_unitario_actual: pkgUActual,
-        pkg_unitario_nuevo:  csv.pkg_unitario,
-        pkg_bulto_actual:    pkgBActual,
-        pkg_bulto_nuevo:     csv.pkg_bulto,
         cambia,
       });
     }
@@ -160,7 +140,7 @@ export async function parsearImport(formData: FormData): Promise<ParseResult | {
 }
 
 export async function aplicarImport(
-  changes: Array<{ id: string; costo: number; pkg_unitario: number; pkg_bulto: number }>
+  changes: Array<{ id: string; costo: number }>
 ) {
   await requireAdmin();
   if (!changes.length) throw new Error("No hay cambios para aplicar.");
@@ -171,7 +151,7 @@ export async function aplicarImport(
   for (const c of changes) {
     const { error } = await db
       .from("products")
-      .update({ costo: c.costo, pkg_unitario: c.pkg_unitario, pkg_bulto: c.pkg_bulto })
+      .update({ costo: c.costo })
       .eq("id", c.id);
     if (error) errores.push(`id ${c.id}: ${error.message}`);
   }
