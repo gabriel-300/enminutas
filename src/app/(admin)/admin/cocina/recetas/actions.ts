@@ -122,6 +122,22 @@ export async function actualizarCostoProducto(
   return { ok: true };
 }
 
+// Packaging del producto a mano (Pkg U = por bolsa/cajita, Pkg B = por caja). Se suma al precio sin margen.
+export async function actualizarPkgProducto(
+  productId: string,
+  pkgUnitario: number,
+  pkgBulto: number,
+): Promise<ActionResult> {
+  await requireRole("admin", "produccion");
+  if (!(pkgUnitario >= 0) || !(pkgBulto >= 0)) return { error: "El packaging no puede ser negativo" };
+  const db = createAdminClient() as any;
+  const { error } = await db.from("products").update({ pkg_unitario: pkgUnitario, pkg_bulto: pkgBulto }).eq("id", productId);
+  if (error) return { error: error.message };
+  revalidateAll();
+  revalidatePath("/admin/productos");
+  return { ok: true };
+}
+
 export async function eliminarReceta(productId: string): Promise<ActionResult> {
   await requireRole("admin", "produccion");
   const db = createAdminClient() as any;

@@ -3,6 +3,7 @@ import Link from "next/link";
 import { createClient, createAdminClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { CostoCajaEdit } from "./costo-edit";
+import { PkgEdit } from "./pkg-edit";
 import { armarRecetaMap } from "@/lib/receta-costos";
 
 const fmtRinde = (n: number) => new Intl.NumberFormat("es-AR", { maximumFractionDigits: 2 }).format(n);
@@ -32,7 +33,7 @@ export default async function RecetasPage() {
   const [{ data: rawProducts }, { data: rawRecipes }, { data: todosKg }] = await Promise.all([
     adminClient
       .from("products")
-      .select("id, name, sku, costo, bolsas_caja, kg_caja, receta_producto_id, unit_label, category:categories!category_id (name)")
+      .select("id, name, sku, costo, pkg_unitario, pkg_bulto, bolsas_caja, kg_caja, receta_producto_id, unit_label, category:categories!category_id (name)")
       .eq("is_active", true)
       .order("name"),
 
@@ -106,6 +107,7 @@ export default async function RecetasPage() {
                   <th className="px-5 py-3 text-xs font-semibold text-neutral-600 text-center">Tiempo</th>
                   <th className="px-5 py-3 text-xs font-semibold text-neutral-600 text-right">Costo receta / caja <span className="block font-normal text-neutral-500">materia prima</span></th>
                   <th className="px-5 py-3 text-xs font-semibold text-neutral-600 text-right">Costo producto / caja <span className="block font-normal text-neutral-500">sin packaging</span></th>
+                  <th className="px-5 py-3 text-xs font-semibold text-neutral-600 text-right">Packaging <span className="block font-normal text-neutral-500">U = bolsa · B = caja</span></th>
                   <th className="px-5 py-3 text-xs font-semibold text-neutral-600"></th>
                 </tr>
               </thead>
@@ -159,6 +161,16 @@ export default async function RecetasPage() {
                         ) : (
                           <span className="text-neutral-500">—</span>
                         )}
+                      </td>
+
+                      {/* Packaging (Pkg U / Pkg B) — editable inline */}
+                      <td className="px-5 py-3 text-right text-sm">
+                        <PkgEdit
+                          productId={p.id}
+                          pkgUnitario={Number(p.pkg_unitario ?? 0)}
+                          pkgBulto={Number(p.pkg_bulto ?? 0)}
+                          pkgReceta={r.pkgCaja}
+                        />
                       </td>
 
                       <td className="px-5 py-3 text-right">
