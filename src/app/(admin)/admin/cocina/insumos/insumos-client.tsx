@@ -18,6 +18,7 @@ export type Insumo = {
   punto_pedido: number;
   stock_maximo: number;
   categoria: string;
+  packaging_uso?: "bolsa" | "caja" | null;
 };
 
 const UNIDADES = ["gr", "kg", "ml", "l", "u", "cc", "taza", "cdita", "cda"];
@@ -394,7 +395,8 @@ function InsumoRow({ ins, cats, onError }: { ins: Insumo; cats: Categoria[]; onE
   const [precio, setPrecio]     = useState(String(ins.precio_unitario));
   const [proveed, setProveed]   = useState(ins.proveedor ?? "");
   const [cat, setCat]           = useState(ins.categoria || "otros");
-  const [sMin, setSMin]         = useState(String(ins.stock_minimo));
+  const [pkgUso, setPkgUso]     = useState(ins.packaging_uso ?? "");
+  const [sMin, setSMin]        = useState(String(ins.stock_minimo));
   const [sPed, setSPed]         = useState(String(ins.punto_pedido));
   const [sMax, setSMax]         = useState(String(ins.stock_maximo));
   const [isPending, start]      = useTransition();
@@ -406,6 +408,7 @@ function InsumoRow({ ins, cats, onError }: { ins: Insumo; cats: Categoria[]; onE
     fd.set("nombre", nombre); fd.set("unidad", unidad);
     fd.set("precio_unitario", precio); fd.set("proveedor", proveed);
     fd.set("categoria", cat);
+    fd.set("packaging_uso", pkgUso);
     start(async () => {
       const res = await actualizarInsumo(ins.id, fd);
       if ("error" in res) { onError(res.error); resetState(); return; }
@@ -424,6 +427,7 @@ function InsumoRow({ ins, cats, onError }: { ins: Insumo; cats: Categoria[]; onE
     setNombre(ins.nombre); setUnidad(ins.unidad);
     setPrecio(String(ins.precio_unitario)); setProveed(ins.proveedor ?? "");
     setCat(ins.categoria || "otros");
+    setPkgUso(ins.packaging_uso ?? "");
     setSMin(String(ins.stock_minimo)); setSPed(String(ins.punto_pedido)); setSMax(String(ins.stock_maximo));
   }
 
@@ -465,6 +469,13 @@ function InsumoRow({ ins, cats, onError }: { ins: Insumo; cats: Categoria[]; onE
             <select value={cat} onChange={e => setCat(e.target.value)}
               className={`${inputCls} w-32`} disabled={isPending}>
               {cats.map(c => <option key={c.valor} value={c.valor}>{c.nombre}</option>)}
+            </select>
+            <select value={pkgUso} onChange={e => setPkgUso(e.target.value as "" | "bolsa" | "caja")}
+              className={`${inputCls} w-32 mt-1`} disabled={isPending}
+              title="Si es packaging, en la receta suma a Pkg U/B en vez de al costo">
+              <option value="">No es packaging</option>
+              <option value="bolsa">Pkg por bolsa</option>
+              <option value="caja">Pkg por caja</option>
             </select>
           </td>
           {/* Stock actual — read-only en edit */}
@@ -527,6 +538,9 @@ function InsumoRow({ ins, cats, onError }: { ins: Insumo; cats: Categoria[]; onE
           <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${catColor(ins.categoria, cats)}`}>
             {catLabel(ins.categoria, cats)}
           </span>
+          {ins.packaging_uso && (
+            <span className="ml-1 text-xs text-neutral-600">· pkg {ins.packaging_uso}</span>
+          )}
         </td>
         {/* Stock actual con indicador */}
         <td className="px-3 py-2.5">

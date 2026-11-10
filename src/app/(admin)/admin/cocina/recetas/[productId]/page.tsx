@@ -42,7 +42,7 @@ export default async function RecetaEditorPage({
 
     adminClient
       .from("insumos")
-      .select("id, nombre, unidad, precio_unitario")
+      .select("id, nombre, unidad, precio_unitario, packaging_uso")
       .order("nombre"),
   ]);
 

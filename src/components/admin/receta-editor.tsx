@@ -9,6 +9,7 @@ type Ing  = { insumo_id: string; cantidad: number; cantidadStr?: string };
 
 export type InsumoOpcion = {
   id: string; nombre: string; unidad: string; precio_unitario: number;
+  packaging_uso?: "bolsa" | "caja" | null;
 };
 
 type RecetaProps = {
@@ -66,11 +67,19 @@ export function RecetaEditor({ productId, insumos, recipe }: RecetaProps) {
   const insumoMap = Object.fromEntries(insumos.map(i => [i.id, i]));
 
   // Cálculo de costos en tiempo real
-  const costoLote = ings.reduce((s, ing) => {
+  // Materia prima vs packaging (insumos marcados "por bolsa" / "por caja"): el packaging no entra en el costo del producto
+  const importeLote = (uso: "bolsa" | "caja" | null) => ings.reduce((s, ing) => {
     const ins = insumoMap[ing.insumo_id];
-    return s + (ins ? ing.cantidad * ins.precio_unitario : 0);
+    if (!ins || (ins.packaging_uso ?? null) !== uso) return s;
+    return s + ing.cantidad * ins.precio_unitario;
   }, 0);
-  const costoCaja = yieldCajas > 0 ? costoLote / yieldCajas : 0;
+  const costoMateria = importeLote(null);
+  const loteBolsa    = importeLote("bolsa");
+  const loteCaja     = importeLote("caja");
+  const costoLote = costoMateria + loteBolsa + loteCaja;
+  const costoCaja = yieldCajas > 0 ? costoMateria / yieldCajas : 0;
+  const pkgBolsaCaja = yieldCajas > 0 ? loteBolsa / yieldCajas : 0;
+  const pkgCajaCaja  = yieldCajas > 0 ? loteCaja / yieldCajas : 0;
   const totalMinutos = steps.reduce((s, st) => s + (st.minutes || 0), 0);
 
   // ── Pasos ──────────────────────────────────────────────────────────────────
@@ -139,7 +148,7 @@ export function RecetaEditor({ productId, insumos, recipe }: RecetaProps) {
   }
 
   function handleSincronizar() {
-    if (!confirm("¿Actualizar el costo del producto con el costo calculado de la receta? Esto afecta el precio B2B.")) return;
+    if (!confirm("¿Actualizar el costo del producto (y el packaging por bolsa/caja, si la receta lo tiene marcado) con lo calculado de la receta? Esto afecta el precio B2B.")) return;
     setSyncMsg(null);
     startTransition(async () => {
       const result = await sincronizarCostoProducto(productId);
@@ -199,9 +208,14 @@ export function RecetaEditor({ productId, insumos, recipe }: RecetaProps) {
               <div>
                 <p className="text-xs text-neutral-600">Costo de materia prima</p>
                 <p className="text-sm font-semibold text-neutral-900">
-                  {fmtARS(costoLote)} / lote
+                  {fmtARS(costoMateria)} / lote
                   <span className="text-tierra-700 ml-2">{fmtARS(costoCaja)} / caja</span>
                 </p>
+                {(loteBolsa > 0 || loteCaja > 0) && (
+                  <p className="text-xs text-neutral-600 mt-0.5">
+                    Packaging (aparte, sin margen): {fmtARS(pkgBolsaCaja)} por bolsas + {fmtARS(pkgCajaCaja)} por caja, por caja producida
+                  </p>
+                )}
               </div>
             )}
           </div>
@@ -219,7 +233,7 @@ export function RecetaEditor({ productId, insumos, recipe }: RecetaProps) {
           </div>
           {costoLote > 0 && (
             <div className="text-right">
-              <span className="text-xs font-semibold text-neutral-700">{fmtARS(costoLote)} / lote</span>
+              <span className="text-xs font-semibold text-neutral-700">{fmtARS(costoMateria)} / lote</span>
               <span className="text-xs text-tierra-700 ml-2 font-semibold">{fmtARS(costoCaja)} / caja</span>
             </div>
           )}
@@ -254,7 +268,7 @@ export function RecetaEditor({ productId, insumos, recipe }: RecetaProps) {
                         <option value="">— Seleccionar insumo —</option>
                         {insumos.map(ins => (
                           <option key={ins.id} value={ins.id}>
-                            {ins.nombre} ({ins.unidad})
+                            {ins.nombre} ({ins.unidad}){ins.packaging_uso ? ` · pkg ${ins.packaging_uso}` : ""}
                           </option>
                         ))}
                       </select>

@@ -18,7 +18,7 @@ export default async function InsumosPage() {
   const [rawInsumos, categorias] = await Promise.all([
     adminClient
       .from("insumos")
-      .select("id, nombre, unidad, precio_unitario, proveedor, updated_at, stock_actual, stock_minimo, punto_pedido, stock_maximo, categoria")
+      .select("id, nombre, unidad, precio_unitario, proveedor, updated_at, stock_actual, stock_minimo, punto_pedido, stock_maximo, categoria, packaging_uso")
       .order("nombre")
       .then(({ data }: { data: any[] | null }) => data ?? []),
     getCategorias(),
