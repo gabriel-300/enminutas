@@ -34,7 +34,7 @@ export default async function CostosPreciosPage() {
       .eq("es_muestra", false)
       .order("name"),
     db.from("recipes")
-      .select("id, product_id, yield_cajas, steps:recipe_steps (id, minutes), ingredients:recipe_ingredients (cantidad, insumo:insumos!insumo_id (precio_unitario))"),
+      .select("id, product_id, yield_cajas, steps:recipe_steps (id, minutes), ingredients:recipe_ingredients (cantidad, insumo:insumos!insumo_id (precio_unitario, packaging_uso))"),
     // Incluye inactivos: el dueño de una receta compartida puede estar inactivo
     db.from("products").select("id, kg_caja"),
   ]);
