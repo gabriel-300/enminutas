@@ -3,7 +3,7 @@
 import { useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { vincularPresentacion, desvincularPresentacion, crearPresentacion } from "@/app/(admin)/admin/cocina/recetas/actions";
+import { vincularPresentacion, desvincularPresentacion, darRecetaPropia, crearPresentacion } from "@/app/(admin)/admin/cocina/recetas/actions";
 
 export type PresentacionVinculada = {
   id: string; name: string; sku: string | null; unit_label: string | null;
@@ -102,12 +102,22 @@ export function PresentacionesReceta({
     });
   }
 
+  function independizar(id: string, name: string) {
+    if (!confirm(`¿Darle a "${name}" una receta propia? Se crea una copia de esta receta (con el rinde convertido a sus cajas) que podés editar sin afectar a las demás presentaciones.`)) return;
+    setError(null);
+    startTransition(async () => {
+      const res = await darRecetaPropia(id);
+      if ("error" in res) setError(res.error);
+      else router.push(`/admin/cocina/recetas/${id}`);
+    });
+  }
+
   return (
     <div className="bg-white rounded-xl border border-neutral-200 shadow-sm overflow-hidden mt-6">
       <div className="px-5 py-4 border-b border-neutral-100">
         <p className="text-sm font-semibold text-neutral-700">Presentaciones que usan esta receta</p>
         <p className="text-xs text-neutral-600 mt-0.5">
-          Al producir podés elegir en cuál sale el lote. Las cajas se calculan por peso (kg por caja de cada producto).
+          Al producir podés elegir en cuál sale el lote. Las cajas se calculan por peso (kg por caja de cada producto). Si una presentación necesita ingredientes distintos, dale «Receta propia».
         </p>
       </div>
 
@@ -136,6 +146,11 @@ export function PresentacionesReceta({
               <p className="text-xs text-neutral-600 tabular-nums shrink-0">
                 {p.cajasPorLote !== null ? `1 lote = ${fmt(p.cajasPorLote)} cajas` : "falta kg/caja"}
               </p>
+              <button type="button" onClick={() => independizar(p.id, p.name)} disabled={isPending}
+                title="Crea una copia de esta receta para que la presentación tenga la suya"
+                className="text-xs text-tierra-700 hover:underline disabled:opacity-40 shrink-0">
+                Receta propia
+              </button>
               <button type="button" onClick={() => desvincular(p.id, p.name)} disabled={isPending}
                 className="text-xs text-danger hover:underline disabled:opacity-40 shrink-0">
                 Quitar

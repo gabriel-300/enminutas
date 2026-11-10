@@ -1,7 +1,7 @@
 "use server";
 
 import { requireRole } from "@/lib/auth";
-import { factorABase } from "@/lib/receta-base";
+import { factorABase, cajasPorLote } from "@/lib/receta-base";
 import { createAdminClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 
@@ -189,6 +189,64 @@ export async function desvincularPresentacion(productId: string): Promise<Action
 
   revalidateAll();
   revalidatePath(`/admin/cocina/recetas/${baseId}`);
+  revalidatePath("/admin/cocina/produccion");
+  revalidatePath("/admin/cocina/planificador");
+  return { ok: true };
+}
+
+// Independiza una presentación: deja de usar la receta del base y pasa a tener la suya, que arranca como una
+// copia (mismos ingredientes y pasos; el rinde se convierte a cajas de esta presentación por peso).
+// Después se edita sin afectar al base. Las producciones ya registradas siguen apuntando a la receta original.
+export async function darRecetaPropia(productId: string): Promise<ActionResult> {
+  await requireRole("admin", "produccion");
+  const db = createAdminClient() as any;
+
+  const { data: pres } = await db.from("products").select("id, kg_caja, receta_producto_id").eq("id", productId).maybeSingle();
+  if (!pres?.receta_producto_id) return { error: "Este producto no usa la receta de otro" };
+  const baseId = pres.receta_producto_id as string;
+
+  const [{ data: base }, { data: recetaBase }] = await Promise.all([
+    db.from("products").select("kg_caja").eq("id", baseId).maybeSingle(),
+    db.from("recipes")
+      .select("id, yield_cajas, vida_util_dias, notes, steps:recipe_steps(step_order, description, minutes, notes), ingredients:recipe_ingredients(insumo_id, cantidad)")
+      .eq("product_id", baseId)
+      .maybeSingle(),
+  ]);
+  if (!recetaBase) return { error: "El producto base no tiene receta para copiar" };
+
+  const rinde = cajasPorLote(recetaBase.yield_cajas, factorABase(pres.kg_caja, base?.kg_caja));
+  if (rinde === null) return { error: "Falta cargar el kg por caja de la presentación o del producto base (en Productos)." };
+
+  const { data: nueva, error: errReceta } = await db
+    .from("recipes")
+    .insert({ product_id: productId, yield_cajas: rinde, vida_util_dias: recetaBase.vida_util_dias, notes: recetaBase.notes })
+    .select("id")
+    .single();
+  if (errReceta || !nueva) return { error: `No se pudo crear la receta: ${errReceta?.message ?? "sin datos"}` };
+
+  const deshacer = () => db.from("recipes").delete().eq("id", nueva.id);
+
+  const steps = (recetaBase.steps ?? []) as any[];
+  if (steps.length > 0) {
+    const { error } = await db.from("recipe_steps").insert(
+      steps.map((s) => ({ recipe_id: nueva.id, step_order: s.step_order, description: s.description, minutes: s.minutes, notes: s.notes })),
+    );
+    if (error) { await deshacer(); return { error: `Error al copiar los pasos: ${error.message}` }; }
+  }
+  const ings = (recetaBase.ingredients ?? []) as any[];
+  if (ings.length > 0) {
+    const { error } = await db.from("recipe_ingredients").insert(
+      ings.map((i) => ({ recipe_id: nueva.id, insumo_id: i.insumo_id, cantidad: i.cantidad })),
+    );
+    if (error) { await deshacer(); return { error: `Error al copiar los ingredientes: ${error.message}` }; }
+  }
+
+  const { error: errVinculo } = await db.from("products").update({ receta_producto_id: null }).eq("id", productId);
+  if (errVinculo) { await deshacer(); return { error: errVinculo.message }; }
+
+  revalidateAll();
+  revalidatePath(`/admin/cocina/recetas/${baseId}`);
+  revalidatePath(`/admin/cocina/recetas/${productId}`);
   revalidatePath("/admin/cocina/produccion");
   revalidatePath("/admin/cocina/planificador");
   return { ok: true };
