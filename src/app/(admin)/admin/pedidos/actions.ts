@@ -23,6 +23,12 @@ async function logOrderEvent(
   });
 }
 
+// Usuario que hace el cambio: se guarda en orders.status_changed_by y el trigger lo copia al evento.
+async function actorId(): Promise<string | null> {
+  const { data: { user } } = await (await createClient()).auth.getUser();
+  return user?.id ?? null;
+}
+
 async function getCallerRole(): Promise<string | null> {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
@@ -55,7 +61,7 @@ export async function updateOrderStatus(orderId: string, status: string, confirm
 
   const { error } = await supabase
     .from("orders")
-    .update({ status: status as any })
+    .update({ status: status as any, status_changed_by: await actorId() } as any)
     .eq("id", orderId);
   if (error) throw new Error(error.message);
   revalidatePath("/admin/pedidos");
@@ -105,6 +111,7 @@ export async function aprobarPedidoB2B(orderId: string) {
     .from("orders")
     .update({
       status:       "aprobado",
+      status_changed_by: user.id,
       aprobado_por: user.id,
       aprobado_at:  new Date().toISOString(),
     })
@@ -129,7 +136,7 @@ export async function marcarEnviadoProd(orderId: string) {
   // Update con guard de estado para atomicidad — 0 filas = estado incorrecto
   const { data: updated, error } = await (supabase as any)
     .from("orders")
-    .update({ status: "enviado_prod" })
+    .update({ status: "enviado_prod", status_changed_by: await actorId() })
     .eq("id", orderId)
     .eq("status", "aprobado")
     .select("id");
@@ -156,7 +163,7 @@ export async function despacharPedido(orderId: string) {
   // Update con guard de estado para atomicidad
   const { data: updated, error } = await (supabase as any)
     .from("orders")
-    .update({ status: "despachado", despachado_at: new Date().toISOString() })
+    .update({ status: "despachado", despachado_at: new Date().toISOString(), status_changed_by: await actorId() })
     .eq("id", orderId)
     .eq("status", "enviado_prod")
     .select("id, payment_method, customer_id, total, order_number");
@@ -260,7 +267,7 @@ export async function iniciarDistribucion(orderId: string) {
 
   const { data: updated, error } = await (supabase as any)
     .from("orders")
-    .update({ status: "en_distribucion" })
+    .update({ status: "en_distribucion", status_changed_by: await actorId() })
     .eq("id", orderId)
     .eq("status", "despachado")
     .select("id");
@@ -280,7 +287,7 @@ export async function confirmarEntrega(orderId: string) {
 
   const { data: updated, error } = await (supabase as any)
     .from("orders")
-    .update({ status: "delivered", entregado_at: new Date().toISOString() })
+    .update({ status: "delivered", entregado_at: new Date().toISOString(), status_changed_by: await actorId() })
     .eq("id", orderId)
     .in("status", ["despachado", "en_distribucion"])
     .select("id");
@@ -368,6 +375,7 @@ export async function despacharPedidoConAjuste(
     .from("orders")
     .update({
       status:        "despachado",
+      status_changed_by: await actorId(),
       despachado_at: new Date().toISOString(),
       subtotal:      newSubtotal,
       total:         newTotal,
@@ -565,6 +573,7 @@ export async function confirmarEntregaParcial(
     .from("orders")
     .update({
       status:       "entrega_parcial",
+      status_changed_by: await actorId(),
       entregado_at: ahora,
       subtotal:     calc.subtotal,
       discount:     calc.descuento,
@@ -688,7 +697,7 @@ export async function cancelarPedidoDistribucion(orderId: string) {
 
   const { data: updated, error } = await (supabase as any)
     .from("orders")
-    .update({ status: "cancelled" })
+    .update({ status: "cancelled", status_changed_by: await actorId() })
     .eq("id", orderId)
     .in("status", ["despachado", "en_distribucion"])
     .select("id");
@@ -794,6 +803,7 @@ export async function crearPedidoConFaltante(
     channel:                 "b2b_mayorista",
     customer_id:             original.customer_id,
     status:                  "aprobado",
+    status_changed_by:       user.id,
     aprobado_por:            user.id,
     aprobado_at:             ahora,
     subtotal,

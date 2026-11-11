@@ -182,6 +182,11 @@ export async function aprobarOrdenPago(ordenId: string, proveedorId: string): Pr
     if (!puedeAprobar(user.email))
       return { error: "Tu usuario no está autorizado a aprobar órdenes de pago" };
     const db = createAdminClient() as any;
+    // Separación de funciones: sin lista de aprobadores configurada, quien crea la orden no la aprueba.
+    if (!process.env.APROBADORES_PAGOS?.trim()) {
+      const { data: o } = await db.from("ordenes_pago").select("creado_por").eq("id", ordenId).single();
+      if (o?.creado_por === user.id) return { error: "No podés aprobar una orden que creaste vos" };
+    }
     const { data, error } = await db.from("ordenes_pago")
       .update({ estado: "aprobada", aprobado_por: user.id, aprobado_at: new Date().toISOString() })
       .eq("id", ordenId).eq("proveedor_id", proveedorId).eq("estado", "borrador")

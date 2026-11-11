@@ -1400,6 +1400,7 @@ export type Database = {
         Row: {
           aprobado_at: string | null
           aprobado_por: string | null
+          status_changed_by: string | null
           assigned_driver_id: string | null
           cargo_adicional_concepto: string | null
           cargo_adicional_monto: number
@@ -1449,6 +1450,7 @@ export type Database = {
         Insert: {
           aprobado_at?: string | null
           aprobado_por?: string | null
+          status_changed_by?: string | null
           assigned_driver_id?: string | null
           cargo_adicional_concepto?: string | null
           cargo_adicional_monto?: number
@@ -1498,6 +1500,7 @@ export type Database = {
         Update: {
           aprobado_at?: string | null
           aprobado_por?: string | null
+          status_changed_by?: string | null
           assigned_driver_id?: string | null
           cargo_adicional_concepto?: string | null
           cargo_adicional_monto?: number

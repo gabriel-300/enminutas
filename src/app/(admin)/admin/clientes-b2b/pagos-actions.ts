@@ -14,14 +14,14 @@ type Result = { error: string } | { ok: true; pagoId: string; aviso?: string };
 // circuito de distribución (no se puede confirmar la entrega) y hacía que comisionara sin entregarse.
 // Tampoco se liquida si todavía queda saldo por cobrar: la deuda desaparecería de las pantallas.
 // Devuelve un aviso (para mostrar al usuario) cuando no se pudo liquidar por saldo.
-async function liquidarSiEntregado(db: any, orderId: string): Promise<string | null> {
+async function liquidarSiEntregado(db: any, orderId: string, actorId: string): Promise<string | null> {
   const info = await saldoPedidoDb(db, orderId);
   if (info && info.saldo > 1) {
     return `El pedido no se liquidó: todavía queda un saldo de ${fmtPesos(info.saldo)}.`;
   }
   await db
     .from("orders")
-    .update({ status: "liquidado", payment_confirmed_at: new Date().toISOString() })
+    .update({ status: "liquidado", payment_confirmed_at: new Date().toISOString(), status_changed_by: actorId })
     .eq("id", orderId)
     .in("status", ["delivered", "entrega_parcial"]);
   return null;
@@ -84,7 +84,7 @@ export async function registrarPago(formData: FormData): Promise<Result> {
   // Cambiar estado del pedido a liquidado si corresponde (solo si ya fue entregado y sin saldo)
   let aviso: string | undefined;
   if (orderId && marcarLiquidado) {
-    aviso = (await liquidarSiEntregado(db, orderId)) ?? undefined;
+    aviso = (await liquidarSiEntregado(db, orderId, user.id)) ?? undefined;
     revalidatePath(`/admin/pedidos/${orderId}`);
   }
 
@@ -143,7 +143,7 @@ export async function registrarPagoPedidos(payload: {
     pagoIds.push(pago.id);
 
     if (item.marcarLiquidado) {
-      const aviso = await liquidarSiEntregado(db, item.orderId);
+      const aviso = await liquidarSiEntregado(db, item.orderId, user.id);
       if (aviso) avisos.push(aviso);
       revalidatePath(`/admin/pedidos/${item.orderId}`);
     }
@@ -177,7 +177,7 @@ export async function eliminarPago(pagoId: string, clienteId: string): Promise<{
       const info = await saldoPedidoDb(db, pago.order_id);
       if (info && info.saldo > 1) {
         const vuelve = order.delivered_snapshot ? "entrega_parcial" : "delivered";
-        await db.from("orders").update({ status: vuelve, payment_confirmed_at: null }).eq("id", pago.order_id);
+        await db.from("orders").update({ status: vuelve, payment_confirmed_at: null, status_changed_by: user.id }).eq("id", pago.order_id);
         await db.from("order_events").insert({
           order_id: pago.order_id,
           status:   vuelve,

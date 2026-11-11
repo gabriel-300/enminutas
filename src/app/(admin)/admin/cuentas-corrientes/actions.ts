@@ -2,6 +2,7 @@
 
 import { createAdminClient } from "@/lib/supabase/server";
 import { requireAdmin } from "@/lib/auth";
+import { saldoPedidoDb } from "@/lib/cobranza";
 import { revalidatePath } from "next/cache";
 
 export async function registrarPagoOrden(payload: {
@@ -38,10 +39,15 @@ export async function registrarPagoOrden(payload: {
 
     const totalPagado = (pagos ?? []).reduce((s: number, p: any) => s + Math.abs(Number(p.monto)), 0);
     const totalOrden  = Number(order?.total ?? 0);
-    const liquidado   = totalPagado >= totalOrden - 0.01;
+    // Misma regla que en cobros: solo se liquida un pedido entregado y sin saldo en la tabla de cobros.
+    const info = await saldoPedidoDb(db, payload.orderId);
+    const liquidado = totalPagado >= totalOrden - 0.01 && !!info && info.saldo <= 1;
 
     if (liquidado) {
-      await db.from("orders").update({ status: "liquidado" }).eq("id", payload.orderId);
+      await db.from("orders")
+        .update({ status: "liquidado", status_changed_by: user.id })
+        .eq("id", payload.orderId)
+        .in("status", ["delivered", "entrega_parcial"]);
       revalidatePath("/admin/pedidos");
       revalidatePath(`/admin/pedidos/${payload.orderId}`);
     }
