@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { createClient } from "@/lib/supabase/server";
+import { createClient, createAdminClient } from "@/lib/supabase/server";
 import { notFound, redirect } from "next/navigation";
 import { ProductoForm } from "@/components/admin/producto-form";
 import { EliminarProductoButton } from "@/components/admin/eliminar-producto-button";
@@ -14,8 +14,11 @@ export default async function EditarProductoPage({ params }: { params: Promise<{
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
+  // Ver comentario en productos/page.tsx: sin esto un producto inactivo da 404 al editarlo.
+  const db = (user.app_metadata?.role === "admin" ? createAdminClient() : supabase) as any;
+
   const [{ data: product }, { data: categorias }, { data: lineas }] = await Promise.all([
-    (supabase as any)
+    db
       .from("products")
       .select(`
         id, sku, name, unit_label, short_description, description, cooking_methods,

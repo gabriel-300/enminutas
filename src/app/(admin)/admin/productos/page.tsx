@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { Plus, Upload } from "lucide-react";
 import { ButtonLink, PageHeader } from "@/components/ui";
-import { createClient } from "@/lib/supabase/server";
+import { createClient, createAdminClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { ProductsAdminClient } from "@/components/admin/products-admin-client";
 
@@ -13,7 +13,11 @@ export default async function AdminProductosPage() {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
-  const { data: products, error } = await (supabase as any)
+  // La política RLS de admin depende de profiles.role (desincronizado): con la sesión del usuario solo
+  // se verían los productos activos. El rol real es app_metadata, así que un admin lee con el cliente admin.
+  const db = (user.app_metadata?.role === "admin" ? createAdminClient() : supabase) as any;
+
+  const { data: products, error } = await db
     .from("products")
     .select(`
       id, sku, name, is_active, es_muestra, presentacion,
