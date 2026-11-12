@@ -135,7 +135,7 @@ id uuid PK, producto_id uuid ->products, receta_id uuid ->recipes, cantidad_caja
 id uuid PK, nombre text, valor text, color text, orden int4, created_at timestamptz
 
 ### recepciones (16 filas)
-id uuid PK, tipo text CHECK[tipo = ANY 'factura', 'remito', 'gasto'], numero text, proveedor text, fecha date, notas text, total numeric, created_by uuid ->profiles, created_at timestamptz, otros_impuestos numeric, imagen_url text, proveedor_cuit text, proveedor_id uuid ->proveedores, fecha_vencimiento_pago date, genera_deuda boolean, categoria_gasto text CHECK[luz|agua|gas|internet_telefono|alquiler|impuestos|servicios|otros]
+id uuid PK, tipo text CHECK[tipo = ANY 'factura', 'remito', 'gasto'], numero text, proveedor text, fecha date, notas text, total numeric, created_by uuid ->profiles, created_at timestamptz, otros_impuestos numeric (COPIA de percepciones: no sumar), imagen_url text, proveedor_cuit text, proveedor_id uuid ->proveedores, fecha_vencimiento_pago date, genera_deuda boolean, categoria_gasto text CHECK[luz|agua|gas|internet_telefono|alquiler|impuestos|servicios|otros], neto numeric, iva numeric, percepciones numeric (el campo que vale: neto + iva + percepciones = total)
 
 ### proveedores
 id uuid PK, nombre text, cuit text, condicion_pago_dias int4, contacto text, telefono text, email text, notas text, activo boolean, created_at timestamptz

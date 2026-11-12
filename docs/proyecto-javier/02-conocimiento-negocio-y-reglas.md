@@ -224,7 +224,7 @@ Al 26/9 la tabla está **vacía**: todavía no se registró ningún pago de comi
   (insumo, cantidad, unidad, costo) y `recipe_steps`.
 - **Insumos:** `insumos` (48; `stock_actual`, `stock_minimo`, `punto_pedido`, `precio_unitario`, `categoria`),
   `insumos_movimientos` (`ingreso` / `egreso` / `ajuste`), `categorias_insumos`.
-- **Compras / recepción de mercadería:** `recepciones` (cabecera: proveedor, número, total, `otros_impuestos`) y
+- **Compras / recepción de mercadería:** `recepciones` (cabecera: proveedor, número, total y su desglose `neto` + `iva` + `percepciones`; `otros_impuestos` es copia de `percepciones`, no sumarlos) y
   `recepciones_items` (insumo, cantidad, `precio_unitario`, `iva_pct`, `fecha_vencimiento`).
 
 ---
