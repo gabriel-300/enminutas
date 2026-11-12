@@ -69,14 +69,28 @@ export async function eliminarInsumo(id: string): Promise<Result> {
   await requireRole("admin", "produccion");
   const db = createAdminClient() as any;
 
-  const { data: uso } = await db
-    .from("recipe_ingredients")
-    .select("id")
-    .eq("insumo_id", id)
-    .limit(1);
+  // La base no deja borrar un insumo con historial (recetas, compras o movimientos de stock): se perdería
+  // el registro de lo comprado y consumido. Se revisa antes para explicarlo en vez de mostrar el error técnico.
+  const cuenta = async (tabla: string) => {
+    const { count } = await db.from(tabla).select("id", { count: "exact", head: true }).eq("insumo_id", id);
+    return count ?? 0;
+  };
+  const [recetas, compras, movimientos] = await Promise.all([
+    cuenta("recipe_ingredients"), cuenta("recepciones_items"), cuenta("insumos_movimientos"),
+  ]);
 
-  if (uso && uso.length > 0)
-    return { error: "Este insumo está siendo usado en una o más recetas. Quitalo de las recetas antes de eliminarlo." };
+  if (recetas > 0)
+    return { error: `Este insumo está en ${recetas} receta${recetas === 1 ? "" : "s"}. Quitalo de las recetas antes de eliminarlo.` };
+  if (compras > 0)
+    return {
+      error: `No se puede eliminar: figura en ${compras} compra${compras === 1 ? "" : "s"} cargada${compras === 1 ? "" : "s"}, ` +
+        "y borrarlo haría perder ese historial. Si ya no lo usás, dejalo con stock 0 y sin stock mínimo para que no genere alertas.",
+    };
+  if (movimientos > 0)
+    return {
+      error: `No se puede eliminar: tiene ${movimientos} movimiento${movimientos === 1 ? "" : "s"} de stock registrado${movimientos === 1 ? "" : "s"}. ` +
+        "Si ya no lo usás, dejalo con stock 0 y sin stock mínimo.",
+    };
 
   const { error } = await db.from("insumos").delete().eq("id", id);
   if (error) return { error: error.message };
