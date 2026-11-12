@@ -5,7 +5,7 @@ import { updateOrderStatus, cancelarPedidoDistribucion } from "@/app/(admin)/adm
 // Solo los 3 estados que updateOrderStatus permite asignar manualmente.
 // Los otros (enviado_prod, despachado, etc.) se cambian desde producción/distribución.
 const B2B_OPTIONS = [
-  { value: "pending_payment",  label: "Pendiente" },
+  { value: "pending_payment",  label: "Pendiente de aprobación" },
   { value: "aprobado",         label: "Aprobado" },
   { value: "cancelled",        label: "Cancelado" },
 ];

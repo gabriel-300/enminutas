@@ -1,6 +1,7 @@
 import { cn } from "@/lib/utils";
 import { ORDER_STATUS_CONFIG } from "./badge";
 import { PEDIDO_TONE, TONE_STYLES, type Tone } from "./tones";
+import { esCanalFlujo } from "@/lib/order-channels";
 
 /** Badge de estado del panel: 12/16, radio 6, borde del tono y punto de color. */
 export function StatusBadge({ tone = "neutral", className, children }: {
@@ -23,8 +24,14 @@ export function StatusBadge({ tone = "neutral", className, children }: {
   );
 }
 
-/** Estado de un pedido con las etiquetas de OrderStatusBadge y los tonos del panel. */
-export function PedidoStatusBadge({ status }: { status: string }) {
-  const label = ORDER_STATUS_CONFIG[status]?.label ?? status;
+/**
+ * Estado de un pedido con las etiquetas de OrderStatusBadge y los tonos del panel.
+ * En los canales del flujo (B2B, muestra) "pending_payment" es un pedido a la espera de que un admin
+ * lo apruebe, no un pago pendiente: con el canal se muestra "Pendiente de aprobación".
+ */
+export function PedidoStatusBadge({ status, channel }: { status: string; channel?: string }) {
+  const label = status === "pending_payment" && channel && esCanalFlujo(channel)
+    ? "Pendiente de aprobación"
+    : ORDER_STATUS_CONFIG[status]?.label ?? status;
   return <StatusBadge tone={PEDIDO_TONE[status] ?? "neutral"}>{label}</StatusBadge>;
 }

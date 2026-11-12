@@ -75,7 +75,7 @@ export function MuestrasClient({ muestras }: { muestras: Muestra[] }) {
                       <span className="line-clamp-2">{productosResumen || "—"}</span>
                       {m.notes && <p className="text-neutral-600 mt-0.5 italic">{m.notes}</p>}
                     </td>
-                    <td className="px-4 py-3"><PedidoStatusBadge status={m.status} /></td>
+                    <td className="px-4 py-3"><PedidoStatusBadge status={m.status} channel="muestra" /></td>
                     <td className="px-4 py-3 text-xs text-neutral-600">
                       {new Date(m.created_at).toLocaleDateString("es-AR", { day: "2-digit", month: "2-digit", year: "2-digit" })}
                     </td>

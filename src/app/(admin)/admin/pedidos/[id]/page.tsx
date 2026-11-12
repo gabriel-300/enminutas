@@ -168,7 +168,7 @@ export default async function AdminPedidoDetailPage({
           </p>
         </div>
         <div className="flex items-center gap-2 flex-wrap">
-          <PedidoStatusBadge status={o.status} />
+          <PedidoStatusBadge status={o.status} channel={o.channel} />
           {o.status !== "pending_payment" && (
             <Link
               href={`/remito/${id}`}

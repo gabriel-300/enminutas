@@ -192,7 +192,7 @@ export function PedidosClient({ orders, esAdmin = false }: { orders: Order[]; es
             )}
 
             <div className="flex items-center gap-2 flex-wrap mb-3">
-              <PedidoStatusBadge status={order.status} />
+              <PedidoStatusBadge status={order.status} channel={order.channel} />
               <span className="text-xs text-neutral-600">{fmtDate(order.created_at)}</span>
               <FaltanteTag order={order} />
             </div>
@@ -272,7 +272,7 @@ export function PedidosClient({ orders, esAdmin = false }: { orders: Order[]; es
                   {order.vendedor_name ?? <span className="text-neutral-500">—</span>}
                 </td>
                 <td className="px-4 py-3">
-                  <PedidoStatusBadge status={order.status} />
+                  <PedidoStatusBadge status={order.status} channel={order.channel} />
                   <FaltanteTag order={order} />
                 </td>
                 <td className="px-4 py-3 text-right text-neutral-600 tabular-nums">

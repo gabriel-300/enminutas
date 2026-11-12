@@ -531,12 +531,12 @@ export function NuevoPedidoClient({
             <div>
               <label className="flex items-center gap-1.5 text-xs font-medium text-neutral-600 mb-1.5">
                 Estado inicial
-                <HelpTooltip wide text="Aprobado: el pago ya está confirmado, el pedido entra directo a producción. Pendiente de pago: el cliente todavía no pagó, queda en espera hasta que se confirme." />
+                <HelpTooltip wide text="Aprobado: el pedido entra directo a producción. Pendiente de aprobación: queda en espera hasta que un administrador lo apruebe." />
               </label>
               <select value={initialStatus} onChange={(e) => setInitialStatus(e.target.value)}
                 className="w-full px-3 py-2 text-sm border border-neutral-400 rounded-lg focus:outline-none focus:ring-[3px] focus:ring-brand-500/30 focus:border-brand-700">
                 <option value="aprobado">Aprobado (va directo a producción)</option>
-                <option value="pending_payment">Pendiente de pago (espera confirmación)</option>
+                <option value="pending_payment">Pendiente de aprobación (espera a un administrador)</option>
               </select>
             </div>
           )}

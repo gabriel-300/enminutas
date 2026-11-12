@@ -41,7 +41,7 @@ function StatusBadge({ label, color }: { label: string; color: string }) {
 }
 
 const ESTADOS = [
-  { key: "pending_payment", label: "Pendiente de pago",  color: "bg-warning-bg text-warning", desc: "El pedido fue cargado pero el cliente aún no confirmó el pago." },
+  { key: "pending_payment", label: "Pendiente",  color: "bg-warning-bg text-warning", desc: "En B2B y muestras se muestra como Pendiente de aprobación: el pedido fue cargado y espera que un administrador lo apruebe. En la tienda (B2C): pendiente de pago." },
   { key: "aprobado",        label: "Aprobado",           color: "bg-info-bg text-info",     desc: "El pago fue confirmado. El pedido entra en cola de producción." },
   { key: "enviado_prod",    label: "En producción",      color: "bg-brand-100 text-brand-700", desc: "El equipo de cocina está preparando el pedido." },
   { key: "despachado",      label: "Despachado",         color: "bg-warning-bg text-warning", desc: "El pedido está listo y esperando al repartidor." },
@@ -119,7 +119,7 @@ export default async function AyudaPage() {
               "Hacer click en Crear pedido. El cliente recibe un email de confirmación.",
             ]} />
             <div className="mt-3 p-3 bg-crema-50 rounded-xl border border-tierra-700/10 text-xs text-neutral-600">
-              <strong>Estado inicial:</strong> Si el pago ya está confirmado elegí <em>Aprobado</em> para que el pedido entre directamente a producción. Si el cliente va a pagar después, elegí <em>Pendiente de pago</em>.
+              <strong>Estado inicial:</strong> Si el pago ya está confirmado elegí <em>Aprobado</em> para que el pedido entre directamente a producción. Si querés que lo revise un administrador antes de producir, elegí <em>Pendiente de aprobación</em>.
             </div>
           </Section>
 

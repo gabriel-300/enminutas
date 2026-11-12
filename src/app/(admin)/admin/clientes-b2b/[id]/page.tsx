@@ -258,7 +258,7 @@ export default async function ClienteB2BDetailPage({
                       {o.order_number}
                     </Link>
                     <div className="flex items-center gap-2 mt-1">
-                      <PedidoStatusBadge status={o.status} />
+                      <PedidoStatusBadge status={o.status} channel="b2b_mayorista" />
                       <span className="text-xs text-neutral-600">Pedido: {fmtFechaSolo(o.created_at)}</span>
                       {o.entregado_at && (
                         <span className="text-xs text-neutral-600">· Entrega: {fmtFechaSolo(o.entregado_at)}</span>
@@ -294,7 +294,7 @@ export default async function ClienteB2BDetailPage({
                     </td>
                     <td className="px-5 py-3 text-neutral-600 text-xs">{fmtFechaSolo(o.created_at)}</td>
                     <td className="px-5 py-3 text-neutral-600 text-xs">{o.entregado_at ? fmtFechaSolo(o.entregado_at) : "—"}</td>
-                    <td className="px-5 py-3"><PedidoStatusBadge status={o.status} /></td>
+                    <td className="px-5 py-3"><PedidoStatusBadge status={o.status} channel="b2b_mayorista" /></td>
                     <td className="px-5 py-3 text-right font-medium text-neutral-900 tabular-nums">
                       {fmt(Number(o.total))}
                     </td>
