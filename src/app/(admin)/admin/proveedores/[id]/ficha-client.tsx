@@ -6,8 +6,9 @@ import { estadoVencimiento, etiquetaComprobante, parseMontoAR } from "@/lib/prov
 import { useState, useTransition } from "react";
 import {
   crearOrdenPago, aprobarOrdenPago, pagarOrdenPago, anularOrdenPago,
-  eliminarPagoProveedor, setGeneraDeuda, setVencimientoPago,
+  eliminarPagoProveedor, setGeneraDeuda, setVencimientoPago, vincularRemitos, desvincularRemito,
 } from "../actions";
+import { compararRemitosConFactura } from "@/lib/remitos";
 import { ESTADO_ORDEN_PAGO, type EstadoOrdenPago } from "@/lib/proveedores-ficha";
 
 export type OrdenPendiente = {
@@ -35,6 +36,9 @@ export type Comprobante = {
   pagado:      number;
   saldo:       number;
   generaDeuda: boolean;
+  /** Solo en remitos: la factura que lo incluye. */
+  facturaId:     string | null;
+  facturaNumero: string | null;
 };
 
 export type PagoGrupo = {
@@ -84,6 +88,11 @@ export function FichaClient({
   const [guardado,    setGuardado]    = useState<{ grupoId: string; aCuenta: number } | null>(null);
   const [errorOrden,  setErrorOrden]  = useState<string | null>(null);
   const [pending,     start]          = useTransition();
+  // Vincular remitos a una factura: id de la factura abierta, remitos tildados y mensajes.
+  const [vinculando,      setVinculando]      = useState<string | null>(null);
+  const [remitosElegidos, setRemitosElegidos] = useState<string[]>([]);
+  const [errorVinculo,    setErrorVinculo]    = useState<string | null>(null);
+  const [avisoVinculo,    setAvisoVinculo]    = useState<string | null>(null);
 
   // Pendientes por vencimiento: se paga primero lo que antes vence.
   const pendientes = comprobantes
@@ -155,6 +164,39 @@ export function FichaClient({
   }
 
   const sinDeuda = comprobantes.filter(c => !c.generaDeuda).length;
+
+  // Remitos que todavía cuentan como deuda propia y se pueden vincular (sin pagos imputados).
+  const remitosLibres = comprobantes.filter(c => c.tipo === "remito" && c.generaDeuda && !c.facturaId && c.pagado === 0);
+  const remitosDe = (facturaId: string) => comprobantes.filter(c => c.facturaId === facturaId);
+  const facturaVinculando = comprobantes.find(c => c.id === vinculando) ?? null;
+
+  function abrirVinculo(factura: Comprobante) {
+    setVinculando(factura.id); setRemitosElegidos([]); setErrorVinculo(null); setAvisoVinculo(null);
+  }
+  function cerrarVinculo() { setVinculando(null); setRemitosElegidos([]); setErrorVinculo(null); }
+  function toggleRemito(id: string) {
+    setRemitosElegidos(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
+  }
+  function confirmarVinculo() {
+    if (!facturaVinculando) return;
+    setErrorVinculo(null);
+    start(async () => {
+      const res = await vincularRemitos(facturaVinculando.id, remitosElegidos, proveedorId);
+      if ("error" in res) { setErrorVinculo(res.error); return; }
+      setAvisoVinculo(Math.abs(res.diferencia) > 1
+        ? `Vinculado. La factura y sus remitos difieren en ${fmt(Math.abs(res.diferencia))} (${res.diferencia > 0 ? "la factura trae más" : "los remitos suman más"}).`
+        : "Vinculado: la factura y sus remitos coinciden.");
+      cerrarVinculo();
+    });
+  }
+  function quitarVinculo(c: Comprobante) {
+    if (!confirm(`¿Desvincular el remito ${c.numero}? Vuelve a generar deuda por su cuenta: si la factura sigue cargada, se contará dos veces.`)) return;
+    setError(null);
+    start(async () => {
+      const res = await desvincularRemito(c.id, proveedorId);
+      if ("error" in res) setError(res.error);
+    });
+  }
 
   return (
     <div className="space-y-6">
@@ -330,10 +372,51 @@ export function FichaClient({
         <div className="px-5 py-4">
           <p className="text-sm font-semibold text-neutral-700">Facturas, remitos y gastos</p>
           <p className="text-xs text-neutral-600 mt-0.5">
-            Destildá «Genera deuda» en un remito que después se facturó (para no contarlo dos veces) o en una compra ya pagada.
+            Cuando llega la factura de un remito, usá «Vincular remitos» en la factura: la deuda pasa a la factura y el remito no se cuenta dos veces.
+            Destildá «Genera deuda» solo en una compra ya pagada.
             {sinDeuda > 0 && ` Hay ${sinDeuda} sin deuda, incluido el historial anterior al módulo.`}
           </p>
+          {avisoVinculo && <p className="text-xs text-success font-medium mt-2">✓ {avisoVinculo}</p>}
         </div>
+
+        {facturaVinculando && (() => {
+          const ya = remitosDe(facturaVinculando.id);
+          const elegidos = remitosLibres.filter(r => remitosElegidos.includes(r.id));
+          const cmp = compararRemitosConFactura([...ya, ...elegidos].map(r => r.total), { neto: facturaVinculando.neto, total: facturaVinculando.total });
+          return (
+            <div className="px-5 py-4 border-y border-neutral-100 bg-neutral-50/50 space-y-3">
+              <p className="text-sm font-semibold text-neutral-800">
+                Vincular remitos a la Factura {facturaVinculando.numero}
+                <span className="font-normal text-neutral-600"> · neto {fmt(facturaVinculando.neto ?? facturaVinculando.total)} · total {fmt(facturaVinculando.total)}</span>
+              </p>
+              <div className="border border-neutral-200 rounded-xl divide-y divide-neutral-100 max-h-56 overflow-y-auto bg-white">
+                {remitosLibres.map(r => (
+                  <label key={r.id} className="flex items-center gap-2.5 px-3 py-2 cursor-pointer select-none hover:bg-neutral-50">
+                    <input type="checkbox" checked={remitosElegidos.includes(r.id)} onChange={() => toggleRemito(r.id)}
+                      disabled={pending} className="rounded border-neutral-300 text-tierra-700 shrink-0" />
+                    <span className="text-sm text-neutral-700 flex-1 min-w-0 truncate">Remito {r.numero} · {fmtFechaSolo(r.fecha)}</span>
+                    <span className="text-sm font-medium text-neutral-900 tabular-nums shrink-0">{fmt(r.total)}</span>
+                  </label>
+                ))}
+              </div>
+              <p className="text-xs text-neutral-600">
+                Remitos {ya.length + elegidos.length} · suman {fmt(cmp.suma)} · factura {fmt(cmp.base)} ·{" "}
+                {Math.abs(cmp.diferencia) <= 1
+                  ? <span className="text-success font-medium">coinciden</span>
+                  : <span className="text-warning font-medium">diferencia {fmt(Math.abs(cmp.diferencia))} ({cmp.diferencia > 0 ? "la factura trae más" : "los remitos suman más"})</span>}
+                . Los remitos vinculados dejan de generar deuda: queda la de la factura.
+              </p>
+              {errorVinculo && <p className="text-sm text-danger">{errorVinculo}</p>}
+              <div className="flex gap-2">
+                <button type="button" onClick={confirmarVinculo} disabled={pending || elegidos.length === 0}
+                  className="px-4 py-2 text-sm font-medium rounded-lg bg-tierra-700 text-white hover:bg-tierra-800 disabled:opacity-50 transition-colors">
+                  {pending ? "Vinculando…" : `Vincular ${elegidos.length || ""} remito${elegidos.length === 1 ? "" : "s"}`}
+                </button>
+                <button type="button" onClick={cerrarVinculo} disabled={pending} className="text-sm text-neutral-600 hover:text-neutral-700 px-2">Cancelar</button>
+              </div>
+            </div>
+          );
+        })()}
         <table className="w-full text-sm">
           <thead className="border-y border-neutral-100">
             <tr>
@@ -359,6 +442,21 @@ export function FichaClient({
                 <tr key={c.id} className={c.generaDeuda ? "" : "text-neutral-500"}>
                   <td className="px-5 py-3">
                     <span className="font-medium">{etiquetaComprobante(c.tipo, c.categoria)} {c.numero}</span>
+                    {c.tipo === "remito" && c.facturaId && (
+                      <span className="block text-[11px] text-neutral-500">
+                        En la factura {c.facturaNumero ?? ""} ·{" "}
+                        <button type="button" onClick={() => quitarVinculo(c)} disabled={pending} className="text-tierra-700 hover:underline disabled:opacity-40">Desvincular</button>
+                      </span>
+                    )}
+                    {c.tipo === "factura" && remitosDe(c.id).length > 0 && (
+                      <span className="block text-[11px] text-neutral-500">
+                        Incluye {remitosDe(c.id).length} remito{remitosDe(c.id).length === 1 ? "" : "s"} ({fmt(remitosDe(c.id).reduce((s, r) => s + r.total, 0))})
+                      </span>
+                    )}
+                    {c.tipo === "factura" && c.generaDeuda && remitosLibres.length > 0 && vinculando !== c.id && (
+                      <button type="button" onClick={() => abrirVinculo(c)} disabled={pending}
+                        className="block text-[11px] text-tierra-700 hover:underline disabled:opacity-40">Vincular remitos</button>
+                    )}
                   </td>
                   <td className="px-5 py-3 tabular-nums">{fmtFechaSolo(c.fecha)}</td>
                   <td className="px-5 py-3">
@@ -376,7 +474,8 @@ export function FichaClient({
                   <td className="px-5 py-3 text-right tabular-nums">{c.pagado > 0 ? fmt(c.pagado) : "—"}</td>
                   <td className="px-5 py-3 text-right tabular-nums font-semibold">{c.generaDeuda ? fmt(c.saldo) : "—"}</td>
                   <td className="px-5 py-3 text-center">
-                    <input type="checkbox" checked={c.generaDeuda} disabled={pending}
+                    <input type="checkbox" checked={c.generaDeuda} disabled={pending || !!c.facturaId}
+                      title={c.facturaId ? "Vinculado a una factura: desvinculalo para que vuelva a generar deuda" : undefined}
                       onChange={e => cambiarGeneraDeuda(c, e.target.checked)}
                       className="rounded border-neutral-300 text-tierra-700" />
                   </td>

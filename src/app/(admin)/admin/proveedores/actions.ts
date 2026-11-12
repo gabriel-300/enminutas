@@ -7,6 +7,7 @@ import { revalidatePath } from "next/cache";
 import { esCategoriaGasto, fechaValida, imputarPago, normalizarCuit } from "@/lib/proveedores";
 import { esCondicionIva, normalizarCbu, validarDesglose } from "@/lib/proveedores-ficha";
 import { resolverProveedor } from "@/lib/proveedores-db";
+import { compararRemitosConFactura } from "@/lib/remitos";
 
 type Result = { ok: true; id?: string } | { error: string };
 
@@ -289,7 +290,74 @@ export async function setGeneraDeuda(recepcionId: string, generaDeuda: boolean, 
         .from("pagos_proveedores").select("id", { count: "exact", head: true }).eq("recepcion_id", recepcionId);
       if ((count ?? 0) > 0) return { error: "Tiene pagos imputados: eliminalos antes de sacarla de la deuda" };
     }
+    if (generaDeuda) {
+      // Un remito vinculado a una factura no puede volver a generar deuda sin desvincularlo: se duplicaría.
+      const { data: rec } = await db.from("recepciones").select("factura_id").eq("id", recepcionId).maybeSingle();
+      if (rec?.factura_id) return { error: "Está vinculado a una factura: desvinculalo para que vuelva a generar deuda" };
+    }
     const { error } = await db.from("recepciones").update({ genera_deuda: generaDeuda }).eq("id", recepcionId);
+    if (error) return { error: error.message };
+    revalidar(proveedorId);
+    return { ok: true };
+  } catch (e: any) {
+    return { error: e.message };
+  }
+}
+
+// Vincula remitos con la factura que los incluye: la deuda pasa a la factura y los remitos dejan de generarla.
+// Una factura puede incluir varios remitos. Devuelve la diferencia entre la factura (neto) y lo que suman sus remitos.
+export async function vincularRemitos(
+  facturaId: string, remitoIds: string[], proveedorId: string,
+): Promise<{ ok: true; diferencia: number } | { error: string }> {
+  try {
+    await requireAdmin();
+    if (!remitoIds?.length) return { error: "Elegí al menos un remito" };
+    const db = createAdminClient() as any;
+
+    const { data: factura } = await db.from("recepciones")
+      .select("id, tipo, proveedor_id, genera_deuda, neto, total").eq("id", facturaId).maybeSingle();
+    if (!factura || factura.proveedor_id !== proveedorId || factura.tipo !== "factura") return { error: "Factura no encontrada" };
+    // Si la factura no genera deuda, vincularle remitos haría desaparecer la deuda de las dos.
+    if (!factura.genera_deuda) return { error: "La factura no genera deuda: activala antes de vincularle remitos" };
+
+    const { data: remitos } = await db.from("recepciones")
+      .select("id, tipo, proveedor_id, factura_id").in("id", remitoIds);
+    const lista = (remitos ?? []) as any[];
+    if (lista.length !== new Set(remitoIds).size) return { error: "Algún remito no existe" };
+    if (lista.some(r => r.proveedor_id !== proveedorId || r.tipo !== "remito"))
+      return { error: "Solo se pueden vincular remitos del mismo proveedor" };
+    if (lista.some(r => r.factura_id)) return { error: "Algún remito ya está vinculado a una factura" };
+
+    const { count } = await db.from("pagos_proveedores")
+      .select("id", { count: "exact", head: true }).in("recepcion_id", remitoIds);
+    if ((count ?? 0) > 0) return { error: "Algún remito tiene pagos imputados: eliminalos antes de vincularlo" };
+
+    const { error } = await db.from("recepciones")
+      .update({ factura_id: facturaId, genera_deuda: false }).in("id", remitoIds);
+    if (error) return { error: error.message };
+
+    const { data: todos } = await db.from("recepciones").select("total").eq("factura_id", facturaId);
+    const { diferencia } = compararRemitosConFactura(
+      ((todos ?? []) as any[]).map(r => Number(r.total ?? 0)),
+      { neto: factura.neto == null ? null : Number(factura.neto), total: Number(factura.total ?? 0) },
+    );
+    revalidar(proveedorId);
+    return { ok: true, diferencia };
+  } catch (e: any) {
+    return { error: e.message };
+  }
+}
+
+// Deshace el vínculo: el remito vuelve a generar deuda por su cuenta.
+export async function desvincularRemito(remitoId: string, proveedorId: string): Promise<Result> {
+  try {
+    await requireAdmin();
+    const db = createAdminClient() as any;
+    const { data: remito } = await db.from("recepciones")
+      .select("id, tipo, proveedor_id, factura_id").eq("id", remitoId).maybeSingle();
+    if (!remito || remito.proveedor_id !== proveedorId || remito.tipo !== "remito") return { error: "Remito no encontrado" };
+    if (!remito.factura_id) return { error: "El remito no está vinculado a ninguna factura" };
+    const { error } = await db.from("recepciones").update({ factura_id: null, genera_deuda: true }).eq("id", remitoId);
     if (error) return { error: error.message };
     revalidar(proveedorId);
     return { ok: true };

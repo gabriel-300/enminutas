@@ -28,7 +28,7 @@ export default async function ProveedorFichaPage({ params }: { params: Promise<{
 
   const [{ data: recs }, { data: pagosRaw }, { data: ordenesRaw }] = await Promise.all([
     db.from("recepciones")
-      .select("id, tipo, categoria_gasto, numero, fecha, total, neto, iva, percepciones, fecha_vencimiento_pago, genera_deuda")
+      .select("id, tipo, categoria_gasto, numero, fecha, total, neto, iva, percepciones, fecha_vencimiento_pago, genera_deuda, factura_id")
       .eq("proveedor_id", id)
       .order("fecha", { ascending: false })
       .order("created_at", { ascending: false }),
@@ -52,6 +52,7 @@ export default async function ProveedorFichaPage({ params }: { params: Promise<{
   const pagadoPorRec: Record<string, number> = {};
   for (const p of pagos) if (p.recepcion_id) pagadoPorRec[p.recepcion_id] = (pagadoPorRec[p.recepcion_id] ?? 0) + Number(p.monto);
 
+  const numeroPorId = new Map<string, string>(((recs ?? []) as any[]).map(r => [r.id, r.numero]));
   const comprobantes: Comprobante[] = ((recs ?? []) as any[]).map(r => {
     const total  = Number(r.total ?? 0);
     const pagado = pagadoPorRec[r.id] ?? 0;
@@ -69,6 +70,8 @@ export default async function ProveedorFichaPage({ params }: { params: Promise<{
       pagado,
       saldo:       Math.max(0, total - pagado),
       generaDeuda: !!r.genera_deuda,
+      facturaId:     r.factura_id ?? null,
+      facturaNumero: r.factura_id ? (numeroPorId.get(r.factura_id) ?? null) : null,
     };
   });
 

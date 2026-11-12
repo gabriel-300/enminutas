@@ -15,7 +15,8 @@ vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
 
 import {
   actualizarProveedor, anularOrdenPago, aprobarOrdenPago, crearOrdenPago, crearProveedor,
-  eliminarPagoProveedor, pagarOrdenPago, registrarGasto, setGeneraDeuda, setVencimientoPago,
+  desvincularRemito, eliminarPagoProveedor, pagarOrdenPago, registrarGasto, setGeneraDeuda, setVencimientoPago,
+  vincularRemitos,
 } from "./actions";
 
 // Camino completo de un pago: crear la orden, aprobarla y registrar el pago.
@@ -48,6 +49,8 @@ describe("permisos: todas las actions exigen admin", () => {
       eliminarPagoProveedor("g", "p"),
       setGeneraDeuda("r", false, "p"),
       setVencimientoPago("r", hoy, "p"),
+      vincularRemitos("f", ["r"], "p"),
+      desvincularRemito("r", "p"),
       registrarGasto({ proveedor: "X", categoria: "luz", numero: "1", fecha: hoy, vencimientoPago: hoy, total: 10 }),
     ]);
     for (const r of rs) expect(err(r)).toBe("No autorizado");
@@ -344,5 +347,74 @@ describe("registrarGasto", () => {
     expect(err(r)).toBe("boom");
     expect(db.rows("recepciones")).toHaveLength(0);
     expect(db.rows("pagos_proveedores")).toHaveLength(0);
+  });
+});
+
+describe("vincularRemitos / desvincularRemito", () => {
+  function escenario() {
+    const [p, q] = db.seed("proveedores", [{ nombre: "San Gabriel" }, { nombre: "Otro" }]);
+    const [fac] = db.seed("recepciones", [{ tipo: "factura", proveedor_id: p.id, genera_deuda: true, neto: 300, total: 363 }]);
+    const [r1, r2] = db.seed("recepciones", [
+      { tipo: "remito", proveedor_id: p.id, genera_deuda: true, total: 100, factura_id: null },
+      { tipo: "remito", proveedor_id: p.id, genera_deuda: true, total: 200, factura_id: null },
+    ]);
+    return { p, q, fac, r1, r2 };
+  }
+
+  it("vincula los remitos a la factura y los saca de la deuda", async () => {
+    const { p, fac, r1, r2 } = escenario();
+    const res: any = await vincularRemitos(fac.id, [r1.id, r2.id], p.id);
+    expect(res.ok).toBe(true);
+    expect(res.diferencia).toBe(0); // 100 + 200 = neto 300
+    for (const r of [r1, r2]) expect(r).toMatchObject({ factura_id: fac.id, genera_deuda: false });
+    expect(fac.genera_deuda).toBe(true); // la deuda queda en la factura
+  });
+
+  it("informa la diferencia cuando los remitos no suman el neto de la factura", async () => {
+    const { p, fac, r1 } = escenario();
+    const res: any = await vincularRemitos(fac.id, [r1.id], p.id);
+    expect(res.diferencia).toBe(200);
+  });
+
+  it("no vincula si la factura no genera deuda (desaparecería la deuda de los dos)", async () => {
+    const { p, fac, r1 } = escenario();
+    fac.genera_deuda = false;
+    expect(err(await vincularRemitos(fac.id, [r1.id], p.id))).toMatch(/no genera deuda/i);
+    expect(r1.genera_deuda).toBe(true);
+  });
+
+  it("rechaza remitos de otro proveedor, ya vinculados o con pagos imputados", async () => {
+    const { p, q, fac, r1, r2 } = escenario();
+    const [ajeno] = db.seed("recepciones", [{ tipo: "remito", proveedor_id: q.id, genera_deuda: true, total: 5 }]);
+    expect(err(await vincularRemitos(fac.id, [ajeno.id], p.id))).toMatch(/mismo proveedor/i);
+
+    r1.factura_id = "otra-factura";
+    expect(err(await vincularRemitos(fac.id, [r1.id], p.id))).toMatch(/ya está vinculado/i);
+    r1.factura_id = null;
+
+    db.seed("pagos_proveedores", [{ recepcion_id: r2.id, monto: 50 }]);
+    expect(err(await vincularRemitos(fac.id, [r2.id], p.id))).toMatch(/pagos imputados/i);
+    expect(r2).toMatchObject({ factura_id: null, genera_deuda: true });
+  });
+
+  it("exige que sea una factura y que haya remitos elegidos", async () => {
+    const { p, r1, r2 } = escenario();
+    expect(err(await vincularRemitos(r1.id, [r2.id], p.id))).toMatch(/Factura no encontrada/i);
+    expect(err(await vincularRemitos("x", [], p.id))).toMatch(/al menos un remito/i);
+  });
+
+  it("desvincular devuelve la deuda al remito", async () => {
+    const { p, fac, r1 } = escenario();
+    await vincularRemitos(fac.id, [r1.id], p.id);
+    expect(await desvincularRemito(r1.id, p.id)).toMatchObject({ ok: true });
+    expect(r1).toMatchObject({ factura_id: null, genera_deuda: true });
+    expect(err(await desvincularRemito(r1.id, p.id))).toMatch(/no está vinculado/i);
+  });
+
+  it("un remito vinculado no puede volver a generar deuda sin desvincularlo", async () => {
+    const { p, fac, r1 } = escenario();
+    await vincularRemitos(fac.id, [r1.id], p.id);
+    expect(err(await setGeneraDeuda(r1.id, true, p.id))).toMatch(/desvinculalo/i);
+    expect(r1.genera_deuda).toBe(false);
   });
 });
