@@ -30,6 +30,14 @@ async function liquidarSiEntregado(db: any, orderId: string, actorId: string): P
 const fmtPesos = (n: number) =>
   new Intl.NumberFormat("es-AR", { style: "currency", currency: "ARS", maximumFractionDigits: 0 }).format(n);
 
+// Aviso si el pedido quedó cobrado de más (cobro duplicado o monto de más). Null si está bien.
+async function avisoCobradoDeMas(db: any, orderId: string): Promise<string | null> {
+  const info = await saldoPedidoDb(db, orderId);
+  if (!info || info.saldo >= -1) return null;
+  const { data: o } = await db.from("orders").select("order_number").eq("id", orderId).single();
+  return `El pedido ${o?.order_number ?? ""} quedó cobrado de más por ${fmtPesos(-info.saldo)}. Revisá si el cobro está duplicado.`;
+}
+
 // Admin: cualquier cliente. Vendedor: sólo los clientes que tiene asignados.
 async function autorizarCliente(clienteId: string): Promise<{ error: string } | { user: User }> {
   let user: User;
@@ -83,8 +91,9 @@ export async function registrarPago(formData: FormData): Promise<Result> {
 
   // Cambiar estado del pedido a liquidado si corresponde (solo si ya fue entregado y sin saldo)
   let aviso: string | undefined;
-  if (orderId && marcarLiquidado) {
-    aviso = (await liquidarSiEntregado(db, orderId, user.id)) ?? undefined;
+  if (orderId) {
+    aviso = (await avisoCobradoDeMas(db, orderId)) ?? undefined;
+    if (marcarLiquidado) aviso = (await liquidarSiEntregado(db, orderId, user.id)) ?? aviso;
     revalidatePath(`/admin/pedidos/${orderId}`);
   }
 
@@ -142,11 +151,13 @@ export async function registrarPagoPedidos(payload: {
     if (error) return { error: error.message };
     pagoIds.push(pago.id);
 
+    const deMas = await avisoCobradoDeMas(db, item.orderId);
+    if (deMas) avisos.push(deMas);
     if (item.marcarLiquidado) {
       const aviso = await liquidarSiEntregado(db, item.orderId, user.id);
       if (aviso) avisos.push(aviso);
-      revalidatePath(`/admin/pedidos/${item.orderId}`);
     }
+    revalidatePath(`/admin/pedidos/${item.orderId}`);
   }
 
   revalidatePath(`/admin/clientes-b2b/${clienteId}`);
@@ -164,7 +175,8 @@ export async function eliminarPago(pagoId: string, clienteId: string): Promise<{
   }
 
   const db = createAdminClient() as any;
-  const { data: pago } = await db.from("pagos").select("cliente_id, order_id, monto").eq("id", pagoId).single();
+  const { data: pago } = await db
+    .from("pagos").select("cliente_id, order_id, monto, fecha, metodo, created_by").eq("id", pagoId).single();
   if (!pago) return { error: "Pago no encontrado" };
 
   const { error } = await db.from("pagos").delete().eq("id", pagoId);
@@ -173,6 +185,15 @@ export async function eliminarPago(pagoId: string, clienteId: string): Promise<{
   if (pago.order_id) {
     const { data: order } = await db
       .from("orders").select("status, order_number, delivered_snapshot").eq("id", pago.order_id).single();
+    // Todo cobro eliminado queda registrado en el historial del pedido (quién lo borró y qué cobro era).
+    if (order) {
+      await db.from("order_events").insert({
+        order_id: pago.order_id,
+        status:   order.status,
+        message:  `Cobro eliminado: ${fmtPesos(Number(pago.monto))} (${pago.metodo}, fecha ${pago.fecha})`,
+        actor_id: user.id,
+      });
+    }
     if (order?.status === "liquidado") {
       const info = await saldoPedidoDb(db, pago.order_id);
       if (info && info.saldo > 1) {

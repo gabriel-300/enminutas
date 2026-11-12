@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { saldoPedido, tieneSaldo } from "./cobranza";
+import { cobradoDeMas, saldoPedido, tieneSaldo } from "./cobranza";
 
 describe("saldoPedido", () => {
   it("sin cobros, el saldo es el total", () => {
@@ -26,5 +26,21 @@ describe("saldoPedido", () => {
 
   it("tolera un peso de redondeo", () => {
     expect(tieneSaldo(1000, [{ monto: 999.5 }])).toBe(false);
+  });
+});
+
+describe("cobradoDeMas", () => {
+  it("devuelve el exceso cuando hay cobros duplicados", () => {
+    expect(cobradoDeMas(1000, [{ monto: 1000 }, { monto: 1000 }])).toBe(1000);
+  });
+  it("es 0 si está cobrado justo o con saldo", () => {
+    expect(cobradoDeMas(1000, [{ monto: 1000 }])).toBe(0);
+    expect(cobradoDeMas(1000, [{ monto: 400 }])).toBe(0);
+  });
+  it("ignora diferencias de redondeo", () => {
+    expect(cobradoDeMas(1000, [{ monto: 1000.5 }])).toBe(0);
+  });
+  it("sin factura compara contra el neto de IVA", () => {
+    expect(cobradoDeMas(1210, [{ monto: 1210, sin_factura: true }])).toBe(210);
   });
 });

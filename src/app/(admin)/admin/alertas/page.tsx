@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import { AlertTriangle, AlertCircle, ArrowRight, Info, CheckCircle } from "lucide-react";
 import { PageHeader, StatusBadge, TONE_STYLES, type Tone } from "@/components/ui";
+import { cobradoDeMas } from "@/lib/cobranza";
 
 export const metadata: Metadata = { title: "Alertas — Admin" };
 export const revalidate = 0;
@@ -186,6 +187,35 @@ export default async function AlertasPage() {
       descripcion: "Saldo ≥90% del límite. Evaluá antes de aprobar nuevos pedidos.",
       href: "/admin/cuentas-corrientes",
       count: clientesEnRiesgo,
+    });
+  }
+
+  // ── 5b. PEDIDOS COBRADOS DE MÁS (cobros duplicados o monto de más) ──
+  const { data: cobrosPedido } = await db
+    .from("pagos")
+    .select("order_id, monto, sin_factura")
+    .not("order_id", "is", null);
+  const pagosPorPedido: Record<string, { monto: number; sin_factura: boolean | null }[]> = {};
+  for (const p of (cobrosPedido ?? []) as any[]) {
+    (pagosPorPedido[p.order_id] ??= []).push({ monto: Number(p.monto), sin_factura: p.sin_factura });
+  }
+  const idsConCobro = Object.keys(pagosPorPedido);
+  let pedidosCobradosDeMas = 0;
+  if (idsConCobro.length > 0) {
+    const { data: pedidosCobrados } = await db
+      .from("orders").select("id, total").in("id", idsConCobro).neq("status", "cancelled");
+    for (const o of (pedidosCobrados ?? []) as any[]) {
+      if (cobradoDeMas(Number(o.total), pagosPorPedido[o.id]) > 0) pedidosCobradosDeMas++;
+    }
+  }
+  if (pedidosCobradosDeMas > 0) {
+    alertas.push({
+      nivel: "urgente",
+      categoria: "Cobranzas",
+      titulo: `${pedidosCobradosDeMas} pedido${pedidosCobradosDeMas > 1 ? "s" : ""} cobrado${pedidosCobradosDeMas > 1 ? "s" : ""} de más`,
+      descripcion: "Los cobros superan lo que se debe: puede haber un cobro duplicado. Revisá el historial de cobros del cliente.",
+      href: "/admin/clientes-b2b",
+      count: pedidosCobradosDeMas,
     });
   }
 

@@ -20,6 +20,12 @@ export function tieneSaldo(total: number, pagos: PagoDePedido[]): boolean {
   return saldoPedido(total, pagos) > TOLERANCIA;
 }
 
+// Cuánto se cobró de más (0 si no hay exceso). Detecta cobros duplicados o con monto de más.
+export function cobradoDeMas(total: number, pagos: PagoDePedido[]): number {
+  const exceso = -saldoPedido(total, pagos);
+  return exceso > TOLERANCIA ? Math.round(exceso * 100) / 100 : 0;
+}
+
 // Lee los cobros del pedido y devuelve su saldo. `db` es el cliente admin de Supabase.
 export async function saldoPedidoDb(db: any, orderId: string): Promise<{ saldo: number; total: number } | null> {
   const [{ data: order }, { data: pagos }] = await Promise.all([
