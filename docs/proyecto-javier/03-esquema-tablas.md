@@ -120,7 +120,7 @@ id uuid PK, plantilla_id uuid ->plantillas_pedido, producto_id uuid ->products, 
 id uuid PK, nombre text, descripcion text, direccion text, activo bool, created_at timestamptz, updated_at timestamptz
 
 ### insumos (48 filas)
-id uuid PK, nombre text, unidad text, precio_unitario numeric, proveedor text, notas text, updated_at timestamptz, created_at timestamptz, stock_actual numeric, stock_minimo numeric, punto_pedido numeric, stock_maximo numeric, categoria text, packaging_uso text CHECK[bolsa|caja] (NULL = materia prima; bolsa/caja = packaging que en la receta va a products.pkg_unitario / pkg_bulto en vez de costo)
+id uuid PK, nombre text, unidad text, precio_unitario numeric, proveedor text, notas text, updated_at timestamptz, created_at timestamptz, stock_actual numeric, stock_minimo numeric, punto_pedido numeric, stock_maximo numeric, categoria text, activo boolean (false = archivado: no aparece en listas ni alertas, conserva el historial; nunca está en recetas), packaging_uso text CHECK[bolsa|caja] (NULL = materia prima; bolsa/caja = packaging que en la receta va a products.pkg_unitario / pkg_bulto en vez de costo)
 
 ### pagos (34 filas)
 id uuid PK, cliente_id uuid ->profiles, monto numeric CHECK[monto > 0::numeric], fecha date, metodo text, referencia text, notas text, created_by uuid ->auth.users, created_at timestamptz, order_id uuid ->orders, factura_numero text, sin_factura bool, grupo_id uuid

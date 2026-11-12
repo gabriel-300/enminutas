@@ -56,7 +56,20 @@ export async function actualizarInsumo(id: string, formData: FormData): Promise<
   if (!nombre) return { error: "El nombre es requerido" };
 
   const db = createAdminClient() as any;
-  const { error } = await db.from("insumos").update({ nombre, unidad, precio_unitario: precio, proveedor: proveed, notas, categoria }).eq("id", id);
+
+  // Activo / inactivo: un insumo inactivo no aparece en la lista, las alertas ni los selectores, pero conserva su historial.
+  // Si el formulario no trae el campo, no se toca. No se puede desactivar uno que esté en recetas: seguiría sumando al costo oculto.
+  const campos: Record<string, any> = { nombre, unidad, precio_unitario: precio, proveedor: proveed, notas, categoria };
+  if (formData.has("activo")) {
+    const activo = formData.get("activo") === "1";
+    if (!activo) {
+      const { count } = await db.from("recipe_ingredients").select("id", { count: "exact", head: true }).eq("insumo_id", id);
+      if ((count ?? 0) > 0)
+        return { error: `No se puede desactivar: está en ${count} receta${count === 1 ? "" : "s"}. Reemplazalo en las recetas antes de desactivarlo.` };
+    }
+    campos.activo = activo;
+  }
+  const { error } = await db.from("insumos").update(campos).eq("id", id);
   if (error) {
     if (error.code === "23505") return { error: `Ya existe un insumo llamado "${nombre}".` };
     return { error: error.message };

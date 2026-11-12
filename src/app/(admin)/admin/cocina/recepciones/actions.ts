@@ -31,6 +31,7 @@ export async function getInsumos(): Promise<InsumoBasico[]> {
   const { data } = await db
     .from("insumos")
     .select("id, nombre, unidad, precio_unitario, stock_actual, proveedor")
+    .eq("activo", true)
     .order("nombre");
   return ((data ?? []) as any[]).map(i => ({
     id:              i.id,

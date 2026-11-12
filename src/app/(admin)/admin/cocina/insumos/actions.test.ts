@@ -7,7 +7,7 @@ vi.mock("@/lib/supabase/server", () => ({ createAdminClient: () => state.db }));
 vi.mock("@/lib/auth", () => ({ requireRole: async () => ({ id: "admin-1" }), requireAdmin: async () => ({ id: "admin-1" }) }));
 vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
 
-import { eliminarInsumo } from "./actions";
+import { actualizarInsumo, eliminarInsumo } from "./actions";
 
 let db: FakeDb;
 beforeEach(() => {
@@ -46,5 +46,36 @@ describe("eliminarInsumo", () => {
     db.seed("insumos_movimientos", [{ insumo_id: i.id }]);
     expect(err(await eliminarInsumo(i.id))).toMatch(/1 movimiento de stock/);
     expect(db.rows("insumos")).toHaveLength(1);
+  });
+});
+
+describe("actualizarInsumo: activar / desactivar", () => {
+  const form = (campos: Record<string, string>) => {
+    const fd = new FormData();
+    for (const [k, v] of Object.entries({ nombre: "Cuadrada Novillo", unidad: "kg", precio_unitario: "100", ...campos })) fd.set(k, v);
+    return fd;
+  };
+
+  it("desactiva un insumo que no está en recetas, sin tocar su historial", async () => {
+    const [i] = db.seed("insumos", [{ nombre: "Cuadrada Novillo", activo: true }]);
+    db.seed("recepciones_items", [{ insumo_id: i.id }]);
+    expect(await actualizarInsumo(i.id, form({ activo: "0" }))).toMatchObject({ ok: true });
+    expect(i.activo).toBe(false);
+    expect(db.rows("recepciones_items")).toHaveLength(1);
+  });
+
+  it("no desactiva un insumo que está en recetas", async () => {
+    const [i] = db.seed("insumos", [{ nombre: "Cuadrada Novillo", activo: true }]);
+    db.seed("recipe_ingredients", [{ insumo_id: i.id }]);
+    expect(err(await actualizarInsumo(i.id, form({ activo: "0" })))).toMatch(/1 receta/);
+    expect(i.activo).toBe(true);
+  });
+
+  it("lo vuelve a activar, y sin el campo no cambia el estado", async () => {
+    const [i] = db.seed("insumos", [{ nombre: "Cuadrada Novillo", activo: false }]);
+    await actualizarInsumo(i.id, form({}));
+    expect(i.activo).toBe(false);
+    await actualizarInsumo(i.id, form({ activo: "1" }));
+    expect(i.activo).toBe(true);
   });
 });

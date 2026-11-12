@@ -1051,6 +1051,7 @@ export type Database = {
       insumos: {
         Row: {
           categoria: string
+          activo: boolean
           packaging_uso: string | null
           created_at: string | null
           id: string
@@ -1067,6 +1068,7 @@ export type Database = {
         }
         Insert: {
           categoria?: string
+          activo?: boolean
           packaging_uso?: string | null
           created_at?: string | null
           id?: string
@@ -1083,6 +1085,7 @@ export type Database = {
         }
         Update: {
           categoria?: string
+          activo?: boolean
           packaging_uso?: string | null
           created_at?: string | null
           id?: string

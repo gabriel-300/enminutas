@@ -18,6 +18,7 @@ export type Insumo = {
   punto_pedido: number;
   stock_maximo: number;
   categoria: string;
+  activo: boolean;
 };
 
 const UNIDADES = ["gr", "kg", "ml", "l", "u", "cc", "taza", "cdita", "cda"];
@@ -397,6 +398,7 @@ function InsumoRow({ ins, cats, onError }: { ins: Insumo; cats: Categoria[]; onE
   const [sMin, setSMin]         = useState(String(ins.stock_minimo));
   const [sPed, setSPed]         = useState(String(ins.punto_pedido));
   const [sMax, setSMax]         = useState(String(ins.stock_maximo));
+  const [activo, setActivo]     = useState(ins.activo);
   const [isPending, start]      = useTransition();
 
   const estado = stockEstado(ins);
@@ -406,6 +408,7 @@ function InsumoRow({ ins, cats, onError }: { ins: Insumo; cats: Categoria[]; onE
     fd.set("nombre", nombre); fd.set("unidad", unidad);
     fd.set("precio_unitario", precio); fd.set("proveedor", proveed);
     fd.set("categoria", cat);
+    fd.set("activo", activo ? "1" : "0");
     start(async () => {
       const res = await actualizarInsumo(ins.id, fd);
       if ("error" in res) { onError(res.error); resetState(); return; }
@@ -425,6 +428,7 @@ function InsumoRow({ ins, cats, onError }: { ins: Insumo; cats: Categoria[]; onE
     setPrecio(String(ins.precio_unitario)); setProveed(ins.proveedor ?? "");
     setCat(ins.categoria || "otros");
     setSMin(String(ins.stock_minimo)); setSPed(String(ins.punto_pedido)); setSMax(String(ins.stock_maximo));
+    setActivo(ins.activo);
   }
 
   function handleEliminar() {
@@ -444,6 +448,12 @@ function InsumoRow({ ins, cats, onError }: { ins: Insumo; cats: Categoria[]; onE
           <td className="px-3 py-2">
             <input value={nombre} onChange={e => setNombre(e.target.value)}
               className={`${inputCls} w-full`} disabled={isPending} autoFocus />
+            <label className="mt-1.5 flex items-center gap-1.5 text-xs text-neutral-700 cursor-pointer select-none"
+              title="Un insumo inactivo no aparece en la lista, las alertas ni al armar recetas y compras. El historial se conserva.">
+              <input type="checkbox" checked={activo} onChange={e => setActivo(e.target.checked)} disabled={isPending}
+                className="rounded border-neutral-400" />
+              Activo
+            </label>
           </td>
           <td className="px-3 py-2">
             <select value={unidad} onChange={e => setUnidad(e.target.value)}
@@ -516,8 +526,11 @@ function InsumoRow({ ins, cats, onError }: { ins: Insumo; cats: Categoria[]; onE
 
   return (
     <>
-      <tr className="hover:bg-neutral-50 transition-colors">
-        <td className="px-3 py-2.5 font-medium text-neutral-900 text-sm">{ins.nombre}</td>
+      <tr className={`hover:bg-neutral-50 transition-colors ${ins.activo ? "" : "opacity-60"}`}>
+        <td className="px-3 py-2.5 font-medium text-neutral-900 text-sm">
+          {ins.nombre}
+          {!ins.activo && <span className="ml-2 text-[11px] font-medium px-1.5 py-0.5 rounded-full bg-neutral-100 text-neutral-600">Inactivo</span>}
+        </td>
         <td className="px-3 py-2.5 text-xs text-neutral-600 font-mono">{ins.unidad}</td>
         <td className="px-3 py-2.5 text-sm font-semibold text-neutral-900 text-right tabular-nums">
           {fmtPrecio(ins.precio_unitario)}
@@ -809,8 +822,14 @@ export function InsumosClient({ insumos, categorias }: { insumos: Insumo[]; cate
   const [error, setError]         = useState<string | null>(null);
   const [busqueda, setBusqueda]   = useState("");
   const [catFiltro, setCatFiltro] = useState("");
+  const [verInactivos, setVerInactivos] = useState(false);
 
-  const filtrados = insumos.filter(i => {
+  // Los inactivos se ocultan (y no generan alertas) salvo que se pidan.
+  const activos    = insumos.filter(i => i.activo);
+  const cantInactivos = insumos.length - activos.length;
+  const visibles   = verInactivos ? insumos : activos;
+
+  const filtrados = visibles.filter(i => {
     if (catFiltro && i.categoria !== catFiltro) return false;
     if (!busqueda) return true;
     const q = busqueda.toLowerCase();
@@ -850,16 +869,23 @@ export function InsumosClient({ insumos, categorias }: { insumos: Insumo[]; cate
         </p>
       )}
 
-      <AlertasStock insumos={insumos} cats={categorias} />
+      <AlertasStock insumos={activos} cats={categorias} />
       <GestorCategorias categorias={categorias} />
       <ImportadorCSV insumos={insumos} />
 
       <div className="bg-white rounded-xl border border-neutral-200 shadow-sm overflow-hidden">
         <div className="px-5 py-3 border-b border-neutral-100 flex items-center justify-between gap-3 flex-wrap">
           <p className="text-sm font-semibold text-neutral-800">
-            Catálogo <span className="font-normal text-neutral-600">({insumos.length})</span>
+            Catálogo <span className="font-normal text-neutral-600">({activos.length})</span>
           </p>
-          <div className="flex gap-2 flex-wrap">
+          <div className="flex gap-2 flex-wrap items-center">
+            {cantInactivos > 0 && (
+              <label className="flex items-center gap-1.5 text-xs text-neutral-700 cursor-pointer select-none">
+                <input type="checkbox" checked={verInactivos} onChange={e => setVerInactivos(e.target.checked)}
+                  className="rounded border-neutral-400" />
+                Mostrar inactivos ({cantInactivos})
+              </label>
+            )}
             <select
               value={catFiltro} onChange={e => setCatFiltro(e.target.value)}
               className="text-sm border border-neutral-400 rounded-lg px-3 py-1.5 focus:outline-none focus:ring-[3px] focus:ring-brand-500/30 focus:border-brand-700 bg-white"

@@ -66,6 +66,7 @@ export default async function ComprasPage() {
     adminClient
       .from("insumos")
       .select("id, nombre, unidad, stock_actual, stock_minimo, punto_pedido, precio_unitario")
+      .eq("activo", true)
       .order("nombre"),
 
     // Incluye inactivos: el dueño de una receta compartida puede estar inactivo
