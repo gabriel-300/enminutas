@@ -42,6 +42,9 @@ export default async function DeudaClientesPage() {
           Pedidos entregados o despachados sin liquidar, menos los cobros registrados. Es la deuda según lo cargado:
           un cobro que no se registró en el sistema sigue figurando como deuda.
         </p>
+        <Link href="/admin/cuentas-corrientes/conciliacion" className="inline-block mt-2 text-xs font-medium text-brand-700 hover:underline">
+          Conciliación con la planilla de Alex →
+        </Link>
       </div>
 
       {error && (

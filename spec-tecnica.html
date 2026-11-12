@@ -364,7 +364,7 @@ section { margin-bottom: 4px; }
 <nav class="sidebar no-print">
   <div class="sidebar-logo">
     <div class="sidebar-logo-em">EnMinutas / contexto técnico</div>
-    <div class="sidebar-logo-sub">v2.17 · Noviembre 2026</div>
+    <div class="sidebar-logo-sub">v2.18 · Noviembre 2026</div>
   </div>
 
   <div class="nav-section">
@@ -1450,6 +1450,7 @@ comercializadora   = comisión_total − preventista
 <table>
   <thead><tr><th>Versión</th><th>Fecha</th><th>Cambios</th></tr></thead>
   <tbody>
+    <tr><td>2.18</td><td>12/11/2026</td><td>Cuenta corriente importada de la planilla de Alex: se define como <strong>informe de control</strong>, no como deuda. Nueva pantalla <code>/admin/cuentas-corrientes/conciliacion</code> (<code>lib/conciliacion.ts</code>): por cliente, saldo de la planilla (filas <code>cc_movimientos</code> con <code>referencia IMPORT-%</code>, fecha de corte leída de la descripción) contra la deuda del sistema a esa fecha (pedidos entregados menos cobros hasta el corte, con la regla «sin factura»). No se suma a Deuda clientes: los 92 cargos de <code>cc_movimientos</code> son copias de pedidos ya contados. Sin cambios de esquema.</td></tr>
     <tr><td>2.17</td><td>12/11/2026</td><td>Compras: se define qué campo vale. En <code>recepciones</code>, <code>percepciones</code> es el dato (neto + iva + percepciones = total) y <code>otros_impuestos</code> es una copia con el mismo importe (<code>registrarRecepcion</code> guarda ambos): no se suman. Comentarios en las dos columnas (migración 20261112120000) y aclaración en la documentación del proyecto de Javier. Sin cambios de código ni de datos.</td></tr>
     <tr><td>2.16</td><td>12/11/2026</td><td>Cobranzas: (1) al registrar un cobro que deja el pedido cobrado de más (duplicado o monto de más) se muestra un aviso, y nueva alerta «pedidos cobrados de más» en <code>/admin/alertas</code> (<code>cobradoDeMas</code> en <code>lib/cobranza.ts</code>); (2) todo cobro eliminado queda como evento en el historial del pedido (<code>order_events</code>: monto, método, fecha y administrador que lo borró). Sin cambios de esquema.</td></tr>
     <tr><td>2.15</td><td>11/11/2026</td><td>Trazabilidad y cierre de huecos de cobranza. (1) Nueva columna <code>orders.status_changed_by</code> (migración 20261111120000): la app la setea en cada cambio de estado y el trigger <code>log_order_event</code> la copia a <code>order_events.actor_id</code> (antes los eventos de estado quedaban sin usuario). Cobros, pagos a proveedores y órdenes de pago ya guardaban usuario (<code>created_by</code>, <code>creado_por</code>, <code>aprobado_por</code>, <code>pagado_por</code>). (2) <code>registrarPagoOrden</code> (cuentas corrientes) ya no liquida pedidos con saldo ni sin entregar: usa la misma regla de <code>lib/cobranza.ts</code>. (3) Orden de pago: sin <code>APROBADORES_PAGOS</code> definida, el creador no puede aprobar su propia orden.</td></tr>
