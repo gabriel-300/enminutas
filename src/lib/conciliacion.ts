@@ -17,7 +17,8 @@ export type FilaConciliacion = {
   pedidos: number;    // pedidos del sistema con saldo al corte
 };
 
-const r2 = (n: number) => Math.round(n * 100) / 100;
+// Redondea a centavos; lo que no llega al peso se toma como 0 (evita mostrar "-$ 0").
+const r2 = (n: number) => (Math.abs(n) < 0.5 ? 0 : Math.round(n * 100) / 100);
 
 /** Extrae la fecha de corte ("... al 14/10/2026") de la descripción de la importación → YYYY-MM-DD. */
 export function fechaCorteDeDescripcion(descripcion: string | null | undefined): string | null {
