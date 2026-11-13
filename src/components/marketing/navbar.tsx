@@ -2,9 +2,10 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { useState } from "react";
-import { Menu, X } from "lucide-react";
+import { useEffect, useState } from "react";
+import { Menu, X, User } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { createClient } from "@/lib/supabase/client";
 
 const NAV_LINKS = [
   { href: "/tienda",        label: "Productos" },
@@ -13,8 +14,29 @@ const NAV_LINKS = [
   { href: "/#mayoristas",   label: "Mayoristas" },
 ];
 
+// Acceso a la cuenta: "Ingresar" si no hay sesión, "Mi cuenta" si la hay.
+// Un cliente de la tienda va a sus pedidos; cualquier otro rol (staff, B2B) lo resuelve /auth/redirect.
+type Cuenta = { href: string; label: string } | null;
+
+function useCuenta(): Cuenta {
+  const [cuenta, setCuenta] = useState<Cuenta>(null);
+  useEffect(() => {
+    let vivo = true;
+    createClient().auth.getUser().then(({ data: { user } }) => {
+      if (!vivo) return;
+      if (!user) return setCuenta({ href: "/login", label: "Ingresar" });
+      const rol = user.app_metadata?.role as string | undefined;
+      const esCliente = !rol || rol === "customer_b2c";
+      setCuenta({ href: esCliente ? "/mi-cuenta/pedidos" : "/auth/redirect", label: "Mi cuenta" });
+    }).catch(() => { if (vivo) setCuenta({ href: "/login", label: "Ingresar" }); });
+    return () => { vivo = false; };
+  }, []);
+  return cuenta;
+}
+
 export function Navbar() {
   const [open, setOpen] = useState(false);
+  const cuenta = useCuenta();
 
   return (
     <header className="sticky top-0 z-50 bg-white border-b border-neutral-200/60">
@@ -46,8 +68,17 @@ export function Navbar() {
             ))}
           </nav>
 
-          {/* hamburger */}
+          {/* cuenta + hamburger */}
           <div className="flex items-center gap-2">
+            {cuenta && (
+              <Link
+                href={cuenta.href}
+                className="hidden md:inline-flex items-center gap-1.5 px-3.5 py-2 text-sm font-medium text-tierra-700 rounded-lg border border-tierra-700/30 hover:bg-tierra-700/5 transition-colors"
+              >
+                <User className="size-4" aria-hidden />
+                {cuenta.label}
+              </Link>
+            )}
             <button
               className="md:hidden p-2 text-neutral-600 hover:text-neutral-900 rounded-lg hover:bg-neutral-100 transition-colors"
               onClick={() => setOpen(!open)}
@@ -75,6 +106,16 @@ export function Navbar() {
               {l.label}
             </Link>
           ))}
+          {cuenta && (
+            <Link
+              href={cuenta.href}
+              onClick={() => setOpen(false)}
+              className="px-3 py-2.5 text-sm font-medium text-tierra-700 hover:bg-neutral-100 rounded-lg transition-colors inline-flex items-center gap-1.5"
+            >
+              <User className="size-4" aria-hidden />
+              {cuenta.label}
+            </Link>
+          )}
         </nav>
       </div>
     </header>
