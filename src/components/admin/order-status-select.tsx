@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { updateOrderStatus, cancelarPedidoDistribucion } from "@/app/(admin)/admin/pedidos/actions";
+import { updateOrderStatus, cancelarPedidoDistribucion, cancelarPedidoEntregado } from "@/app/(admin)/admin/pedidos/actions";
 // Solo los 3 estados que updateOrderStatus permite asignar manualmente.
 // Los otros (enviado_prod, despachado, etc.) se cambian desde producción/distribución.
 const B2B_OPTIONS = [
@@ -51,12 +51,27 @@ export function OrderStatusSelect({
       if (!ok) return;
     }
 
+    // Un pedido ya entregado se cancela con motivo (queda en el historial): devuelve el stock y sale de la deuda.
+    const cancelandoEntregado =
+      newStatus === "cancelled" && (localStatus === "delivered" || localStatus === "entrega_parcial");
+    let motivo = "";
+    if (cancelandoEntregado) {
+      const dado = prompt(
+        "Cancelar un pedido ya entregado: se devuelve el stock y sale de la deuda del cliente.\n\nMotivo de la cancelación (queda registrado):"
+      );
+      if (dado === null) return;
+      motivo = dado.trim();
+      if (motivo.length < 3) { setError("Indicá el motivo de la cancelación"); return; }
+    }
+
     const prevStatus = localStatus;
     setLocalStatus(newStatus);
     setError(null);
     startTransition(async () => {
       try {
-        if (cancelandoEnDistribucion) {
+        if (cancelandoEntregado) {
+          await cancelarPedidoEntregado(orderId, motivo);
+        } else if (cancelandoEnDistribucion) {
           await cancelarPedidoDistribucion(orderId);
         } else {
           const res = await updateOrderStatus(orderId, newStatus);
@@ -93,7 +108,7 @@ export function OrderStatusSelect({
     );
   }
 
-  // Desde entregado o entrega_parcial solo se puede pasar a liquidado
+  // Desde entregado o entrega_parcial se puede pasar a liquidado o cancelar (con motivo, si no tiene cobros)
   if (currentStatus === "delivered" || currentStatus === "entrega_parcial") {
     const currentLabel = currentStatus === "delivered" ? "Entregado" : "Entrega parcial";
     return (
@@ -101,6 +116,7 @@ export function OrderStatusSelect({
         <select value={localStatus} onChange={handleChange} disabled={isPending} className={selectCls}>
           <option value={currentStatus}>{currentLabel}</option>
           <option value="liquidado">Liquidado</option>
+          <option value="cancelled">Cancelado</option>
         </select>
         {error && <p className="text-xs text-danger mt-1 leading-tight">{error}</p>}
       </div>

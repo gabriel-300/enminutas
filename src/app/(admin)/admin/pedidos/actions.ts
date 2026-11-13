@@ -670,6 +670,41 @@ export async function confirmarEntregaParcial(
     throw new Error(`La entrega parcial se registró, pero falló: ${fallos.join("; ")}. Avisale al administrador.`);
 }
 
+// Al cancelar un pedido: devuelve al stock lo que el pedido tenía descontado y, si era cuenta corriente,
+// revierte lo cargado. Devuelve la lista de errores (vacía si todo salió bien).
+async function revertirStockYCuenta(
+  supabase: ReturnType<typeof createAdminClient>,
+  order: { id: string; payment_method: string | null; customer_id: string | null; order_number: string },
+  lines: { product_id: string; quantity: number }[],
+  userId: string,
+  notaStock: string,
+): Promise<string[]> {
+  const fallos: string[] = [];
+
+  for (const line of lines) {
+    if (Number(line.quantity) <= 0) continue;
+    const errStock = await reintegrarStock(supabase, line.product_id, Number(line.quantity), order.id, notaStock);
+    if (errStock) fallos.push(`stock: ${errStock}`);
+  }
+
+  if (order.payment_method === "cuenta_corriente" && order.customer_id) {
+    const { cantidad, neto } = await cargoNetoCC(supabase, order.id);
+    if (cantidad > 0 && Math.abs(neto) >= 0.01) {
+      const { error: errCC } = await (supabase as any).from("cc_movimientos").insert({
+        cliente_id:  order.customer_id,
+        order_id:    order.id,
+        tipo:        "ajuste",
+        descripcion: `Reversión por cancelación — Pedido ${order.order_number}`,
+        monto:       -neto,
+        fecha:       new Date().toISOString().slice(0, 10),
+        created_by:  userId,
+      });
+      if (errCC) fallos.push(`cuenta corriente: ${errCC.message}`);
+    }
+  }
+  return fallos;
+}
+
 // Cancela un pedido ya despachado / en distribución (antes de que se confirme
 // entrega). Revierte el stock consumido en el despacho y, si el pedido era
 // cuenta corriente, anula lo cargado — a diferencia de updateOrderStatus,
@@ -704,34 +739,10 @@ export async function cancelarPedidoDistribucion(orderId: string) {
   if (error) throw new Error(error.message);
   if (!updated?.length) throw new Error("El pedido ya fue procesado");
 
-  const fallos: string[] = [];
-
-  // Reintegrar el stock consumido al despachar
-  for (const line of (lines ?? []) as { product_id: string; quantity: number }[]) {
-    if (Number(line.quantity) <= 0) continue;
-    const errStock = await reintegrarStock(
-      supabase, line.product_id, Number(line.quantity), orderId,
-      "Reintegro por cancelación de pedido en distribución",
-    );
-    if (errStock) fallos.push(`stock: ${errStock}`);
-  }
-
-  // Revertir lo que el pedido tenga cargado en cuenta corriente, si lo hubo
-  if (order.payment_method === "cuenta_corriente" && order.customer_id) {
-    const { cantidad, neto } = await cargoNetoCC(supabase, orderId);
-    if (cantidad > 0 && Math.abs(neto) >= 0.01) {
-      const { error: errCC } = await (supabase as any).from("cc_movimientos").insert({
-        cliente_id:  order.customer_id,
-        order_id:    orderId,
-        tipo:        "ajuste",
-        descripcion: `Reversión por cancelación — Pedido ${order.order_number}`,
-        monto:       -neto,
-        fecha:       new Date().toISOString().slice(0, 10),
-        created_by:  user.id,
-      });
-      if (errCC) fallos.push(`cuenta corriente: ${errCC.message}`);
-    }
-  }
+  const fallos = await revertirStockYCuenta(
+    supabase, order, (lines ?? []) as { product_id: string; quantity: number }[], user.id,
+    "Reintegro por cancelación de pedido en distribución",
+  );
 
   await logOrderEvent(
     supabase, orderId, "cancelled",
@@ -749,6 +760,75 @@ export async function cancelarPedidoDistribucion(orderId: string) {
 
   if (fallos.length)
     throw new Error(`El pedido se canceló, pero falló: ${fallos.join("; ")}. Revisá stock y cuenta corriente.`);
+}
+
+// Cancelar un pedido ya ENTREGADO (total o parcial), por ejemplo uno cargado por error. No se borra: queda el
+// historial. Se cancela con un motivo, se devuelve al stock lo entregado y el pedido deja de contar en la deuda
+// del cliente y en las comisiones. Se bloquea si ya tiene cobros, si está liquidado o si su faltante se reprogramó
+// en otro pedido que sigue vigente.
+export async function cancelarPedidoEntregado(orderId: string, motivo: string) {
+  const authClient = await createClient();
+  const { data: { user } } = await authClient.auth.getUser();
+  if (!user || user.app_metadata?.role !== "admin") throw new Error("No autorizado");
+
+  const razon = (motivo ?? "").trim();
+  if (razon.length < 3) throw new Error("Indicá el motivo de la cancelación");
+
+  const supabase = createAdminClient();
+
+  const { data: order } = await (supabase as any)
+    .from("orders")
+    .select("id, status, payment_method, customer_id, order_number")
+    .eq("id", orderId)
+    .single();
+  if (!order) throw new Error("Pedido no encontrado");
+  if (!["delivered", "entrega_parcial"].includes(order.status))
+    throw new Error("Solo se puede cancelar desde acá un pedido entregado o con entrega parcial");
+
+  const { count: cobros } = await (supabase as any)
+    .from("pagos").select("id", { count: "exact", head: true }).eq("order_id", orderId);
+  if ((cobros ?? 0) > 0)
+    throw new Error("Tiene cobros cargados: eliminá los cobros del pedido antes de cancelarlo");
+
+  const { data: reprogramado } = await (supabase as any)
+    .from("orders").select("order_number").eq("origen_order_id", orderId).neq("status", "cancelled").maybeSingle();
+  if (reprogramado)
+    throw new Error(`Su faltante se reprogramó en ${reprogramado.order_number}: cancelá ese pedido primero`);
+
+  const { data: lines } = await (supabase as any)
+    .from("order_lines").select("product_id, quantity").eq("order_id", orderId);
+
+  const { data: updated, error } = await (supabase as any)
+    .from("orders")
+    .update({ status: "cancelled", status_changed_by: await actorId() })
+    .eq("id", orderId)
+    .in("status", ["delivered", "entrega_parcial"])
+    .select("id");
+  if (error) throw new Error(error.message);
+  if (!updated?.length) throw new Error("El pedido ya fue procesado");
+
+  const fallos = await revertirStockYCuenta(
+    supabase, order, (lines ?? []) as { product_id: string; quantity: number }[], user.id,
+    "Reintegro por cancelación de pedido entregado",
+  );
+
+  await logOrderEvent(
+    supabase, orderId, "cancelled",
+    `Pedido entregado cancelado — motivo: ${razon} — stock devuelto y deuda anulada` +
+      (fallos.length ? ` — ATENCIÓN, fallaron: ${fallos.join("; ")}` : ""),
+    user.id,
+  );
+
+  revalidatePath("/admin/pedidos");
+  revalidatePath("/admin/dashboard");
+  revalidatePath("/admin/stock");
+  revalidatePath("/admin/comisiones");
+  revalidatePath("/admin/cuentas-corrientes");
+  revalidatePath(`/admin/pedidos/${orderId}`);
+  if (order.customer_id) revalidatePath(`/admin/clientes-b2b/${order.customer_id}`);
+
+  if (fallos.length)
+    throw new Error(`El pedido se canceló, pero falló: ${fallos.join("; ")}. Revisá el stock.`);
 }
 
 // Reprogramar el faltante de una entrega parcial: crea UN pedido nuevo, aprobado y enlazado, con lo que no
