@@ -1,5 +1,5 @@
 /** Tonos semánticos del panel (tema Índigo). El color nunca es la única señal: siempre va con texto. */
-export type Tone = "neutral" | "info" | "brand" | "success" | "warning" | "danger";
+export type Tone = "neutral" | "info" | "brand" | "success" | "warning" | "danger" | "teal";
 
 // Clases literales (no armadas por template) para que Tailwind las detecte.
 export const TONE_STYLES: Record<Tone, {
@@ -20,6 +20,8 @@ export const TONE_STYLES: Record<Tone, {
   success: { badge: "bg-success-bg border-success-border text-success", dot: "bg-success-solid", tile: "bg-success-bg text-success",  text: "text-success",   border: "border-success-border" },
   warning: { badge: "bg-warning-bg border-warning-border text-warning", dot: "bg-warning-solid", tile: "bg-warning-bg text-warning",  text: "text-warning",   border: "border-warning-border" },
   danger:  { badge: "bg-danger-bg border-danger-border text-danger",    dot: "bg-danger-solid",  tile: "bg-danger-bg text-danger",    text: "text-danger",    border: "border-danger-border" },
+  // Verde azulado: estados cerrados que no deben confundirse con "entregado" (verde), p. ej. liquidado.
+  teal:    { badge: "bg-teal-50 border-teal-200 text-teal-700",         dot: "bg-teal-600",      tile: "bg-teal-50 text-teal-700",    text: "text-teal-700",  border: "border-teal-200" },
 };
 
 // Estado → tono, un objeto por dominio. Las claves son los valores reales de la base.
@@ -39,7 +41,7 @@ export const PEDIDO_TONE: Record<string, Tone> = {
   despachado:      "brand",
   en_distribucion: "brand",
   entrega_parcial: "warning",
-  liquidado:       "success",
+  liquidado:       "teal",
 };
 
 export const PIPELINE_TONE = {
