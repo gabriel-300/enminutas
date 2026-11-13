@@ -1,10 +1,10 @@
-import { Fragment } from "react";
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { createClient, createAdminClient } from "@/lib/supabase/server";
 import { calcularPrecio } from "@/lib/b2b-pricing";
 import { getParametros } from "@/lib/parametros";
 import { armarRecetaMap } from "@/lib/receta-costos";
+import { CostosPreciosClient } from "./costos-precios-client";
 
 export const metadata: Metadata = { title: "Costos vs precios — Admin En Minutas" };
 export const revalidate = 0;
@@ -14,9 +14,6 @@ const CANALES = [
   { slug: "gastro", label: "Gastronomía"  },
   { slug: "min",    label: "Minorista"    },
 ];
-
-const fmtPeso = (n: number) =>
-  new Intl.NumberFormat("es-AR", { style: "currency", currency: "ARS", maximumFractionDigits: 0 }).format(n);
 
 export default async function CostosPreciosPage() {
   const supabase = await createClient();
@@ -91,51 +88,7 @@ export default async function CostosPreciosPage() {
         </p>
       </div>
 
-      <div className="bg-white rounded-xl border border-neutral-200 shadow-sm overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="text-left">
-                <th rowSpan={2} className="px-5 py-3 text-xs font-semibold text-neutral-600 border-b border-neutral-100">Producto</th>
-                {CANALES.map((c) => (
-                  <th key={c.slug} colSpan={2}
-                    className="px-5 pt-3 pb-1 text-sm font-semibold text-neutral-900 text-center border-l border-neutral-100">
-                    {c.label}
-                  </th>
-                ))}
-              </tr>
-              <tr className="border-b border-neutral-100 text-left">
-                {CANALES.map((c) => (
-                  <Fragment key={c.slug}>
-                    <th className="px-5 pb-3 text-xs font-medium text-neutral-600 text-right border-l border-neutral-100">Precio actual</th>
-                    <th className="px-5 pb-3 text-xs font-medium text-neutral-600 text-right">Precio sugerido</th>
-                  </Fragment>
-                ))}
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-neutral-50">
-              {filas.map((f) => (
-                <tr key={f.id} className="hover:bg-neutral-50 transition-colors">
-                  <td className="px-5 py-3">
-                    <p className="font-medium text-neutral-900">{f.name}</p>
-                    <p className="text-xs text-neutral-600 font-mono">{f.sku}</p>
-                  </td>
-                  {CANALES.map((c) => (
-                    <Fragment key={c.slug}>
-                      <td className="px-5 py-3 text-right tabular-nums text-neutral-700 border-l border-neutral-100">
-                        {f.actual ? fmtPeso(f.actual[c.slug]) : <span className="text-neutral-500">—</span>}
-                      </td>
-                      <td className="px-5 py-3 text-right tabular-nums font-semibold text-neutral-900">
-                        {f.simulado ? fmtPeso(f.simulado[c.slug]) : <span className="text-neutral-500 font-normal">—</span>}
-                      </td>
-                    </Fragment>
-                  ))}
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
+      <CostosPreciosClient filas={filas} canales={CANALES} />
 
       <p className="text-xs text-neutral-600 mt-4 px-1">
         Precios finales por caja con IVA y comisión incluidos, sin flete de zona, con la misma fórmula y márgenes que la lista de precios.
