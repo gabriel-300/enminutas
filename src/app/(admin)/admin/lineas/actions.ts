@@ -37,6 +37,35 @@ export async function editarLinea(id: number, nombre: string): Promise<{ error?:
   }
 }
 
+// Visible en el catálogo B2B: el catálogo muestra las líneas que tienen una fila en disponibilidad_lineas con disponible = true.
+// Ocultar no borra el historial: deja disponible = false.
+export async function setLineaVisibleB2B(id: number, visible: boolean): Promise<{ error?: string }> {
+  try {
+    await requireAdmin();
+    const db = createAdminClient() as any;
+    const { data: filas, error: errLectura } = await db.from("disponibilidad_lineas").select("id, disponible").eq("linea_id", id);
+    if (errLectura) return { error: errLectura.message };
+    const lista = (filas ?? []) as { id: string; disponible: boolean }[];
+
+    if (visible) {
+      if (!lista.some(f => f.disponible)) {
+        const { error } = lista.length > 0
+          ? await db.from("disponibilidad_lineas").update({ disponible: true, hasta: null }).in("id", lista.map(f => f.id))
+          : await db.from("disponibilidad_lineas").insert({ linea_id: id, disponible: true });
+        if (error) return { error: error.message };
+      }
+    } else {
+      const { error } = await db.from("disponibilidad_lineas").update({ disponible: false }).eq("linea_id", id).eq("disponible", true);
+      if (error) return { error: error.message };
+    }
+    revalidatePath("/admin/lineas");
+    revalidatePath("/b2b/catalogo");
+    return {};
+  } catch (e: any) {
+    return { error: e.message };
+  }
+}
+
 export async function eliminarLinea(id: number): Promise<{ error?: string }> {
   try {
     await requireAdmin();

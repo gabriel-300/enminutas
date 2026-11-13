@@ -364,7 +364,7 @@ section { margin-bottom: 4px; }
 <nav class="sidebar no-print">
   <div class="sidebar-logo">
     <div class="sidebar-logo-em">EnMinutas / contexto técnico</div>
-    <div class="sidebar-logo-sub">v2.20 · Noviembre 2026</div>
+    <div class="sidebar-logo-sub">v2.21 · Noviembre 2026</div>
   </div>
 
   <div class="nav-section">
@@ -1450,6 +1450,7 @@ comercializadora   = comisión_total − preventista
 <table>
   <thead><tr><th>Versión</th><th>Fecha</th><th>Cambios</th></tr></thead>
   <tbody>
+    <tr><td>2.21</td><td>13/11/2026</td><td>Catálogo B2B: visibilidad de líneas desde la pantalla Líneas (<code>setLineaVisibleB2B</code>). El catálogo del portal B2B muestra las líneas con una fila en <code>disponibilidad_lineas</code> con <code>disponible = true</code>; antes solo se podía cambiar en la base. Ahora cada línea tiene un interruptor «B2B»; ocultar deja <code>disponible = false</code> (no borra). La pantalla avisa si la línea es exclusiva de un canal y cuántos productos activos no se ven por faltar costo, bolsas por caja, unidades por bolsa o categoría. Sin cambios de esquema.</td></tr>
     <tr><td>2.20</td><td>12/11/2026</td><td>Insumos: activar / desactivar. Nueva columna <code>insumos.activo</code> (migración 20261112160000). Desde «Editar» se puede desactivar un insumo (por ejemplo un duplicado cargado dos veces): deja de aparecer en la lista (hay «Mostrar inactivos»), en las alertas de stock y en los selectores de recetas, compras y recepciones, pero conserva compras y movimientos. No se puede desactivar un insumo que esté en recetas. Además <code>eliminarInsumo</code> ahora explica por qué no se puede borrar un insumo con recetas, compras o movimientos en lugar de mostrar el error de la base.</td></tr>
     <tr><td>2.19</td><td>12/11/2026</td><td>Compras: vincular remito con su factura. Nueva columna <code>recepciones.factura_id</code> (solo remitos; migración 20261112140000). En la ficha del proveedor, la factura tiene «Vincular remitos» (<code>vincularRemitos</code>): tilda uno o varios remitos del mismo proveedor, que pasan a <code>genera_deuda = false</code> (la deuda es la de la factura) y se informa la diferencia entre lo que suman los remitos y el neto de la factura (<code>lib/remitos.ts</code>). Reglas: la factura debe generar deuda; no se vincula un remito con pagos imputados ni ya vinculado; un remito vinculado no vuelve a generar deuda sin <code>desvincularRemito</code>. Resuelve el caso de remitos de Fruta Express, SENAB y San Gabriel que figuraban dos veces al llegar la factura.</td></tr>
     <tr><td>2.18</td><td>12/11/2026</td><td>Cuenta corriente importada de la planilla de Alex: se define como <strong>informe de control</strong>, no como deuda. Nueva pantalla <code>/admin/cuentas-corrientes/conciliacion</code> (<code>lib/conciliacion.ts</code>): por cliente, saldo de la planilla (filas <code>cc_movimientos</code> con <code>referencia IMPORT-%</code>, fecha de corte leída de la descripción) contra la deuda del sistema a esa fecha (pedidos entregados menos cobros hasta el corte, con la regla «sin factura»). No se suma a Deuda clientes: los 92 cargos de <code>cc_movimientos</code> son copias de pedidos ya contados. Sin cambios de esquema.</td></tr>

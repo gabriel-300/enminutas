@@ -2,14 +2,28 @@
 
 import { useState, useTransition } from "react";
 import { Trash2, Plus, Pencil, Check, X } from "lucide-react";
-import { crearLinea, editarLinea, eliminarLinea } from "./actions";
+import { crearLinea, editarLinea, eliminarLinea, setLineaVisibleB2B } from "./actions";
+import { Switch } from "@/components/ui";
 
-type Linea = { id: number; nombre: string; orden: number; total: number };
+type Linea = {
+  id: number; nombre: string; orden: number; total: number;
+  visible: boolean; canalExclusivo: string | null; sinDatos: number;
+};
 
 function LineaRow({ l, onError }: { l: Linea; onError: (e: string) => void }) {
   const [editing, setEditing]   = useState(false);
   const [valor, setValor]       = useState(l.nombre);
+  const [visible, setVisible]   = useState(l.visible);
   const [isPending, startTransition] = useTransition();
+
+  function handleVisible() {
+    const next = !visible;
+    setVisible(next);
+    startTransition(async () => {
+      const res = await setLineaVisibleB2B(l.id, next);
+      if (res.error) { onError(res.error); setVisible(!next); }
+    });
+  }
 
   function handleGuardar() {
     if (!valor.trim() || valor.trim() === l.nombre) { setEditing(false); return; }
@@ -51,8 +65,21 @@ function LineaRow({ l, onError }: { l: Linea; onError: (e: string) => void }) {
         </>
       ) : (
         <>
-          <span className="flex-1 text-sm font-medium text-neutral-800">{l.nombre}</span>
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-medium text-neutral-800">{l.nombre}</p>
+            {(l.canalExclusivo || (visible && l.sinDatos > 0)) && (
+              <p className="text-[11px] text-neutral-600 mt-0.5">
+                {l.canalExclusivo && `Exclusiva del canal ${l.canalExclusivo}. `}
+                {visible && l.sinDatos > 0 &&
+                  `${l.sinDatos} producto${l.sinDatos !== 1 ? "s" : ""} sin datos completos (no se ${l.sinDatos !== 1 ? "ven" : "ve"} en el catálogo).`}
+              </p>
+            )}
+          </div>
           <span className="text-xs text-neutral-600 mr-1">{l.total} producto{l.total !== 1 ? "s" : ""}</span>
+          <div className="flex items-center gap-1.5 mr-1" title="Visible en el catálogo B2B de los clientes">
+            <span className="text-[11px] text-neutral-600">B2B</span>
+            <Switch checked={visible} onCheckedChange={handleVisible} disabled={isPending} label={`Visible en el catálogo B2B: ${l.nombre}`} />
+          </div>
           <button onClick={() => setEditing(true)} disabled={isPending} className="p-1.5 rounded-lg text-neutral-500 hover:text-neutral-600 hover:bg-neutral-100 transition-colors">
             <Pencil className="size-4" />
           </button>
