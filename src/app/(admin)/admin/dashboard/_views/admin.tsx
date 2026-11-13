@@ -14,7 +14,7 @@ function toneFromDot(dotClass: string): Tone {
 }
 
 const TONE_ICON: Record<Tone, React.ElementType> = {
-  danger: AlertCircle, warning: AlertTriangle, success: CheckCircle2, neutral: Info, info: Info, brand: Info, teal: CheckCircle2,
+  danger: AlertCircle, warning: AlertTriangle, success: CheckCircle2, neutral: Info, info: Info, brand: Info, closed: CheckCircle2,
 };
 
 const BAR_MAX_PX = 170;
