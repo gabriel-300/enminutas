@@ -43,7 +43,7 @@ export default async function AdminProductosPage() {
       <PageHeader
         className="mb-5"
         title="Productos"
-        subtitle={`${products?.length ?? 0} productos`}
+        subtitle={`${(products ?? []).filter((p: any) => p.is_active).length} productos activos · ${(products ?? []).filter((p: any) => !p.is_active).length} inactivos`}
         actions={
           <>
             <ButtonLink href="/admin/productos/importar" variant="secondary"><Upload />Importar precios</ButtonLink>

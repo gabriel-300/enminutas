@@ -185,10 +185,17 @@ function ProductRow({ p }: { p: Product }) {
 
 export function ProductsAdminClient({ products }: { products: Product[] }) {
   const [search, setSearch] = useState("");
+  const [verInactivos, setVerInactivos] = useState(false);
+
+  // Los inactivos se ocultan por defecto. Los que estaban activos al cargar la página siguen visibles aunque
+  // se desactiven en esta sesión, para poder volver a activarlos; recién se ocultan al recargar.
+  const [idsDeEstaSesion] = useState(() => new Set(products.filter((p) => p.is_active).map((p) => p.id)));
+  const ocultos = products.filter((p) => !p.is_active && !idsDeEstaSesion.has(p.id));
+  const visibles = verInactivos ? products : products.filter((p) => p.is_active || idsDeEstaSesion.has(p.id));
 
   const filtered = search.trim() === ""
-    ? products
-    : products.filter((p) => {
+    ? visibles
+    : visibles.filter((p) => {
         const q = search.toLowerCase();
         return (
           p.name.toLowerCase().includes(q) ||
@@ -201,15 +208,24 @@ export function ProductsAdminClient({ products }: { products: Product[] }) {
 
   return (
     <>
-      <div className="relative mb-5 max-w-[420px]">
-        <Search aria-hidden className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-n-500" />
-        <input
-          type="search"
-          placeholder="Buscar por nombre, SKU, código o línea…"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="h-10 w-full rounded-lg border border-neutral-400 bg-white pl-9 pr-3 text-sm focus:outline-none focus:ring-[3px] focus:ring-brand-500/30 focus:border-brand-700"
-        />
+      <div className="mb-5 flex flex-wrap items-center gap-x-5 gap-y-2">
+        <div className="relative w-full max-w-[420px]">
+          <Search aria-hidden className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-n-500" />
+          <input
+            type="search"
+            placeholder="Buscar por nombre, SKU, código o línea…"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="h-10 w-full rounded-lg border border-neutral-400 bg-white pl-9 pr-3 text-sm focus:outline-none focus:ring-[3px] focus:ring-brand-500/30 focus:border-brand-700"
+          />
+        </div>
+        {(ocultos.length > 0 || verInactivos) && (
+          <label className="flex items-center gap-1.5 text-sm text-neutral-700 cursor-pointer select-none">
+            <input type="checkbox" checked={verInactivos} onChange={(e) => setVerInactivos(e.target.checked)}
+              className="rounded border-neutral-400" />
+            Mostrar inactivos ({products.filter((p) => !p.is_active).length})
+          </label>
+        )}
       </div>
 
       {/* Mobile */}
