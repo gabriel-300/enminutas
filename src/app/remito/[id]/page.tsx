@@ -75,16 +75,6 @@ export default async function RemitoPage({
   const direccionEntrega = [sucursal, direccionCalle].filter(Boolean).join(" — ");
   const customerPhone = o.customer?.phone ?? o.guest_phone ?? "";
 
-  const paymentLabel: Record<string, string> = {
-    bank_transfer:    "Transferencia bancaria",
-    transferencia:    "Transferencia bancaria",
-    mercado_pago:     "Mercado Pago",
-    cash:             "Efectivo",
-    efectivo:         "Efectivo",
-    cheque:           "Cheque",
-    cuenta_corriente: "Cuenta corriente",
-  };
-
   const flete           = Number(o.shipping_fee ?? 0);
   const descuento       = Number(o.discount ?? 0);
   const cargoAdicional  = Number(o.cargo_adicional_monto ?? 0);
@@ -173,16 +163,18 @@ export default async function RemitoPage({
                 <span style={{ color: "#111" }}>{customerPhone}</span>
               </div>
             )}
-            {esMuestra && direccionEntrega && (
+            {direccionEntrega && (
               <div>
                 <span style={{ color: "#666" }}>Dirección: </span>
                 <span style={{ color: "#111" }}>{direccionEntrega}</span>
               </div>
             )}
-            <div>
-              <span style={{ color: "#666" }}>{esMuestra ? "Tipo: " : "Forma de pago: "}</span>
-              <span style={{ color: "#111" }}>{esMuestra ? "Muestra sin cargo" : (paymentLabel[o.payment_method] ?? o.payment_method ?? "—")}</span>
-            </div>
+            {esMuestra && (
+              <div>
+                <span style={{ color: "#666" }}>Tipo: </span>
+                <span style={{ color: "#111" }}>Muestra sin cargo</span>
+              </div>
+            )}
             {o.payment_confirmed_at && (
               <div>
                 <span style={{ color: "#666" }}>Pago confirmado: </span>
@@ -226,6 +218,14 @@ export default async function RemitoPage({
                 </div>
               )}
             </div>
+            {o.despacho_info.transporte && (
+              <div style={{ marginTop: 10, padding: "8px 10px", borderRadius: 6, background: "#f3f4f6" }}>
+                <p style={{ fontSize: 10, fontWeight: 600, color: "#666", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 2 }}>
+                  Nota para logística
+                </p>
+                <p style={{ fontSize: 13, color: "#333", whiteSpace: "pre-wrap" }}>{o.despacho_info.transporte}</p>
+              </div>
+            )}
           </div>
         )}
 

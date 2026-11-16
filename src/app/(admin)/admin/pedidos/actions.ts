@@ -313,6 +313,7 @@ export type DespachoInfo = {
   fecha_entrega: string;
   hora_entrega:  string;
   patente:       string;
+  transporte:    string;
 };
 
 export async function despacharPedidoConAjuste(

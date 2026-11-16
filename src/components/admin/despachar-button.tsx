@@ -24,6 +24,7 @@ export function DespacharButton({ orderId, lines }: { orderId: string; lines: Li
     fecha_entrega: hoy(),
     hora_entrega:  "",
     patente:       "",
+    transporte:    "",
   });
   const [isPending, startTransition] = useTransition();
   const [error,     setError]        = useState<string | null>(null);
@@ -36,7 +37,7 @@ export function DespacharButton({ orderId, lines }: { orderId: string; lines: Li
       quantityDespacho: cantidades[l.lineId] ?? l.quantity,
       unitPrice:        l.unitPrice,
     }));
-    const despachoInfo = (info.repartidor || info.fecha_entrega || info.hora_entrega || info.patente)
+    const despachoInfo = (info.repartidor || info.fecha_entrega || info.hora_entrega || info.patente || info.transporte)
       ? info
       : undefined;
     startTransition(async () => {
@@ -115,6 +116,17 @@ export function DespacharButton({ orderId, lines }: { orderId: string; lines: Li
                   onChange={(e) => setInfo((p) => ({ ...p, patente: e.target.value.toUpperCase() }))}
                   className={inputCls}
                 />
+              </div>
+              <div>
+                <label className="block text-[13px] font-medium text-neutral-800 mb-1.5">Nota para logística</label>
+                <textarea
+                  placeholder="Ej: va con transporte del NEA a Bs. As. y de ahí lo lleva flete Pirulai a Av. Siempre Viva 123"
+                  value={info.transporte}
+                  onChange={(e) => setInfo((p) => ({ ...p, transporte: e.target.value }))}
+                  rows={2}
+                  className={`${inputCls} resize-none`}
+                />
+                <p className="text-[11px] text-neutral-500 mt-1">Se imprime en el remito, para quien transporta el pedido.</p>
               </div>
             </div>
 
