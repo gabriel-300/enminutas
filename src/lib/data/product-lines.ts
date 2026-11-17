@@ -31,16 +31,17 @@ type GroupDef = {
   slugs: string[];
   photo?: string; // archivo en /site/ — sin foto => tarjeta celeste (placeholder)
   fit?: boolean;  // foto con fondo transparente => object-fit: contain
+  coccion?: string; // tiempo real de freidora industrial (POE-HPC-008); sin dato => texto genérico
 };
 
 const PRODUCT_GROUPS: GroupDef[] = [
-  { displayName: "Bastoncitos de mandioca",              line: "mandioca",   slugs: ["bas-mand-2kg", "bocaditos-mandioca-2kg"],                                    photo: "bastoncitos.webp",  fit: true },
-  { displayName: "Noisette de mandioca",                 line: "mandioca",   slugs: ["boc-nois-2kg", "noisette-mandioca-2kg"],                                     photo: "noisette.webp",     fit: true },
-  { displayName: "Croqueta de mandioca y pacú",          line: "croquetas",  slugs: ["bocaditos-pacu-500g", "boc-pacu-2kg", "bocaditos-pacu-2kg"],                 photo: "pacu.webp" },
-  { displayName: "Croqueta de pollo",                     line: "croquetas",  slugs: ["bocaditos-pollo-500g", "boc-pollo-2kg", "bocaditos-pollo-2kg"],              photo: "pollo.webp" },
-  { displayName: "Croqueta de mandioca y cerdo",         line: "croquetas",  slugs: ["boc-cerdo-2kg", "boc-cer-10kg"],                                             photo: "croq-cerdo.webp",   fit: true },
-  { displayName: "Croqueta de mandioca y cordero",       line: "croquetas",  slugs: ["boc-cor-2kg", "boc-cor-10kg"],                                               photo: "croq-cordero.webp", fit: true },
-  { displayName: "Bastoncito de mozzarella",             line: "croquetas",  slugs: ["batoncitos-mozzarella-500g", "boc-mozza-2kg", "batoncitos-mozzarella-2kg"],  photo: "mozzarella.webp" },
+  { displayName: "Bastoncitos de mandioca",              line: "mandioca",   slugs: ["bas-mand-2kg", "bocaditos-mandioca-2kg"],                                    photo: "bastoncitos.webp",  fit: true, coccion: "Freidora 180° · 2 min" },
+  { displayName: "Noisette de mandioca",                 line: "mandioca",   slugs: ["boc-nois-2kg", "noisette-mandioca-2kg"],                                     photo: "noisette.webp",     fit: true, coccion: "Freidora 190° · 3 min" },
+  { displayName: "Croqueta de mandioca y pacú",          line: "croquetas",  slugs: ["bocaditos-pacu-500g", "boc-pacu-2kg", "bocaditos-pacu-2kg"],                 photo: "pacu.webp",                    coccion: "Freidora 180° · 4-5 min" },
+  { displayName: "Croqueta de pollo",                     line: "croquetas",  slugs: ["bocaditos-pollo-500g", "boc-pollo-2kg", "bocaditos-pollo-2kg"],              photo: "pollo.webp",                   coccion: "Freidora 180° · 4-5 min" },
+  { displayName: "Croqueta de mandioca y cerdo",         line: "croquetas",  slugs: ["boc-cerdo-2kg", "boc-cer-10kg"],                                             photo: "croq-cerdo.webp",   fit: true, coccion: "Freidora 180° · 4-5 min" },
+  { displayName: "Croqueta de mandioca y cordero",       line: "croquetas",  slugs: ["boc-cor-2kg", "boc-cor-10kg"],                                               photo: "croq-cordero.webp", fit: true, coccion: "Freidora 180° · 4-5 min" },
+  { displayName: "Bastoncito de mozzarella",             line: "croquetas",  slugs: ["batoncitos-mozzarella-500g", "boc-mozza-2kg", "batoncitos-mozzarella-2kg"],  photo: "mozzarella.webp",               coccion: "Freidora 180° · 3 min" },
   { displayName: "Chipa bocadito premium",               line: "chipas",     slugs: ["chipa-500g"],                                                                photo: "chipa.webp" },
   { displayName: "Chipa bocadito para góndola",          line: "chipas",     slugs: ["chipa-premium-500g"],                                                        photo: "chipa.webp" },
   { displayName: "Chipa long gourmet",                   line: "chipas",     slugs: ["chipa-long-30", "chipa-long-gourmet-x30"],                                   photo: "chipa-long.webp" },
@@ -56,7 +57,7 @@ const PRODUCT_GROUPS: GroupDef[] = [
   { displayName: "Empanada de verdura",                   line: "empanadas",  slugs: ["empanadas-verdura-x36"],                                                    photo: "emp-verdura.webp" },
   { displayName: "Empanada de acelga",                    line: "empanadas",  slugs: ["empanadas-acelga-x36"],                                                     photo: "emp-acelga.webp" },
   { displayName: "Empanada cebolla y mozzarella",         line: "empanadas",  slugs: ["empanadas-cebolla-x36"],                                                     photo: "emp-cebolla.webp" },
-  { displayName: "Hattogu, pancho coreano",               line: "hattogu",    slugs: ["kio-1401"],                                                                  photo: "hattogu-caja.webp", fit: true },
+  { displayName: "Hattogu, pancho coreano",               line: "hattogu",    slugs: ["kio-1401"],                                                                  photo: "hattogu-caja.webp", fit: true, coccion: "Freidora 180° · 5-6 min" },
 ];
 
 // Palabra clave → línea, para productos activos nuevos que todavía no están en PRODUCT_GROUPS.
@@ -76,6 +77,7 @@ export type ProductGroup = {
   line: Linea;
   photo?: string;
   fit?: boolean;
+  coccion?: string;
   presentaciones: string[];
   description: string | null;
   products: Product[];
@@ -116,6 +118,7 @@ export function groupProductsByLine(products: Product[]): ProductGroup[] {
       line,
       photo: def?.photo,
       fit: def?.fit,
+      coccion: def?.coccion,
       presentaciones,
       description,
       products: ps,

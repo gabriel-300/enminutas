@@ -17,7 +17,7 @@ export function ProductDetail({ group, related }: { group: ProductGroup; related
   const spec = [
     { Icon: BoxIcon, label: "Presentación", value: group.presentaciones[0] ?? "Consultar" },
     { Icon: BoxesIcon, label: "Por caja", value: porCaja(group) },
-    { Icon: PotIcon, label: "Cocción", value: "Horno o freidora · 12 min" },
+    { Icon: PotIcon, label: "Cocción", value: group.coccion || "Horno o freidora · 12 min" },
     { Icon: SnowIcon, label: "Conservación", value: "Freezer −18 °C" },
   ];
 
