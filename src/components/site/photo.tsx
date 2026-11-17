@@ -8,13 +8,14 @@ type PhotoProps = {
   fit?: boolean;
   className?: string;
   sizes?: string;
+  priority?: boolean;
 };
 
 // Foto real dentro de una celda .ph (con tapiz de fondo si la imagen tiene transparencia, vía CSS).
-export function Photo({ src, alt, fit, className, sizes = "(max-width: 760px) 50vw, 25vw" }: PhotoProps) {
+export function Photo({ src, alt, fit, className, sizes = "(max-width: 760px) 50vw, 25vw", priority }: PhotoProps) {
   return (
     <div className={cn(s.ph, fit && s.fit, className)}>
-      <Image src={src} alt={alt} fill sizes={sizes} />
+      <Image src={src} alt={alt} fill sizes={sizes} priority={priority} />
     </div>
   );
 }

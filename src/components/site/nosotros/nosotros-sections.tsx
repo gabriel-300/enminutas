@@ -17,9 +17,9 @@ export function NosotrosHeader({ titulo, parrafo1, parrafo2 }: { titulo: string;
           <p>{parrafo2}</p>
         </div>
         <div className={s.pics}>
-          <Photo src="/site/bastoncitos-plato.webp" alt="Bastoncitos de mandioca En Minutas" />
-          <Photo src="/site/chipas-canasta.webp" alt="Chipas En Minutas" />
-          <Photo src="/site/pacu.webp" alt="Bocaditos de mandioca y pacú En Minutas" />
+          <Photo src="/site/bastoncitos-plato.webp" alt="Bastoncitos de mandioca En Minutas" priority />
+          <Photo src="/site/chipas-canasta.webp" alt="Chipas En Minutas" priority />
+          <Photo src="/site/pacu.webp" alt="Bocaditos de mandioca y pacú En Minutas" priority />
         </div>
       </div>
     </section>

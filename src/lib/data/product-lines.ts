@@ -121,7 +121,14 @@ export function groupProductsByLine(products: Product[]): ProductGroup[] {
       products: ps,
     });
   }
-  return result.sort((a, b) => a.name.localeCompare(b.name, "es"));
+  // Orden fijo de la tabla de INSTRUCCIONES.md §4 (no alfabético). Los productos
+  // nuevos sin configurar (match por palabra clave) van al final, por nombre.
+  const orderByName = new Map(PRODUCT_GROUPS.map((g, i) => [g.displayName, i]));
+  return result.sort((a, b) => {
+    const oa = orderByName.get(a.name) ?? Number.MAX_SAFE_INTEGER;
+    const ob = orderByName.get(b.name) ?? Number.MAX_SAFE_INTEGER;
+    return oa !== ob ? oa - ob : a.name.localeCompare(b.name, "es");
+  });
 }
 
 export function findGroupBySlug(groups: ProductGroup[], slug: string): ProductGroup | null {

@@ -31,10 +31,13 @@
   -webkit-font-smoothing: antialiased;
   overflow-x: hidden;
 }
-.root a { color: inherit; text-decoration: none; }
-.root button, .root input { font: inherit; color: inherit; }
+/* Sin ".root button": le ganaba por especificidad al color de .chipOn, .pri, etc. */
+.root button { font: inherit; }
+.root input { font: inherit; color: inherit; }
 .root :focus-visible { outline: 3px solid var(--indigo); outline-offset: 3px; }
-.root h1, .root h2, .root h3 { margin: 0; color: var(--indigo); letter-spacing: -.02em; text-wrap: balance; }
+.root h1, .root h2, .root h3 { margin: 0; color: var(--indigo); letter-spacing: -.02em; text-wrap: balance; font-family: inherit; }
+/* El body global sigue con --color-crema-50 (lo usan admin/checkout); acá lo forzamos a blanco. */
+:global(body:has(.site-public)) { background-color: #FFFFFF; }
 
 .wrap { max-width: var(--wrap); margin: 0 auto; padding-left: max(24px, env(safe-area-inset-left, 0px)); padding-right: max(24px, env(safe-area-inset-right, 0px)); }
 .waIco { width: 22px; height: 22px; flex: none; }

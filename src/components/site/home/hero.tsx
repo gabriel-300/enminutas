@@ -45,6 +45,7 @@ export function Hero({ whatsapp, titulo, subtitulo, stats }: HeroProps) {
               className={s.cut}
               src="/site/noisette-cut.webp"
               alt="Bolsa de Noisette de mandioca En Minutas, 2 kg"
+              priority
               fill
               sizes="(max-width: 760px) 90vw, 45vw"
             />
