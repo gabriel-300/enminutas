@@ -1,4 +1,5 @@
 import { GoogleAds } from "@/components/marketing/google-ads";
+import { SiteShell } from "@/components/site/shell";
 
 export default function MarketingLayout({
   children,
@@ -8,7 +9,7 @@ export default function MarketingLayout({
   return (
     <>
       <GoogleAds />
-      {children}
+      <SiteShell>{children}</SiteShell>
     </>
   );
 }

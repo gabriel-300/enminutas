@@ -1,35 +1,39 @@
 import type { Metadata } from "next";
-import { getCategories, getProducts } from "@/lib/data/products";
-import { CatalogClient } from "@/components/catalog/catalog-client";
+import { createClient } from "@/lib/supabase/server";
+import { getProducts } from "@/lib/data/products";
+import { groupProductsByLine } from "@/lib/data/product-lines";
+import { CatalogView } from "@/components/site/catalog/catalog-view";
 
 export const metadata: Metadata = {
   title: "Catálogo de productos",
   description:
-    "Chipas, empanadas, pizzas y bocaditos ultracongelados. Materia prima del Litoral, cocción Rational. Comprá online con envío a todo el país.",
+    "Ultracongelados a base de mandioca para gastronomía y distribuidores. Listos en 12 minutos, cero mermas. Envíos a todo el país.",
 };
 
-// Revalidar cada 10 minutos para ISR en producción
 export const revalidate = 600;
+
+async function getWhatsapp() {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("contenido_web")
+    .select("valor")
+    .eq("clave", "contacto_whatsapp")
+    .maybeSingle();
+  return data?.valor || undefined;
+}
 
 export default async function TiendaPage({
   searchParams,
 }: {
-  searchParams: Promise<{ categoria?: string; q?: string }>;
+  searchParams: Promise<{ linea?: string }>;
 }) {
-  const params = await searchParams;
-
-  // Fetch en paralelo
-  const [categories, products] = await Promise.all([
-    getCategories(true),
+  const [{ linea }, products, whatsapp] = await Promise.all([
+    searchParams,
     getProducts(undefined, true),
+    getWhatsapp(),
   ]);
 
-  return (
-    <CatalogClient
-      categories={categories}
-      products={products}
-      initialCategory={params.categoria}
-      initialSearch={params.q}
-    />
-  );
+  const groups = groupProductsByLine(products);
+
+  return <CatalogView groups={groups} whatsapp={whatsapp} initialLine={linea} />;
 }

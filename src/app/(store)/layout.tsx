@@ -1,6 +1,5 @@
-import { Navbar } from "@/components/marketing/navbar";
-import { Footer } from "@/components/marketing/footer";
 import { GoogleAds } from "@/components/marketing/google-ads";
+import { SiteShell } from "@/components/site/shell";
 
 export default function StoreLayout({
   children,
@@ -10,9 +9,9 @@ export default function StoreLayout({
   return (
     <>
       <GoogleAds />
-      <Navbar />
-      <main className="min-h-screen bg-crema-50">{children}</main>
-      <Footer />
+      <SiteShell>
+        <div className="min-h-screen bg-crema-50">{children}</div>
+      </SiteShell>
     </>
   );
 }
