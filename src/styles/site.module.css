@@ -170,9 +170,11 @@
 .waPanelHeader span { display: block; font-size: 12px; color: #D6E3EE; }
 .waPanelClose { margin-left: auto; background: none; border: 0; color: #fff; cursor: pointer; font-size: 16px; padding: 4px; }
 .waPanelBody { background: var(--celeste-l); padding: 18px 16px; }
-.waBubble { margin: 0; background: #fff; border-radius: 14px; border-top-left-radius: 2px; padding: 10px 14px; font-size: 14px; color: var(--ink); box-shadow: 0 1px 3px rgba(21,17,94,.1); max-width: 100%; }
+.waInput { width: 100%; resize: none; border: 1.5px solid var(--line); background: #fff; border-radius: 14px; border-top-left-radius: 2px; padding: 10px 14px; font-size: 14px; font-family: inherit; color: var(--ink); box-shadow: 0 1px 3px rgba(21,17,94,.1); }
+.waInput:focus { outline: none; border-color: var(--indigo); }
 .waPanelFooter { padding: 14px 16px; }
 .waPanelFooter .btn { width: 100%; }
+.btnDisabled { opacity: .5; cursor: not-allowed; pointer-events: none; }
 
 /* Catálogo */
 .catH { position: relative; padding: 28px 0 8px; overflow: hidden; }

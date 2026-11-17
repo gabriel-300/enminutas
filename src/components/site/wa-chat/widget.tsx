@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import s from "@/styles/site.module.css";
 import { cn } from "@/lib/utils";
@@ -9,6 +10,13 @@ import { WhatsAppIcon } from "../icons";
 
 export function WaChatWidget({ whatsapp }: { whatsapp?: string }) {
   const { state, openChat, close } = useWaChat();
+  const [draft, setDraft] = useState(state.message);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  // Cada vez que se abre con un mensaje nuevo (otro botón "Pedir"), reinicia el borrador.
+  useEffect(() => {
+    if (state.open) setDraft(state.message);
+  }, [state.open, state.message]);
 
   return (
     <>
@@ -25,15 +33,23 @@ export function WaChatWidget({ whatsapp }: { whatsapp?: string }) {
             </button>
           </div>
           <div className={s.waPanelBody}>
-            <p className={s.waBubble}>{state.message}</p>
+            <textarea
+              ref={textareaRef}
+              className={s.waInput}
+              value={draft}
+              onChange={(e) => setDraft(e.target.value)}
+              rows={3}
+              aria-label="Tu mensaje"
+            />
           </div>
           <div className={s.waPanelFooter}>
             <a
-              className={cn(s.btn, s.pri)}
-              href={waHref(whatsapp, state.message)}
+              className={cn(s.btn, s.pri, !draft.trim() && s.btnDisabled)}
+              href={waHref(whatsapp, draft || state.message)}
               target="_blank"
               rel="noopener"
-              onClick={close}
+              onClick={(e) => (!draft.trim() ? e.preventDefault() : close())}
+              aria-disabled={!draft.trim()}
             >
               <WhatsAppIcon className={s.waIco} />
               Continuar en WhatsApp
