@@ -89,7 +89,6 @@
 .art { position: relative; aspect-ratio: 1/1; max-width: 100%; }
 .art .blob { inset: 4% 0 0 8%; }
 .pack { position: absolute; inset: 4% 2% 0 10%; display: grid; place-items: center; }
-.pack { position: relative; }
 .pack .cut { object-fit: contain; transform: rotate(-7deg); filter: drop-shadow(0 26px 34px rgba(21,17,94,.22)); }
 .hero .rays { right: 2%; top: 2%; }
 
