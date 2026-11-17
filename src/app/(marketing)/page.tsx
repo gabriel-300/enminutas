@@ -9,7 +9,7 @@ import { HowItWorks } from "@/components/site/home/how-it-works";
 export const metadata: Metadata = {
   title: "En Minutas — Ultracongelados a base de mandioca",
   description:
-    "Ultracongelados a base de mandioca para gastronomía y distribuidores. Listos en 12 minutos, cero mermas. Envíos a todo el país.",
+    "Ultracongelados a base de mandioca para gastronomía y distribuidores. Listos en 2 a 6 minutos, cero mermas. Envíos a todo el país.",
   openGraph: {
     images: ["/site/bastoncitos-plato.webp"],
   },
@@ -25,7 +25,7 @@ export default async function LandingPage() {
   const cms = await getContenido();
 
   const STAT_DEFAULTS = [
-    { value: "12 min", label: "del freezer a la mesa" },
+    { value: "2 a 6 min", label: "del freezer a la mesa" },
     { value: "−40 °C", label: "ultracongelado" },
     { value: "Todo el país", label: "envíos con cadena de frío" },
   ];

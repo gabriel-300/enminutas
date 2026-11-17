@@ -20,7 +20,7 @@ export function Hero({ whatsapp, titulo, subtitulo, stats }: HeroProps) {
     <section className={s.hero}>
       <div className={cn(s.wrap, s.inner)}>
         <div>
-          <h1>{titulo || "Ultracongelados a base de mandioca. Listos en 12 minutos."}</h1>
+          <h1>{titulo || "Ultracongelados a base de mandioca. Listos en 2 a 6 minutos."}</h1>
           <p className={s.heroSub}>{subtitulo || "Para restaurantes, hoteles y distribuidores de todo el país. Cero mermas."}</p>
           <div className={s.ctas}>
             <WaLink whatsapp={whatsapp} message={WA_MESSAGES.pedido} className={cn(s.btn, s.pri, s.lg)}>

@@ -56,7 +56,7 @@ const PASOS = [
   { titulo: "Cocción", texto: "Horno Rational: mismo punto en cada lote." },
   { titulo: "Ultracongelado", texto: "Abatidor Irinox a −40 °C." },
   { titulo: "Envío", texto: "Cadena de frío asegurada a todo el país." },
-  { titulo: "Servicio", texto: "Del freezer a la mesa en 12 minutos." },
+  { titulo: "Servicio", texto: "Del freezer a la mesa en 2 a 6 minutos." },
 ];
 
 export function NosotrosProceso() {
@@ -81,7 +81,7 @@ export function NosotrosProceso() {
 
 export function NosotrosCifras({ productos }: { productos: number }) {
   const items = [
-    { value: "12 min", label: "del freezer a la mesa" },
+    { value: "2 a 6 min", label: "del freezer a la mesa" },
     { value: "−40 °C", label: "ultracongelado" },
     { value: String(productos), label: "productos en catálogo" },
     { value: "0", label: "merma por pedido" },

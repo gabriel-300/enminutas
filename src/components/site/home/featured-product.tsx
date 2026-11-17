@@ -15,7 +15,7 @@ export function FeaturedProduct({ whatsapp }: { whatsapp?: string }) {
           <div className={s.tx}>
             <span className={s.k}>Producto insignia</span>
             <h2>Bastoncitos de mandioca</h2>
-            <p>Mandioca precocida, crocante por fuera y suave por dentro. Lista en 12 minutos, al horno o a la freidora. Cero mermas.</p>
+            <p>Mandioca precocida, crocante por fuera y suave por dentro. Lista en 2 minutos en freidora. Cero mermas.</p>
             <WaLink whatsapp={whatsapp} message={WA_MESSAGES.bastoncitos} className={cn(s.btn, s.wht)}>
               <WhatsAppBadgeIcon className={s.waIco} />
               Pedir Bastoncitos por WhatsApp
