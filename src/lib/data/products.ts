@@ -23,6 +23,9 @@ export interface Product {
   price_b2b:         number;
   min_quantity_b2b:  number;
   unit_label:        string;
+  presentacion:      string | null;
+  kg_caja:           number | null;
+  bolsas_caja:       number | null;
   weight_grams:      number | null;
   freezer_required:  boolean;
   is_active:         boolean;
@@ -36,7 +39,8 @@ export interface Product {
 const PRODUCT_SELECT = `
   id, sku, slug, name, short_description, description,
   category_id, price_b2c, price_b2b, min_quantity_b2b,
-  unit_label, weight_grams, freezer_required, is_active,
+  unit_label, presentacion, kg_caja, bolsas_caja,
+  weight_grams, freezer_required, is_active,
   cover_image_url, extra_images, cooking_methods,
   category:categories!category_id (id, slug, name, description, image_url, sort_order, visible_en_tienda)
 `;
@@ -63,6 +67,9 @@ function mapProduct(p: any): Product {
     price_b2b:        Number(p.price_b2b)        || 0,
     min_quantity_b2b: p.min_quantity_b2b          ?? 1,
     unit_label:       p.unit_label,
+    presentacion:     p.presentacion              ?? null,
+    kg_caja:          p.kg_caja != null ? Number(p.kg_caja) : null,
+    bolsas_caja:      p.bolsas_caja                ?? null,
     weight_grams:     p.weight_grams              ?? null,
     freezer_required: p.freezer_required          ?? true,
     is_active:        p.is_active                 ?? true,
