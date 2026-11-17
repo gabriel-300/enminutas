@@ -6,7 +6,8 @@ import s from "@/styles/site.module.css";
 import { cn } from "@/lib/utils";
 import { LINE_FILTERS, photoUrl, type ProductGroup } from "@/lib/data/product-lines";
 import { Photo, NoPhoto } from "../photo";
-import { WA_MESSAGES, waHref } from "../wa-link";
+import { WA_MESSAGES } from "../wa-messages";
+import { useWaChat } from "../wa-chat/context";
 import { SearchIcon, WhatsAppBadgeIcon } from "../icons";
 import { Rays } from "../decor";
 
@@ -14,15 +15,16 @@ function sinTildes(str: string) {
   return str.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
 }
 
-function Card({ group, whatsapp }: { group: ProductGroup; whatsapp?: string }) {
+function Card({ group }: { group: ProductGroup }) {
+  const { openChat } = useWaChat();
   const foto = photoUrl(group.photo);
   const pres = group.presentaciones.join(" · ");
 
   const pedirBtn = (
-    <a className={cn(s.btn, s.pri, s.sm, s.cta)} href={waHref(whatsapp, WA_MESSAGES.producto(group.name))} target="_blank" rel="noopener">
+    <button type="button" className={cn(s.btn, s.pri, s.sm, s.cta)} onClick={() => openChat(WA_MESSAGES.producto(group.name))}>
       <WhatsAppBadgeIcon className={s.waIco} />
       Pedir
-    </a>
+    </button>
   );
 
   if (!foto) {
@@ -51,7 +53,7 @@ function Card({ group, whatsapp }: { group: ProductGroup; whatsapp?: string }) {
   );
 }
 
-export function CatalogView({ groups, whatsapp, initialLine }: { groups: ProductGroup[]; whatsapp?: string; initialLine?: string }) {
+export function CatalogView({ groups, initialLine }: { groups: ProductGroup[]; initialLine?: string }) {
   const [line, setLine] = useState<string>(initialLine && LINE_FILTERS.some((f) => f.key === initialLine) ? initialLine : "todos");
   const [q, setQ] = useState("");
 
@@ -94,7 +96,7 @@ export function CatalogView({ groups, whatsapp, initialLine }: { groups: Product
         {list.length === 0 ? (
           <p className={s.empty}>No encontramos productos con ese nombre. Escribinos por WhatsApp y te ayudamos.</p>
         ) : (
-          list.map((g) => <Card key={g.slug} group={g} whatsapp={whatsapp} />)
+          list.map((g) => <Card key={g.slug} group={g} />)
         )}
       </div>
     </section>

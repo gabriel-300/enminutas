@@ -1,13 +1,18 @@
+"use client";
+
 import Link from "next/link";
 import s from "@/styles/site.module.css";
 import { cn } from "@/lib/utils";
 import { Rays } from "../decor";
 import { Photo, NoPhoto } from "../photo";
-import { WaLink, WA_MESSAGES, waHref } from "../wa-link";
+import { WaLink } from "../wa-link";
+import { WA_MESSAGES } from "../wa-messages";
+import { useWaChat } from "../wa-chat/context";
 import { WhatsAppBadgeIcon, BoxIcon, BoxesIcon, PotIcon, SnowIcon } from "../icons";
 import { LINE_LABELS, photoUrl, porCaja, type ProductGroup } from "@/lib/data/product-lines";
 
-export function ProductDetail({ group, related, whatsapp }: { group: ProductGroup; related: ProductGroup[]; whatsapp?: string }) {
+export function ProductDetail({ group, related }: { group: ProductGroup; related: ProductGroup[] }) {
+  const { openChat } = useWaChat();
   const foto = photoUrl(group.photo);
   const spec = [
     { Icon: BoxIcon, label: "Presentación", value: group.presentaciones[0] ?? "Consultar" },
@@ -33,7 +38,7 @@ export function ProductDetail({ group, related, whatsapp }: { group: ProductGrou
           <span className={s.badge}>Línea {LINE_LABELS[group.line].toLowerCase()}</span>
           <h1>{group.name}</h1>
           <p>{group.description || "Ultracongelado, listo para calentar en pocos minutos."}</p>
-          <WaLink whatsapp={whatsapp} message={WA_MESSAGES.producto(group.name)} className={cn(s.btn, s.pri, s.lg)}>
+          <WaLink message={WA_MESSAGES.producto(group.name)} className={cn(s.btn, s.pri, s.lg)}>
             <WhatsAppBadgeIcon className={s.waIco} />
             Pedir por WhatsApp
           </WaLink>
@@ -66,15 +71,14 @@ export function ProductDetail({ group, related, whatsapp }: { group: ProductGrou
               {rFoto ? <Photo src={rFoto} alt={r.name} fit={r.fit} /> : <NoPhoto label={r.name} pending />}
               <div className={s.bd}>
                 <b>{r.name}</b>
-                <a
+                <button
+                  type="button"
                   className={cn(s.btn, s.pri, s.sm, s.cta)}
-                  href={waHref(whatsapp, WA_MESSAGES.producto(r.name))}
-                  target="_blank"
-                  rel="noopener"
+                  onClick={() => openChat(WA_MESSAGES.producto(r.name))}
                 >
                   <WhatsAppBadgeIcon className={s.waIco} />
                   Pedir
-                </a>
+                </button>
               </div>
             </div>
           );

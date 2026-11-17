@@ -2,7 +2,8 @@ import Image from "next/image";
 import s from "@/styles/site.module.css";
 import { cn } from "@/lib/utils";
 import { Rays } from "../decor";
-import { WaLink, WA_MESSAGES } from "../wa-link";
+import { WaLink } from "../wa-link";
+import { WA_MESSAGES } from "../wa-messages";
 import { WhatsAppBadgeIcon } from "../icons";
 
 export function FeaturedProduct({ whatsapp }: { whatsapp?: string }) {

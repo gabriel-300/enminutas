@@ -6,7 +6,8 @@ import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import s from "@/styles/site.module.css";
 import { cn } from "@/lib/utils";
-import { WaLink, WA_MESSAGES } from "./wa-link";
+import { WaLink } from "./wa-link";
+import { WA_MESSAGES } from "./wa-messages";
 import { ChevronDownIcon, BurgerIcon, WhatsAppBadgeIcon } from "./icons";
 
 const NAV_LINKS = [

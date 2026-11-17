@@ -2,7 +2,8 @@ import Image from "next/image";
 import s from "@/styles/site.module.css";
 import { cn } from "@/lib/utils";
 import { Rays, Blob } from "../decor";
-import { WaLink, WA_MESSAGES } from "../wa-link";
+import { WaLink } from "../wa-link";
+import { WA_MESSAGES } from "../wa-messages";
 import { WhatsAppBadgeIcon } from "../icons";
 
 type Stat = { value: string; label: string };

@@ -2,7 +2,8 @@ import Link from "next/link";
 import Image from "next/image";
 import s from "@/styles/site.module.css";
 import { cn } from "@/lib/utils";
-import { WaLink, WA_MESSAGES } from "./wa-link";
+import { WaLink } from "./wa-link";
+import { WA_MESSAGES } from "./wa-messages";
 import { WhatsAppIcon } from "./icons";
 
 type FooterProps = {

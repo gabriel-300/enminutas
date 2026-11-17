@@ -1,24 +1,15 @@
-// Único punto de armado de links de WhatsApp del sitio público.
-// El tracking de conversión de Google Ads es un listener global (GoogleAds,
-// en src/components/marketing/google-ads.tsx) que ya captura cualquier
-// <a href> con "wa.me" — alcanza con que todo botón use este componente.
+"use client";
 
-export const WA_DEFAULT = "5493765017944";
+import { useWaChat } from "./wa-chat/context";
 
-export const WA_MESSAGES = {
-  pedido: "Hola, quería hacer un pedido de productos En Minutas 🛒",
-  consulta: "Hola, quería consultar sobre los productos de En Minutas 👋",
-  mayorista: "Hola, quería consultar sobre condiciones mayoristas de En Minutas 🏪",
-  producto: (nombre: string) => `Hola, quería consultar por ${nombre} de En Minutas 🛒`,
-  bastoncitos: "Hola, quería consultar sobre los Bastoncitos de mandioca de En Minutas 🛒",
-} as const;
-
-export function waHref(whatsapp: string | undefined, message: string) {
-  const numero = (whatsapp || WA_DEFAULT).replace(/[^\d]/g, "");
-  return `https://wa.me/${numero}?text=${encodeURIComponent(message)}`;
-}
+// Único punto de armado de mensajes de WhatsApp del sitio público. Los botones
+// "Pedir" abren el panel de chat en la página (ver wa-chat/); el único <a>
+// real hacia wa.me vive en WaChatWidget — ahí es donde el listener global de
+// Google Ads (src/components/marketing/google-ads.tsx) sigue detectando la
+// conversión, solo que ahora recién al confirmar, no al primer click.
 
 type WaLinkProps = {
+  /** @deprecated el número ya lo resuelve WaChatWidget desde el contexto */
   whatsapp?: string;
   message: string;
   className?: string;
@@ -26,10 +17,11 @@ type WaLinkProps = {
   "aria-label"?: string;
 };
 
-export function WaLink({ whatsapp, message, className, children, ...rest }: WaLinkProps) {
+export function WaLink({ whatsapp: _whatsapp, message, className, children, ...rest }: WaLinkProps) {
+  const { openChat } = useWaChat();
   return (
-    <a href={waHref(whatsapp, message)} target="_blank" rel="noopener" className={className} {...rest}>
+    <button type="button" className={className} onClick={() => openChat(message)} {...rest}>
       {children}
-    </a>
+    </button>
   );
 }

@@ -2,7 +2,8 @@ import { Nunito } from "next/font/google";
 import { createClient } from "@/lib/supabase/server";
 import { Header } from "./header";
 import { Footer } from "./footer";
-import { WhatsAppFab } from "./whatsapp-fab";
+import { WaChatProvider } from "./wa-chat/context";
+import { WaChatWidget } from "./wa-chat/widget";
 import s from "@/styles/site.module.css";
 
 const nunito = Nunito({
@@ -24,10 +25,12 @@ export async function SiteShell({ children }: { children: React.ReactNode }) {
 
   return (
     <div className={`site-public ${nunito.className} ${s.root}`}>
-      <Header whatsapp={whatsapp} />
-      <main>{children}</main>
-      <Footer whatsapp={whatsapp} email={cms.contacto_email || undefined} instagram={cms.contacto_instagram || undefined} />
-      <WhatsAppFab whatsapp={whatsapp} />
+      <WaChatProvider>
+        <Header whatsapp={whatsapp} />
+        <main>{children}</main>
+        <Footer whatsapp={whatsapp} email={cms.contacto_email || undefined} instagram={cms.contacto_instagram || undefined} />
+        <WaChatWidget whatsapp={whatsapp} />
+      </WaChatProvider>
     </div>
   );
 }

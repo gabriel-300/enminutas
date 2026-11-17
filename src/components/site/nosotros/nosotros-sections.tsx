@@ -1,7 +1,8 @@
 import s from "@/styles/site.module.css";
 import { cn } from "@/lib/utils";
 import { Photo } from "../photo";
-import { WaLink, WA_MESSAGES } from "../wa-link";
+import { WaLink } from "../wa-link";
+import { WA_MESSAGES } from "../wa-messages";
 import { WhatsAppBadgeIcon, StoreIcon, PotIcon, SnowIcon, ClocheIcon } from "../icons";
 
 type Pilar = { titulo: string; body: string };
