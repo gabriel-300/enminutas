@@ -76,7 +76,7 @@ export async function aprobarDevolucion(id: string): Promise<{ error?: string }>
     if (!dev) return { error: "Devolución no encontrada" };
     if (dev.estado !== "solicitada") return { error: "Solo se pueden aprobar devoluciones solicitadas" };
 
-    // Crear movimiento en cuenta corriente (crédito a favor del cliente)
+    // Movimiento histórico en cc_movimientos (ya no define la deuda, se deja por trazabilidad)
     const { data: mov, error: movErr } = await db
       .from("cc_movimientos")
       .insert({
@@ -93,12 +93,30 @@ export async function aprobarDevolucion(id: string): Promise<{ error?: string }>
 
     if (movErr) return { error: movErr.message };
 
+    // Crédito real: un ajuste interno aprobado, que sí descuenta de deuda_clientes(). La
+    // aprobación de la devolución ya es la autorización; no hace falta una segunda.
+    const { error: errAjuste } = await db.from("ajustes_internos").insert({
+      tipo:         "credito",
+      cliente_id:   dev.cliente_id,
+      referencia:   `Devolución DEV-${id.slice(0, 8).toUpperCase()}`,
+      monto:        Math.abs(Number(dev.monto_total)),
+      motivo:       `Devolución aprobada: ${dev.motivo}`,
+      estado:       "aprobado",
+      creado_por:   user.id,
+      aprobado_por: user.id,
+      aprobado_at:  new Date().toISOString(),
+    });
+    if (errAjuste) return { error: errAjuste.message };
+
     const { error } = await db
       .from("devoluciones")
       .update({ estado: "aprobada", cc_movimiento_id: mov.id })
       .eq("id", id);
 
     if (error) return { error: error.message };
+
+    revalidatePath("/admin/cuentas-corrientes");
+    revalidatePath("/admin/ajustes-internos");
 
     revalidatePath("/admin/devoluciones");
     revalidatePath(`/admin/devoluciones/${id}`);
