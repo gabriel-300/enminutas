@@ -3,18 +3,27 @@
 import { useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { vincularPresentacion, desvincularPresentacion, darRecetaPropia, crearPresentacion } from "@/app/(admin)/admin/cocina/recetas/actions";
+import {
+  vincularPresentacion, desvincularPresentacion, darRecetaPropia, crearPresentacion,
+  fusionarPresentacion, guardarEnvase,
+} from "@/app/(admin)/admin/cocina/recetas/actions";
+
+export type EnvaseFila = { insumo_id: string; cantidad_por_caja: number };
 
 export type PresentacionVinculada = {
   id: string; name: string; sku: string | null; unit_label: string | null;
-  kg_caja: number | null; cajasPorLote: number | null;
+  kg_caja: number | null; cajasPorLote: number | null; envase: EnvaseFila[];
 };
 
 export type ProductoVinculable = {
   id: string; name: string; sku: string | null; unit_label: string | null; kg_caja: number | null;
 };
 
+export type InsumoOpcion = { id: string; nombre: string; unidad: string; precio_unitario: number };
+
 const fmt = (n: number) => new Intl.NumberFormat("es-AR", { maximumFractionDigits: 2 }).format(n);
+const fmtARS = (n: number) =>
+  new Intl.NumberFormat("es-AR", { style: "currency", currency: "ARS", maximumFractionDigits: 2 }).format(n);
 
 const norm = (s: string) => s.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "");
 
@@ -30,21 +39,27 @@ const num = (s: string) => parseFloat(s.replace(",", "."));
 const inputCls = "w-full px-3 py-2 text-sm border border-neutral-400 rounded-lg bg-white focus:outline-none focus:ring-[3px] focus:ring-brand-500/30 focus:border-brand-700 disabled:opacity-50";
 
 export function PresentacionesReceta({
-  baseId, baseName, baseKgCaja, baseLineaId, lineas, puedeCrear, vinculadas, candidatos,
+  baseId, baseName, baseKgCaja, baseLineaId, lineas, puedeCrear, puedeFusionar, vinculadas, candidatos,
+  fusionables, insumos, envaseBase,
 }: {
-  baseId:      string;
-  baseName:    string;
-  baseKgCaja:  number | null;
-  baseLineaId: number | null;
-  lineas:      LineaOpcion[];
-  puedeCrear:  boolean;
-  vinculadas:  PresentacionVinculada[];
-  candidatos:  ProductoVinculable[];
+  baseId:        string;
+  baseName:      string;
+  baseKgCaja:    number | null;
+  baseLineaId:   number | null;
+  lineas:        LineaOpcion[];
+  puedeCrear:    boolean;
+  puedeFusionar: boolean;
+  vinculadas:    PresentacionVinculada[];
+  candidatos:    ProductoVinculable[];
+  fusionables:   ProductoVinculable[];
+  insumos:       InsumoOpcion[];
+  envaseBase:    EnvaseFila[];
 }) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
   const [elegido, setElegido] = useState("");
+  const fusionablesSet = new Set(fusionables.map(f => f.id));
 
   const [creando, setCreando] = useState(false);
   const [form, setForm] = useState({ ...FORM_VACIO, name: baseName, linea_id: baseLineaId ? String(baseLineaId) : "" });
@@ -79,14 +94,24 @@ export function PresentacionesReceta({
   const clave = norm(baseName).split(/\s+/)[0] ?? "";
   const relacionados = candidatos.filter(c => clave && norm(c.name).includes(clave));
   const otros = candidatos.filter(c => !relacionados.includes(c));
+  const fusRelacionados = fusionables.filter(c => clave && norm(c.name).includes(clave));
+  const fusOtros = fusionables.filter(c => !fusRelacionados.includes(c));
   const etiqueta = (c: ProductoVinculable) =>
     `${c.name}${c.unit_label ? ` · ${c.unit_label}` : ""}${c.sku ? ` (${c.sku})` : ""}${c.kg_caja ? "" : " — sin kg/caja"}`;
 
   function vincular() {
     if (!elegido) return;
     setError(null);
+    const esFusion = fusionablesSet.has(elegido);
+    if (esFusion) {
+      const nombre = fusionables.find(f => f.id === elegido)?.name ?? "";
+      if (!confirm(
+        `"${nombre}" tiene receta propia. Al fusionarla se descarta esa receta (pasos e ingredientes) ` +
+        `y usa la de "${baseName}" de ahora en más. Su envase (si lo cargaste) no se pierde. ¿Continuar?`
+      )) return;
+    }
     startTransition(async () => {
-      const res = await vincularPresentacion(baseId, elegido);
+      const res = esFusion ? await fusionarPresentacion(baseId, elegido) : await vincularPresentacion(baseId, elegido);
       if ("error" in res) setError(res.error);
       else { setElegido(""); router.refresh(); }
     });
@@ -117,7 +142,9 @@ export function PresentacionesReceta({
       <div className="px-5 py-4 border-b border-neutral-100">
         <p className="text-sm font-semibold text-neutral-700">Presentaciones que usan esta receta</p>
         <p className="text-xs text-neutral-600 mt-0.5">
-          Al producir podés elegir en cuál sale el lote. Las cajas se calculan por peso (kg por caja de cada producto). Si una presentación necesita ingredientes distintos, dale «Receta propia».
+          Al producir podés elegir en cuál sale el lote. Las cajas se calculan por peso (kg por caja de cada producto).
+          Si una presentación necesita <em>producción</em> distinta (pasos o ingredientes), dale «Receta propia».
+          Si solo cambia el envase (bolsa, caja, etiqueta), cargalo abajo en «Envase» de cada una.
         </p>
       </div>
 
@@ -127,6 +154,10 @@ export function PresentacionesReceta({
         </p>
       )}
 
+      <div className="px-5 py-3 border-b border-neutral-100">
+        <EnvaseEditor productId={baseId} productName={baseName} insumos={insumos} initial={envaseBase} />
+      </div>
+
       {vinculadas.length === 0 ? (
         <p className="px-5 py-4 text-sm text-neutral-600">
           Todavía no hay otras presentaciones vinculadas. Se produce solo el producto de esta receta.
@@ -134,27 +165,30 @@ export function PresentacionesReceta({
       ) : (
         <div className="divide-y divide-neutral-100">
           {vinculadas.map(p => (
-            <div key={p.id} className="px-5 py-3 flex items-center gap-3">
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-neutral-800 truncate">{p.name}</p>
-                <p className="text-xs text-neutral-600">
-                  {p.sku && <span className="font-mono mr-2">{p.sku}</span>}
-                  {p.unit_label}
-                  {p.kg_caja ? ` · ${fmt(p.kg_caja)} kg/caja` : ""}
+            <div key={p.id} className="px-5 py-3">
+              <div className="flex items-center gap-3">
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-neutral-800 truncate">{p.name}</p>
+                  <p className="text-xs text-neutral-600">
+                    {p.sku && <span className="font-mono mr-2">{p.sku}</span>}
+                    {p.unit_label}
+                    {p.kg_caja ? ` · ${fmt(p.kg_caja)} kg/caja` : ""}
+                  </p>
+                </div>
+                <p className="text-xs text-neutral-600 tabular-nums shrink-0">
+                  {p.cajasPorLote !== null ? `1 lote = ${fmt(p.cajasPorLote)} cajas` : "falta kg/caja"}
                 </p>
+                <button type="button" onClick={() => independizar(p.id, p.name)} disabled={isPending}
+                  title="Crea una copia de esta receta para que la presentación tenga la suya"
+                  className="text-xs text-tierra-700 hover:underline disabled:opacity-40 shrink-0">
+                  Receta propia
+                </button>
+                <button type="button" onClick={() => desvincular(p.id, p.name)} disabled={isPending}
+                  className="text-xs text-danger hover:underline disabled:opacity-40 shrink-0">
+                  Quitar
+                </button>
               </div>
-              <p className="text-xs text-neutral-600 tabular-nums shrink-0">
-                {p.cajasPorLote !== null ? `1 lote = ${fmt(p.cajasPorLote)} cajas` : "falta kg/caja"}
-              </p>
-              <button type="button" onClick={() => independizar(p.id, p.name)} disabled={isPending}
-                title="Crea una copia de esta receta para que la presentación tenga la suya"
-                className="text-xs text-tierra-700 hover:underline disabled:opacity-40 shrink-0">
-                Receta propia
-              </button>
-              <button type="button" onClick={() => desvincular(p.id, p.name)} disabled={isPending}
-                className="text-xs text-danger hover:underline disabled:opacity-40 shrink-0">
-                Quitar
-              </button>
+              <EnvaseEditor productId={p.id} productName={p.name} insumos={insumos} initial={p.envase} />
             </div>
           ))}
         </div>
@@ -164,9 +198,9 @@ export function PresentacionesReceta({
         <div className="flex items-center gap-2">
           <select value={elegido} onChange={e => setElegido(e.target.value)} disabled={isPending}
             className="flex-1 min-w-0 truncate px-3 py-2 text-sm border border-neutral-400 rounded-lg bg-white focus:outline-none focus:ring-[3px] focus:ring-brand-500/30 focus:border-brand-700 disabled:opacity-50">
-            <option value="">— Agregar presentación (producto sin receta propia) —</option>
+            <option value="">— Agregar presentación —</option>
             {relacionados.length > 0 && (
-              <optgroup label={`Relacionados con ${baseName}`}>
+              <optgroup label={`Relacionados con ${baseName}, sin receta propia`}>
                 {relacionados.map(c => <option key={c.id} value={c.id}>{etiqueta(c)}</option>)}
               </optgroup>
             )}
@@ -175,15 +209,25 @@ export function PresentacionesReceta({
                 {otros.map(c => <option key={c.id} value={c.id}>{etiqueta(c)}</option>)}
               </optgroup>
             )}
+            {puedeFusionar && fusRelacionados.length > 0 && (
+              <optgroup label={`Relacionados con ${baseName}, con receta propia (se fusiona)`}>
+                {fusRelacionados.map(c => <option key={c.id} value={c.id}>{etiqueta(c)}</option>)}
+              </optgroup>
+            )}
+            {puedeFusionar && fusOtros.length > 0 && (
+              <optgroup label="Otros productos con receta propia (se fusiona)">
+                {fusOtros.map(c => <option key={c.id} value={c.id}>{etiqueta(c)}</option>)}
+              </optgroup>
+            )}
           </select>
           <button type="button" onClick={vincular} disabled={isPending || !elegido}
             className="shrink-0 px-4 py-2 rounded-xl border border-neutral-200 text-sm text-neutral-700 hover:bg-neutral-50 disabled:opacity-50 transition-colors">
-            Vincular
+            {elegido && fusionablesSet.has(elegido) ? "Fusionar" : "Vincular"}
           </button>
         </div>
-        {relacionados.length === 0 && (
+        {relacionados.length === 0 && fusRelacionados.length === 0 && (
           <p className="text-xs text-warning">
-            No hay productos sin receta relacionados con «{baseName}».
+            No hay productos relacionados con «{baseName}» sin vincular.
           </p>
         )}
         {error && <p className="text-sm text-danger">{error}</p>}
@@ -272,6 +316,100 @@ export function PresentacionesReceta({
           </div>
         )}
       </div>
+    </div>
+  );
+}
+
+// Envase (bolsa, caja, etiqueta) de una presentación puntual. Se descuenta por caja producida,
+// no por lote de receta, para que varias presentaciones compartan receta con envases distintos.
+function EnvaseEditor({
+  productId, productName, insumos, initial,
+}: {
+  productId:   string;
+  productName: string;
+  insumos:     InsumoOpcion[];
+  initial:     EnvaseFila[];
+}) {
+  const router = useRouter();
+  const [abierto, setAbierto] = useState(false);
+  const [isPending, startTransition] = useTransition();
+  const [filas, setFilas] = useState<{ insumo_id: string; cantidadStr: string }[]>(
+    initial.length > 0
+      ? initial.map(i => ({ insumo_id: i.insumo_id, cantidadStr: String(i.cantidad_por_caja) }))
+      : [{ insumo_id: "", cantidadStr: "" }]
+  );
+  const [error, setError] = useState<string | null>(null);
+  const [ok, setOk] = useState(false);
+
+  const insumoMap = Object.fromEntries(insumos.map(i => [i.id, i]));
+  const costoTotal = filas.reduce((s, f) => {
+    const ins = insumoMap[f.insumo_id];
+    const cant = parseFloat((f.cantidadStr || "0").replace(",", "."));
+    return s + (ins && cant > 0 ? cant * ins.precio_unitario : 0);
+  }, 0);
+
+  function guardar() {
+    setError(null); setOk(false);
+    const items = filas
+      .filter(f => f.insumo_id && parseFloat((f.cantidadStr || "0").replace(",", ".")) > 0)
+      .map(f => ({ insumo_id: f.insumo_id, cantidad_por_caja: parseFloat(f.cantidadStr.replace(",", ".")) }));
+    startTransition(async () => {
+      const res = await guardarEnvase(productId, items);
+      if ("error" in res) setError(res.error);
+      else { setOk(true); router.refresh(); }
+    });
+  }
+
+  if (!abierto) {
+    return (
+      <button type="button" onClick={() => setAbierto(true)}
+        className="mt-1.5 text-xs text-neutral-600 hover:underline">
+        Envase{initial.length > 0 ? ` (${initial.length})` : ""}
+      </button>
+    );
+  }
+
+  return (
+    <div className="mt-2 pl-3 border-l-2 border-neutral-200 space-y-2">
+      <p className="text-xs font-medium text-neutral-700">Envase de {productName} (por caja producida)</p>
+      {filas.map((f, i) => {
+        const ins = insumoMap[f.insumo_id];
+        return (
+          <div key={i} className="flex items-center gap-2">
+            <select value={f.insumo_id} disabled={isPending}
+              onChange={e => setFilas(p => p.map((x, idx) => idx === i ? { ...x, insumo_id: e.target.value } : x))}
+              className="flex-1 min-w-0 px-2 py-1.5 text-xs border border-neutral-400 rounded-lg bg-white focus:outline-none focus:ring-[3px] focus:ring-brand-500/30 focus:border-brand-700 disabled:opacity-50">
+              <option value="">— Insumo —</option>
+              {insumos.map(o => <option key={o.id} value={o.id}>{o.nombre} ({o.unidad})</option>)}
+            </select>
+            <input type="text" inputMode="decimal" placeholder="0" value={f.cantidadStr} disabled={isPending}
+              onChange={e => setFilas(p => p.map((x, idx) => idx === i ? { ...x, cantidadStr: e.target.value } : x))}
+              className="w-20 px-2 py-1.5 text-xs border border-neutral-400 rounded-lg text-center focus:outline-none focus:ring-[3px] focus:ring-brand-500/30 focus:border-brand-700 disabled:opacity-50" />
+            {ins && <span className="text-xs text-neutral-600 font-mono w-8 shrink-0">{ins.unidad}</span>}
+            <button type="button" onClick={() => setFilas(p => p.filter((_, idx) => idx !== i))} disabled={isPending}
+              className="size-6 flex items-center justify-center rounded-lg border border-danger-border text-danger hover:bg-danger-bg disabled:opacity-30 text-xs shrink-0">
+              ✕
+            </button>
+          </div>
+        );
+      })}
+      <div className="flex items-center gap-2 flex-wrap">
+        <button type="button" onClick={() => setFilas(p => [...p, { insumo_id: "", cantidadStr: "" }])} disabled={isPending}
+          className="px-2.5 py-1 text-xs font-medium rounded-lg border border-neutral-200 text-neutral-600 hover:bg-neutral-50 disabled:opacity-50 transition-colors">
+          + Insumo
+        </button>
+        <button type="button" onClick={guardar} disabled={isPending}
+          className="px-3 py-1 text-xs font-semibold rounded-lg bg-tierra-700 text-white hover:bg-tierra-800 disabled:opacity-50 transition-colors">
+          {isPending ? "Guardando…" : "Guardar envase"}
+        </button>
+        <button type="button" onClick={() => setAbierto(false)} disabled={isPending}
+          className="text-xs text-neutral-500 hover:underline disabled:opacity-40">
+          Cerrar
+        </button>
+        {costoTotal > 0 && <span className="text-xs text-neutral-600 ml-auto">{fmtARS(costoTotal)} / caja</span>}
+      </div>
+      {error && <p className="text-xs text-danger">{error}</p>}
+      {ok && <p className="text-xs text-success">Envase guardado.</p>}
     </div>
   );
 }

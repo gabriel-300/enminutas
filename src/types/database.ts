@@ -1993,6 +1993,45 @@ export type Database = {
           },
         ]
       }
+      product_packaging: {
+        Row: {
+          cantidad_por_caja: number
+          created_at: string
+          id: string
+          insumo_id: string
+          product_id: string
+        }
+        Insert: {
+          cantidad_por_caja: number
+          created_at?: string
+          id?: string
+          insumo_id: string
+          product_id: string
+        }
+        Update: {
+          cantidad_por_caja?: number
+          created_at?: string
+          id?: string
+          insumo_id?: string
+          product_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_packaging_insumo_id_fkey"
+            columns: ["insumo_id"]
+            isOneToOne: false
+            referencedRelation: "insumos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "product_packaging_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       product_variants: {
         Row: {
           id: string

@@ -253,8 +253,16 @@ export async function darRecetaPropia(productId: string): Promise<ActionResult> 
 }
 
 // Costo de materia prima por unidad (bolsa/cajita) de una presentación: costo del lote de la receta base,
-// dividido por su rinde, prorrateado por peso (factor) y por bolsas de la caja. null si no hay receta.
-async function costoUnidadDesdeReceta(db: any, baseId: string, factor: number, bolsasCaja: number): Promise<number | null> {
+// dividido por su rinde, prorrateado por peso (factor) y por bolsas de la caja, más el envase propio de
+// la presentación (si tiene uno cargado en product_packaging; se consume por caja, no por lote).
+// null si no hay receta. productId en null omite el envase (se usa al crear, antes de que el producto exista).
+async function costoUnidadDesdeReceta(
+  db: any,
+  productId: string | null,
+  baseId: string,
+  factor: number,
+  bolsasCaja: number,
+): Promise<number | null> {
   const { data: recipe } = await db
     .from("recipes")
     .select("id, yield_cajas, ingredients:recipe_ingredients(cantidad, insumo:insumos!insumo_id(precio_unitario))")
@@ -268,7 +276,96 @@ async function costoUnidadDesdeReceta(db: any, baseId: string, factor: number, b
   }, 0);
 
   const yieldCajas = Number(recipe.yield_cajas) || 1;
-  return ((costoLote / yieldCajas) * factor) / (bolsasCaja > 0 ? bolsasCaja : 1);
+  const bolsas = bolsasCaja > 0 ? bolsasCaja : 1;
+  const costoProduccionUnidad = ((costoLote / yieldCajas) * factor) / bolsas;
+
+  let costoEnvasePorCaja = 0;
+  if (productId) {
+    const { data: envase } = await db
+      .from("product_packaging")
+      .select("cantidad_por_caja, insumo:insumos!insumo_id(precio_unitario)")
+      .eq("product_id", productId);
+    costoEnvasePorCaja = (envase ?? []).reduce((s: number, e: any) => {
+      const precio = Number(e.insumo?.precio_unitario ?? 0);
+      return s + Number(e.cantidad_por_caja) * precio;
+    }, 0);
+  }
+
+  return costoProduccionUnidad + costoEnvasePorCaja / bolsas;
+}
+
+export type EnvaseItem = { insumo_id: string; cantidad_por_caja: number };
+
+// Envase (bolsa, caja, etiqueta) de una presentación puntual: se descuenta por caja producida,
+// no por lote de receta, para que varias presentaciones puedan compartir receta con envases distintos.
+export async function guardarEnvase(productId: string, items: EnvaseItem[]): Promise<ActionResult> {
+  await requireRole("admin", "produccion");
+  if (!productId) return { error: "Falta el producto" };
+  const db = createAdminClient() as any;
+
+  const limpio = items
+    .map((i) => ({ insumo_id: (i.insumo_id ?? "").trim(), cantidad_por_caja: Number(i.cantidad_por_caja) }))
+    .filter((i) => i.insumo_id && i.cantidad_por_caja > 0);
+
+  if (new Set(limpio.map((i) => i.insumo_id)).size !== limpio.length) {
+    return { error: "No repitas el mismo insumo en el envase" };
+  }
+
+  const { error: delErr } = await db.from("product_packaging").delete().eq("product_id", productId);
+  if (delErr) return { error: delErr.message };
+
+  if (limpio.length > 0) {
+    const { error } = await db
+      .from("product_packaging")
+      .insert(limpio.map((i) => ({ product_id: productId, insumo_id: i.insumo_id, cantidad_por_caja: i.cantidad_por_caja })));
+    if (error) return { error: error.message };
+  }
+
+  revalidateAll();
+  revalidatePath("/admin/cocina/recetas");
+  return { ok: true };
+}
+
+// Fusiona una presentación que tiene receta propia con la del producto base: descarta su receta
+// (el envase vive aparte, en product_packaging, y no se toca) y reasigna el historial de producción
+// a la receta base. Pensado para el caso típico: presentaciones duplicaban la receta solo por el envase.
+export async function fusionarPresentacion(baseProductId: string, productId: string): Promise<ActionResult> {
+  await requireRole("admin");
+  if (!baseProductId || !productId) return { error: "Faltan datos" };
+  if (baseProductId === productId) return { error: "Un producto no puede fusionarse consigo mismo" };
+
+  const db = createAdminClient() as any;
+
+  const [{ data: base }, { data: recetaBase }, { data: pres }, { data: recetaPres }, { count: usadaPorOtros }] = await Promise.all([
+    db.from("products").select("id, kg_caja, receta_producto_id").eq("id", baseProductId).maybeSingle(),
+    db.from("recipes").select("id").eq("product_id", baseProductId).maybeSingle(),
+    db.from("products").select("id, name, kg_caja, receta_producto_id").eq("id", productId).maybeSingle(),
+    db.from("recipes").select("id").eq("product_id", productId).maybeSingle(),
+    db.from("products").select("id", { count: "exact", head: true }).eq("receta_producto_id", productId),
+  ]);
+
+  if (!base || !pres) return { error: "Producto no encontrado" };
+  if (!recetaBase) return { error: "El producto base no tiene receta cargada" };
+  if (base.receta_producto_id) return { error: "El producto base usa la receta de otro producto" };
+  if (!(Number(base.kg_caja) > 0)) return { error: "Cargá el kg por caja del producto base (en Productos) para poder calcular equivalencias" };
+  if (!(Number(pres.kg_caja) > 0)) return { error: `Cargá el kg por caja de "${pres.name}" (en Productos) para poder calcular equivalencias` };
+  if (!recetaPres) return { error: `"${pres.name}" no tiene receta propia: usá «Vincular» en vez de «Fusionar»` };
+  if (usadaPorOtros && usadaPorOtros > 0) return { error: `"${pres.name}" es la receta base de otras presentaciones: desvinculalas primero` };
+
+  const { error: errHist } = await db.from("produccion").update({ receta_id: recetaBase.id }).eq("receta_id", recetaPres.id);
+  if (errHist) return { error: `No se pudo migrar el historial de producción: ${errHist.message}` };
+
+  const { error: errDel } = await db.from("recipes").delete().eq("id", recetaPres.id);
+  if (errDel) return { error: `No se pudo borrar la receta propia: ${errDel.message}` };
+
+  const { error: errLink } = await db.from("products").update({ receta_producto_id: baseProductId }).eq("id", productId);
+  if (errLink) return { error: errLink.message };
+
+  revalidateAll();
+  revalidatePath(`/admin/cocina/recetas/${baseProductId}`);
+  revalidatePath("/admin/cocina/produccion");
+  revalidatePath("/admin/cocina/planificador");
+  return { ok: true };
 }
 
 export type NuevaPresentacion = {
@@ -315,7 +412,7 @@ export async function crearPresentacion(
 
   const costo = input.costo !== null && input.costo > 0
     ? input.costo
-    : await costoUnidadDesdeReceta(db, baseProductId, factor, input.bolsas_caja);
+    : await costoUnidadDesdeReceta(db, null, baseProductId, factor, input.bolsas_caja);
 
   const { data: creado, error } = await db
     .from("products")
@@ -382,7 +479,7 @@ export async function sincronizarCostoProducto(productId: string): Promise<Actio
     factor = f;
   }
 
-  const costoUnidad = await costoUnidadDesdeReceta(db, baseId, factor, Number(product?.bolsas_caja ?? 1) || 1);
+  const costoUnidad = await costoUnidadDesdeReceta(db, productId, baseId, factor, Number(product?.bolsas_caja ?? 1) || 1);
   if (costoUnidad === null) return { error: "No hay receta cargada para este producto." };
 
   const { error } = await db.from("products").update({ costo: costoUnidad }).eq("id", productId);

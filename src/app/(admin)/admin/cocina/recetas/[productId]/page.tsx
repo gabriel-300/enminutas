@@ -52,16 +52,18 @@ export default async function RecetaEditorPage({
   // Una presentación no tiene receta propia: se edita en el producto base
   if (product.receta_producto_id) redirect(`/admin/cocina/recetas/${product.receta_producto_id}`);
 
-  // Presentaciones vinculadas y productos que se podrían vincular (solo si ya hay receta)
+  // Presentaciones vinculadas y productos que se podrían vincular/fusionar (solo si ya hay receta)
   let vinculadas: PresentacionVinculada[] = [];
   let candidatos: ProductoVinculable[] = [];
+  let fusionables: ProductoVinculable[] = [];
   let lineas: LineaOpcion[] = [];
+  let envaseBase: { insumo_id: string; cantidad_por_caja: number }[] = [];
   if (recipeRaw?.id) {
     const { data: lineasRaw } = await adminClient.from("lineas_producto").select("id, nombre").order("id");
     lineas = (lineasRaw ?? []) as LineaOpcion[];
 
     const factorDe = (kg: number | string | null) => factorABase(kg, product.kg_caja);
-    const [{ data: linked }, { data: activos }, { data: conReceta }] = await Promise.all([
+    const [{ data: linked }, { data: activos }, { data: conReceta }, { data: basesEnUso }, { data: envasePropio }] = await Promise.all([
       adminClient
         .from("products")
         .select("id, name, sku, unit_label, kg_caja")
@@ -75,19 +77,39 @@ export default async function RecetaEditorPage({
         .neq("id", productId)
         .order("name"),
       adminClient.from("recipes").select("product_id"),
+      adminClient.from("products").select("receta_producto_id").not("receta_producto_id", "is", null),
+      adminClient.from("product_packaging").select("insumo_id, cantidad_por_caja").eq("product_id", productId),
     ]);
+
+    const { data: envaseVinculadas } = linked?.length
+      ? await adminClient.from("product_packaging").select("product_id, insumo_id, cantidad_por_caja").in("product_id", linked.map((p: any) => p.id))
+      : { data: [] };
+    const envaseByProduct: Record<string, { insumo_id: string; cantidad_por_caja: number }[]> = {};
+    for (const e of (envaseVinculadas ?? []) as any[]) {
+      (envaseByProduct[e.product_id] ??= []).push({ insumo_id: e.insumo_id, cantidad_por_caja: Number(e.cantidad_por_caja) });
+    }
+
     vinculadas = ((linked ?? []) as any[]).map((p) => ({
       id: p.id, name: p.name, sku: p.sku, unit_label: p.unit_label,
       kg_caja:      p.kg_caja !== null ? Number(p.kg_caja) : null,
       cajasPorLote: cajasPorLote(recipeRaw.yield_cajas, factorDe(p.kg_caja)),
+      envase:       envaseByProduct[p.id] ?? [],
     }));
     const tienenReceta = new Set(((conReceta ?? []) as any[]).map((r) => r.product_id));
+    const sonBase = new Set(((basesEnUso ?? []) as any[]).map((r) => r.receta_producto_id));
     candidatos = ((activos ?? []) as any[])
       .filter((p) => !tienenReceta.has(p.id))
       .map((p) => ({
         id: p.id, name: p.name, sku: p.sku, unit_label: p.unit_label,
         kg_caja: p.kg_caja !== null ? Number(p.kg_caja) : null,
       }));
+    fusionables = ((activos ?? []) as any[])
+      .filter((p) => tienenReceta.has(p.id) && !sonBase.has(p.id))
+      .map((p) => ({
+        id: p.id, name: p.name, sku: p.sku, unit_label: p.unit_label,
+        kg_caja: p.kg_caja !== null ? Number(p.kg_caja) : null,
+      }));
+    envaseBase = ((envasePropio ?? []) as any[]).map((e) => ({ insumo_id: e.insumo_id, cantidad_por_caja: Number(e.cantidad_por_caja) }));
   }
 
   const insumos = (insumosRaw ?? []) as { id: string; nombre: string; unidad: string; precio_unitario: number }[];
@@ -145,9 +167,13 @@ export default async function RecetaEditorPage({
           baseLineaId={product.linea_id ?? null}
           lineas={lineas}
           puedeCrear={user.app_metadata?.role === "admin"}
+          puedeFusionar={user.app_metadata?.role === "admin"}
           baseKgCaja={product.kg_caja !== null ? Number(product.kg_caja) : null}
           vinculadas={vinculadas}
           candidatos={candidatos}
+          fusionables={fusionables}
+          insumos={insumos}
+          envaseBase={envaseBase}
         />
       )}
     </div>
