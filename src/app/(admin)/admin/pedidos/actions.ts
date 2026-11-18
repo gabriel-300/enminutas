@@ -39,7 +39,22 @@ async function getCallerRole(): Promise<string | null> {
 // Estados que admin puede setear manualmente (casos excepcionales)
 const ALLOWED_MANUAL_STATUSES = ["pending_payment", "aprobado", "cancelled", "liquidado"] as const;
 
-export async function updateOrderStatus(orderId: string, status: string, confirmarSaldo = false) {
+const fmtPesos = (n: number) =>
+  new Intl.NumberFormat("es-AR", { style: "currency", currency: "ARS", maximumFractionDigits: 0 }).format(n);
+
+// Pagos del cliente que quedaron sin imputar a ningún pedido (order_id null): plata que ya tiene el
+// cliente a favor y que capaz conviene asignar a este pedido antes de liquidar con saldo pendiente.
+async function avisoPagosACuentaSinImputar(db: ReturnType<typeof createAdminClient>, orderId: string): Promise<string | null> {
+  const { data: order } = await (db as any).from("orders").select("customer_id").eq("id", orderId).single();
+  if (!order?.customer_id) return null;
+  const { data: pagos } = await (db as any)
+    .from("pagos").select("monto").eq("cliente_id", order.customer_id).is("order_id", null);
+  const total = (pagos ?? []).reduce((s: number, p: any) => s + Number(p.monto), 0);
+  if (total <= 1) return null;
+  return `Ojo: el cliente tiene ${fmtPesos(total)} en pagos a cuenta sin imputar a ningún pedido — capaz conviene imputarlos a este pedido en vez de liquidar con saldo pendiente.`;
+}
+
+export async function updateOrderStatus(orderId: string, status: string, confirmarSaldo = false, motivo?: string) {
   const role = await getCallerRole();
   if (role !== "admin") throw new Error("No autorizado");
 
@@ -48,14 +63,20 @@ export async function updateOrderStatus(orderId: string, status: string, confirm
 
   const supabase = createAdminClient();
 
-  // Un pedido con saldo por cobrar no se liquida salvo que el administrador lo confirme expresamente.
+  // Un pedido con saldo por cobrar no se liquida salvo que el administrador lo confirme expresamente,
+  // con motivo (queda en el historial) y viendo si el cliente tiene pagos a cuenta sin imputar.
   if (status === "liquidado") {
     const info = await saldoPedidoDb(supabase, orderId);
     if (info && info.saldo > 1) {
-      const monto = new Intl.NumberFormat("es-AR", { style: "currency", currency: "ARS", maximumFractionDigits: 0 }).format(info.saldo);
-      if (!confirmarSaldo) return { saldoPendiente: `Este pedido tiene un saldo sin cobrar de ${monto}.` };
+      const monto = fmtPesos(info.saldo);
+      if (!confirmarSaldo) {
+        const avisoCuenta = await avisoPagosACuentaSinImputar(supabase, orderId);
+        return { saldoPendiente: `Este pedido tiene un saldo sin cobrar de ${monto}.${avisoCuenta ? ` ${avisoCuenta}` : ""}` };
+      }
+      const motivoTrim = (motivo ?? "").trim();
+      if (motivoTrim.length < 3) throw new Error("Para liquidar con saldo pendiente hay que indicar el motivo.");
       const { data: { user } } = await (await createClient()).auth.getUser();
-      await logOrderEvent(supabase, orderId, "liquidado", `Liquidado con saldo pendiente de ${monto} (confirmado por administrador)`, user?.id);
+      await logOrderEvent(supabase, orderId, "liquidado", `Liquidado con saldo pendiente de ${monto}: ${motivoTrim} (confirmado por administrador)`, user?.id);
     }
   }
 

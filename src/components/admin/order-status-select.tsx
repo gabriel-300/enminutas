@@ -80,7 +80,11 @@ export function OrderStatusSelect({
               `${res.saldoPendiente}\n\nSi lo liquidás igual, esa deuda dejará de aparecer. ¿Liquidar de todos modos?`
             );
             if (!ok) throw new Error("Liquidación cancelada: el pedido tiene saldo sin cobrar.");
-            await updateOrderStatus(orderId, newStatus, true);
+            const motivoDado = prompt("Motivo para liquidar con saldo pendiente (queda registrado):");
+            if (motivoDado === null) throw new Error("Liquidación cancelada: el pedido tiene saldo sin cobrar.");
+            const motivo = motivoDado.trim();
+            if (motivo.length < 3) throw new Error("Indicá el motivo para liquidar con saldo pendiente.");
+            await updateOrderStatus(orderId, newStatus, true, motivo);
           }
         }
       } catch (err) {
