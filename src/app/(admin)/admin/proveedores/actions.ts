@@ -3,6 +3,7 @@
 import { randomUUID } from "node:crypto";
 import { createAdminClient } from "@/lib/supabase/server";
 import { requireAdmin } from "@/lib/auth";
+import { aprobadoresConfigurados, puedeAprobar } from "@/lib/aprobadores";
 import { revalidatePath } from "next/cache";
 import { esCategoriaGasto, fechaValida, imputarPago, normalizarCuit } from "@/lib/proveedores";
 import { esCondicionIva, normalizarCbu, validarDesglose } from "@/lib/proveedores-ficha";
@@ -136,14 +137,6 @@ async function repartirPago(
 // ── Orden de pago: borrador → aprobada (Alex) → pagada ───────────────────────────────────────────────
 // Solo al pasar a "pagada" se insertan las filas de pagos_proveedores, que son las que bajan la deuda.
 
-// Quién puede aprobar: si APROBADORES_PAGOS (emails separados por coma) está definida, solo esos
-// administradores; si no, cualquier administrador.
-function puedeAprobar(email: string | undefined): boolean {
-  const lista = (process.env.APROBADORES_PAGOS ?? "").split(",").map(s => s.trim().toLowerCase()).filter(Boolean);
-  if (lista.length === 0) return true;
-  return !!email && lista.includes(email.toLowerCase());
-}
-
 export async function crearOrdenPago(
   input: PagoProveedorInput,
 ): Promise<{ error: string } | { ok: true; ordenId: string; aCuenta: number }> {
@@ -184,7 +177,7 @@ export async function aprobarOrdenPago(ordenId: string, proveedorId: string): Pr
       return { error: "Tu usuario no está autorizado a aprobar órdenes de pago" };
     const db = createAdminClient() as any;
     // Separación de funciones: sin lista de aprobadores configurada, quien crea la orden no la aprueba.
-    if (!process.env.APROBADORES_PAGOS?.trim()) {
+    if (!aprobadoresConfigurados()) {
       const { data: o } = await db.from("ordenes_pago").select("creado_por").eq("id", ordenId).single();
       if (o?.creado_por === user.id) return { error: "No podés aprobar una orden que creaste vos" };
     }

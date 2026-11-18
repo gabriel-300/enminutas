@@ -139,6 +139,66 @@ export type Database = {
           },
         ]
       }
+      ajustes_internos: {
+        Row: {
+          aprobado_at: string | null
+          aprobado_por: string | null
+          cliente_id: string | null
+          created_at: string
+          creado_por: string
+          estado: string
+          id: string
+          monto: number
+          motivo: string
+          proveedor_id: string | null
+          referencia: string | null
+          tipo: string
+        }
+        Insert: {
+          aprobado_at?: string | null
+          aprobado_por?: string | null
+          cliente_id?: string | null
+          created_at?: string
+          creado_por: string
+          estado?: string
+          id?: string
+          monto: number
+          motivo: string
+          proveedor_id?: string | null
+          referencia?: string | null
+          tipo: string
+        }
+        Update: {
+          aprobado_at?: string | null
+          aprobado_por?: string | null
+          cliente_id?: string | null
+          created_at?: string
+          creado_por?: string
+          estado?: string
+          id?: string
+          monto?: number
+          motivo?: string
+          proveedor_id?: string | null
+          referencia?: string | null
+          tipo?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ajustes_internos_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ajustes_internos_proveedor_id_fkey"
+            columns: ["proveedor_id"]
+            isOneToOne: false
+            referencedRelation: "proveedores"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       canales: {
         Row: {
           activo: boolean

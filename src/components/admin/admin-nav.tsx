@@ -10,7 +10,7 @@ import {
   Settings2, Truck,
   Users, UserCheck, GitBranch, BarChart2, TrendingUp, Target, Tag, Gift,
   Package, Layers, BookOpen, Calendar, ShoppingCart, Clock, Database,
-  FileText, CreditCard, RotateCcw, CheckSquare, DollarSign, Wallet,
+  FileText, CreditCard, RotateCcw, CheckSquare, DollarSign, Wallet, ClipboardList,
   Settings, HelpCircle, ChefHat, Factory, Globe, Scale, Building2,
   ChevronLeft, ChevronRight, ChevronDown, Menu, X,
 } from "lucide-react";
@@ -92,6 +92,7 @@ const SECTIONS: { label?: string; key?: string; items: NavEntry[] }[] = [
       { href: "/admin/facturacion",         label: "Facturación",      icon: FileText,    roles: ["admin"] },
       { href: "/admin/cuentas-corrientes",  label: "Deuda clientes", icon: CreditCard,  roles: ["admin"] },
       { href: "/admin/proveedores",         label: "Proveedores",      icon: Building2,   roles: ["admin"] },
+      { href: "/admin/ajustes-internos",    label: "Ajustes internos", icon: ClipboardList, roles: ["admin"] },
       { href: "/admin/comisiones",          label: "Comisiones",       icon: Wallet,      roles: ["admin"] },
       { href: "/admin/devoluciones",        label: "Devoluciones",     icon: RotateCcw,   roles: ["admin"] },
       { href: "/admin/cheques",             label: "Cheques",          icon: CheckSquare, roles: ["admin"] },
