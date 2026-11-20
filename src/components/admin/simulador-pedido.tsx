@@ -342,6 +342,11 @@ export function SimuladorPedido({
                     <div key={p.id} className="flex items-start justify-between gap-2">
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-medium text-neutral-800 truncate">{p.nombre}</p>
+                        {[p.linea, p.presentacion].some((s) => s && s !== "—") && (
+                          <p className="hidden print:block text-xs text-neutral-600">
+                            {[p.linea, p.presentacion].filter((s) => s && s !== "—").join(" · ")}
+                          </p>
+                        )}
                         <p className="text-xs text-neutral-600">
                           {cajas} caja{cajas !== 1 ? "s" : ""} × {fmt(precioCaja(p))}
                         </p>
