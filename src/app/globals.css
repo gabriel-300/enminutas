@@ -372,75 +372,82 @@
 
 /* ─────────────────────────────────────────────
    BASE STYLES
+   Van en `@layer base`: sin layer, cualquier regla de acá (ej. `a { color:
+   inherit }`) le gana a TODAS las utilities de Tailwind sin importar
+   especificidad (así funcionan los cascade layers), incluso a clases como
+   `text-brand-200` puestas directo en un <Link>. Con `@layer base` quedan
+   por debajo de las utilities, como corresponde.
    ───────────────────────────────────────────── */
 
-*, *::before, *::after {
-  box-sizing: border-box;
+@layer base {
+  *, *::before, *::after {
+    box-sizing: border-box;
+  }
+
+  html {
+    height: 100%;
+    scroll-behavior: smooth;
+  }
+
+  html, body {
+    max-width: 100vw;
+    overflow-x: hidden;
+  }
+
+  body {
+    min-height: 100%;
+    background-color: var(--color-crema-50);
+    color: var(--color-neutral-900);
+    font-family: var(--font-sans);
+    font-size: var(--text-base);
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    font-feature-settings: "kern" 1, "liga" 1;
+  }
+
+  h1, h2, h3, h4 {
+    font-family: var(--font-display);
+    font-weight: 600;
+    line-height: 1.05;
+    letter-spacing: -0.025em;
+    color: var(--color-neutral-900);
+  }
+
+  a {
+    color: inherit;
+    text-decoration: none;
+  }
+
+  img, video {
+    max-width: 100%;
+    display: block;
+  }
+
+  ::selection {
+    background: var(--color-tierra-700);
+    color: #fff;
+  }
+
+  /* Focus visible — accesibilidad */
+  :focus-visible {
+    outline: 2px solid var(--color-dorado-500);
+    outline-offset: 3px;
+    border-radius: var(--radius-sm);
+  }
+
+  /* Scrollbar sutil */
+  ::-webkit-scrollbar { width: 8px; height: 8px; }
+  ::-webkit-scrollbar-track { background: var(--color-crema-100); }
+  ::-webkit-scrollbar-thumb { background: var(--color-neutral-300); border-radius: 4px; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--color-neutral-400); }
+
+  /* Utilidades básicas garantizadas (Tailwind v4 no genera white/black sin definirlos) */
+  .text-white { color: #ffffff; }
+  .text-black { color: #000000; }
+  .bg-white   { background-color: #ffffff; }
+  .bg-black   { background-color: #000000; }
 }
-
-html {
-  height: 100%;
-  scroll-behavior: smooth;
-}
-
-html, body {
-  max-width: 100vw;
-  overflow-x: hidden;
-}
-
-body {
-  min-height: 100%;
-  background-color: var(--color-crema-50);
-  color: var(--color-neutral-900);
-  font-family: var(--font-sans);
-  font-size: var(--text-base);
-  line-height: 1.6;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  font-feature-settings: "kern" 1, "liga" 1;
-}
-
-h1, h2, h3, h4 {
-  font-family: var(--font-display);
-  font-weight: 600;
-  line-height: 1.05;
-  letter-spacing: -0.025em;
-  color: var(--color-neutral-900);
-}
-
-a {
-  color: inherit;
-  text-decoration: none;
-}
-
-img, video {
-  max-width: 100%;
-  display: block;
-}
-
-::selection {
-  background: var(--color-tierra-700);
-  color: #fff;
-}
-
-/* Focus visible — accesibilidad */
-:focus-visible {
-  outline: 2px solid var(--color-dorado-500);
-  outline-offset: 3px;
-  border-radius: var(--radius-sm);
-}
-
-/* Scrollbar sutil */
-::-webkit-scrollbar { width: 8px; height: 8px; }
-::-webkit-scrollbar-track { background: var(--color-crema-100); }
-::-webkit-scrollbar-thumb { background: var(--color-neutral-300); border-radius: 4px; }
-::-webkit-scrollbar-thumb:hover { background: var(--color-neutral-400); }
-
-/* Utilidades básicas garantizadas (Tailwind v4 no genera white/black sin definirlos) */
-.text-white { color: #ffffff; }
-.text-black { color: #000000; }
-.bg-white   { background-color: #ffffff; }
-.bg-black   { background-color: #000000; }
 
 /* Reduced motion */
 @media (prefers-reduced-motion: reduce) {
