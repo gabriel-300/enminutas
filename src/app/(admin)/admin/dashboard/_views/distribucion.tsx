@@ -1,76 +1,91 @@
 import Link from "next/link";
+import { ArrowRight, CheckCircle2 } from "lucide-react";
+import { Card, CardHeader, KpiCard, PageHeader, TONE_STYLES } from "@/components/ui";
+import { cn } from "@/lib/utils";
 import { IC } from "../_components/icons";
 import { loadDistribucionDashboard } from "../_data/distribucion";
 
 export async function DistribucionDashboard({ user }: { user: { id: string } }) {
   const { now, zonaFiltro, zonaNombre, enTransitoList, entregadosHoyList, evolucion, maxMonth, entregasMes } = await loadDistribucionDashboard(user);
 
+  const quickLinks = [
+    { href: "/admin/distribucion",              label: "Pendientes de entrega", badge: enTransitoList.length > 0 ? `${enTransitoList.length}` : null, icon: IC.distribucion },
+    { href: "/admin/distribucion/hoja-de-ruta", label: "Hoja de ruta hoy",      badge: null as string | null, icon: IC.zonas },
+    { href: "/admin/distribucion/historial",    label: "Historial",            badge: null as string | null, icon: IC.clock },
+  ];
+
   return (
-    <div className="p-4 md:px-10 md:py-8 md:pb-16">
-      {/* Header */}
-      <div className="mb-5 md:mb-6">
-        <h1 className="text-xl md:text-2xl font-semibold font-display text-neutral-900">Dashboard</h1>
-        <p className="text-sm text-neutral-600 mt-0.5 capitalize">
-          {now.toLocaleDateString("es-AR", { weekday: "long", day: "numeric", month: "long", year: "numeric" })}
-          {zonaNombre && <span className="ml-2 text-neutral-500">— Zona: {zonaNombre}</span>}
-        </p>
-        {!zonaFiltro && (
-          <p className="text-xs text-warning mt-1">Sin zona asignada — pedile al admin que configure tu zona en Staff.</p>
-        )}
-      </div>
+    <div className="flex flex-col gap-6 p-4 md:px-10 md:py-8 md:pb-16">
+      <PageHeader
+        title="Dashboard"
+        subtitle={
+          <span className="capitalize">
+            {now.toLocaleDateString("es-AR", { weekday: "long", day: "numeric", month: "long", year: "numeric" })}
+            {zonaNombre && <span className="ml-2 text-n-500">— Zona: {zonaNombre}</span>}
+          </span>
+        }
+      />
+      {!zonaFiltro && (
+        <p className="-mt-4 text-xs text-warning">Sin zona asignada — pedile al admin que configure tu zona en Staff.</p>
+      )}
 
       {/* KPIs */}
-      <div className="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-4 mb-5 md:mb-6">
-        <Link href="/admin/distribucion" className={`rounded-xl border p-5 hover:border-neutral-300 transition-colors ${enTransitoList.length > 0 ? "bg-warning-bg/40 border-warning-border" : "bg-white border-neutral-200"}`}>
-          <p className="text-xs font-medium text-neutral-600 mb-1">En tránsito</p>
-          <p className={`text-3xl font-semibold font-display tabular-nums ${enTransitoList.length > 0 ? "text-warning" : "text-neutral-900"}`}>
-            {enTransitoList.length}
-          </p>
-          <p className="text-xs mt-1 text-neutral-600">pendiente{enTransitoList.length !== 1 ? "s" : ""} de entrega</p>
-        </Link>
-
-        <div className={`rounded-xl border p-5 ${entregadosHoyList.length > 0 ? "bg-success-bg/40 border-success-border" : "bg-white border-neutral-200"}`}>
-          <p className="text-xs font-medium text-neutral-600 mb-1">Entregados hoy</p>
-          <p className={`text-3xl font-semibold font-display tabular-nums ${entregadosHoyList.length > 0 ? "text-success" : "text-neutral-900"}`}>
-            {entregadosHoyList.length}
-          </p>
-          <p className="text-xs mt-1 text-neutral-600">pedido{entregadosHoyList.length !== 1 ? "s" : ""} entregados</p>
-        </div>
-
-        <Link href="/admin/distribucion/historial" className="bg-white rounded-xl border border-neutral-200 shadow-sm p-5 hover:border-neutral-300 transition-colors">
-          <p className="text-xs font-medium text-neutral-600 mb-1">Este mes</p>
-          <p className="text-3xl font-semibold font-display tabular-nums text-neutral-900">{entregasMes}</p>
-          <p className="text-xs mt-1 text-neutral-600">entregas en {now.toLocaleDateString("es-AR", { month: "long" })}</p>
-        </Link>
+      <div className="grid grid-cols-[repeat(auto-fit,minmax(220px,1fr))] gap-4">
+        <KpiCard
+          href="/admin/distribucion"
+          label="En tránsito"
+          value={enTransitoList.length}
+          icon={IC.distribucion}
+          tone={enTransitoList.length > 0 ? "warning" : "default"}
+          footer={`pendiente${enTransitoList.length !== 1 ? "s" : ""} de entrega`}
+        />
+        <KpiCard
+          label="Entregados hoy"
+          value={entregadosHoyList.length}
+          icon={<CheckCircle2 />}
+          tone={entregadosHoyList.length > 0 ? "success" : "default"}
+          footer="pedidos entregados"
+        />
+        <KpiCard
+          href="/admin/distribucion/historial"
+          label="Este mes"
+          value={entregasMes}
+          icon={IC.clock}
+          footer={`entregas en ${now.toLocaleDateString("es-AR", { month: "long" })}`}
+        />
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-5 gap-4">
+      {/* Cuerpo — dos columnas */}
+      <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-[minmax(0,2fr)_minmax(320px,1fr)]">
 
-        {/* Izquierda */}
-        <div className="lg:col-span-3 space-y-4">
+        {/* Columna izquierda */}
+        <div className="flex flex-col gap-4">
 
-          {/* En tránsito */}
-          <div className="bg-white rounded-xl border border-neutral-200 shadow-sm overflow-hidden">
-            <div className="px-5 py-3.5 border-b border-neutral-100 flex items-center justify-between">
-              <p className="text-xs font-semibold text-neutral-600">En tránsito ahora</p>
-              <Link href="/admin/distribucion" className="text-xs text-tierra-700 hover:underline">Ver todo →</Link>
-            </div>
+          <Card>
+            <CardHeader
+              title="En tránsito ahora"
+              action={
+                <Link href="/admin/distribucion" className="inline-flex items-center gap-1 text-[13px] font-medium text-brand-700 hover:text-brand-800 hover:underline">
+                  Ver todo <ArrowRight className="size-3.5" />
+                </Link>
+              }
+            />
             {enTransitoList.length === 0 ? (
-              <p className="px-5 py-8 text-sm text-neutral-600 text-center">Sin pedidos en tránsito.</p>
+              <p className="py-8 text-center text-sm text-n-600">Sin pedidos en tránsito.</p>
             ) : (
-              <ul className="divide-y divide-neutral-50">
+              <ul>
                 {enTransitoList.slice(0, 5).map((o: any) => {
                   const dias = o.despachado_at
                     ? Math.floor((Date.now() - new Date(o.despachado_at).getTime()) / (1000 * 60 * 60 * 24))
                     : null;
                   return (
-                    <li key={o.id} className="px-5 py-3 flex items-center gap-3">
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-neutral-800">{o.customer?.full_name ?? "—"}</p>
-                        <p className="text-xs font-mono text-neutral-600">{o.order_number}</p>
+                    <li key={o.id} className="flex items-center gap-3 border-b border-n-100 px-5 py-3 last:border-b-0">
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate text-sm font-medium text-n-800">{o.customer?.full_name ?? "—"}</p>
+                        <p className="font-mono text-xs text-n-600">{o.order_number}</p>
                       </div>
                       {dias !== null && dias > 0 && (
-                        <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${dias > 3 ? "bg-danger-bg text-danger" : "bg-warning-bg text-warning"}`}>
+                        <span className={cn("shrink-0 rounded-full px-2 py-0.5 text-xs font-semibold", dias > 3 ? TONE_STYLES.danger.tile : TONE_STYLES.warning.tile)}>
                           {dias}d
                         </span>
                       )}
@@ -78,27 +93,24 @@ export async function DistribucionDashboard({ user }: { user: { id: string } }) 
                   );
                 })}
                 {enTransitoList.length > 5 && (
-                  <li className="px-5 py-3 text-xs text-neutral-600 text-center">+{enTransitoList.length - 5} más</li>
+                  <li className="px-5 py-3 text-center text-xs text-n-600">+{enTransitoList.length - 5} más</li>
                 )}
               </ul>
             )}
-          </div>
+          </Card>
 
-          {/* Entregados hoy */}
           {entregadosHoyList.length > 0 && (
-            <div className="bg-white rounded-xl border border-success-border overflow-hidden">
-              <div className="px-5 py-3.5 border-b border-neutral-100">
-                <p className="text-xs font-semibold text-success">Entregados hoy</p>
-              </div>
-              <ul className="divide-y divide-neutral-50">
+            <Card className="border-success-border">
+              <CardHeader title={<span className="text-success">Entregados hoy</span>} />
+              <ul>
                 {entregadosHoyList.map((o: any) => (
-                  <li key={o.id} className="px-5 py-3 flex items-center gap-3">
-                    <span className="text-success text-sm shrink-0">✓</span>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-neutral-700">{o.customer?.full_name ?? "—"}</p>
-                      <ul className="flex flex-wrap gap-x-3 mt-0.5">
+                  <li key={o.id} className="flex items-center gap-3 border-b border-n-100 px-5 py-3 last:border-b-0">
+                    <span className="shrink-0 text-sm text-success">✓</span>
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-sm font-medium text-n-700">{o.customer?.full_name ?? "—"}</p>
+                      <ul className="mt-0.5 flex flex-wrap gap-x-3">
                         {(o.lines ?? []).map((l: any, i: number) => (
-                          <li key={i} className="text-xs text-neutral-600">
+                          <li key={i} className="text-xs text-n-600">
                             {l.quantity}× {l.product_snapshot?.name ?? "Producto"}
                           </li>
                         ))}
@@ -107,68 +119,60 @@ export async function DistribucionDashboard({ user }: { user: { id: string } }) 
                   </li>
                 ))}
               </ul>
-            </div>
+            </Card>
           )}
         </div>
 
-        {/* Derecha */}
-        <div className="lg:col-span-2 space-y-4">
+        {/* Columna derecha */}
+        <div className="flex flex-col gap-4">
 
-          {/* Evolución mensual */}
-          <div className="bg-white rounded-xl border border-neutral-200 shadow-sm overflow-hidden">
-            <div className="px-5 py-3.5 border-b border-neutral-100">
-              <p className="text-xs font-semibold text-neutral-600">Entregas por mes</p>
-            </div>
-            <div className="px-5 py-4 space-y-3">
+          <Card>
+            <CardHeader title="Entregas por mes" />
+            <div className="flex flex-col gap-3 px-5 py-4">
               {evolucion.map((m) => (
                 <div key={m.key}>
-                  <div className="flex items-center justify-between mb-1">
-                    <span className={`text-xs capitalize ${m.current ? "font-bold text-neutral-900" : "text-neutral-600"}`}>
+                  <div className="mb-1 flex items-center justify-between">
+                    <span className={cn("text-xs capitalize", m.current ? "font-bold text-n-900" : "text-n-600")}>
                       {m.label}{m.current ? " (actual)" : ""}
                     </span>
-                    <span className={`text-xs tabular-nums ${m.current ? "font-bold text-tierra-700" : "font-medium text-neutral-700"}`}>
+                    <span className={cn("text-xs tabular-nums", m.current ? "font-bold text-brand-700" : "font-medium text-n-700")}>
                       {m.count > 0 ? `${m.count} entregas` : "—"}
                     </span>
                   </div>
-                  <div className="h-1.5 bg-neutral-100 rounded-full overflow-hidden">
+                  <div className="h-1.5 overflow-hidden rounded-full bg-n-100">
                     <div
-                      className={`h-full rounded-full ${m.current ? "bg-tierra-700" : "bg-tierra-300"}`}
+                      className={cn("h-full rounded-full", m.current ? "bg-brand-700" : "bg-brand-300")}
                       style={{ width: m.count > 0 ? `${Math.round((m.count / maxMonth) * 100)}%` : "0%" }}
                     />
                   </div>
                 </div>
               ))}
             </div>
-          </div>
+          </Card>
 
-          {/* Accesos rápidos */}
-          <div className="bg-white rounded-xl border border-neutral-200 shadow-sm overflow-hidden">
-            <div className="px-5 py-3.5 border-b border-neutral-100">
-              <p className="text-xs font-semibold text-neutral-600">Accesos rápidos</p>
-            </div>
-            <ul className="divide-y divide-neutral-50">
-              {([
-                { href: "/admin/distribucion",              label: "Pendientes de entrega", badge: enTransitoList.length > 0 ? `${enTransitoList.length}` : null, icon: IC.distribucion },
-                { href: "/admin/distribucion/hoja-de-ruta", label: "Hoja de ruta hoy",  badge: null, icon: IC.zonas },
-                { href: "/admin/distribucion/historial",    label: "Historial",          badge: null, icon: IC.clock },
-              ] as { href: string; label: string; badge: string | null; icon: React.ReactNode }[]).map(({ href, label, badge, icon }) => (
-                <li key={href}>
-                  <Link href={href} className="flex items-center justify-between px-5 py-3 hover:bg-neutral-50 transition-colors group">
-                    <div className="flex items-center gap-3">
-                      <span className="text-neutral-600 flex items-center">{icon}</span>
-                      <span className="text-sm text-neutral-700 group-hover:text-neutral-900">{label}</span>
-                      {badge && (
-                        <span className="px-2 py-0.5 rounded-full bg-warning-bg text-warning text-xs font-medium">{badge}</span>
-                      )}
-                    </div>
-                    <span className="text-neutral-500 group-hover:text-neutral-600 text-sm">→</span>
+          <Card>
+            <CardHeader title="Accesos rápidos" />
+            <ul>
+              {quickLinks.map(({ href, label, badge, icon }) => (
+                <li key={href} className="border-b border-n-100 last:border-b-0">
+                  <Link href={href} className="flex items-center justify-between gap-3 px-5 py-3.5 transition-colors hover:bg-n-50">
+                    <span className="flex min-w-0 items-center gap-3">
+                      <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-brand-50 text-brand-700 [&_svg]:size-[18px]">
+                        {icon}
+                      </span>
+                      <span className="truncate text-sm text-n-800">{label}</span>
+                    </span>
+                    {badge ? (
+                      <span className={cn("shrink-0 rounded-full border px-2 py-px text-xs font-medium", TONE_STYLES.warning.badge)}>{badge}</span>
+                    ) : (
+                      <ArrowRight className="size-4 shrink-0 text-n-400" />
+                    )}
                   </Link>
                 </li>
               ))}
             </ul>
-          </div>
+          </Card>
         </div>
-
       </div>
     </div>
   );

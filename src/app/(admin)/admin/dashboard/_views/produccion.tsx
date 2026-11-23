@@ -1,106 +1,119 @@
 import Link from "next/link";
+import { AlertTriangle, ArrowRight } from "lucide-react";
+import { Card, CardHeader, KpiCard, PageHeader, TONE_STYLES } from "@/components/ui";
+import { cn } from "@/lib/utils";
 import { IC } from "../_components/icons";
 import { loadProduccionDashboard } from "../_data/produccion";
+
+function diasDesdeAprobado(iso: string | null) {
+  if (!iso) return null;
+  return Math.floor((Date.now() - new Date(iso).getTime()) / (1000 * 60 * 60 * 24));
+}
 
 export async function ProduccionDashboard() {
   const { now, cola, preparando, stockCritico } = await loadProduccionDashboard();
 
-
-function diasDesdeAprobado(iso: string | null) {
-if (!iso) return null;
-return Math.floor((Date.now() - new Date(iso).getTime()) / (1000 * 60 * 60 * 24));
-}
+  const quickLinks = [
+    { href: "/admin/produccion",          label: "Producción",       badge: cola.length > 0 ? `${cola.length} en cola` : null, icon: IC.produccion },
+    { href: "/admin/cocina",              label: "Cocina / Stock",   badge: stockCritico.length > 0 ? `${stockCritico.length} críticos` : null, icon: IC.cocina },
+    { href: "/admin/cocina/planificador", label: "Planificador",     badge: null as string | null, icon: IC.planificador },
+    { href: "/admin/cocina/compras",      label: "Lista de compras", badge: null as string | null, icon: IC.compras },
+  ];
 
   return (
-    <div className="p-4 md:px-10 md:py-8 md:pb-16">
-      {/* Header */}
-      <div className="mb-5 md:mb-6">
-        <h1 className="text-xl md:text-2xl font-semibold font-display text-neutral-900">Dashboard</h1>
-        <p className="text-sm text-neutral-600 mt-0.5 capitalize">
-          {now.toLocaleDateString("es-AR", { weekday: "long", day: "numeric", month: "long", year: "numeric" })}
-        </p>
-      </div>
+    <div className="flex flex-col gap-6 p-4 md:px-10 md:py-8 md:pb-16">
+      <PageHeader
+        title="Dashboard"
+        subtitle={<span className="capitalize">{now.toLocaleDateString("es-AR", { weekday: "long", day: "numeric", month: "long", year: "numeric" })}</span>}
+      />
 
       {/* KPIs */}
-      <div className="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-4 mb-5 md:mb-6">
-        <Link href="/admin/produccion" className="bg-white rounded-xl border border-neutral-200 shadow-sm p-5 hover:border-neutral-300 transition-colors">
-          <p className="text-xs font-medium text-neutral-600 mb-1">En cola</p>
-          <p className="text-3xl font-semibold font-display tabular-nums text-neutral-900">{cola.length}</p>
-          <p className="text-xs mt-1 text-neutral-600">pedido{cola.length !== 1 ? "s" : ""} sin iniciar</p>
-        </Link>
-
-        <Link href="/admin/produccion" className={`rounded-xl border p-5 hover:border-neutral-300 transition-colors ${preparando.length > 0 ? "bg-success-bg/40 border-success-border" : "bg-white border-neutral-200"}`}>
-          <p className="text-xs font-medium text-neutral-600 mb-1">En preparación</p>
-          <p className={`text-3xl font-semibold font-display tabular-nums ${preparando.length > 0 ? "text-success" : "text-neutral-900"}`}>
-            {preparando.length}
-          </p>
-          <p className="text-xs mt-1 text-neutral-600">en cocina ahora</p>
-        </Link>
-
-        <Link href="/admin/cocina" className={`rounded-xl border p-5 hover:border-neutral-300 transition-colors ${stockCritico.length > 0 ? "bg-danger-bg/40 border-danger-border" : "bg-white border-neutral-200"}`}>
-          <p className="text-xs font-medium text-neutral-600 mb-1">Stock crítico</p>
-          <p className={`text-3xl font-semibold font-display tabular-nums ${stockCritico.length > 0 ? "text-danger" : "text-neutral-900"}`}>
-            {stockCritico.length}
-          </p>
-          <p className="text-xs mt-1 text-neutral-600">producto{stockCritico.length !== 1 ? "s" : ""} bajo mínimo</p>
-        </Link>
+      <div className="grid grid-cols-[repeat(auto-fit,minmax(220px,1fr))] gap-4">
+        <KpiCard
+          href="/admin/produccion"
+          label="En cola"
+          value={cola.length}
+          icon={IC.pedidos}
+          footer={`pedido${cola.length !== 1 ? "s" : ""} sin iniciar`}
+        />
+        <KpiCard
+          href="/admin/produccion"
+          label="En preparación"
+          value={preparando.length}
+          icon={IC.cocina}
+          tone={preparando.length > 0 ? "success" : "default"}
+          footer="en cocina ahora"
+        />
+        <KpiCard
+          href="/admin/cocina"
+          label="Stock crítico"
+          value={stockCritico.length}
+          icon={<AlertTriangle />}
+          tone={stockCritico.length > 0 ? "danger" : "default"}
+          footer={`producto${stockCritico.length !== 1 ? "s" : ""} bajo mínimo`}
+        />
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-5 gap-4">
+      {/* Cuerpo — dos columnas */}
+      <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-[minmax(0,2fr)_minmax(320px,1fr)]">
 
-        {/* Izquierda */}
-        <div className="lg:col-span-3 space-y-4">
+        {/* Columna izquierda */}
+        <div className="flex flex-col gap-4">
 
-          {/* Stock crítico */}
           {stockCritico.length > 0 && (
-            <div className="bg-white rounded-xl border border-neutral-200 shadow-sm overflow-hidden">
-              <div className="px-5 py-3.5 border-b border-neutral-100 flex items-center justify-between">
-                <p className="text-xs font-semibold text-neutral-600">Stock crítico</p>
-                <Link href="/admin/cocina" className="text-xs text-tierra-700 hover:underline">Ver todo →</Link>
-              </div>
-              <ul className="divide-y divide-neutral-50">
+            <Card>
+              <CardHeader
+                title="Stock crítico"
+                action={
+                  <Link href="/admin/cocina" className="inline-flex items-center gap-1 text-[13px] font-medium text-brand-700 hover:text-brand-800 hover:underline">
+                    Ver todo <ArrowRight className="size-3.5" />
+                  </Link>
+                }
+              />
+              <ul>
                 {stockCritico.map((p: any) => (
-                  <li key={p.id} className="flex items-center gap-3 px-5 py-3 bg-danger-bg/20">
-                    <span className="size-1.5 rounded-full bg-danger shrink-0" />
-                    <p className="text-sm text-neutral-800 flex-1">
+                  <li key={p.id} className="flex items-center gap-3 border-b border-n-100 bg-danger-bg/20 px-5 py-3 last:border-b-0">
+                    <span className={cn("size-1.5 shrink-0 rounded-full", TONE_STYLES.danger.dot)} />
+                    <p className="flex-1 text-sm text-n-800">
                       <span className="font-semibold">{p.name}</span>
-                      <span className="text-neutral-600 ml-2 font-mono text-xs">{p.sku}</span>
+                      <span className="ml-2 font-mono text-xs text-n-600">{p.sku}</span>
                     </p>
-                    <span className="text-xs font-semibold text-danger tabular-nums">
+                    <span className="shrink-0 text-xs font-semibold tabular-nums text-danger">
                       {Number(p.stock_cajas ?? 0)} / {Number(p.stock_minimo)} cajas
                     </span>
                   </li>
                 ))}
               </ul>
-            </div>
+            </Card>
           )}
 
-          {/* Cola de pedidos */}
-          <div className="bg-white rounded-xl border border-neutral-200 shadow-sm overflow-hidden">
-            <div className="px-5 py-3.5 border-b border-neutral-100 flex items-center justify-between">
-              <p className="text-xs font-semibold text-neutral-600">
-                Cola — pendientes de iniciar
-              </p>
-              <Link href="/admin/produccion" className="text-xs text-tierra-700 hover:underline">Ver todo →</Link>
-            </div>
+          <Card>
+            <CardHeader
+              title="Cola — pendientes de iniciar"
+              action={
+                <Link href="/admin/produccion" className="inline-flex items-center gap-1 text-[13px] font-medium text-brand-700 hover:text-brand-800 hover:underline">
+                  Ver todo <ArrowRight className="size-3.5" />
+                </Link>
+              }
+            />
             {cola.length === 0 ? (
-              <p className="px-5 py-8 text-sm text-neutral-600 text-center">Sin pedidos en cola.</p>
+              <p className="py-8 text-center text-sm text-n-600">Sin pedidos en cola.</p>
             ) : (
-              <ul className="divide-y divide-neutral-50">
+              <ul>
                 {cola.slice(0, 5).map((o: any) => {
                   const dias = diasDesdeAprobado(o.aprobado_at);
                   return (
-                    <li key={o.id} className="px-5 py-3">
-                      <div className="flex items-center justify-between mb-1">
-                        <span className="font-mono text-xs font-semibold text-neutral-700">{o.order_number}</span>
+                    <li key={o.id} className="border-b border-n-100 px-5 py-3 last:border-b-0">
+                      <div className="mb-1 flex items-center justify-between">
+                        <span className="font-mono text-xs font-semibold text-n-700">{o.order_number}</span>
                         {dias !== null && dias > 1 && (
-                          <span className="text-xs text-warning font-medium">Aprobado hace {dias}d</span>
+                          <span className="text-xs font-medium text-warning">Aprobado hace {dias}d</span>
                         )}
                       </div>
                       <ul className="space-y-0.5">
                         {(o.lines ?? []).map((l: any, i: number) => (
-                          <li key={i} className="text-xs text-neutral-600">
-                            <span className="font-semibold text-neutral-700">{l.quantity}×</span>{" "}
+                          <li key={i} className="text-xs text-n-600">
+                            <span className="font-semibold text-n-700">{l.quantity}×</span>{" "}
                             {l.product_snapshot?.name ?? "Producto"}
                           </li>
                         ))}
@@ -109,67 +122,59 @@ return Math.floor((Date.now() - new Date(iso).getTime()) / (1000 * 60 * 60 * 24)
                   );
                 })}
                 {cola.length > 5 && (
-                  <li className="px-5 py-3 text-xs text-neutral-600 text-center">
+                  <li className="px-5 py-3 text-center text-xs text-n-600">
                     +{cola.length - 5} más en cola
                   </li>
                 )}
               </ul>
             )}
-          </div>
+          </Card>
         </div>
 
-        {/* Derecha — accesos rápidos + en preparación */}
-        <div className="lg:col-span-2 space-y-4">
+        {/* Columna derecha */}
+        <div className="flex flex-col gap-4">
 
-          {/* En preparación */}
           {preparando.length > 0 && (
-            <div className="bg-white rounded-xl border border-success-border bg-success-bg/20 overflow-hidden">
-              <div className="px-5 py-3.5 border-b border-neutral-100">
-                <p className="text-xs font-semibold text-success">En preparación ahora</p>
-              </div>
-              <ul className="divide-y divide-neutral-50">
+            <Card className="border-success-border">
+              <CardHeader title={<span className="text-success">En preparación ahora</span>} />
+              <ul>
                 {preparando.map((o: any) => (
-                  <li key={o.id} className="px-5 py-3">
-                    <span className="font-mono text-xs font-semibold text-neutral-700 block mb-1">{o.order_number}</span>
+                  <li key={o.id} className="border-b border-n-100 bg-success-bg/20 px-5 py-3 last:border-b-0">
+                    <span className="mb-1 block font-mono text-xs font-semibold text-n-700">{o.order_number}</span>
                     {(o.lines ?? []).map((l: any, i: number) => (
-                      <p key={i} className="text-xs text-neutral-600">
-                        <span className="font-semibold text-neutral-700">{l.quantity}×</span>{" "}
+                      <p key={i} className="text-xs text-n-600">
+                        <span className="font-semibold text-n-700">{l.quantity}×</span>{" "}
                         {l.product_snapshot?.name ?? "Producto"}
                       </p>
                     ))}
                   </li>
                 ))}
               </ul>
-            </div>
+            </Card>
           )}
 
-          {/* Accesos rápidos */}
-          <div className="bg-white rounded-xl border border-neutral-200 shadow-sm overflow-hidden">
-            <div className="px-5 py-3.5 border-b border-neutral-100">
-              <p className="text-xs font-semibold text-neutral-600">Accesos rápidos</p>
-            </div>
-            <ul className="divide-y divide-neutral-50">
-              {([
-                { href: "/admin/produccion",           label: "Producción",        badge: cola.length > 0 ? `${cola.length} en cola` : null, icon: IC.produccion },
-                { href: "/admin/cocina",               label: "Cocina / Stock",    badge: stockCritico.length > 0 ? `${stockCritico.length} críticos` : null, icon: IC.cocina },
-                { href: "/admin/cocina/planificador",  label: "Planificador",      badge: null, icon: IC.planificador },
-                { href: "/admin/cocina/compras",       label: "Lista de compras",  badge: null, icon: IC.compras },
-              ] as { href: string; label: string; badge: string | null; icon: React.ReactNode }[]).map(({ href, label, badge, icon }) => (
-                <li key={href}>
-                  <Link href={href} className="flex items-center justify-between px-5 py-3 hover:bg-neutral-50 transition-colors group">
-                    <div className="flex items-center gap-3">
-                      <span className="text-neutral-600 flex items-center">{icon}</span>
-                      <span className="text-sm text-neutral-700 group-hover:text-neutral-900">{label}</span>
-                      {badge && (
-                        <span className="px-2 py-0.5 rounded-full bg-warning-bg text-warning text-xs font-medium">{badge}</span>
-                      )}
-                    </div>
-                    <span className="text-neutral-500 group-hover:text-neutral-600 text-sm">→</span>
+          <Card>
+            <CardHeader title="Accesos rápidos" />
+            <ul>
+              {quickLinks.map(({ href, label, badge, icon }) => (
+                <li key={href} className="border-b border-n-100 last:border-b-0">
+                  <Link href={href} className="flex items-center justify-between gap-3 px-5 py-3.5 transition-colors hover:bg-n-50">
+                    <span className="flex min-w-0 items-center gap-3">
+                      <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-brand-50 text-brand-700 [&_svg]:size-[18px]">
+                        {icon}
+                      </span>
+                      <span className="truncate text-sm text-n-800">{label}</span>
+                    </span>
+                    {badge ? (
+                      <span className={cn("shrink-0 rounded-full border px-2 py-px text-xs font-medium", TONE_STYLES.warning.badge)}>{badge}</span>
+                    ) : (
+                      <ArrowRight className="size-4 shrink-0 text-n-400" />
+                    )}
                   </Link>
                 </li>
               ))}
             </ul>
-          </div>
+          </Card>
         </div>
       </div>
     </div>

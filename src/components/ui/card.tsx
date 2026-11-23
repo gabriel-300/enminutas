@@ -29,14 +29,14 @@ interface KpiCardProps {
   /** Pill opcional junto al pie (ej. "↑ 110%"). */
   pill?: { text: string; tone: Tone };
   footer?: React.ReactNode;
-  /** "warning" pinta borde, tile y valor con el tono de alerta. */
-  tone?: "default" | "warning";
+  /** Tono de énfasis del card entero (borde, tile del ícono y valor). "default" = neutro. */
+  tone?: Tone | "default";
   href?: string;
 }
 
 /** KPI: label + tile de ícono, valor de 32px y pie de 13px. Clickeable si tiene href. */
 export function KpiCard({ label, value, icon, pill, footer, tone = "default", href }: KpiCardProps) {
-  const warn = tone === "warning";
+  const toneStyles = tone !== "default" ? TONE_STYLES[tone] : null;
   const body = (
     <>
       <div className="flex items-center justify-between gap-2">
@@ -45,14 +45,14 @@ export function KpiCard({ label, value, icon, pill, footer, tone = "default", hr
           <span
             className={cn(
               "flex size-8 shrink-0 items-center justify-center rounded-lg [&_svg]:size-[18px]",
-              warn ? TONE_STYLES.warning.tile : "bg-brand-50 text-brand-700"
+              toneStyles ? toneStyles.tile : "bg-brand-50 text-brand-700"
             )}
           >
             {icon}
           </span>
         )}
       </div>
-      <p className={cn("text-3xl font-semibold leading-10 tracking-[-0.02em] tabular-nums", warn ? "text-warning" : "text-n-900")}>
+      <p className={cn("text-3xl font-semibold leading-10 tracking-[-0.02em] tabular-nums", toneStyles ? toneStyles.text : "text-n-900")}>
         {value}
       </p>
       {(pill || footer) && (
@@ -67,7 +67,7 @@ export function KpiCard({ label, value, icon, pill, footer, tone = "default", hr
   );
   const cls = cn(
     "flex flex-col gap-2.5 rounded-xl border bg-n-0 px-5 py-[18px] shadow-card",
-    warn ? "border-warning-border" : "border-n-200",
+    toneStyles ? toneStyles.border : "border-n-200",
     href && "transition hover:border-n-400 hover:shadow-card-hover"
   );
   return href ? <Link href={href} className={cls}>{body}</Link> : <div className={cls}>{body}</div>;
