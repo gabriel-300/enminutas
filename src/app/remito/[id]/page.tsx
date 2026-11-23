@@ -122,7 +122,7 @@ export default async function RemitoPage({
         <div className="flex items-start justify-between mb-8 pb-6 border-b border-neutral-200">
           <div>
             <div className="flex items-center gap-2 mb-1">
-              <div style={{ width: 28, height: 28, borderRadius: 6, background: "#0E2544", display: "flex", alignItems: "center", justifyContent: "center" }}>
+              <div style={{ width: 28, height: 28, borderRadius: 6, background: "var(--color-brand-950)", display: "flex", alignItems: "center", justifyContent: "center" }}>
                 <span style={{ color: "white", fontWeight: 700, fontSize: 11 }}>EM</span>
               </div>
               <span style={{ fontWeight: 700, fontSize: 18, color: "#111" }}>En Minutas</span>

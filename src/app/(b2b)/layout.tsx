@@ -26,12 +26,12 @@ export default function B2BLayout({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <div className="min-h-screen bg-neutral-50 pb-16 md:pb-0">
+    <div className="system-skin min-h-screen bg-neutral-50 pb-16 md:pb-0">
       {/* ── Header ────────────────────────────────────────────────────── */}
       <header className="bg-white border-b border-neutral-200 sticky top-0 z-10">
         <div className="max-w-7xl mx-auto px-4 md:px-6 h-14 flex items-center justify-between gap-4">
           <Link href="/b2b/catalogo" className="flex items-center gap-2 shrink-0 hover:opacity-80 transition-opacity">
-            <div className="size-7 rounded-lg bg-tierra-700 text-white flex items-center justify-center font-display font-bold text-xs">EM</div>
+            <div className="size-7 rounded-lg bg-brand-700 text-white flex items-center justify-center font-display font-bold text-xs">EM</div>
             <span className="text-sm font-semibold text-neutral-900 font-display">En Minutas</span>
             <span className="hidden sm:inline text-neutral-300 select-none">·</span>
             <span className="hidden sm:inline text-xs text-neutral-500 font-medium">Portal B2B</span>

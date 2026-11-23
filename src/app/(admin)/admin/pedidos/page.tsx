@@ -1,7 +1,7 @@
 import { listAllUsers } from "@/lib/supabase/users";
 import type { Metadata } from "next";
 import { Plus } from "lucide-react";
-import { ButtonLink, PageHeader } from "@/components/ui";
+import { ButtonLink, PageHeader, ListError } from "@/components/ui";
 import { createClient, createAdminClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { PedidosClient } from "@/components/admin/pedidos-client";
@@ -53,11 +53,7 @@ export default async function AdminPedidosPage() {
   ]);
 
   if (error) {
-    return (
-      <div className="p-8 text-sm text-danger">
-        Error al cargar pedidos: {error.message}
-      </div>
-    );
+    return <ListError title="Error al cargar pedidos" message={error.message} retryHref="/admin/pedidos" />;
   }
 
   const emailMap: Record<string, string> = Object.fromEntries(

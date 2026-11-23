@@ -2,6 +2,7 @@
 
 import { useReducer, useTransition, useState } from "react";
 import Image from "next/image";
+import { Package } from "lucide-react";
 import { confirmarPedidoB2B } from "@/app/(b2b)/b2b/catalogo/actions";
 import type { PrecioB2B } from "@/lib/b2b-pricing";
 
@@ -78,15 +79,15 @@ function ProductCard({
           />
         </div>
       ) : (
-        <div className="w-full aspect-[4/3] bg-neutral-50 flex items-center justify-center">
-          <span className="text-3xl text-neutral-200">📦</span>
+        <div className="w-full aspect-[4/3] bg-brand-50 flex items-center justify-center">
+          <Package className="size-8 text-brand-300" strokeWidth={1.5} />
         </div>
       )}
 
       <div className="p-5 flex flex-col gap-3 flex-1">
         <div>
           <h3 className="font-medium text-neutral-900 text-sm leading-snug">{p.name}</h3>
-          <p className="text-xs text-neutral-400 mt-0.5">
+          <p className="text-xs text-neutral-600 mt-0.5">
             {p.presentacion ?? p.unit_label}
           </p>
           {minQty > 1 && (
@@ -97,17 +98,17 @@ function ProductCard({
         {p.precio ? (
           <div className="flex items-end justify-between">
             <div>
-              <p className="text-xs text-neutral-400">FINAL c/IVA · por caja</p>
+              <p className="text-xs text-neutral-600">FINAL c/IVA · por caja</p>
               <p className="text-xl font-semibold text-neutral-900 font-display tabular-nums">
                 {fmt(p.precio.final_civa)}
               </p>
             </div>
-            <p className="text-xs text-neutral-400 pb-0.5">
+            <p className="text-xs text-neutral-600 pb-0.5">
               {fmt(p.precio.precio_unidad)}/u
             </p>
           </div>
         ) : (
-          <p className="text-sm text-neutral-400 italic flex-1">Precio a consultar</p>
+          <p className="text-sm text-neutral-600 italic flex-1">Precio a consultar</p>
         )}
 
         <div className="pt-2 border-t border-neutral-100 mt-auto">

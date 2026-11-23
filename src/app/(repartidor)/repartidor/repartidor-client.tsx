@@ -5,6 +5,8 @@ import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { confirmarEntrega, iniciarDistribucion } from "@/app/(admin)/admin/pedidos/actions";
 import { MapPin, Phone, MessageCircle, Package, CheckCircle2, ChevronDown, ChevronUp, LogOut } from "lucide-react";
+import { TONE_STYLES, type Tone } from "@/components/ui";
+import { cn } from "@/lib/utils";
 
 type Pedido = {
   id: string;
@@ -58,6 +60,7 @@ function PedidoCard({ p, idx }: { p: Pedido; idx: number }) {
     : null;
 
   const isEnDistrib = p.status === "en_distribucion";
+  const estadoTone: Tone = isEnDistrib ? "info" : "neutral";
 
   function handleEntregar() {
     startTransition(async () => {
@@ -78,7 +81,7 @@ function PedidoCard({ p, idx }: { p: Pedido; idx: number }) {
         onClick={() => setExpanded(v => !v)}
         className="w-full flex items-center gap-3 px-4 py-4 text-left active:bg-neutral-50"
       >
-        <div className="size-9 rounded-full bg-[#16233f] text-white flex items-center justify-center font-bold text-sm shrink-0">
+        <div className="size-9 rounded-full bg-brand-900 text-white flex items-center justify-center font-bold text-sm shrink-0">
           {p.orden_ruta ?? idx + 1}
         </div>
         <div className="flex-1 min-w-0">
@@ -90,16 +93,10 @@ function PedidoCard({ p, idx }: { p: Pedido; idx: number }) {
           )}
         </div>
         <div className="flex items-center gap-2 shrink-0">
-          {!isEnDistrib && (
-            <span className="text-xs px-2 py-0.5 rounded-full bg-neutral-100 text-neutral-500 font-medium">
-              Despachado
-            </span>
-          )}
-          {isEnDistrib && (
-            <span className="text-xs px-2 py-0.5 rounded-full bg-blue-100 text-blue-700 font-medium">
-              En ruta
-            </span>
-          )}
+          <span className={cn("inline-flex items-center gap-1.5 text-xs px-2 py-0.5 rounded-full border font-medium", TONE_STYLES[estadoTone].badge)}>
+            <span className={cn("size-1.5 rounded-full shrink-0", TONE_STYLES[estadoTone].dot)} />
+            {isEnDistrib ? "En ruta" : "Despachado"}
+          </span>
           {expanded ? <ChevronUp className="size-4 text-neutral-400" /> : <ChevronDown className="size-4 text-neutral-400" />}
         </div>
       </button>
@@ -112,7 +109,7 @@ function PedidoCard({ p, idx }: { p: Pedido; idx: number }) {
               <>
                 <a
                   href={telUrl(phone) ?? "#"}
-                  className="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl border border-neutral-200 text-sm font-medium text-neutral-700 active:bg-neutral-100"
+                  className="flex-1 flex items-center justify-center gap-1.5 py-3 rounded-xl border border-neutral-300 text-sm font-medium text-neutral-700 active:bg-neutral-100"
                 >
                   <Phone className="size-4" />
                   Llamar
@@ -121,7 +118,7 @@ function PedidoCard({ p, idx }: { p: Pedido; idx: number }) {
                   href={waUrl(phone) ?? "#"}
                   target="_blank"
                   rel="noopener"
-                  className="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl border border-green-200 text-sm font-medium text-green-700 bg-green-50 active:bg-green-100"
+                  className="flex-1 flex items-center justify-center gap-1.5 py-3 rounded-xl border border-wa text-sm font-medium text-wa active:bg-success-bg"
                 >
                   <MessageCircle className="size-4" />
                   WhatsApp
@@ -133,7 +130,7 @@ function PedidoCard({ p, idx }: { p: Pedido; idx: number }) {
                 href={mapsUrl(p.shipping_snapshot) ?? "#"}
                 target="_blank"
                 rel="noopener"
-                className="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl border border-blue-200 text-sm font-medium text-blue-700 bg-blue-50 active:bg-blue-100"
+                className="flex-1 flex items-center justify-center gap-1.5 py-3 rounded-xl border border-info-border text-sm font-medium text-info active:bg-info-bg"
               >
                 <MapPin className="size-4" />
                 Maps
@@ -171,7 +168,7 @@ function PedidoCard({ p, idx }: { p: Pedido; idx: number }) {
               )}
               <button
                 onClick={() => setConfirmando(true)}
-                className="flex-1 py-3 rounded-xl bg-emerald-600 text-white text-sm font-bold active:bg-emerald-700"
+                className="flex-1 py-3 rounded-xl bg-success-solid text-white text-sm font-bold active:bg-success-hover"
               >
                 Entregado ✓
               </button>
@@ -190,7 +187,7 @@ function PedidoCard({ p, idx }: { p: Pedido; idx: number }) {
                 <button
                   onClick={handleEntregar}
                   disabled={isPending}
-                  className="flex-1 py-3 rounded-xl bg-emerald-600 text-white text-sm font-bold active:bg-emerald-700 disabled:opacity-50"
+                  className="flex-1 py-3 rounded-xl bg-success-solid text-white text-sm font-bold active:bg-success-hover disabled:opacity-50"
                 >
                   {isPending ? "Registrando…" : "Sí, entregar"}
                 </button>
@@ -217,6 +214,8 @@ export function RepartidorClient({
   const router = useRouter();
   const [signingOut, setSigningOut] = useState(false);
 
+  const totalHoy = pedidos.length + entregadosHoy.length;
+
   async function handleSignOut() {
     setSigningOut(true);
     const sb = createClient();
@@ -227,7 +226,7 @@ export function RepartidorClient({
   return (
     <div className="flex flex-col min-h-screen">
       {/* Sticky header */}
-      <header className="sticky top-0 z-20 bg-[#16233f] text-white px-4 pt-safe-top">
+      <header className="sticky top-0 z-20 bg-brand-950 text-white px-4 pt-safe-top">
         <div className="flex items-center gap-3 py-3">
           <div className="size-9 rounded-full bg-white/15 flex items-center justify-center font-bold text-sm shrink-0">
             {userName.charAt(0).toUpperCase()}
@@ -254,14 +253,21 @@ export function RepartidorClient({
             <LogOut className="size-4" />
           </button>
         </div>
+        {totalHoy > 0 && (
+          <div className="pb-3">
+            <span className="inline-flex items-center gap-1.5 text-xs font-semibold bg-white/15 text-white px-3 py-1 rounded-full">
+              {entregadosHoy.length} de {totalHoy} entregas
+            </span>
+          </div>
+        )}
       </header>
 
       {/* Content */}
       <main className="flex-1 px-3 py-4 space-y-3 pb-safe-bottom pb-6">
         {pedidos.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-20 gap-4">
-            <div className="size-16 rounded-full bg-emerald-100 flex items-center justify-center">
-              <CheckCircle2 className="size-8 text-emerald-600" />
+            <div className="size-16 rounded-full bg-success-bg flex items-center justify-center">
+              <CheckCircle2 className="size-8 text-success-solid" />
             </div>
             <div className="text-center">
               <p className="font-semibold text-neutral-800">Todo entregado</p>
@@ -288,7 +294,7 @@ export function RepartidorClient({
             <div className="space-y-2">
               {entregadosHoy.map(e => (
                 <div key={e.id} className="flex items-center gap-3 bg-white/60 rounded-xl px-4 py-3 border border-neutral-100">
-                  <CheckCircle2 className="size-4 text-emerald-500 shrink-0" />
+                  <CheckCircle2 className="size-4 text-success-solid shrink-0" />
                   <span className="font-mono text-xs text-neutral-400">{e.order_number}</span>
                   <span className="text-sm text-neutral-600 truncate">{e.customer?.full_name ?? "—"}</span>
                   {e.entregado_at && (

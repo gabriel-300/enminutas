@@ -1,0 +1,528 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Propuesta de diseño — En Minutas · Rediseño Frontend</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&family=Fraunces:opsz,wght@9..144,600;9..144,700;9..144,900&display=swap');
+
+:root{
+  /* Índigo de marca (única identidad) */
+  --brand-950:#14103F; --brand-900:#1A1560; --brand-800:#24208C; --brand-700:#2C25B5;
+  --brand-600:#4A3EE8; --brand-500:#6A5FF0; --brand-100:#E4E1FB; --brand-50:#F2F0FE;
+  /* Neutros cálidos (heredados del panel, se globalizan) */
+  --n-0:#FFFFFF; --n-50:#FAFAF8; --n-100:#F1EFE9; --n-200:#E4E1DA; --n-300:#CDC9BF;
+  --n-400:#A5A096; --n-600:#57544E; --n-700:#3B3934; --n-900:#211F1C;
+  /* Semánticos (tonos, nunca color solo) */
+  --success-bg:#ECFDF3; --success-solid:#17B26A; --success-text:#067647;
+  --danger-bg:#FEF3F2;  --danger-solid:#D92D20;  --danger-text:#B42318;
+  --warning-bg:#FFFAEB; --warning-solid:#DC6803; --warning-text:#B54708;
+  --info-bg:#EFF8FF;    --info-solid:#2E90FA;    --info-text:#175CD3;
+  --wa:#25D366; --wa-dark:#1FB855;
+  --r-sm:8px; --r-md:12px; --r-lg:16px; --r-xl:24px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--n-100);color:var(--n-900);font-family:'Nunito',system-ui,sans-serif;font-size:16px;line-height:1.5}
+.wrap{max-width:1280px;margin:0 auto;padding:56px 32px 96px}
+h1,h2,.display{font-family:'Fraunces',serif}
+
+/* ---------- HERO ---------- */
+.hero{background:linear-gradient(135deg,var(--brand-950) 0%,var(--brand-800) 100%);color:#fff;border-radius:var(--r-xl);padding:56px 48px;margin-bottom:40px;position:relative;overflow:hidden}
+.hero::after{content:"";position:absolute;right:-120px;top:-120px;width:340px;height:340px;border-radius:50%;background:radial-gradient(circle,var(--brand-600) 0%,transparent 70%);opacity:.55}
+.hero .kicker{display:inline-flex;align-items:center;gap:8px;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.22);border-radius:999px;padding:6px 16px;font-size:13px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;margin-bottom:20px}
+.hero h1{font-size:clamp(36px,4.5vw,54px);font-weight:900;line-height:1.08;margin-bottom:14px}
+.hero p{max-width:680px;font-size:18px;color:rgba(255,255,255,.82);font-weight:600}
+.hero .em{display:inline-flex;width:52px;height:52px;border-radius:14px;background:var(--brand-600);color:#fff;font-weight:900;font-size:20px;align-items:center;justify-content:center;box-shadow:0 8px 24px rgba(74,62,232,.45);margin-bottom:22px}
+
+/* ---------- SECTIONS ---------- */
+section{margin-bottom:56px}
+.sec-title{display:flex;align-items:baseline;gap:14px;margin-bottom:8px}
+.sec-title .num{font-family:'Fraunces',serif;font-weight:900;font-size:15px;color:var(--brand-700);background:var(--brand-50);border:1px solid var(--brand-100);border-radius:999px;padding:4px 12px}
+.sec-title h2{font-size:28px;font-weight:900}
+.sec-sub{color:var(--n-600);font-weight:600;margin-bottom:24px;max-width:760px}
+
+/* ---------- DIAGNÓSTICO ---------- */
+.diag-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px}
+.diag{background:var(--n-0);border:1px solid var(--n-200);border-radius:var(--r-lg);padding:22px}
+.diag .tag{display:inline-block;font-size:11px;font-weight:900;letter-spacing:.08em;text-transform:uppercase;border-radius:999px;padding:4px 10px;margin-bottom:12px}
+.diag .tag.crit{background:var(--danger-bg);color:var(--danger-text)}
+.diag .tag.alto{background:var(--warning-bg);color:var(--warning-text)}
+.diag .tag.medio{background:var(--info-bg);color:var(--info-text)}
+.diag h3{font-size:17px;font-weight:800;margin-bottom:6px}
+.diag p{font-size:14px;color:var(--n-600);font-weight:600}
+.diag code{font-size:12px;background:var(--n-100);padding:1px 6px;border-radius:6px;color:var(--brand-800)}
+
+/* ---------- TOKENS ---------- */
+.token-panels{display:grid;grid-template-columns:1.35fr 1fr;gap:16px}
+.panel{background:var(--n-0);border:1px solid var(--n-200);border-radius:var(--r-lg);padding:24px}
+.panel h3{font-size:15px;font-weight:900;letter-spacing:.02em;margin-bottom:16px}
+.swatches{display:grid;grid-template-columns:repeat(7,1fr);gap:10px}
+.swatch{border-radius:10px;overflow:hidden;border:1px solid var(--n-200)}
+.swatch .c{height:52px}
+.swatch .l{font-size:10px;font-weight:800;padding:6px 8px;background:var(--n-0);color:var(--n-700)}
+.swatches .family{grid-column:1/-1;font-size:11px;font-weight:900;letter-spacing:.1em;text-transform:uppercase;color:var(--n-400);margin:8px 0 2px}
+.tone-row{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:16px}
+.tone{border-radius:10px;border:1px solid var(--n-200);padding:12px;display:flex;align-items:center;gap:10px;background:var(--n-0)}
+.tone .dot{width:14px;height:14px;border-radius:50%;flex:none}
+.tone b{font-size:12px;font-weight:800}
+.tone span{display:block;font-size:10.5px;color:var(--n-500);font-weight:700}
+.type-spec{margin-top:18px;border-top:1px solid var(--n-200);padding-top:18px}
+.type-spec .row{display:flex;align-items:baseline;gap:14px;margin-bottom:10px}
+.type-spec .fam{font-size:11px;font-weight:900;color:var(--n-400);width:86px;flex:none;letter-spacing:.06em;text-transform:uppercase}
+.shape-spec{margin-top:14px;display:flex;gap:12px;flex-wrap:wrap}
+.shape{background:var(--brand-50);border:1px solid var(--brand-100);padding:8px 18px;font-size:12.5px;font-weight:800;color:var(--brand-800)}
+.shape.s1{border-radius:999px}.shape.s2{border-radius:16px}.shape.s3{border-radius:12px}.shape.s4{border-radius:8px}
+
+/* ---------- MOCKUP FRAMES ---------- */
+.browser{background:var(--n-0);border:1px solid var(--n-200);border-radius:var(--r-lg);overflow:hidden;box-shadow:0 24px 60px -24px rgba(26,21,96,.25)}
+.browser .bar{display:flex;align-items:center;gap:10px;background:var(--n-50);border-bottom:1px solid var(--n-200);padding:10px 14px}
+.browser .dots{display:flex;gap:6px}
+.browser .dots i{width:10px;height:10px;border-radius:50%;background:var(--n-200)}
+.browser .dots i:first-child{background:#F87171}.browser .dots i:nth-child(2){background:#FBBF24}.browser .dots i:nth-child(3){background:#34D399}
+.browser .url{flex:1;background:var(--n-0);border:1px solid var(--n-200);border-radius:999px;padding:5px 14px;font-size:11.5px;color:var(--n-500);font-weight:700}
+.phone{width:300px;border-radius:38px;border:8px solid #14171C;overflow:hidden;background:var(--n-0);box-shadow:0 24px 60px -24px rgba(26,21,96,.35);flex:none}
+.phone .notch{height:26px;background:#14171C;display:flex;justify-content:center;align-items:flex-end;padding-bottom:5px}
+.phone .notch i{width:80px;height:12px;border-radius:999px;background:#2A2F36}
+.mock-row{display:flex;gap:24px;align-items:flex-start;flex-wrap:wrap}
+.mock-col{display:flex;flex-direction:column;gap:8px;flex:none}
+.mock-label{font-size:12.5px;font-weight:900;letter-spacing:.04em;color:var(--n-600);text-transform:uppercase;display:flex;align-items:center;gap:8px}
+.mock-label i{width:8px;height:8px;border-radius:50%;background:var(--brand-700)}
+
+/* ---------- ADMIN MOCK ---------- */
+.admin{display:flex;min-height:560px;background:var(--n-50)}
+.sb{width:236px;flex:none;background:var(--n-0);border-right:1px solid var(--n-200);display:flex;flex-direction:column;padding:16px 12px}
+.sb .logo{display:flex;align-items:center;gap:10px;padding:4px 8px 16px}
+.sb .em{width:36px;height:36px;border-radius:10px;background:var(--brand-700);color:#fff;font-weight:900;font-size:14px;display:flex;align-items:center;justify-content:center}
+.sb .logo b{font-size:14.5px;font-weight:900;line-height:1.15}
+.sb .logo span{display:block;font-size:10.5px;color:var(--n-500);font-weight:800;letter-spacing:.04em}
+.sb .grp{font-size:10px;font-weight:900;letter-spacing:.12em;text-transform:uppercase;color:var(--n-400);padding:14px 10px 6px}
+.sb a{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:9px;font-size:13.5px;font-weight:700;color:var(--n-600);text-decoration:none}
+.sb a svg{width:16px;height:16px;opacity:.75}
+.sb a.on{background:var(--brand-50);color:var(--brand-800);box-shadow:inset 2.5px 0 0 var(--brand-700)}
+.sb .bdg{margin-left:auto;background:var(--danger-solid);color:#fff;font-size:10px;font-weight:900;border-radius:999px;padding:1px 7px}
+.sb a.soft .bdg2{margin-left:auto;background:var(--n-100);color:var(--n-600);font-size:10px;font-weight:900;border-radius:999px;padding:1px 7px}
+.main{flex:1;padding:20px 24px;min-width:0}
+.top{display:flex;align-items:center;gap:12px;margin-bottom:20px}
+.top .search{flex:1;max-width:360px;background:var(--n-0);border:1px solid var(--n-200);border-radius:999px;padding:8px 16px;font-size:12.5px;color:var(--n-400);font-weight:700}
+.top .ava{margin-left:auto;display:flex;align-items:center;gap:10px}
+.top .ava .pic{width:34px;height:34px;border-radius:50%;background:var(--brand-100);color:var(--brand-800);font-weight:900;font-size:12px;display:flex;align-items:center;justify-content:center}
+.ph{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
+.ph h4{font-size:22px;font-weight:900}
+.ph .acts{display:flex;gap:8px}
+.btn{display:inline-flex;align-items:center;gap:6px;border-radius:999px;font-size:13px;font-weight:800;padding:9px 18px;border:1px solid transparent}
+.btn.pri{background:var(--brand-700);color:#fff}
+.btn.sec{background:var(--n-0);border-color:var(--n-200);color:var(--n-700)}
+.btn.danger-o{background:var(--danger-bg);color:var(--danger-text);border-color:#FEDCD9}
+.kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px}
+.kpi{background:var(--n-0);border:1px solid var(--n-200);border-radius:var(--r-md);padding:14px 16px}
+.kpi .ic{width:30px;height:30px;border-radius:8px;display:flex;align-items:center;justify-content:center;margin-bottom:10px}
+.kpi .lb{font-size:11px;font-weight:800;color:var(--n-500);letter-spacing:.03em}
+.kpi .vl{font-size:21px;font-weight:900;line-height:1.2}
+.kpi .ft{font-size:11px;font-weight:800;margin-top:2px}
+.pill{display:inline-flex;align-items:center;gap:4px;font-size:10.5px;font-weight:900;border-radius:999px;padding:2px 8px}
+.pill.ok{background:var(--success-bg);color:var(--success-text)}
+.pill.bad{background:var(--danger-bg);color:var(--danger-text)}
+.dash-grid{display:grid;grid-template-columns:1.15fr 1fr;gap:12px}
+.card{background:var(--n-0);border:1px solid var(--n-200);border-radius:var(--r-md)}
+.card .hd{display:flex;align-items:center;justify-content:space-between;padding:14px 16px 0}
+.card .hd b{font-size:13.5px;font-weight:900}
+.chart{display:flex;align-items:flex-end;gap:12px;height:150px;padding:16px}
+.chart .b{flex:1;display:flex;flex-direction:column;align-items:center;gap:6px}
+.chart .b i{width:100%;border-radius:6px 6px 2px 2px;background:var(--brand-100)}
+.chart .b.hi i{background:var(--brand-700)}
+.chart .b span{font-size:10px;font-weight:800;color:var(--n-500)}
+.chart .b .n{font-size:10.5px;font-weight:900;color:var(--n-700)}
+.tbl{width:100%;border-collapse:collapse;font-size:12.5px}
+.tbl th{text-align:left;font-size:10.5px;font-weight:900;letter-spacing:.08em;text-transform:uppercase;color:var(--n-400);padding:10px 16px;border-bottom:1px solid var(--n-200)}
+.tbl td{padding:11px 16px;border-bottom:1px solid var(--n-100);font-weight:700;color:var(--n-700)}
+.tbl tr:last-child td{border-bottom:none}
+.st{display:inline-flex;align-items:center;gap:6px;font-size:11px;font-weight:900;border-radius:999px;padding:3px 10px;white-space:nowrap}
+.st i{width:7px;height:7px;border-radius:50%}
+.st.info{background:var(--info-bg);color:var(--info-text)}.st.info i{background:var(--info-solid)}
+.st.warn{background:var(--warning-bg);color:var(--warning-text)}.st.warn i{background:var(--warning-solid)}
+.st.ok{background:var(--success-bg);color:var(--success-text)}.st.ok i{background:var(--success-solid)}
+.st.brand{background:var(--brand-50);color:var(--brand-800)}.st.brand i{background:var(--brand-700)}
+
+/* ---------- PHONE MOCKS ---------- */
+.mhead{background:var(--brand-700);color:#fff;padding:14px 16px}
+.mhead .row1{display:flex;align-items:center;gap:10px}
+.mhead .bk{width:30px;height:30px;border-radius:50%;background:rgba(255,255,255,.14);display:flex;align-items:center;justify-content:center;font-size:14px}
+.mhead b{font-size:15px;font-weight:900}
+.mhead .sub{font-size:11.5px;opacity:.85;font-weight:700;margin-top:2px}
+.mhead .chipw{margin-top:10px;display:inline-flex;background:rgba(255,255,255,.14);border-radius:999px;padding:4px 12px;font-size:11px;font-weight:800}
+.pbody{padding:14px}
+.route-card{background:var(--n-50);border:1px solid var(--n-200);border-radius:14px;padding:12px 14px;margin-bottom:10px}
+.route-card.act{border:1.5px solid var(--brand-600);background:var(--brand-50);box-shadow:0 6px 16px -8px rgba(44,37,181,.35)}
+.route-card .top{display:flex;align-items:center;gap:8px;margin:0 0 4px}
+.route-card .ord{font-size:11px;font-weight:900;color:var(--n-500)}
+.route-card .st{margin-left:auto}
+.route-card b{font-size:14px;font-weight:900}
+.route-card .dir{font-size:12px;color:var(--n-600);font-weight:700}
+.route-card .pago{font-size:11px;font-weight:800;color:var(--n-600)}
+.mbtn{display:flex;align-items:center;justify-content:center;gap:8px;border-radius:999px;padding:12px;font-size:14px;font-weight:900}
+.mbtn.pri{background:var(--brand-700);color:#fff;box-shadow:0 8px 20px -8px rgba(44,37,181,.5)}
+.mbtn.ok-o{background:var(--success-bg);color:var(--success-text);border:1px solid #CDEFDB}
+.mbtn.n-o{background:var(--n-0);color:var(--n-700);border:1px solid var(--n-200)}
+.bottom-bar{padding:12px 14px 18px;border-top:1px solid var(--n-200);background:var(--n-0)}
+.confirm-hero{background:var(--n-0);padding:22px 16px 8px;text-align:center}
+.chk{width:56px;height:56px;border-radius:50%;background:var(--success-bg);display:flex;align-items:center;justify-content:center;margin:0 auto 12px}
+.chk svg{width:26px;height:26px}
+.confirm-hero b{font-size:19px;font-weight:900;display:block}
+.confirm-hero span{font-size:12.5px;color:var(--n-600);font-weight:700}
+.note{margin:12px 0;border-radius:12px;padding:11px 13px;font-size:12px;font-weight:800;display:flex;gap:8px;align-items:flex-start}
+.note.warn{background:var(--warning-bg);color:var(--warning-text);border:1px solid #F5E3B8}
+.summary{background:var(--n-50);border:1px solid var(--n-200);border-radius:14px;padding:13px;margin-bottom:12px}
+.summary .li{display:flex;justify-content:space-between;font-size:12.5px;font-weight:700;color:var(--n-600);padding:3px 0}
+.summary .tt{border-top:1px dashed var(--n-200);margin-top:7px;padding-top:8px;font-size:14px;font-weight:900;color:var(--n-900);display:flex;justify-content:space-between}
+
+/* ---------- PROD CARD / EMPTY ---------- */
+.prod{background:var(--n-0);border:1px solid var(--n-200);border-radius:var(--r-lg);overflow:hidden;width:230px;flex:none}
+.prod .ph2{height:120px;background:linear-gradient(135deg,var(--brand-100),var(--brand-50));display:flex;align-items:center;justify-content:center;color:var(--brand-700);font-size:34px}
+.prod .in{padding:14px}
+.prod .ln{font-size:10.5px;font-weight:900;letter-spacing:.08em;text-transform:uppercase;color:var(--brand-700)}
+.prod b{display:block;font-size:15px;font-weight:900;margin:2px 0 6px}
+.prod .pr{font-size:15.5px;font-weight:900;color:var(--n-900)}
+.prod .pu{font-size:11.5px;font-weight:800;color:var(--n-600)}
+.prod .ft{display:flex;align-items:center;gap:8px;margin-top:10px}
+.stepper{display:flex;align-items:center;border:1px solid var(--n-200);border-radius:999px;overflow:hidden}
+.stepper i{width:30px;height:30px;display:flex;align-items:center;justify-content:center;font-style:normal;font-weight:900;color:var(--brand-800);background:var(--brand-50)}
+.stepper b{min-width:26px;text-align:center;font-size:13px}
+.empty{background:var(--n-0);border:1px dashed var(--n-300);border-radius:var(--r-lg);padding:26px 22px;text-align:center;width:230px;flex:none}
+.empty .ic{width:52px;height:52px;border-radius:50%;background:var(--brand-50);color:var(--brand-700);display:flex;align-items:center;justify-content:center;margin:0 auto 10px;font-size:22px}
+.empty b{font-size:14.5px;font-weight:900;display:block;margin-bottom:4px}
+.empty p{font-size:12px;color:var(--n-600);font-weight:700;margin-bottom:12px}
+.skel{background:var(--n-0);border:1px solid var(--n-200);border-radius:var(--r-lg);padding:18px;width:230px;flex:none}
+.skel .li{height:12px;border-radius:6px;background:var(--n-100);margin-bottom:10px;position:relative;overflow:hidden}
+.skel .li::after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,transparent,rgba(255,255,255,.75),transparent);animation:sh 1.4s infinite}
+.skel .big{height:44px}
+@keyframes sh{0%{transform:translateX(-100%)}100%{transform:translateX(100%)}}
+
+/* ---------- ANTES/DESPUÉS ---------- */
+.ba{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.ba .panel h3 .lbl{font-size:11px;font-weight:900;letter-spacing:.1em;text-transform:uppercase;padding:3px 10px;border-radius:999px;margin-left:8px;vertical-align:middle}
+.ba .antes .lbl{background:var(--danger-bg);color:var(--danger-text)}
+.ba .despues .lbl{background:var(--success-bg);color:var(--success-text)}
+.logos{display:flex;gap:14px;flex-wrap:wrap;margin:14px 0 18px}
+.lg{width:52px;height:52px;border-radius:14px;color:#fff;font-weight:900;font-size:19px;display:flex;align-items:center;justify-content:center;position:relative}
+.lg small{position:absolute;bottom:-20px;font-size:10px;font-weight:800;color:var(--n-500);white-space:nowrap;font-family:'Nunito'}
+.chips{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
+.chips .ch{font-size:11.5px;font-weight:800;border-radius:999px;padding:5px 12px}
+
+/* ---------- PLAN ---------- */
+table.plan{width:100%;border-collapse:collapse;background:var(--n-0);border:1px solid var(--n-200);border-radius:var(--r-lg);overflow:hidden}
+table.plan th{text-align:left;font-size:11px;font-weight:900;letter-spacing:.08em;text-transform:uppercase;color:var(--n-500);padding:14px 18px;background:var(--n-50);border-bottom:1px solid var(--n-200)}
+table.plan td{padding:14px 18px;border-bottom:1px solid var(--n-100);font-size:13.5px;font-weight:600;color:var(--n-700);vertical-align:top}
+table.plan tr:last-child td{border-bottom:none}
+table.plan b.f{color:var(--brand-800);font-weight:900;white-space:nowrap}
+.tagx{display:inline-block;font-size:10.5px;font-weight:900;border-radius:999px;padding:2px 9px}
+.tagx.hi{background:var(--success-bg);color:var(--success-text)}
+.tagx.me{background:var(--warning-bg);color:var(--warning-text)}
+.foot{margin-top:56px;text-align:center;color:var(--n-500);font-size:12.5px;font-weight:700}
+.foot code{background:var(--n-0);border:1px solid var(--n-200);padding:2px 8px;border-radius:6px;font-size:12px;color:var(--brand-800)}
+@media (max-width:980px){.token-panels,.ba{grid-template-columns:1fr}.dash-grid{grid-template-columns:1fr}.kpis{grid-template-columns:repeat(2,1fr)}.swatches{grid-template-columns:repeat(4,1fr)}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- HERO -->
+  <div class="hero">
+    <div class="em">EM</div>
+    <div class="kicker">✦ Propuesta de rediseño · Frontend</div>
+    <h1>Una sola identidad índigo<br>para todo "En Minutas"</h1>
+    <p>Hoy el sitio, el panel, el B2B, el checkout y el repartidor parecen 4 productos distintos.
+    La propuesta unifica los 6 roles bajo <b>una paleta índigo</b>, <b>2 familias tipográficas</b> y
+    <b>un sistema de tonos semánticos</b>, conservando lo que ya está bien hecho.</p>
+  </div>
+
+  <!-- 1. DIAGNÓSTICO -->
+  <section>
+    <div class="sec-title"><span class="num">01</span><h2>Diagnóstico — por qué "se siente feo"</h2></div>
+    <p class="sec-sub">No es feo por descuidado: es <b>feo por fragmentado</b>. Hay 3 identidades conviviendo y colores sueltos fuera del sistema. Referencias exactas en la auditoría.</p>
+    <div class="diag-grid">
+      <div class="diag"><span class="tag crit">Crítico</span><h3>3 identidades conviviendo</h3><p>Índigo en el panel (#2C25B5), índigo distinto en el sitio (CSS Modules), y paleta legada "tierra" (#0E2544) en B2B, checkout, auth y repartidor. El isologo EM aparece en <code>4 colores distintos</code>.</p></div>
+      <div class="diag"><span class="tag crit">Crítico</span><h3>~35 usos de la paleta default</h3><p>Checkout, repartidor, auth y B2B usan <code>green-600</code>, <code>blue-100</code>, <code>red-50</code>, <code>yellow-200</code>… en vez de los tokens semánticos. Incluso mezclan token + default en el mismo elemento.</p></div>
+      <div class="diag"><span class="tag alto">Alto</span><h3>Sidebar del admin en inline-styles</h3><p><code>admin-nav.tsx:172-337</code> usa objetos <code>style&#123;&#123;&#125;&#125;</code> con hex literales que no existen en ninguna paleta, hover manual con React y sin focus visible accesible.</p></div>
+      <div class="diag"><span class="tag alto">Alto</span><h3>Estados transversales faltantes</h3><p><b>Cero</b> <code>loading.tsx</code>, <b>cero</b> <code>not-found.tsx</code>, solo 3 <code>error.tsx</code> (en pedidos). El 404 default de Next está expuesto en toda la app.</p></div>
+      <div class="diag"><span class="tag medio">Medio</span><h3>5 familias tipográficas</h3><p>Nunito (sitio) + Geist (admin) + Inter/Fraunces (checkout) + Montserrat cargada y sin uso. El checkout no combina con la tienda que lo contiene.</p></div>
+      <div class="diag"><span class="tag medio">Medio</span><h3>Contraste y a11y con huecos</h3><p><code>text-neutral-400</code> para textos informativos (≈2.9:1), botón "Precio a consultar" casi ilegible (1.6:1), toggles inalcanzables por teclado y 5 modales ad-hoc sin focus trap.</p></div>
+    </div>
+  </section>
+
+  <!-- 2. SISTEMA UNIFICADO -->
+  <section>
+    <div class="sec-title"><span class="num">02</span><h2>Sistema unificado</h2></div>
+    <p class="sec-sub">Se extiende el mejor activo del código — el remapeo de doble piel <code>admin:</code> de <code>globals.css</code> — a tokens globales semánticos. Una sola fuente de verdad de color.</p>
+    <div class="token-panels">
+      <div class="panel">
+        <h3>Paleta única (índigo de marca + neutros cálidos)</h3>
+        <div class="swatches">
+          <div class="family">Índigo — marca #2C25B5</div>
+          <div class="swatch"><div class="c" style="background:#14103F"></div><div class="l">950</div></div>
+          <div class="swatch"><div class="c" style="background:#1A1560"></div><div class="l">900</div></div>
+          <div class="swatch"><div class="c" style="background:#24208C"></div><div class="l">800</div></div>
+          <div class="swatch"><div class="c" style="background:#2C25B5"></div><div class="l">700 ★</div></div>
+          <div class="swatch"><div class="c" style="background:#4A3EE8"></div><div class="l">600</div></div>
+          <div class="swatch"><div class="c" style="background:#E4E1FB"></div><div class="l">100</div></div>
+          <div class="swatch"><div class="c" style="background:#F2F0FE"></div><div class="l">50</div></div>
+          <div class="family">Neutros cálidos (del panel, globalizados)</div>
+          <div class="swatch"><div class="c" style="background:#FAFAF8"></div><div class="l">50</div></div>
+          <div class="swatch"><div class="c" style="background:#F1EFE9"></div><div class="l">100</div></div>
+          <div class="swatch"><div class="c" style="background:#E4E1DA"></div><div class="l">200</div></div>
+          <div class="swatch"><div class="c" style="background:#A5A096"></div><div class="l">400</div></div>
+          <div class="swatch"><div class="c" style="background:#57544E"></div><div class="l">600</div></div>
+          <div class="swatch"><div class="c" style="background:#3B3934"></div><div class="l">700</div></div>
+          <div class="swatch"><div class="c" style="background:#211F1C"></div><div class="l">900</div></div>
+        </div>
+        <div class="tone-row">
+          <div class="tone"><span class="dot" style="background:var(--success-solid)"></span><div><b>success</b><span>Entregado · cobrado</span></div></div>
+          <div class="tone"><span class="dot" style="background:var(--danger-solid)"></span><div><b>danger</b><span>Cancelado · vencido</span></div></div>
+          <div class="tone"><span class="dot" style="background:var(--warning-solid)"></span><div><b>warning</b><span>En cocina · pendiente</span></div></div>
+          <div class="tone"><span class="dot" style="background:var(--info-solid)"></span><div><b>info</b><span>Confirmado · reparto</span></div></div>
+        </div>
+      </div>
+      <div class="panel">
+        <h3>Tipografía (de 5 familias → 2)</h3>
+        <div class="type-spec">
+          <div class="row"><span class="fam">Nunito</span><div><div style="font-size:22px;font-weight:900">Producto + marca</div><div style="font-size:12.5px;color:var(--n-500);font-weight:700">Sitio, tienda, B2B, checkout, auth, repartidor y panel (14px en admin)</div></div></div>
+          <div class="row"><span class="fam">Fraunces</span><div><div class="display" style="font-size:22px;font-weight:900">Display editorial</div><div style="font-size:12.5px;color:var(--n-500);font-weight:700">Solo titulares hero del sitio público</div></div></div>
+        </div>
+        <div style="border-top:1px solid var(--n-200);margin-top:16px;padding-top:16px">
+          <h3 style="font-size:15px;font-weight:900;margin-bottom:12px">Formas</h3>
+          <div class="shape-spec">
+            <span class="shape s1">Botones → pill</span>
+            <span class="shape s2">Cards → 16px</span>
+            <span class="shape s3">Inputs → 12px</span>
+            <span class="shape s4">Chips → 8px</span>
+          </div>
+          <p style="font-size:12px;color:var(--n-500);font-weight:700;margin-top:12px">El color <b>nunca es la única señal</b>: cada tono lleva punto + texto (regla ya establecida en <code>tones.ts</code>).</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 3. MOCKUPS -->
+  <section>
+    <div class="sec-title"><span class="num">03</span><h2>Mockups — look propuesto por superficie</h2></div>
+    <p class="sec-sub">Todo lo mostrado abajo es construido con los tokens de arriba. Lo mejor de lo actual (KPI cards del panel, patrones del sitio) se conserva; lo legado se re-pinta.</p>
+
+    <!-- ADMIN -->
+    <div class="mock-col" style="margin-bottom:28px">
+      <div class="mock-label"><i></i>Panel admin — sidebar tokenizada + dashboard</div>
+      <div class="browser">
+        <div class="bar"><div class="dots"><i></i><i></i><i></i></div><div class="url">app.enminutas.com/admin/dashboard</div></div>
+        <div class="admin">
+          <div class="sb">
+            <div class="logo"><span class="em">EM</span><div><b>En Minutas</b><span>PANEL INTERNO</span></div></div>
+            <div class="grp">Operación</div>
+            <a class="on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="3" y="3" width="7" height="9" rx="1"/><rect x="14" y="3" width="7" height="5" rx="1"/><rect x="14" y="12" width="7" height="9" rx="1"/><rect x="3" y="16" width="7" height="5" rx="1"/></svg>Dashboard</a>
+            <a><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M6 6h15l-1.5 8H8L6 3H3"/><circle cx="9" cy="20" r="1.5"/><circle cx="18" cy="20" r="1.5"/></svg>Pedidos<span class="bdg">3</span></a>
+            <a><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M4 3h16v6a8 8 0 0 1-16 0V3z"/><path d="M8 21h8M12 17v4"/></svg>Cocina</a>
+            <a><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M1 3h13v10H1zM14 7h4l3 4v2h-7z"/><circle cx="5.5" cy="17" r="1.8"/><circle cx="17.5" cy="17" r="1.8"/></svg>Distribución</a>
+            <a><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg>Facturación</a>
+            <div class="grp">Comercial</div>
+            <a><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="9" cy="8" r="3.5"/><path d="M2 20c0-4 3-6 7-6s7 2 7 6"/><path d="M17 11a3 3 0 1 0 0-6"/></svg>Clientes</a>
+            <a><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M3 17l6-6 4 4 8-8"/><path d="M21 7v6h-6"/></svg>Pipeline</a>
+            <div class="grp">Catálogo</div>
+            <a><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M20 7l-8-4-8 4v10l8 4 8-4V7z"/><path d="M4 7l8 4 8-4M12 21V11"/></svg>Productos<span class="bdg2">128</span></a>
+            <a><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 3v18M5 7c2 3 5 3 7 0 2 3 5 3 7 0"/></svg>Stock</a>
+          </div>
+          <div class="main">
+            <div class="top">
+              <div class="search">🔍&nbsp; Buscar pedidos, clientes, productos…</div>
+              <div class="ava"><div class="pic">DM</div></div>
+            </div>
+            <div class="ph">
+              <h4>Buenos días, Damián 👋</h4>
+              <div class="acts"><span class="btn sec">Exportar</span><span class="btn pri">+ Nuevo pedido</span></div>
+            </div>
+            <div class="kpis">
+              <div class="kpi"><div class="ic" style="background:var(--brand-50);color:var(--brand-700)"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M3 17l6-6 4 4 8-8"/></svg></div><div class="lb">Ventas noviembre</div><div class="vl">$4.2M</div><div class="ft" style="color:var(--success-text)"><span class="pill ok">↑ 12%</span>&nbsp;vs octubre</div></div>
+              <div class="kpi"><div class="ic" style="background:var(--info-bg);color:var(--info-text)"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M6 6h15l-1.5 8H8L6 3H3"/></svg></div><div class="lb">Pedidos hoy</div><div class="vl">38</div><div class="ft" style="color:var(--n-500)">9 en reparto</div></div>
+              <div class="kpi"><div class="ic" style="background:var(--success-bg);color:var(--success-text)"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6L9 17l-5-5"/></svg></div><div class="lb">Entregas OK</div><div class="vl">96%</div><div class="ft" style="color:var(--success-text)"><span class="pill ok">↑ 3%</span>&nbsp;semana</div></div>
+              <div class="kpi"><div class="ic" style="background:var(--danger-bg);color:var(--danger-text)"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 8v5M12 16.5v.5"/><circle cx="12" cy="12" r="9"/></svg></div><div class="lb">Cuenta corriente</div><div class="vl">$310K</div><div class="ft" style="color:var(--danger-text)">4 clientes vencidos</div></div>
+            </div>
+            <div class="dash-grid">
+              <div class="card">
+                <div class="hd"><b>Ventas por semana</b><span class="pill ok">Noviembre</span></div>
+                <div class="chart">
+                  <div class="b"><div class="n">$0.9M</div><i style="height:52%"></i><span>S1</span></div>
+                  <div class="b"><div class="n">$1.1M</div><i style="height:64%"></i><span>S2</span></div>
+                  <div class="b"><div class="n">$1.0M</div><i style="height:58%"></i><span>S3</span></div>
+                  <div class="b hi"><div class="n" style="color:var(--brand-800)">$1.2M</div><i style="height:74%"></i><span>S4</span></div>
+                </div>
+              </div>
+              <div class="card">
+                <div class="hd"><b>Pedidos de hoy</b><span class="st warn"><i></i>3 por despachar</span></div>
+                <table class="tbl">
+                  <tr><th>Cliente</th><th>Estado</th><th style="text-align:right">Total</th></tr>
+                  <tr><td>Almacén Doña Rosa</td><td><span class="st info"><i></i>Confirmado</span></td><td style="text-align:right">$84.000</td></tr>
+                  <tr><td>La Gastronómica</td><td><span class="st warn"><i></i>En cocina</span></td><td style="text-align:right">$212.500</td></tr>
+                  <tr><td>Dietética Sur</td><td><span class="st brand"><i></i>En reparto</span></td><td style="text-align:right">$45.900</td></tr>
+                  <tr><td>Restaurante Arai</td><td><span class="st ok"><i></i>Entregado</span></td><td style="text-align:right">$138.000</td></tr>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- PHONES ROW -->
+    <div class="mock-row" style="margin-bottom:28px">
+      <div class="mock-col">
+        <div class="mock-label"><i></i>Repartidor (PWA)</div>
+        <div class="phone">
+          <div class="notch"><i></i></div>
+          <div class="mhead">
+            <div class="row1"><div class="bk">←</div><div><b>Hoja de ruta</b><div class="sub">Viernes 27/11 · Mañana</div></div></div>
+            <span class="chipw">4 de 9 entregas · $68.400 por cobrar</span>
+          </div>
+          <div class="pbody">
+            <div class="route-card act">
+              <div class="top"><span class="ord">#1042</span><span class="st brand"><i></i>En reparto</span></div>
+              <b>Almacén Doña Rosa</b>
+              <div class="dir">Av. Uruguay 1240 · Centro</div>
+              <div class="pago">💵 Efectivo — $84.000</div>
+            </div>
+            <div class="route-card">
+              <div class="top"><span class="ord">#1043</span><span class="st warn"><i></i>Pendiente</span></div>
+              <b>Dietética Sur</b>
+              <div class="dir">Félix de Azara 852</div>
+              <div class="pago">💳 Transferencia</div>
+            </div>
+            <div class="route-card">
+              <div class="top"><span class="ord">#1044</span><span class="st warn"><i></i>Pendiente</span></div>
+              <b>Restaurante Arai</b>
+              <div class="dir">Ruta 12 km 4</div>
+              <div class="pago">💵 Efectivo — $138.000</div>
+            </div>
+          </div>
+          <div class="bottom-bar">
+            <div class="mbtn pri">Marcar entrega →</div>
+            <div style="display:flex;gap:8px;margin-top:8px">
+              <div class="mbtn n-o" style="flex:1">📞 Llamar</div>
+              <div class="mbtn n-o" style="flex:1">🗺️ Ver mapa</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="mock-col">
+        <div class="mock-label"><i></i>Checkout B2C — confirmación</div>
+        <div class="phone">
+          <div class="notch"><i></i></div>
+          <div class="confirm-hero">
+            <div class="chk"><svg viewBox="0 0 24 24" fill="none" stroke="var(--success-solid)" stroke-width="3"><path d="M20 6L9 17l-5-5"/></svg></div>
+            <b>¡Pedido confirmado!</b>
+            <span>Orden <b style="display:inline;font-size:12.5px">#MN-0847</b> · lista para producción</span>
+          </div>
+          <div class="pbody">
+            <div class="note warn">⚠️ Coordinamos el envío por WhatsApp cuando salga de cocina.</div>
+            <div class="summary">
+              <div class="li"><span>2× Chipá congelado 1kg</span><span>$12.800</span></div>
+              <div class="li"><span>1× Sopa de mandioca</span><span>$4.200</span></div>
+              <div class="li"><span>Envío centro</span><span>Gratis</span></div>
+              <div class="tt"><span>Total</span><span>$17.000</span></div>
+            </div>
+            <div class="mbtn pri" style="margin-bottom:8px">Ver mis pedidos</div>
+            <div class="mbtn ok-o">🟢&nbsp; Hablar por WhatsApp</div>
+            <div style="text-align:center;margin-top:10px"><span style="font-size:11px;color:var(--n-500);font-weight:800">Seguir comprando</span></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="mock-col">
+        <div class="mock-label"><i></i>Catálogo B2B — card + estados</div>
+        <div class="mock-row" style="gap:14px">
+          <div class="prod">
+            <div class="ph2">🫓</div>
+            <div class="in">
+              <span class="ln">Línea tradicional</span>
+              <b>Chipá congelado</b>
+              <div class="pr">$8.400 <span style="font-size:11px;color:var(--n-500);font-weight:800">/ caja</span></div>
+              <div class="pu">por unidad $1.050 · FINAL c/IVA</div>
+              <div class="ft">
+                <div class="stepper"><i>−</i><b>2</b><i>+</i></div>
+                <span class="btn pri" style="padding:7px 14px;font-size:12px">Agregar</span>
+              </div>
+            </div>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:14px">
+            <div class="empty">
+              <div class="ic">🔍</div>
+              <b>Sin resultados</b>
+              <p>Nada coincide con "congelad".</p>
+              <span class="btn sec" style="padding:7px 14px;font-size:12px">Limpiar filtro</span>
+            </div>
+            <div class="skel">
+              <div class="li big"></div><div class="li" style="width:80%"></div><div class="li" style="width:60%"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 4. ANTES / DESPUÉS -->
+  <section>
+    <div class="sec-title"><span class="num">04</span><h2>Antes → Después</h2></div>
+    <div class="ba">
+      <div class="panel antes">
+        <h3>Identidad actual <span class="lbl">antes</span></h3>
+        <div class="logos">
+          <div class="lg" style="background:#0E2544">EM<small>tierra-700 (legado)</small></div>
+          <div class="lg" style="background:#16233f">EM<small>themeColor / repartidor</small></div>
+          <div class="lg" style="background:#2C25B5">EM<small>índigo sitio</small></div>
+          <div class="lg" style="background:#3f37b3">EM<small>índigo admin</small></div>
+        </div>
+        <div class="chips">
+          <span class="ch" style="background:#FEF2F2;color:#DC2626">red-600</span>
+          <span class="ch" style="background:#EFF6FF;color:#1D4ED8">blue-100</span>
+          <span class="ch" style="background:#ECFDF5;color:#059669">emerald-600</span>
+          <span class="ch" style="background:#FEF9C3;color:#A16207">yellow-200</span>
+          <span class="ch" style="background:#8698A6;color:#fff">neutral-400 (2.9:1) ✗</span>
+        </div>
+      </div>
+      <div class="panel despues">
+        <h3>Identidad propuesta <span class="lbl">después</span></h3>
+        <div class="logos">
+          <div class="lg" style="background:var(--brand-700);box-shadow:0 10px 24px -8px rgba(44,37,181,.5)">EM<small>brand-700 · único en todo</small></div>
+          <div class="lg" style="background:var(--brand-950)">EM<small>brand-950 · fondos</small></div>
+        </div>
+        <div class="chips">
+          <span class="ch" style="background:var(--success-bg);color:var(--success-text)">success</span>
+          <span class="ch" style="background:var(--danger-bg);color:var(--danger-text)">danger</span>
+          <span class="ch" style="background:var(--warning-bg);color:var(--warning-text)">warning</span>
+          <span class="ch" style="background:var(--info-bg);color:var(--info-text)">info</span>
+          <span class="ch" style="background:var(--brand-50);color:var(--brand-800)">brand (tono propio)</span>
+          <span class="ch" style="background:var(--n-600);color:#fff">n-600 texto ✓ 5.9:1</span>
+        </div>
+        <p style="font-size:12.5px;color:var(--n-600);font-weight:700;margin-top:14px">Los hex crudos (<code>#25D366</code>, <code>#16233f</code>, <code>#f4f6f9</code>…) se reemplazan por tokens: WhatsApp pasa a un token <code>wa</code> documentado, el resto a brand/n/semánticos.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 5. PLAN -->
+  <section>
+    <div class="sec-title"><span class="num">05</span><h2>Plan de trabajo por fases</h2></div>
+    <p class="sec-sub">Orden por impacto/esfuerzo. Lo mejor terminado (sitio público, dashboard) no se rehace — se pulira.</p>
+    <table class="plan">
+      <tr><th>Fase</th><th>Qué</th><th>Superficies</th><th>Esfuerzo</th></tr>
+      <tr><td><b class="f">0 · Fundación</b></td><td>Tokens globales semánticos (surface/text/accent + tonos), barrido de ~35 usos de paleta default → <code>tones.ts</code>, fuentes 5→2, borrar dead deps (recharts, leaflet, next-themes… a decidir)</td><td><code>globals.css</code> transversal</td><td><span class="tagx me">Medio · alto impacto</span></td></tr>
+      <tr><td><b class="f">1 · Transversal</b></td><td>Sidebar admin reescrita a Tailwind+tokens (con focus-visible), <code>loading.tsx</code> del grupo admin, <code>not-found.tsx</code> global, errores con icono+retry, unificar mapa de colores pipeline</td><td>Admin · toda la app</td><td><span class="tagx hi">Bajo · visible ya</span></td></tr>
+      <tr><td><b class="f">2 · Operación diaria</b></td><td>Repartidor mobile-first (hex → tokens, botones al kit) + checkout B2C con la piel de la tienda (Inter/Fraunces → Nunito, semánticos)</td><td>Repartidor · Checkout</td><td><span class="tagx me">Medio</span></td></tr>
+      <tr><td><b class="f">3 · Clientes</b></td><td>Auth (forgot/set-password/registro con Input/Button del kit) + Portal B2B (paleta legada → índigo, 📦 → NoPhoto de marca, steppers unificados)</td><td>Auth · B2B</td><td><span class="tagx me">Medio</span></td></tr>
+      <tr><td><b class="f">4 · Pulido</b></td><td>Contraste AA (neutral-400→n-600), focus trap en modales ad-hoc, dashboard chart con recharts ya instalada, marca (tapiz/rays) en flujos transaccionales, reduced-motion</td><td>Todo</td><td><span class="tagx hi">Bajo</span></td></tr>
+    </table>
+  </section>
+
+  <div class="foot">
+    Propuesta de rediseño frontend · "En Minutas" · Mockup estático — abrí <code>docs/propuesta-diseno-frontend.html</code> en el navegador para verlo en vivo.<br>
+    Fase 0 puede ejecutarse con las skills <b>web-design-guidelines</b> + <b>extract-design-system</b> (skills.sh) y la skill local <b>senior-frontend</b>.
+  </div>
+
+</div>
+</body>
+</html>

@@ -11,3 +11,4 @@ export { Card, CardHeader, KpiCard, ConfigCard } from "./card";
 export { PageHeader } from "./page-header";
 export { TONE_STYLES, PEDIDO_TONE, ALERTA_TONE, CLIENTE_TONE, PIPELINE_TONE, type Tone } from "./tones";
 export { Skeleton, ProductCardSkeleton } from "./skeleton";
+export { ListError } from "./list-error";

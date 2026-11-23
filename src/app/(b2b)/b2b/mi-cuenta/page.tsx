@@ -64,8 +64,8 @@ export default async function MiCuentaPage() {
         </div>
         <div className="px-5 py-4">
           <p className="text-xs text-neutral-400 mb-0.5">Estado de cuenta</p>
-          <span className="inline-flex items-center gap-1.5 text-xs font-medium text-emerald-700 bg-emerald-50 border border-emerald-100 px-2.5 py-1 rounded-full">
-            <span className="size-1.5 rounded-full bg-emerald-500 inline-block" />
+          <span className="inline-flex items-center gap-1.5 text-xs font-medium text-success bg-success-bg border border-success-border px-2.5 py-1 rounded-full">
+            <span className="size-1.5 rounded-full bg-success-solid inline-block" />
             Activo
           </span>
         </div>

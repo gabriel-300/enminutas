@@ -49,7 +49,7 @@ export function PlantillasClient({ plantillas }: { plantillas: Plantilla[] }) {
 
   return (
     <div className="space-y-3">
-      {error && <p className="text-sm text-red-600">{error}</p>}
+      {error && <p className="text-sm text-danger">{error}</p>}
       {plantillas.map(p => (
         <div key={p.id} className="bg-white rounded-2xl border border-neutral-200 overflow-hidden">
           {/* Header de la plantilla */}
@@ -81,7 +81,7 @@ export function PlantillasClient({ plantillas }: { plantillas: Plantilla[] }) {
               <button
                 onClick={() => handleEliminar(p.id, p.nombre)}
                 disabled={pending}
-                className="p-2 rounded-lg text-neutral-300 hover:text-red-500 hover:bg-red-50 transition-colors disabled:opacity-30"
+                className="p-2 rounded-lg text-neutral-300 hover:text-danger hover:bg-danger-bg transition-colors disabled:opacity-30"
                 title="Eliminar plantilla"
               >
                 <Trash2 className="size-4" />

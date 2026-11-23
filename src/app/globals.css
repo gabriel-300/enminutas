@@ -170,6 +170,11 @@
   --color-danger-soft-border: #e8a39b;
   --color-info-border:    #b9d1f3;
   --color-info-solid:     #2f6fd0;
+  --color-success-hover:  #1d6b3a;
+
+  /* Marca externa documentada: WhatsApp (CTA de contacto) */
+  --color-wa:             #25d366;
+  --color-wa-dark:        #1fb855;
 
   /* Sombras del panel */
   --shadow-card:       0 1px 2px rgba(28, 27, 24, 0.05);
@@ -186,9 +191,9 @@
    existentes (bg-tierra-700, text-neutral-600, rounded-xl...) se re-pintan
    sin tocar cada pantalla. La tienda y el sitio público no se ven afectados. */
 .admin-panel {
-  --font-sans:    var(--font-geist-sans), system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-sans:    var(--font-nunito), system-ui, -apple-system, "Segoe UI", sans-serif;
   --font-display: var(--font-sans);
-  --font-mono:    var(--font-geist-mono), ui-monospace, "Cascadia Code", monospace;
+  --font-mono:    ui-monospace, "Cascadia Code", monospace;
 
   --color-tierra-900: #2c2872;
   --color-tierra-800: #342e8f;
@@ -315,6 +320,54 @@
 .admin-panel :focus-visible:not(input, select, textarea) {
   outline: 2px solid var(--color-brand-500);
   outline-offset: 2px;
+}
+
+/* Portal B2B y Auth: mismo remapeo de color que `.admin-panel` (tierra/dorado/
+   crema/neutral/semánticos → índigo), sin las reglas propias del panel
+   (tipografía fija, tablas, inputs). Las pantallas quedan índigo sin tocar
+   cada clase existente. */
+.system-skin {
+  --color-tierra-900: #2c2872;
+  --color-tierra-800: #342e8f;
+  --color-tierra-700: #3f37b3;
+  --color-tierra-600: #4a45cc;
+  --color-tierra-500: #5b5be0;
+  --color-tierra-400: #7a7cec;
+  --color-tierra-300: #9ea3f4;
+  --color-tierra-200: #c3c8f9;
+  --color-tierra-100: #e0e3fc;
+  --color-tierra-50:  #f0f1fe;
+
+  --color-dorado-600: #4a45cc;
+  --color-dorado-500: #5b5be0;
+  --color-dorado-400: #7a7cec;
+  --color-dorado-300: #9ea3f4;
+  --color-dorado-100: #e0e3fc;
+
+  --color-crema-50:  #f6f6f4;
+  --color-crema-100: #efeeeb;
+  --color-crema-200: #e3e2de;
+  --color-crema-300: #cfcdc8;
+
+  --color-neutral-900: #1c1b18;
+  --color-neutral-800: #2c2a26;
+  --color-neutral-700: #44413c;
+  --color-neutral-600: #57544e;
+  --color-neutral-500: #737069;
+  --color-neutral-400: #928e87;
+  --color-neutral-300: #cfcdc8;
+  --color-neutral-200: #e3e2de;
+  --color-neutral-100: #efeeeb;
+  --color-neutral-50:  #f6f6f4;
+
+  --color-success:    #1d6b3a;
+  --color-success-bg: #eaf6ee;
+  --color-warning:    #8a5a00;
+  --color-warning-bg: #fdf4e0;
+  --color-danger:     #b42318;
+  --color-danger-bg:  #fdecea;
+  --color-info:       #1f5bb5;
+  --color-info-bg:    #e9f1fc;
 }
 
 /* ─────────────────────────────────────────────

@@ -11,6 +11,7 @@ import { MOTIVOS_FALTANTE } from "@/lib/entrega-parcial";
 import { ReprogramarFaltanteButton } from "@/components/admin/reprogramar-faltante-button";
 import { CerrarFaltanteButton } from "@/components/admin/cerrar-faltante-button";
 import { esCanalFlujo } from "@/lib/order-channels";
+import { ListError } from "@/components/ui";
 
 export const metadata: Metadata = { title: "Detalle de pedido — Admin En Minutas" };
 export const revalidate = 0;
@@ -49,11 +50,7 @@ export default async function AdminPedidoDetailPage({
 
   if (orderError) {
     console.error("[pedido-detail] query error:", orderError);
-    return (
-      <div className="p-8 text-sm text-danger">
-        Error al cargar el pedido: {orderError.message}
-      </div>
-    );
+    return <ListError title="Error al cargar el pedido" message={orderError.message} retryHref={`/admin/pedidos/${id}`} />;
   }
   if (!order) notFound();
 

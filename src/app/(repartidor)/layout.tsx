@@ -7,7 +7,7 @@ export const metadata: Metadata = {
 
 export default function RepartidorLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div className="min-h-screen bg-[#f4f6f9]">
+    <div className="min-h-screen bg-n-50">
       {children}
     </div>
   );

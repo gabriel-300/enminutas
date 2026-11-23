@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { Plus, Upload } from "lucide-react";
-import { ButtonLink, PageHeader } from "@/components/ui";
+import { ButtonLink, PageHeader, ListError } from "@/components/ui";
 import { createClient, createAdminClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { ProductsAdminClient } from "@/components/admin/products-admin-client";
@@ -31,11 +31,7 @@ export default async function AdminProductosPage() {
     .order("name");
 
   if (error) {
-    return (
-      <div className="p-8 text-sm text-danger">
-        Error al cargar productos: {error.message}
-      </div>
-    );
+    return <ListError title="Error al cargar productos" message={error.message} retryHref="/admin/productos" />;
   }
 
   return (

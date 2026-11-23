@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { ContenidoClient } from "./contenido-client";
+import { ListError } from "@/components/ui";
 
 export const metadata = { title: "Contenido web · En Minutas" };
 
@@ -12,11 +13,7 @@ export default async function ContenidoPage() {
     .order("clave");
 
   if (error) {
-    return (
-      <div className="p-8 text-danger">
-        Error al cargar contenido: {error.message}
-      </div>
-    );
+    return <ListError title="Error al cargar contenido" message={error.message} retryHref="/admin/contenido" />;
   }
 
   return (

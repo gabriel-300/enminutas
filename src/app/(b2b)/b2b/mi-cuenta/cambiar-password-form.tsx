@@ -104,12 +104,12 @@ export function CambiarPasswordForm() {
           </div>
 
           {error && (
-            <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-xl px-3 py-2">
+            <p className="text-sm text-danger bg-danger-bg border border-danger-border rounded-xl px-3 py-2">
               {error}
             </p>
           )}
           {ok && (
-            <p className="text-sm text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-xl px-3 py-2">
+            <p className="text-sm text-success bg-success-bg border border-success-border rounded-xl px-3 py-2">
               ✓ Contraseña actualizada correctamente.
             </p>
           )}

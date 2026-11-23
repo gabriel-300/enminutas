@@ -45,7 +45,7 @@ export function LoginForm() {
     <div className="w-full max-w-sm">
       {/* Logo */}
       <div className="text-center mb-8">
-        <div className="size-12 rounded-full bg-tierra-700 text-white flex items-center justify-center mx-auto mb-4 font-display font-bold text-lg">
+        <div className="size-12 rounded-full bg-brand-700 text-white flex items-center justify-center mx-auto mb-4 font-display font-bold text-lg">
           EM
         </div>
         <h1 className="font-display text-2xl font-semibold text-neutral-900">

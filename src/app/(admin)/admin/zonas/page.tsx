@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { createClient, createAdminClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { ZonasClient } from "@/components/admin/zonas-client";
+import { ListError } from "@/components/ui";
 
 export const metadata: Metadata = { title: "Zonas de delivery — Admin En Minutas" };
 export const revalidate = 0;
@@ -21,11 +22,7 @@ export default async function AdminZonasPage() {
   ]);
 
   if (error) {
-    return (
-      <div className="p-8 text-sm text-danger">
-        Error al cargar zonas: {error.message}
-      </div>
-    );
+    return <ListError title="Error al cargar zonas" message={error.message} retryHref="/admin/zonas" />;
   }
 
   const countMap: Record<string, number> = {};

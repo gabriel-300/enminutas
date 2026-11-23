@@ -23,7 +23,7 @@ const variantClasses: Record<ButtonVariant, string> = {
     "admin:border-transparent admin:text-brand-700 admin:hover:border-transparent admin:hover:bg-brand-50 admin:hover:text-brand-800 admin:active:scale-100 " +
     "admin:disabled:text-n-500",
   danger:
-    "bg-danger text-white hover:bg-red-700 active:scale-[0.98] shadow-sm " +
+    "bg-danger text-white hover:bg-danger-hover active:scale-[0.98] shadow-sm " +
     "admin:border admin:border-danger admin:shadow-none admin:hover:bg-danger-hover admin:hover:border-danger-hover admin:active:scale-100 " +
     "admin:disabled:bg-n-100 admin:disabled:border-n-200 admin:disabled:text-n-500",
   "danger-soft":

@@ -82,9 +82,9 @@ export function FirmaCanvas({ orderId }: { orderId: string }) {
 
   if (guardado) {
     return (
-      <div className="no-print mt-6 p-4 bg-emerald-50 border border-emerald-200 rounded-2xl flex items-center gap-3">
-        <Check className="size-5 text-emerald-600 shrink-0" />
-        <p className="text-sm font-medium text-emerald-800">Firma guardada correctamente. Recargá la página para verla en el remito.</p>
+      <div className="no-print mt-6 p-4 bg-success-bg border border-success-border rounded-2xl flex items-center gap-3">
+        <Check className="size-5 text-success-solid shrink-0" />
+        <p className="text-sm font-medium text-success">Firma guardada correctamente. Recargá la página para verla en el remito.</p>
       </div>
     );
   }
@@ -129,13 +129,13 @@ export function FirmaCanvas({ orderId }: { orderId: string }) {
           value={aclaracion}
           onChange={e => setAclaracion(e.target.value)}
           placeholder="Aclaración (nombre del firmante, opcional)"
-          className="w-full rounded-xl border border-neutral-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#16233f]/20 focus:border-[#16233f]"
+          className="w-full rounded-xl border border-neutral-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-700/20 focus:border-brand-700"
         />
-        {error && <p className="text-xs text-red-600">{error}</p>}
+        {error && <p className="text-xs text-danger">{error}</p>}
         <button
           onClick={confirmar}
           disabled={pending || !tieneTrazo}
-          className="w-full py-2.5 rounded-xl bg-[#16233f] text-white text-sm font-medium hover:bg-[#1e2f52] transition-colors disabled:opacity-40"
+          className="w-full py-2.5 rounded-xl bg-brand-700 text-white text-sm font-medium hover:bg-brand-800 transition-colors disabled:opacity-40"
         >
           {pending ? "Guardando..." : "Confirmar firma"}
         </button>

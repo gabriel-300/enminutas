@@ -20,7 +20,7 @@ export default async function PendientePage() {
 
   return (
     <div className="w-full max-w-sm text-center">
-      <div className="size-12 rounded-full bg-tierra-700 text-white flex items-center justify-center mx-auto mb-6 font-display font-bold text-lg">
+      <div className="size-12 rounded-full bg-brand-700 text-white flex items-center justify-center mx-auto mb-6 font-display font-bold text-lg">
         EM
       </div>
 

@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { CategoriasClient } from "@/components/admin/categorias-client";
+import { ListError } from "@/components/ui";
 
 export const metadata: Metadata = { title: "Categorías — Admin En Minutas" };
 export const revalidate = 0;
@@ -20,11 +21,7 @@ export default async function AdminCategoriasPage() {
   ]);
 
   if (error) {
-    return (
-      <div className="p-8 text-sm text-danger">
-        Error al cargar categorías: {error.message}
-      </div>
-    );
+    return <ListError title="Error al cargar categorías" message={error.message} retryHref="/admin/categorias" />;
   }
 
   const countMap: Record<string, number> = {};

@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import { createClient, createAdminClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { StaffClient } from "@/components/admin/staff-client";
+import { ListError } from "@/components/ui";
 
 export const metadata: Metadata = { title: "Staff — Admin En Minutas" };
 export const revalidate = 0;
@@ -28,11 +29,7 @@ export default async function AdminStaffPage() {
   ]);
 
   if (error) {
-    return (
-      <div className="p-8 text-sm text-danger">
-        Error al cargar usuarios: {error}
-      </div>
-    );
+    return <ListError title="Error al cargar usuarios" message={error} retryHref="/admin/staff" />;
   }
 
   const STAFF_ROLES = ["admin", "vendedor", "produccion", "distribucion"];
