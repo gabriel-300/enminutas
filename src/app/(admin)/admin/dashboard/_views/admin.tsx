@@ -88,6 +88,11 @@ export async function AdminDashboard() {
                     )}>
                       {fmtK(m.total)}
                     </span>
+                    {m.pct !== null && (
+                      <span className={cn("text-center text-[11px] font-medium tabular-nums", m.pct >= 0 ? "text-success" : "text-danger")}>
+                        {m.pct >= 0 ? "↑" : "↓"} {Math.abs(m.pct)}%
+                      </span>
+                    )}
                     <div
                       className={cn(
                         "rounded-t-md rounded-b-sm transition-colors",
@@ -113,21 +118,32 @@ export async function AdminDashboard() {
             <div className="flex flex-col px-5 pb-4 pt-2">
               {topProducts.length === 0 ? (
                 <p className="py-4 text-center text-sm text-n-600">Sin datos este mes</p>
-              ) : topProducts.map(([name, total], i) => (
-                <div key={name} className="grid grid-cols-[20px_minmax(0,1fr)_auto] items-center gap-3 border-b border-n-100 py-2.5 last:border-b-0">
-                  <span className="text-[13px] tabular-nums text-n-600">{i + 1}</span>
-                  <div className="flex min-w-0 flex-col gap-1.5">
-                    <span className="truncate text-sm font-medium text-n-900" title={name}>{name}</span>
-                    <div className="h-1.5 overflow-hidden rounded-full bg-n-100">
-                      <div
-                        className="h-full rounded-full bg-brand-600"
-                        style={{ width: `${Math.round((total / maxProduct) * 100)}%` }}
-                      />
+              ) : topProducts.map(({ name, total, productId }, i) => {
+                const rowCls = cn(
+                  "grid grid-cols-[20px_minmax(0,1fr)_auto] items-center gap-3 border-b border-n-100 py-2.5 last:border-b-0",
+                  productId && "-mx-2 rounded-lg px-2 transition-colors hover:bg-n-50"
+                );
+                const content = (
+                  <>
+                    <span className="text-[13px] tabular-nums text-n-600">{i + 1}</span>
+                    <div className="flex min-w-0 flex-col gap-1.5">
+                      <span className="truncate text-sm font-medium text-n-900" title={name}>{name}</span>
+                      <div className="h-1.5 overflow-hidden rounded-full bg-n-100">
+                        <div
+                          className="h-full rounded-full bg-brand-600"
+                          style={{ width: `${Math.round((total / maxProduct) * 100)}%` }}
+                        />
+                      </div>
                     </div>
-                  </div>
-                  <span className="text-right text-sm font-semibold tabular-nums text-n-900">{fmtK(total)}</span>
-                </div>
-              ))}
+                    <span className="text-right text-sm font-semibold tabular-nums text-n-900">{fmtK(total)}</span>
+                  </>
+                );
+                return productId ? (
+                  <Link key={name} href={`/admin/productos/${productId}/editar`} className={rowCls}>{content}</Link>
+                ) : (
+                  <div key={name} className={rowCls}>{content}</div>
+                );
+              })}
             </div>
           </Card>
 

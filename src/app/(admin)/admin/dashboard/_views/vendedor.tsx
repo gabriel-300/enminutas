@@ -14,7 +14,15 @@ export async function VendedorDashboard({ user }: { user: { id: string } }) {
   const { now, mesNombre, misIds, pedidosPendientes, pedidosEnProd, ultimosContactos, sinPedidos, inactivos30, inactivos15, activosCnt, ventasMes, objetivo, pctMeta, totalPend, totalInact } = await loadVendedorDashboard(user);
 
   const inactTone: Tone | "default" = (sinPedidos.length + inactivos30.length) > 0 ? "danger" : inactivos15.length > 0 ? "warning" : "default";
-  const metaTone  = objetivo > 0 ? (pctMeta! >= 100 ? "success" : pctMeta! >= 60 ? "brand" : "warning") : "neutral";
+
+  // Ritmo esperado según el día del mes: vender el 40% de la meta el día 25 es peor que el día 5.
+  const diasEnMes    = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+  const paceEsperado = Math.round((now.getDate() / diasEnMes) * 100);
+  const atrasado     = objetivo > 0 && pctMeta !== null && pctMeta < 100 && pctMeta < paceEsperado - 10;
+
+  const metaTone: Tone = objetivo > 0
+    ? (pctMeta! >= 100 ? "success" : atrasado ? "danger" : pctMeta! >= 60 ? "brand" : "warning")
+    : "neutral";
 
   const quickLinks = [
     { href: "/admin/preventista",   label: "Mis clientes", badge: totalInact > 0 ? `${totalInact} para contactar` : null, icon: IC.preventista },
@@ -49,7 +57,10 @@ export async function VendedorDashboard({ user }: { user: { id: string } }) {
                   style={{ width: `${pctMeta}%` }}
                 />
               </div>
-              <p className="text-[13px] text-n-600">{pctMeta}% de {fmtK(objetivo)}</p>
+              <p className="text-[13px] text-n-600">
+                {pctMeta}% de {fmtK(objetivo)}
+                {atrasado && <span className="font-medium text-danger"> · atrasado para el día {now.getDate()}</span>}
+              </p>
             </>
           ) : (
             <p className="text-[13px] text-n-500">Sin meta definida</p>

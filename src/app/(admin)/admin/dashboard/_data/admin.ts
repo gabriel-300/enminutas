@@ -47,7 +47,7 @@ export async function loadAdminDashboard() {
 
     // Pedidos activos últimos 6 meses (para evolución + top productos)
     db.from("orders")
-      .select("id, total, created_at, lines:order_lines(line_total, product_snapshot)")
+      .select("id, total, created_at, lines:order_lines(product_id, line_total, product_snapshot)")
       .eq("channel", "b2b_mayorista").in("status", VENTAS_STATUSES)
       .gte("created_at", sixMonthsAgo)
       .order("created_at", { ascending: false }),
@@ -165,17 +165,19 @@ export async function loadAdminDashboard() {
     (productosSinDatosB2B ?? 0);
 
   // ── Top productos ─────────────────────────────────────────────────────
-  const productMap: Record<string, number> = {};
+  const productMap: Record<string, { total: number; productId: string | null }> = {};
   for (const order of monthlyOrders) {
     for (const line of (order.lines ?? [])) {
       const name = line.product_snapshot?.name ?? "Producto";
-      productMap[name] = (productMap[name] ?? 0) + Number(line.line_total);
+      if (!productMap[name]) productMap[name] = { total: 0, productId: line.product_id ?? null };
+      productMap[name].total += Number(line.line_total);
     }
   }
   const topProducts = Object.entries(productMap)
-    .sort(([, a], [, b]) => b - a)
+    .map(([name, v]) => ({ name, total: v.total, productId: v.productId }))
+    .sort((a, b) => b.total - a.total)
     .slice(0, 5);
-  const maxProduct = topProducts[0]?.[1] ?? 1;
+  const maxProduct = topProducts[0]?.total ?? 1;
 
   // ── Evolución mensual ─────────────────────────────────────────────────
   const monthMap: Record<string, number> = {};
@@ -188,12 +190,14 @@ export async function loadAdminDashboard() {
     const d = new Date(now.getFullYear(), now.getMonth() - (5 - i), 1);
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
   });
-  const monthlyEvol = monthKeys.map((k) => ({
+  const monthlyEvol = monthKeys.map((k, i) => ({
     key:     k,
     total:   monthMap[k] ?? 0,
     label:   new Date(Number(k.split("-")[0]), Number(k.split("-")[1]) - 1)
                .toLocaleDateString("es-AR", { month: "short" }),
     current: k === `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`,
+    // Variación vs. el mes anterior del propio rango (el primero no tiene referencia).
+    pct:     i > 0 ? pctChange(monthMap[k] ?? 0, monthMap[monthKeys[i - 1]] ?? 0) : null,
   }));
   const maxMonth = Math.max(...monthlyEvol.map((m) => m.total), 1);
 
