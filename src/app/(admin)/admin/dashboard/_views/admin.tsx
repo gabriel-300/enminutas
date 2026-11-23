@@ -80,21 +80,24 @@ export async function AdminDashboard() {
               {monthlyEvol.map((m) => {
                 const pxH = maxMonth > 0 ? Math.round((m.total / maxMonth) * BAR_MAX_PX) : 0;
                 return (
-                  <div key={m.key} className="flex h-full flex-col items-stretch justify-end gap-1.5">
+                  <div key={m.key} className="group flex h-full flex-col items-stretch justify-end gap-1.5">
                     <span className={cn(
-                      "text-center text-xs tabular-nums",
-                      m.current ? "font-semibold text-brand-700" : "text-n-600",
+                      "text-center text-xs tabular-nums transition-colors",
+                      m.current ? "font-semibold text-brand-700" : "text-n-600 group-hover:font-semibold group-hover:text-brand-700",
                       m.total === 0 && "invisible"
                     )}>
                       {fmtK(m.total)}
                     </span>
                     <div
-                      className={cn("rounded-t-md rounded-b-sm", m.total === 0 ? "bg-n-200" : m.current ? "bg-brand-700" : "bg-brand-300")}
+                      className={cn(
+                        "rounded-t-md rounded-b-sm transition-colors",
+                        m.total === 0 ? "bg-n-200" : m.current ? "bg-brand-700 group-hover:bg-brand-800" : "bg-brand-300 group-hover:bg-brand-500"
+                      )}
                       style={{ height: m.total === 0 ? 3 : Math.max(pxH, 4) }}
                     />
                     <span className={cn(
-                      "border-t border-n-200 pt-1 text-center text-xs capitalize",
-                      m.current ? "font-semibold text-brand-700" : "text-n-600"
+                      "border-t border-n-200 pt-1 text-center text-xs capitalize transition-colors",
+                      m.current ? "font-semibold text-brand-700" : "text-n-600 group-hover:font-semibold group-hover:text-brand-700"
                     )}>
                       {m.label}
                     </span>
