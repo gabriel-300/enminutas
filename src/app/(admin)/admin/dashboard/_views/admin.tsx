@@ -4,7 +4,6 @@ import { AlertCircle, AlertTriangle, ArrowRight, BarChart3, Building2, CheckCirc
 import { Card, CardHeader, KpiCard, PageHeader, TONE_STYLES, type Tone } from "@/components/ui";
 import { cn } from "@/lib/utils";
 import { loadAdminDashboard } from "../_data/admin";
-import { EvolucionVentasChart } from "./evolucion-ventas-chart";
 
 // El loader entrega clases de color por grupo; de ahí se deduce el tono.
 function toneFromDot(dotClass: string): Tone {
@@ -17,6 +16,8 @@ function toneFromDot(dotClass: string): Tone {
 const TONE_ICON: Record<Tone, React.ElementType> = {
   danger: AlertCircle, warning: AlertTriangle, success: CheckCircle2, neutral: Info, info: Info, brand: Info, closed: CheckCircle2,
 };
+
+const BAR_MAX_PX = 170;
 
 export async function AdminDashboard() {
   const { now, b2bUsers, pendingClients, activeClients, revenueTotal, revPct, ordersThisMonth, ordersPrevMonth, totalAlerts, topProducts, maxProduct, monthlyEvol, maxMonth, mesNombre, IVA_DIV, preventistasRanking, alertGroups } = await loadAdminDashboard();
@@ -69,10 +70,46 @@ export async function AdminDashboard() {
         {/* Columna izquierda */}
         <div className="flex flex-col gap-4">
 
-          {/* Evolución de ventas — área con gradiente */}
+          {/* Evolución de ventas — gráfico de barras verticales */}
           <Card>
             <CardHeader title="Evolución de ventas" />
-            <EvolucionVentasChart data={monthlyEvol} max={maxMonth} />
+            <div
+              className="grid items-end gap-4 px-6 pb-4 pt-5"
+              style={{ gridTemplateColumns: `repeat(${monthlyEvol.length || 1}, minmax(0, 1fr))`, height: 260 }}
+            >
+              {monthlyEvol.map((m) => {
+                const pxH = maxMonth > 0 ? Math.round((m.total / maxMonth) * BAR_MAX_PX) : 0;
+                return (
+                  <div key={m.key} className="group flex h-full flex-col items-stretch justify-end gap-1.5">
+                    <span className={cn(
+                      "text-center text-xs tabular-nums transition-colors",
+                      m.current ? "font-semibold text-brand-700" : "text-n-600 group-hover:font-semibold group-hover:text-brand-700",
+                      m.total === 0 && "invisible"
+                    )}>
+                      {fmtK(m.total)}
+                    </span>
+                    {m.pct !== null && (
+                      <span className={cn("text-center text-[11px] font-medium tabular-nums", m.pct >= 0 ? "text-success" : "text-danger")}>
+                        {m.pct >= 0 ? "↑" : "↓"} {Math.abs(m.pct)}%
+                      </span>
+                    )}
+                    <div
+                      className={cn(
+                        "rounded-t-md rounded-b-sm transition-colors",
+                        m.total === 0 ? "bg-n-200" : m.current ? "bg-brand-700 group-hover:bg-brand-800" : "bg-brand-300 group-hover:bg-brand-500"
+                      )}
+                      style={{ height: m.total === 0 ? 3 : Math.max(pxH, 4) }}
+                    />
+                    <span className={cn(
+                      "border-t border-n-200 pt-1 text-center text-xs capitalize transition-colors",
+                      m.current ? "font-semibold text-brand-700" : "text-n-600 group-hover:font-semibold group-hover:text-brand-700"
+                    )}>
+                      {m.label}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
           </Card>
 
           {/* Productos más vendidos */}
