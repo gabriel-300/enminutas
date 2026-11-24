@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { createClient } from "@/lib/supabase/server";
 import { redirect, notFound } from "next/navigation";
 import Link from "next/link";
-import { OrderStatusBadge } from "@/components/ui/badge";
+import { PedidoStatusBadge } from "@/components/ui";
 import { DeclararPagoButton } from "@/components/b2b/declarar-pago-button";
 import { ReorderButton } from "@/components/b2b/reorder-button";
 import { GuardarPlantillaButton } from "@/components/b2b/guardar-plantilla-button";
@@ -110,7 +110,7 @@ export default async function B2BPedidoDetailPage({
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <OrderStatusBadge status={o.status} />
+          <PedidoStatusBadge status={o.status} channel="b2b_mayorista" />
           <Link
             href={`/remito/${o.id}`}
             target="_blank"

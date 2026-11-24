@@ -3,7 +3,7 @@ import type { Metadata } from "next";
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import Link from "next/link";
-import { OrderStatusBadge } from "@/components/ui/badge";
+import { PedidoStatusBadge } from "@/components/ui";
 import { fmtFechaSolo } from "@/lib/fecha";
 import { ReorderButton } from "@/components/b2b/reorder-button";
 
@@ -54,7 +54,7 @@ export default async function B2BPedidosPage() {
                 </div>
                 <div className="flex items-center justify-between gap-2">
                   <div className="flex items-center gap-2">
-                    <OrderStatusBadge status={p.status as any} />
+                    <PedidoStatusBadge status={p.status} channel="b2b_mayorista" />
                     <span className="text-xs text-neutral-400">{fmtFechaSolo(p.created_at)}</span>
                   </div>
                   <ReorderButton orderId={p.id} variant="small" />
@@ -85,7 +85,7 @@ export default async function B2BPedidosPage() {
                       </Link>
                     </td>
                     <td className="px-5 py-3">
-                      <OrderStatusBadge status={p.status as any} />
+                      <PedidoStatusBadge status={p.status} channel="b2b_mayorista" />
                     </td>
                     <td className="px-5 py-3 text-right font-medium text-neutral-900 tabular-nums">
                       {fmt(p.total)}
