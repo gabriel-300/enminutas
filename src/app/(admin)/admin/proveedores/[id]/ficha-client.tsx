@@ -69,13 +69,14 @@ const ESTADO_CLS = {
 const ESTADO_TXT = { vencida: "Vencida", por_vencer: "Por vencer", al_dia: "Al día" } as const;
 
 export function FichaClient({
-  proveedorId, hoy, comprobantes, pagos, ordenes,
+  proveedorId, hoy, comprobantes, pagos, ordenes, rol,
 }: {
   proveedorId:  string;
   hoy:          string;
   comprobantes: Comprobante[];
   pagos:        PagoGrupo[];
   ordenes:      OrdenPendiente[];
+  rol:          string;
 }) {
   const [mostrarForm, setMostrarForm] = useState(false);
   const [elegidos,    setElegidos]    = useState<string[]>([]);
@@ -235,7 +236,7 @@ export function FichaClient({
                 </div>
                 <div className="flex items-center gap-3 shrink-0">
                   <a href={`/admin/proveedores/orden-pago/${o.id}`} target="_blank" className="text-xs text-tierra-700 hover:underline font-medium">Ver / imprimir</a>
-                  {o.estado === "borrador" && (
+                  {o.estado === "borrador" && rol === "admin" && (
                     <button type="button" disabled={pending} onClick={() => avanzarOrden(o, "aprobar")}
                       className="px-3 py-1.5 text-xs font-medium rounded-lg bg-tierra-700 text-white hover:bg-tierra-800 disabled:opacity-50">Aprobar</button>
                   )}
@@ -243,8 +244,10 @@ export function FichaClient({
                     <button type="button" disabled={pending} onClick={() => avanzarOrden(o, "pagar")}
                       className="px-3 py-1.5 text-xs font-medium rounded-lg bg-success text-white disabled:opacity-50">Registrar pago</button>
                   )}
-                  <button type="button" disabled={pending} onClick={() => avanzarOrden(o, "anular")}
-                    className="text-xs text-neutral-500 hover:text-danger disabled:opacity-40">Descartar</button>
+                  {rol === "admin" && (
+                    <button type="button" disabled={pending} onClick={() => avanzarOrden(o, "anular")}
+                      className="text-xs text-neutral-500 hover:text-danger disabled:opacity-40">Descartar</button>
+                  )}
                 </div>
               </div>
             ))}

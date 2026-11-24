@@ -29,12 +29,13 @@ const ROLE_LABEL: Record<string, string> = {
   vendedor:     "Vendedor",
   produccion:   "Producción",
   distribucion: "Distribución",
+  caja:         "Caja",
 };
 
 const SECTIONS: { label?: string; key?: string; items: NavEntry[] }[] = [
   {
     items: [
-      { href: "/admin/dashboard", label: "Dashboard", icon: LayoutDashboard, roles: ["admin", "vendedor", "produccion", "distribucion"] },
+      { href: "/admin/dashboard", label: "Dashboard", icon: LayoutDashboard, roles: ["admin", "vendedor", "produccion", "distribucion", "caja"] },
       { href: "/admin/pedidos",   label: "Pedidos",   icon: ShoppingBag,     roles: ["admin", "vendedor"] },
       { href: "/admin/alertas",   label: "Alertas",   icon: Bell,            roles: ["admin"], badge: true },
     ],
@@ -92,7 +93,7 @@ const SECTIONS: { label?: string; key?: string; items: NavEntry[] }[] = [
     items: [
       { href: "/admin/facturacion",         label: "Facturación",      icon: FileText,    roles: ["admin"] },
       { href: "/admin/cuentas-corrientes",  label: "Deuda clientes", icon: CreditCard,  roles: ["admin"] },
-      { href: "/admin/proveedores",         label: "Proveedores",      icon: Building2,   roles: ["admin"] },
+      { href: "/admin/proveedores",         label: "Proveedores",      icon: Building2,   roles: ["admin", "caja"] },
       { href: "/admin/ajustes-internos",    label: "Ajustes internos", icon: ClipboardList, roles: ["admin"] },
       { href: "/admin/comisiones",          label: "Comisiones",       icon: Wallet,      roles: ["admin"] },
       { href: "/admin/devoluciones",        label: "Devoluciones",     icon: RotateCcw,   roles: ["admin"] },
@@ -104,7 +105,7 @@ const SECTIONS: { label?: string; key?: string; items: NavEntry[] }[] = [
 
 const BOTTOM_ITEMS: NavEntry[] = [
   { href: "/admin/configuracion", label: "Configuración", icon: Settings,    roles: ["admin"] },
-  { href: "/admin/ayuda",         label: "Ayuda",         icon: HelpCircle,  roles: ["admin", "vendedor", "produccion", "distribucion"] },
+  { href: "/admin/ayuda",         label: "Ayuda",         icon: HelpCircle,  roles: ["admin", "vendedor", "produccion", "distribucion", "caja"] },
 ];
 
 const STORAGE_KEY   = "em_sidebar_collapsed";

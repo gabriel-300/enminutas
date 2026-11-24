@@ -64,6 +64,7 @@ const ROLE_OPTIONS = [
   { value: "vendedor",     label: "Vendedor",        desc: "Pedidos, clientes y dashboard" },
   { value: "produccion",   label: "Producción",      desc: "Solo vista de producción" },
   { value: "distribucion", label: "Distribución",    desc: "Solo vista de distribución" },
+  { value: "caja",         label: "Caja",            desc: "Ejecuta pagos a proveedores ya aprobados" },
 ];
 
 const ROLE_BADGE: Record<string, string> = {
@@ -71,6 +72,7 @@ const ROLE_BADGE: Record<string, string> = {
   vendedor:     "bg-info-bg text-info",
   produccion:   "bg-success-bg text-success",
   distribucion: "bg-warning-bg text-warning",
+  caja:         "bg-brand-100 text-brand-700",
 };
 
 function fmtAcceso(ts: string | null) {
@@ -531,6 +533,7 @@ export function StaffClient({ staff, currentUserId, zonas = [] }: {
               {r.value === "vendedor" && (<><li>· Dashboard, pedidos, preventista</li><li>· Clientes B2B</li><li>· Sin acceso a configuración ni producción</li></>)}
               {r.value === "produccion" && (<><li>· Dashboard y producción</li><li>· Cocina / Stock completa</li><li>· Sin acceso a pedidos ni clientes</li></>)}
               {r.value === "distribucion" && (<><li>· Vista de distribución y entregas</li><li>· Sin acceso a pedidos ni clientes</li></>)}
+              {r.value === "caja" && (<><li>· Dashboard y Proveedores</li><li>· Solo registra pagos de órdenes ya aprobadas</li><li>· No puede crear ni aprobar órdenes</li></>)}
             </ul>
           </div>
         ))}

@@ -32,7 +32,7 @@ export async function actualizarComisionPreventista(userId: string, pct: number 
   revalidatePath("/admin/comisiones");
 }
 
-const VALID_ROLES = ["admin", "vendedor", "produccion", "distribucion"] as const;
+const VALID_ROLES = ["admin", "vendedor", "produccion", "distribucion", "caja"] as const;
 type StaffRole = typeof VALID_ROLES[number];
 
 function isValidRole(r: unknown): r is StaffRole {

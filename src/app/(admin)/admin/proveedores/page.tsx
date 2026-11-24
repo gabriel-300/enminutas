@@ -15,7 +15,7 @@ export default async function ProveedoresPage() {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/login");
-  if (user.app_metadata?.role !== "admin") redirect("/admin/dashboard");
+  if (!["admin", "caja"].includes(user.app_metadata?.role as string)) redirect("/admin/dashboard");
 
   const db = createAdminClient() as any;
   const { data, error } = await db.rpc("proveedores_saldos");

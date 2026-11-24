@@ -32,7 +32,7 @@ export default async function AdminStaffPage() {
     return <ListError title="Error al cargar usuarios" message={error} retryHref="/admin/staff" />;
   }
 
-  const STAFF_ROLES = ["admin", "vendedor", "produccion", "distribucion"];
+  const STAFF_ROLES = ["admin", "vendedor", "produccion", "distribucion", "caja"];
   const staffUsers   = (users ?? []).filter((u) => STAFF_ROLES.includes(u.app_metadata?.role));
   const distIds      = staffUsers.filter((u) => u.app_metadata?.role === "distribucion").map((u) => u.id);
   const vendedorIds  = staffUsers.filter((u) => u.app_metadata?.role === "vendedor").map((u) => u.id);
@@ -64,7 +64,7 @@ export default async function AdminStaffPage() {
       comision_preventista_pct: comisionByUser[u.id] ?? null,
     }))
     .sort((a, b) => {
-      const order = { admin: 0, vendedor: 1, produccion: 2, distribucion: 3 };
+      const order = { admin: 0, vendedor: 1, produccion: 2, distribucion: 3, caja: 4 };
       return (order[a.role as keyof typeof order] ?? 9) - (order[b.role as keyof typeof order] ?? 9);
     });
 

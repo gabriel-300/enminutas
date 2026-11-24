@@ -1,7 +1,7 @@
 import type { User } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/server";
 
-export type StaffRole = "admin" | "vendedor" | "produccion" | "distribucion";
+export type StaffRole = "admin" | "vendedor" | "produccion" | "distribucion" | "caja";
 
 // Las Server Actions son alcanzables por POST directo: el chequeo de página o
 // middleware NO las cubre. Cada action debe llamar a requireRole() por su cuenta.

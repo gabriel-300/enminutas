@@ -26,7 +26,7 @@ export default async function OrdenPagoPage({ params }: { params: Promise<{ grup
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/login");
-  if (user.app_metadata?.role !== "admin") redirect("/admin/dashboard");
+  if (!["admin", "caja"].includes(user.app_metadata?.role as string)) redirect("/admin/dashboard");
 
   const db = createAdminClient() as any;
   const provCols = "id, nombre, cuit, contacto, telefono, email, condicion_iva, cbu, alias_bancario";

@@ -2,7 +2,7 @@
 
 import { randomUUID } from "node:crypto";
 import { createAdminClient } from "@/lib/supabase/server";
-import { requireAdmin } from "@/lib/auth";
+import { requireAdmin, requireRole } from "@/lib/auth";
 import { aprobadoresConfigurados, puedeAprobar } from "@/lib/aprobadores";
 import { revalidatePath } from "next/cache";
 import { esCategoriaGasto, fechaValida, imputarPago, normalizarCuit } from "@/lib/proveedores";
@@ -15,6 +15,7 @@ type Result = { ok: true; id?: string } | { error: string };
 function revalidar(proveedorId?: string) {
   revalidatePath("/admin/proveedores");
   if (proveedorId) revalidatePath(`/admin/proveedores/${proveedorId}`);
+  revalidatePath("/admin/proveedores/pagos-pendientes");
   revalidatePath("/admin/cocina/recepciones");
 }
 
@@ -199,7 +200,7 @@ export async function pagarOrdenPago(
   ordenId: string, proveedorId: string,
 ): Promise<{ error: string } | { ok: true; grupoId: string; aCuenta: number }> {
   try {
-    const user = await requireAdmin();
+    const user = await requireRole("admin", "caja");
     const db = createAdminClient() as any;
 
     // Se "reclama" la orden de forma atómica: dos clics no pagan dos veces.
@@ -237,6 +238,39 @@ export async function pagarOrdenPago(
   } catch (e: any) {
     return { error: e.message };
   }
+}
+
+// Bandeja global: órdenes aprobadas de todos los proveedores, listas para que caja las pague.
+export type OrdenAprobadaGlobal = {
+  id:            string;
+  proveedorId:   string;
+  proveedorNombre: string;
+  monto:         number;
+  fecha:         string;
+  metodo:        string;
+  referencia:    string | null;
+  notas:         string | null;
+  aprobadoAt:    string | null;
+};
+
+export async function listarOrdenesAprobadas(): Promise<OrdenAprobadaGlobal[]> {
+  await requireRole("admin", "caja");
+  const db = createAdminClient() as any;
+  const { data } = await db.from("ordenes_pago")
+    .select("id, proveedor_id, monto, fecha, metodo, referencia, notas, aprobado_at, proveedor:proveedores!proveedor_id(nombre)")
+    .eq("estado", "aprobada")
+    .order("fecha", { ascending: true });
+  return ((data ?? []) as any[]).map(o => ({
+    id:              o.id,
+    proveedorId:     o.proveedor_id,
+    proveedorNombre: o.proveedor?.nombre ?? "—",
+    monto:           Number(o.monto),
+    fecha:           o.fecha,
+    metodo:          o.metodo,
+    referencia:      o.referencia,
+    notas:           o.notas,
+    aprobadoAt:      o.aprobado_at ?? null,
+  }));
 }
 
 // Una orden todavía no pagada se puede descartar. Una pagada se corrige eliminando el pago.

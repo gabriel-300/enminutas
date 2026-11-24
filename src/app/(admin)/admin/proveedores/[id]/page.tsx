@@ -19,7 +19,7 @@ export default async function ProveedorFichaPage({ params }: { params: Promise<{
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/login");
-  if (user.app_metadata?.role !== "admin") redirect("/admin/dashboard");
+  if (!["admin", "caja"].includes(user.app_metadata?.role as string)) redirect("/admin/dashboard");
 
   const db = createAdminClient() as any;
 
@@ -140,6 +140,7 @@ export default async function ProveedorFichaPage({ params }: { params: Promise<{
         comprobantes={comprobantes}
         pagos={pagosGrupo}
         ordenes={ordenes}
+        rol={user.app_metadata?.role as string}
       />
     </div>
   );

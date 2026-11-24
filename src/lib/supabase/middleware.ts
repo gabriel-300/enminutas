@@ -2,7 +2,7 @@ import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 import type { Database } from "@/types/database";
 
-const STAFF_ROLES = ["admin", "vendedor", "produccion", "distribucion"];
+const STAFF_ROLES = ["admin", "vendedor", "produccion", "distribucion", "caja"];
 
 const ADMIN_ONLY_PREFIXES = [
   "/admin/productos",
@@ -24,6 +24,12 @@ const PRODUCCION_ALLOWED = [
 const DISTRIBUCION_ALLOWED = [
   "/admin/dashboard",
   "/admin/distribucion",
+  "/admin/ayuda",
+];
+
+const CAJA_ALLOWED = [
+  "/admin/dashboard",
+  "/admin/proveedores",
   "/admin/ayuda",
 ];
 
@@ -118,6 +124,13 @@ export async function updateSession(request: NextRequest) {
         const allowed = DISTRIBUCION_ALLOWED.some((p) => pathname.startsWith(p));
         if (!allowed) {
           return NextResponse.redirect(new URL("/admin/distribucion", request.url));
+        }
+      }
+
+      if (role === "caja") {
+        const allowed = CAJA_ALLOWED.some((p) => pathname.startsWith(p));
+        if (!allowed) {
+          return NextResponse.redirect(new URL("/admin/dashboard", request.url));
         }
       }
     }

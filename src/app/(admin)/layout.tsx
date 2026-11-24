@@ -10,7 +10,7 @@ import { Nunito } from "next/font/google";
 // descarguen esta fuente.
 const nunito = Nunito({ subsets: ["latin"], variable: "--font-nunito", display: "swap" });
 
-const STAFF_ROLES = ["admin", "vendedor", "produccion", "distribucion"];
+const STAFF_ROLES = ["admin", "vendedor", "produccion", "distribucion", "caja"];
 
 export default async function AdminLayout({
   children,
