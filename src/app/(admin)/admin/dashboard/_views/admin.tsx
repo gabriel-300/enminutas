@@ -1,9 +1,10 @@
-import { fmtK } from "@/lib/format";
+import { fmt, fmtK } from "@/lib/format";
 import Link from "next/link";
-import { AlertCircle, AlertTriangle, ArrowRight, BarChart3, Building2, CheckCircle2, ClipboardList, Info } from "lucide-react";
+import { AlertCircle, AlertTriangle, ArrowRight, BarChart3, Building2, CheckCircle2, ClipboardList, Info, Landmark } from "lucide-react";
 import { Card, CardHeader, KpiCard, PageHeader, TONE_STYLES, type Tone } from "@/components/ui";
 import { cn } from "@/lib/utils";
 import { loadAdminDashboard } from "../_data/admin";
+import { getPosicionCaja } from "../../caja/actions";
 
 // El loader entrega clases de color por grupo; de ahí se deduce el tono.
 function toneFromDot(dotClass: string): Tone {
@@ -20,7 +21,8 @@ const TONE_ICON: Record<Tone, React.ElementType> = {
 const BAR_MAX_PX = 170;
 
 export async function AdminDashboard() {
-  const { now, b2bUsers, pendingClients, activeClients, revenueTotal, revPct, ordersThisMonth, ordersPrevMonth, totalAlerts, topProducts, maxProduct, monthlyEvol, maxMonth, mesNombre, IVA_DIV, preventistasRanking, alertGroups } = await loadAdminDashboard();
+  const [{ now, b2bUsers, pendingClients, activeClients, revenueTotal, revPct, ordersThisMonth, ordersPrevMonth, totalAlerts, topProducts, maxProduct, monthlyEvol, maxMonth, mesNombre, IVA_DIV, preventistasRanking, alertGroups }, posicionCaja] =
+    await Promise.all([loadAdminDashboard(), getPosicionCaja()]);
 
   const prevMonthName = new Date(now.getFullYear(), now.getMonth() - 1).toLocaleDateString("es-AR", { month: "long" });
 
@@ -61,6 +63,14 @@ export async function AdminDashboard() {
           value={activeClients}
           icon={<Building2 />}
           footer={`${b2bUsers.length} totales${pendingClients > 0 ? ` · ${pendingClients} pendientes` : ""}`}
+        />
+        <KpiCard
+          href="/admin/caja"
+          label="Posición de caja"
+          value={fmt(posicionCaja.posicion)}
+          icon={<Landmark />}
+          tone={posicionCaja.posicion < 0 ? "danger" : "default"}
+          footer="banco + cobros − deuda − OP pendientes"
         />
       </div>
 

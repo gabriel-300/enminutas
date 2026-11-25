@@ -63,13 +63,18 @@ export async function registrarProduccion(formData: FormData): Promise<Result> {
   const yieldCajas = Number(receta.yield_cajas);
   if (!(yieldCajas > 0)) return { error: "La receta no tiene rendimiento configurado" };
 
-  const [{ data: presentaciones }, { data: base }] = await Promise.all([
+  const [{ data: presentaciones }, { data: base }, { data: ingredientes }] = await Promise.all([
     db.from("products").select("id, name, unit_label, kg_caja, receta_producto_id").in("id", items.map(i => i.producto_id)),
     db.from("products").select("kg_caja").eq("id", receta.product_id).single(),
+    db.from("recipe_ingredients").select("cantidad, insumo:insumos!insumo_id(precio_unitario)").eq("recipe_id", recetaId),
   ]);
   const presPorId: Record<string, any> = Object.fromEntries((presentaciones ?? []).map((p: any) => [p.id, p]));
 
-  type Linea = { pres: any; cajas: number; kg: number | null };
+  // Costo de insumos del lote de receta, para poner el lote producido al costo real (tarea 92):
+  // antes quedaba sin costo y había que cargarlo a mano aparte.
+  const costoLoteInsumos = ((ingredientes ?? []) as any[]).reduce((s, ing) => s + Number(ing.cantidad) * Number(ing.insumo?.precio_unitario ?? 0), 0);
+
+  type Linea = { pres: any; cajas: number; kg: number | null; factor: number | null };
   const lineas: Linea[] = [];
   for (const it of items) {
     const pres = presPorId[it.producto_id];
@@ -89,8 +94,20 @@ export async function registrarProduccion(formData: FormData): Promise<Result> {
     }
 
     const kgCaja = Number(pres.kg_caja);
-    lineas.push({ pres, cajas, kg: kgCaja > 0 ? cajas * kgCaja : null });
+    lineas.push({ pres, cajas, kg: kgCaja > 0 ? cajas * kgCaja : null, factor });
   }
+
+  // Envase por caja de cada presentación (igual criterio que costoUnidadDesdeReceta en recetas/actions.ts)
+  const { data: envasesRaw } = await db
+    .from("product_packaging")
+    .select("product_id, cantidad_por_caja, insumo:insumos!insumo_id(precio_unitario)")
+    .in("product_id", lineas.map(l => l.pres.id));
+  const envasePorCajaPorProducto: Record<string, number> = {};
+  for (const e of (envasesRaw ?? []) as any[]) {
+    envasePorCajaPorProducto[e.product_id] = (envasePorCajaPorProducto[e.product_id] ?? 0) + Number(e.cantidad_por_caja) * Number(e.insumo?.precio_unitario ?? 0);
+  }
+  const costoCajaDeLinea = (l: Linea): number | null =>
+    l.factor === null ? null : (costoLoteInsumos / yieldCajas) * l.factor + (envasePorCajaPorProducto[l.pres.id] ?? 0);
 
   // Los insumos se descuentan una sola vez por batch: los lotes de receta se reparten entre
   // las presentaciones en proporción a sus kg (una fila de produccion por presentación).
@@ -134,6 +151,7 @@ export async function registrarProduccion(formData: FormData): Promise<Result> {
     fecha_vencimiento: fechaVenc,
     cantidad_inicial:  l.cajas,
     cantidad_actual:   l.cajas,
+    costo_unitario:    costoCajaDeLinea(l),
     unidad:            l.pres.unit_label?.trim() || "cajas",
     observaciones:     notas,
     created_by:        user.id,

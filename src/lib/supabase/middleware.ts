@@ -30,6 +30,7 @@ const DISTRIBUCION_ALLOWED = [
 const CAJA_ALLOWED = [
   "/admin/dashboard",
   "/admin/proveedores",
+  "/admin/caja",
   "/admin/ayuda",
 ];
 

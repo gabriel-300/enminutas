@@ -53,6 +53,7 @@ export function LotesClient({
   // Ajuste inline
   const [ajustando, setAjustando] = useState<string | null>(null);
   const [nuevaCant, setNuevaCant] = useState("");
+  const [motivoAjuste, setMotivoAjuste] = useState("");
 
   // Nuevo lote
   const [modalAbierto, setModalAbierto] = useState(false);
@@ -138,10 +139,12 @@ export function LotesClient({
   function handleAjuste(id: string) {
     const val = parseFloat(nuevaCant.replace(",", "."));
     if (isNaN(val) || val < 0) return;
+    if (!motivoAjuste.trim()) { setError("Ingresá el motivo del ajuste"); return; }
+    setError(null);
     start(async () => {
-      const res = await ajustarCantidad(id, val);
-      if (res.error) setError(res.error);
-      setAjustando(null); setNuevaCant("");
+      const res = await ajustarCantidad(id, val, motivoAjuste);
+      if (res.error) { setError(res.error); return; }
+      setAjustando(null); setNuevaCant(""); setMotivoAjuste("");
     });
   }
 
@@ -166,6 +169,15 @@ export function LotesClient({
             {criticos > 0 && <span>{criticos} lote{criticos > 1 ? "s" : ""} vence{criticos > 1 ? "n" : ""} en menos de 7 días. </span>}
             Revisá y dá de baja los que correspondan.
           </div>
+        </div>
+      )}
+
+      {error && (
+        <div className="bg-danger-bg border border-danger-border rounded-xl px-4 py-2.5 flex items-start justify-between gap-3">
+          <p className="text-sm text-danger">{error}</p>
+          <button onClick={() => setError(null)} className="text-danger shrink-0">
+            <X className="size-4" />
+          </button>
         </div>
       )}
 
@@ -303,24 +315,33 @@ export function LotesClient({
                     </td>
                     <td className="px-5 py-3.5 text-right">
                       {ajustando === lote.id ? (
-                        <div className="flex items-center justify-end gap-1.5">
+                        <div className="flex flex-col items-end gap-1.5">
+                          <div className="flex items-center justify-end gap-1.5">
+                            <input
+                              type="number"
+                              min="0"
+                              step="0.001"
+                              value={nuevaCant}
+                              onChange={e => setNuevaCant(e.target.value)}
+                              className="w-20 rounded-lg border border-neutral-400 px-2 py-1 text-xs text-right focus:outline-none focus:ring-1 focus:ring-brand-500/30"
+                              autoFocus
+                            />
+                            <button onClick={() => handleAjuste(lote.id)} disabled={pending}
+                              className="px-2 py-1 rounded-lg bg-brand-700 text-white text-xs disabled:opacity-50">✓</button>
+                            <button onClick={() => { setAjustando(null); setNuevaCant(""); setMotivoAjuste(""); }}
+                              className="px-2 py-1 rounded-lg border text-xs text-neutral-600">✕</button>
+                          </div>
                           <input
-                            type="number"
-                            min="0"
-                            step="0.001"
-                            value={nuevaCant}
-                            onChange={e => setNuevaCant(e.target.value)}
-                            className="w-20 rounded-lg border border-neutral-400 px-2 py-1 text-xs text-right focus:outline-none focus:ring-1 focus:ring-brand-500/30"
-                            autoFocus
+                            type="text"
+                            value={motivoAjuste}
+                            onChange={e => setMotivoAjuste(e.target.value)}
+                            placeholder="Motivo del ajuste *"
+                            className="w-full rounded-lg border border-neutral-400 px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-brand-500/30"
                           />
-                          <button onClick={() => handleAjuste(lote.id)} disabled={pending}
-                            className="px-2 py-1 rounded-lg bg-brand-700 text-white text-xs disabled:opacity-50">✓</button>
-                          <button onClick={() => { setAjustando(null); setNuevaCant(""); }}
-                            className="px-2 py-1 rounded-lg border text-xs text-neutral-600">✕</button>
                         </div>
                       ) : (
                         <button
-                          onClick={() => { setAjustando(lote.id); setNuevaCant(String(lote.cantidad_actual)); }}
+                          onClick={() => { setAjustando(lote.id); setNuevaCant(String(lote.cantidad_actual)); setMotivoAjuste(""); }}
                           className="text-right group"
                           title="Click para ajustar"
                         >
@@ -362,12 +383,16 @@ export function LotesClient({
       {modalAbierto && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
           <div className="bg-white rounded-xl border border-neutral-200 shadow-sm w-full max-w-md max-h-[90vh] overflow-y-auto p-6">
-            <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center justify-between mb-1">
               <h2 className="text-lg font-bold font-display text-neutral-900">Nuevo lote</h2>
               <button onClick={() => setModalAbierto(false)} className="p-1 rounded-lg text-neutral-600 hover:bg-neutral-100">
                 <X className="size-4" />
               </button>
             </div>
+            <p className="text-xs text-neutral-600 mb-4">
+              Solo productos sin receta propia. Los que se fabrican con receta se cargan desde{" "}
+              <a href="/admin/cocina/produccion" className="underline">Producción</a>.
+            </p>
 
             <div className="space-y-3">
               <div>

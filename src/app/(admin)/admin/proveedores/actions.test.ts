@@ -51,7 +51,7 @@ describe("permisos: todas las actions exigen admin", () => {
       setVencimientoPago("r", hoy, "p"),
       vincularRemitos("f", ["r"], "p"),
       desvincularRemito("r", "p"),
-      registrarGasto({ proveedor: "X", categoria: "luz", numero: "1", fecha: hoy, vencimientoPago: hoy, total: 10 }),
+      registrarGasto({ proveedor: "X", categoria: "luz", grupo: "estructura", numero: "1", fecha: hoy, vencimientoPago: hoy, total: 10 }),
     ]);
     for (const r of rs) expect(err(r)).toBe("No autorizado");
     expect(db.rows("pagos_proveedores")).toHaveLength(0);
@@ -250,7 +250,7 @@ describe("ficha del proveedor y desglose", () => {
   });
 
   it("un gasto con desglose que no suma el total se rechaza", async () => {
-    const gasto = { proveedor: "Energía", categoria: "luz", numero: "1", fecha: hoy, vencimientoPago: hoy, total: 1210 };
+    const gasto = { proveedor: "Energía", categoria: "luz", grupo: "estructura", numero: "1", fecha: hoy, vencimientoPago: hoy, total: 1210 };
     expect(err(await registrarGasto({ ...gasto, neto: 1000, iva: 100 }))).toMatch(/no suman/);
     expect(db.rows("recepciones")).toHaveLength(0);
     await registrarGasto({ ...gasto, neto: 1000, iva: 210 });
@@ -293,12 +293,13 @@ describe("eliminarPagoProveedor / setGeneraDeuda / setVencimientoPago", () => {
 });
 
 describe("registrarGasto", () => {
-  const gasto = { proveedor: "Energía", categoria: "luz", numero: "0001-123", fecha: hoy, vencimientoPago: "2026-11-20", total: 15000 };
+  const gasto = { proveedor: "Energía", categoria: "luz", grupo: "estructura", numero: "0001-123", fecha: hoy, vencimientoPago: "2026-11-20", total: 15000 };
 
   it("valida los campos", async () => {
     expect(err(await registrarGasto({ ...gasto, proveedor: " " }))).toMatch(/proveedor/i);
     expect(err(await registrarGasto({ ...gasto, numero: "" }))).toMatch(/comprobante/i);
     expect(err(await registrarGasto({ ...gasto, categoria: "combustible" }))).toMatch(/categor/i);
+    expect(err(await registrarGasto({ ...gasto, grupo: "produccion" }))).toMatch(/fábrica|estructura/i);
     expect(err(await registrarGasto({ ...gasto, total: 0 }))).toMatch(/importe/i);
     expect(err(await registrarGasto({ ...gasto, total: NaN }))).toMatch(/importe/i);
     expect(err(await registrarGasto({ ...gasto, fecha: "2026-13-01" }))).toMatch(/fecha/i);

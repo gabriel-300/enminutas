@@ -3,7 +3,7 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { registrarGasto } from "./actions";
-import { CATEGORIAS_GASTO, claveProveedor, normalizarCuit, parseMontoAR, sumarDias } from "@/lib/proveedores";
+import { CATEGORIAS_GASTO, GRUPOS_GASTO, claveProveedor, normalizarCuit, parseMontoAR, sumarDias } from "@/lib/proveedores";
 
 export type ProveedorOpcion = { id: string; nombre: string; cuit: string | null; dias: number };
 
@@ -19,6 +19,7 @@ export function GastoForm({ proveedores }: { proveedores: ProveedorOpcion[] }) {
   const [proveedor, setProveedor] = useState("");
   const [cuit,      setCuit]      = useState("");
   const [categoria, setCategoria] = useState("luz");
+  const [grupo,     setGrupo]     = useState("estructura");
   const [numero,    setNumero]    = useState("");
   const [fecha,     setFecha]     = useState(hoy());
   const [total,     setTotal]     = useState("");
@@ -40,7 +41,7 @@ export function GastoForm({ proveedores }: { proveedores: ProveedorOpcion[] }) {
 
   function cerrar() {
     setAbierto(false); setProveedor(""); setCuit(""); setCategoria("luz"); setNumero("");
-    setFecha(hoy()); setTotal(""); setVencManual(""); setNotas(""); setNeto(""); setIva(""); setPercep(""); setContado(false); setMetodo("efectivo"); setReferencia(""); setError(null);
+    setFecha(hoy()); setTotal(""); setVencManual(""); setNotas(""); setNeto(""); setIva(""); setPercep(""); setContado(false); setMetodo("efectivo"); setReferencia(""); setGrupo("estructura"); setError(null);
   }
 
   function guardar(e: React.FormEvent) {
@@ -51,7 +52,7 @@ export function GastoForm({ proveedores }: { proveedores: ProveedorOpcion[] }) {
     const num = (s: string) => (s.trim() ? parseMontoAR(s) : null);
     start(async () => {
       const res = await registrarGasto({
-        proveedor, cuit: cuit || null, categoria, numero, fecha, vencimientoPago: contado ? fecha : vencimiento, total: importe, notas: notas || null,
+        proveedor, cuit: cuit || null, categoria, grupo, numero, fecha, vencimientoPago: contado ? fecha : vencimiento, total: importe, notas: notas || null,
         neto: num(neto), iva: num(iva), percepciones: num(percep),
         pagoContado: contado ? { metodo, referencia: referencia || null } : undefined,
       });
@@ -112,6 +113,12 @@ export function GastoForm({ proveedores }: { proveedores: ProveedorOpcion[] }) {
           <label className={labelCls}>Categoría *</label>
           <select value={categoria} onChange={e => setCategoria(e.target.value)} className={inputCls} disabled={pending}>
             {CATEGORIAS_GASTO.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
+          </select>
+        </div>
+        <div>
+          <label className={labelCls}>Es gasto de *</label>
+          <select value={grupo} onChange={e => setGrupo(e.target.value)} className={inputCls} disabled={pending}>
+            {GRUPOS_GASTO.map(g => <option key={g.value} value={g.value}>{g.label}</option>)}
           </select>
         </div>
         <div>

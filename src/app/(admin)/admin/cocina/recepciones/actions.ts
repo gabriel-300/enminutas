@@ -247,6 +247,7 @@ export async function registrarRecepcion(
       proveedor_id:    prov.id,
       fecha,
       notas,
+      grupo_gasto:     "materia_prima", // factura/remito siempre compran insumos del catálogo
       total,
       otros_impuestos: otros_impuestos || 0,
       neto:            Math.round(totalNeto * 100) / 100,

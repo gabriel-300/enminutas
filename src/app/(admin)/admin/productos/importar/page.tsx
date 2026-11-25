@@ -41,6 +41,10 @@ export default async function ImportarPreciosPage() {
           El campo <strong>codigo</strong> no debe modificarse — se usa para identificar cada producto.
           Los precios B2B se recalculan automáticamente al guardar.
         </p>
+        <p className="text-neutral-600 pt-1">
+          Los productos con receta no aparecen acá: su costo sale solo de la receta (pantalla{" "}
+          <Link href="/admin/cocina/recetas" className="underline">Recetas</Link>).
+        </p>
       </div>
 
       <ImportarProductosClient />

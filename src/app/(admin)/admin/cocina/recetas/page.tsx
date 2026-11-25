@@ -144,13 +144,12 @@ export default async function RecetasPage() {
                         }
                       </td>
 
-                      {/* Costo producto / caja — editable inline */}
+                      {/* Costo producto / caja — calculado desde la receta, no editable a mano */}
                       <td className="px-5 py-3 text-right text-sm tabular-nums whitespace-nowrap">
                         {pricing ? (
                           <CostoCajaEdit
                             productId={p.id}
                             costoProductoCaja={pricing.costoProductoCaja}
-                            bolsasCaja={Number(p.bolsas_caja ?? 1)}
                             desactualizado={pricing.desactualizado}
                           />
                         ) : (

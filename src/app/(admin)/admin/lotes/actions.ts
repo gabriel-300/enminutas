@@ -21,6 +21,13 @@ export async function crearLote(payload: {
     const user = await requireAdmin();
     const db = createAdminClient() as any;
 
+    // Tarea 92: un producto con receta no se carga como lote suelto -- eso dejaba 27 lotes en
+    // noviembre sin registro de producción, sin costo y sin descontar insumos. Para esos, el
+    // alta es desde Producción (que ya descuenta insumos y, ahora, pone el costo de la receta).
+    if (await tieneReceta(db, payload.productoId)) {
+      return { error: "Este producto se fabrica con receta: cargá la producción en /admin/cocina/produccion, no un lote suelto." };
+    }
+
     const numeroLote = payload.numeroLote?.trim() || (await generarNumeroLote(db));
 
     const { data, error } = await db.from("lotes").insert({
@@ -51,20 +58,39 @@ export async function crearLote(payload: {
   }
 }
 
+// Un producto es "de receta propia" si es la base de una receta o una presentación de una:
+// a esos no se les debería sumar stock a mano, hay que cargar producción (tarea 92).
+async function tieneReceta(db: any, productoId: string): Promise<boolean> {
+  const { data: producto } = await db.from("products").select("receta_producto_id").eq("id", productoId).maybeSingle();
+  if (producto?.receta_producto_id) return true;
+  const { data: receta } = await db.from("recipes").select("id").eq("product_id", productoId).maybeSingle();
+  return !!receta;
+}
+
 export async function ajustarCantidad(
   id: string,
-  nuevaCantidad: number
+  nuevaCantidad: number,
+  motivo: string
 ): Promise<{ error?: string }> {
   try {
-    await requireAdmin();
+    const user = await requireAdmin();
     const db = createAdminClient() as any;
 
-    const { data: lote } = await db.from("lotes").select("cantidad_inicial").eq("id", id).single();
+    const motivoLimpio = motivo?.trim();
+    if (!motivoLimpio) return { error: "El motivo es obligatorio" };
+
+    const { data: lote } = await db.from("lotes").select("producto_id, cantidad_inicial, cantidad_actual").eq("id", id).single();
+    if (!lote) return { error: "El lote no existe" };
+
+    const cantidadAnterior = Number(lote.cantidad_actual);
+    if (nuevaCantidad > cantidadAnterior && (await tieneReceta(db, lote.producto_id))) {
+      return { error: "Este producto se fabrica con receta: para sumar stock cargá la producción en /admin/cocina/produccion, no un ajuste manual." };
+    }
 
     // Si la nueva cantidad supera la inicial (entró más stock, no fue consumo),
     // subimos también la inicial para que el % consumido no quede negativo.
     const update: { cantidad_actual: number; cantidad_inicial?: number } = { cantidad_actual: nuevaCantidad };
-    if (lote && nuevaCantidad > Number(lote.cantidad_inicial)) update.cantidad_inicial = nuevaCantidad;
+    if (nuevaCantidad > Number(lote.cantidad_inicial)) update.cantidad_inicial = nuevaCantidad;
 
     const { error } = await db
       .from("lotes")
@@ -72,6 +98,16 @@ export async function ajustarCantidad(
       .eq("id", id);
 
     if (error) return { error: error.message };
+
+    await db.from("ajustes_stock_lotes").insert({
+      lote_id:           id,
+      producto_id:       lote.producto_id,
+      cantidad_anterior: cantidadAnterior,
+      cantidad_nueva:    nuevaCantidad,
+      motivo:            motivoLimpio,
+      creado_por:        user.id,
+    });
+
     revalidatePath("/admin/lotes");
     revalidatePath("/admin/stock");
     return {};

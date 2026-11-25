@@ -94,6 +94,7 @@ const SECTIONS: { label?: string; key?: string; items: NavEntry[] }[] = [
       { href: "/admin/facturacion",         label: "Facturación",      icon: FileText,    roles: ["admin"] },
       { href: "/admin/cuentas-corrientes",  label: "Deuda clientes", icon: CreditCard,  roles: ["admin"] },
       { href: "/admin/proveedores",         label: "Proveedores",      icon: Building2,   roles: ["admin", "caja"] },
+      { href: "/admin/caja",                label: "Posición de caja", icon: Wallet,      roles: ["admin", "caja"] },
       { href: "/admin/ajustes-internos",    label: "Ajustes internos", icon: ClipboardList, roles: ["admin"] },
       { href: "/admin/comisiones",          label: "Comisiones",       icon: Wallet,      roles: ["admin"] },
       { href: "/admin/devoluciones",        label: "Devoluciones",     icon: RotateCcw,   roles: ["admin"] },

@@ -622,7 +622,7 @@
       Documento confidencial — uso interno
     </div>
     <div class="cover-footer-right">
-      v2.24 · Noviembre 2026<br>
+      v2.31 · Noviembre 2026<br>
       admin@enminutas.com.ar
     </div>
   </div>
@@ -630,7 +630,7 @@
 
 <!-- PRINT BAR -->
 <div class="print-bar no-print">
-  <span class="version-tag">v2.24 · Noviembre 2026</span>
+  <span class="version-tag">v2.31 · Noviembre 2026</span>
   <button class="btn-print" onclick="window.print()">⎙ Imprimir / Guardar PDF</button>
 </div>
 
@@ -674,7 +674,7 @@
           <tr><td>Productos activos</td><td>55 productos a la venta, en 8 líneas (más 18 presentaciones de muestra)</td></tr>
           <tr><td>En producción desde</td><td>Junio 2026</td></tr>
           <tr><td>Operación real (al 26/9/2026)</td><td>236 pedidos y 36 clientes con pedidos B2B, 20 zonas de entrega</td></tr>
-          <tr><td>Versión de este documento</td><td>2.24 — noviembre 2026</td></tr>
+          <tr><td>Versión de este documento</td><td>2.25 — noviembre 2026</td></tr>
         </tbody>
       </table>
     </div>
@@ -754,6 +754,10 @@
         <p class="role-desc">Ve los pedidos despachados de su zona. Inicia el reparto, confirma entregas totales o parciales y usa la app de repartidor en el móvil.</p>
       </div>
       <div class="role-card">
+        <div class="role-name">Caja <span class="role-badge">caja</span></div>
+        <p class="role-desc">Registra el pago de órdenes a proveedores ya aprobadas por un administrador, desde una bandeja global o la ficha del proveedor. No crea ni aprueba órdenes de pago, ni ve el resto del panel. Solo pagos a proveedores por ahora.</p>
+      </div>
+      <div class="role-card">
         <div class="role-name">Comercializadora</div>
         <p class="role-desc">No es un rol de acceso sino una condición de un perfil: participa de la comisión de todos los clientes del sistema. Recibe una vista de solo lectura de la base para armar sus propios informes.</p>
       </div>
@@ -824,7 +828,7 @@
     </div>
       <div class="module-item">
         <div><div class="module-name">Proveedores y pagos</div></div>
-        <div class="module-desc">Cuenta corriente de compras (solo admin). Cada factura o remito cargado en Recepciones genera deuda con su proveedor, con vencimiento según el plazo de pago acordado. La ficha guarda condición de IVA, CBU y alias del proveedor, y cada comprobante muestra neto, IVA y percepciones. Los pagos pasan por una orden de pago con tres estados: borrador, aprobada (la aprueba Alex) y pagada; recién al registrar el pago baja la deuda. Se puede pagar uno o varios comprobantes (o dejar a cuenta), se ve lo vencido y se imprime la orden en cualquier estado. Un remito luego facturado se saca de la deuda para no contarlo dos veces. También se cargan acá los gastos sin mercadería (luz, agua, gas, internet, alquiler, impuestos…), que generan deuda igual que una factura pero no mueven stock. Cada gasto se carga como «a pagar» (cuenta corriente, queda como deuda) o «ya pagado» (contado, se registra con su pago y orden de pago).</div>
+        <div class="module-desc">Cuenta corriente de compras. Cada factura o remito cargado en Recepciones genera deuda con su proveedor, con vencimiento según el plazo de pago acordado. La ficha guarda condición de IVA, CBU y alias del proveedor, y cada comprobante muestra neto, IVA y percepciones. Los pagos pasan por una orden de pago con tres estados: borrador, aprobada (solo admin) y pagada — a partir de ahí el pago lo puede registrar un administrador o el rol caja, para separar quién aprueba de quién ejecuta; recién al registrar el pago baja la deuda. Se puede pagar uno o varios comprobantes (o dejar a cuenta), se ve lo vencido y se imprime la orden en cualquier estado. Un remito luego facturado se saca de la deuda para no contarlo dos veces. También se cargan acá los gastos sin mercadería (luz, agua, gas, internet, alquiler, impuestos…), que generan deuda igual que una factura pero no mueven stock. Cada gasto se carga como «a pagar» (cuenta corriente, queda como deuda) o «ya pagado» (contado, se registra con su pago y orden de pago).</div>
       </div>
       <div class="module-item">
         <div><div class="module-name">Ajustes internos (DRI/CRI)</div></div>
@@ -1223,6 +1227,11 @@
           <tr><td>Reportes y rentabilidad</td><td><span class="tag tag-green">Completo</span></td></tr>
           <tr><td>Firma digital en remito</td><td><span class="tag tag-green">Completo</span></td></tr>
           <tr><td>Pantalla Deuda clientes (saldos y vencimientos)</td><td><span class="tag tag-green">Operativa</span></td></tr>
+          <tr><td>Costo de producto desde receta, sin edición manual</td><td><span class="tag tag-green">Completo</span></td></tr>
+          <tr><td>Compras categorizadas (materia prima / fábrica / estructura)</td><td><span class="tag tag-green">Completo</span></td></tr>
+          <tr><td>Posición de caja (saldo banco + cobros − deuda proveedores − pagos pendientes)</td><td><span class="tag tag-green">Completo</span></td></tr>
+          <tr><td>Ajustes de stock de lotes con motivo y auditoría</td><td><span class="tag tag-green">Completo</span></td></tr>
+          <tr><td>Exportes para el contador (libro IVA compras, gastos por categoría)</td><td><span class="tag tag-amber">Parcial — ventas en borrador</span></td></tr>
         </tbody>
       </table>
     </div>
@@ -1234,10 +1243,11 @@
         <tbody>
           <tr><td>Límite de crédito por cliente</td><td>Definir dónde vive el límite y bloquear pedidos al superarlo</td></tr>
           <tr><td>Comisión sobre lo cobrado</td><td>Calcular la comisión a medida que el cliente paga, en lugar de al entregar. Ya está diseñado</td></tr>
-          <tr><td>Facturación electrónica (AFIP/CAE)</td><td>Generación de comprobantes fiscales con CAE para clientes que lo requieren</td></tr>
+          <tr><td>Facturación electrónica (AFIP/CAE)</td><td>Generación de comprobantes fiscales con CAE. Hay un cliente propio WSAA/WSFE (sin terceros) empezado; falta la alícuota de IVA y el flag "facturar sí/no". Mientras no esté, el libro IVA ventas del contador es un borrador calculado desde el total del pedido, no de una factura real</td></tr>
           <tr><td>Remito con firma física</td><td>Versión del remito apta para firma en papel + registro de recepción</td></tr>
           <tr><td>Optimización de ruta</td><td>Hoy el orden de las paradas es manual. Ordenamiento automático por proximidad geográfica</td></tr>
-          <tr><td>Historial de precios</td><td>Registro de cambios de costo por producto para ver la evolución de márgenes</td></tr>
+          <tr><td>Historial de precios de insumos</td><td>Hoy el precio de un insumo se pisa sin dejar rastro. Falta guardar precio anterior/nuevo, quién y cuándo, y avisar qué productos se ven afectados (el costo del producto, en cambio, ya sale solo de la receta)</td></tr>
+          <tr><td>Costos fijos y capacidad de planta</td><td>Tablas por crear (mano de obra, gastos de fábrica, estructura, capacidad por línea), esperando que producción y administración carguen los datos</td></tr>
           <tr><td>Alertas de stock por email</td><td>Notificación automática cuando un producto baja del mínimo configurado</td></tr>
           <tr><td>App instalable — ícono y uso sin conexión</td><td>Reemplazar el ícono provisorio por el logo real en PNG y agregar funcionamiento sin conexión</td></tr>
           <tr><td>Portal kioscos (proyecto separado)</td><td>Sistema para kioscos revendedores (kioscos-ideia): estructura lista, pendiente de datos</td></tr>
@@ -1253,7 +1263,7 @@
   <div style="border-top: 1px solid var(--border); padding-top: 32px; text-align: center;">
     <p style="font-size: 12px; color: var(--text-3); max-width: none; text-align: center;">
       En Minutas · Posadas, Misiones · enminutas.com.ar · admin@enminutas.com.ar<br>
-      Versión 2.24, actualizada en noviembre 2026 — confidencial, uso interno
+      Versión 2.31, actualizada en noviembre 2026 — confidencial, uso interno
     </p>
   </div>
 

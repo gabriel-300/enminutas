@@ -17,7 +17,7 @@ export default async function EditarProductoPage({ params }: { params: Promise<{
   // Ver comentario en productos/page.tsx: sin esto un producto inactivo da 404 al editarlo.
   const db = (user.app_metadata?.role === "admin" ? createAdminClient() : supabase) as any;
 
-  const [{ data: product }, { data: categorias }, { data: lineas }] = await Promise.all([
+  const [{ data: product }, { data: categorias }, { data: lineas }, { data: receta }] = await Promise.all([
     db
       .from("products")
       .select(`
@@ -26,17 +26,20 @@ export default async function EditarProductoPage({ params }: { params: Promise<{
         category_id, cover_image_url, extra_images,
         codigo, presentacion, linea_id, categoria,
         costo, bolsas_caja, u_bolsa, kg_caja,
-        divisiones_display, min_quantity_b2b, stock_minimo
+        divisiones_display, min_quantity_b2b, stock_minimo, receta_producto_id
       `)
       .eq("id", id)
       .single(),
     supabase.from("categories").select("id, name").order("name"),
     (supabase as any).from("lineas_producto").select("id, nombre").order("orden"),
+    db.from("recipes").select("id").eq("product_id", id).maybeSingle(),
   ]);
 
   if (!product) notFound();
 
   const p = product as any;
+  // Tarea 82: el costo sale de la receta (propia o heredada), no se edita a mano.
+  const tieneReceta = Boolean(receta) || Boolean(p.receta_producto_id);
 
   async function handleUpdate(formData: FormData) {
     "use server";
@@ -88,6 +91,7 @@ export default async function EditarProductoPage({ params }: { params: Promise<{
         action={handleUpdate}
         submitLabel="Guardar cambios"
         cancelHref="/admin/productos"
+        tieneReceta={tieneReceta}
       />
     </div>
   );

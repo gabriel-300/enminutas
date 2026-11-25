@@ -101,24 +101,17 @@ export async function guardarReceta(formData: FormData): Promise<ActionResult> {
     if (ingsError) return { error: `Error al guardar ingredientes: ${ingsError.message}` };
   }
 
+  // El costo del producto ya no se carga a mano (tarea 82): sale siempre de la receta recién
+  // guardada, tanto para el producto base como para cada presentación que la usa.
+  const { data: presentacionesIds } = await db.from("products").select("id").eq("receta_producto_id", productId);
+  await Promise.all([
+    syncCostoUnProducto(db, productId),
+    ...((presentacionesIds ?? []) as any[]).map((p) => syncCostoUnProducto(db, p.id)),
+  ]);
+
   revalidateAll();
   revalidatePath(`/admin/cocina/recetas/${productId}`);
-  return { ok: true };
-}
-
-export async function actualizarCostoProducto(
-  productId: string,
-  costoNuevoPorCaja: number,
-  bolsasCaja: number,
-): Promise<ActionResult> {
-  await requireRole("admin", "produccion");
-  if (costoNuevoPorCaja <= 0) return { error: "El costo debe ser mayor a cero" };
-  const bolsas = bolsasCaja > 0 ? bolsasCaja : 1;
-  const costoUnidad = costoNuevoPorCaja / bolsas;
-  const db = createAdminClient() as any;
-  const { error } = await db.from("products").update({ costo: costoUnidad }).eq("id", productId);
-  if (error) return { error: error.message };
-  revalidateAll();
+  revalidatePath("/admin/productos");
   return { ok: true };
 }
 
@@ -459,10 +452,9 @@ export async function crearPresentacion(
   return { ok: true, id: creado.id };
 }
 
-export async function sincronizarCostoProducto(productId: string): Promise<ActionResult> {
-  await requireRole("admin", "produccion");
-  const db = createAdminClient() as any;
-
+// Recalcula products.costo desde la receta (base o heredada) y lo guarda. Sin requireRole: la
+// llama tanto la action pública de abajo como guardarReceta() internamente tras guardar.
+async function syncCostoUnProducto(db: any, productId: string): Promise<ActionResult> {
   const { data: product } = await db
     .from("products")
     .select("bolsas_caja, kg_caja, receta_producto_id")
@@ -484,9 +476,17 @@ export async function sincronizarCostoProducto(productId: string): Promise<Actio
 
   const { error } = await db.from("products").update({ costo: costoUnidad }).eq("id", productId);
   if (error) return { error: error.message };
-
-  revalidatePath("/admin/productos");
-  revalidatePath("/admin/rentabilidad");
-  revalidateAll();
   return { ok: true };
+}
+
+export async function sincronizarCostoProducto(productId: string): Promise<ActionResult> {
+  await requireRole("admin", "produccion");
+  const db = createAdminClient() as any;
+  const result = await syncCostoUnProducto(db, productId);
+  if ("ok" in result) {
+    revalidatePath("/admin/productos");
+    revalidatePath("/admin/rentabilidad");
+    revalidateAll();
+  }
+  return result;
 }

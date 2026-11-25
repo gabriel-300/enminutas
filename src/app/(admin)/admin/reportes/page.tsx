@@ -2,6 +2,7 @@ import { fmt, fmtK } from "@/lib/format";
 import type { Metadata } from "next";
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
+import Link from "next/link";
 import { ReportesFilter } from "@/components/admin/reportes-filter";
 import { ExportDropdown } from "@/components/admin/export-dropdown";
 import { CHANNEL_CFG, STATUS_LABELS, DailySalesChart, ChannelPill, Delta } from "./_components/widgets";
@@ -38,6 +39,10 @@ export default async function ReportesPage({
           </p>
         </div>
         <div className="flex items-center gap-2 flex-wrap">
+          <Link href={`/admin/reportes/contador?mes=${mesParam}`}
+            className="px-3 py-1.5 text-sm font-medium border border-neutral-200 rounded-lg text-neutral-700 hover:bg-neutral-50 transition-colors">
+            Para el contador
+          </Link>
           <ReportesFilter mes={mesParam} />
           <ExportDropdown mesParam={mesParam} />
         </div>

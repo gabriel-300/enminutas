@@ -108,10 +108,14 @@ export async function parsearImport(formData: FormData): Promise<ParseResult | {
       return { error: "El archivo no contiene filas válidas." };
     }
 
-    const { data: products } = await (createAdminClient() as any)
-      .from("products")
-      .select("id, codigo, name, costo")
-      .not("codigo", "is", null);
+    const db = createAdminClient() as any;
+    const [{ data: products }, { data: recetas }] = await Promise.all([
+      db.from("products").select("id, codigo, name, costo, receta_producto_id").not("codigo", "is", null),
+      db.from("recipes").select("product_id"),
+    ]);
+
+    // Tarea 82: un producto con receta no se actualiza por CSV, el costo sale solo de la receta.
+    const conReceta = new Set(((recetas ?? []) as any[]).map((r) => r.product_id));
 
     const rows: ChangeRow[] = [];
     for (const p of (products ?? []) as any[]) {
@@ -119,7 +123,13 @@ export async function parsearImport(formData: FormData): Promise<ParseResult | {
       if (!csv) continue;
 
       const costoActual = Number(p.costo ?? 0);
-      const cambia = Math.round(costoActual * 100) !== Math.round(csv.costo * 100);
+      const difiere = Math.round(costoActual * 100) !== Math.round(csv.costo * 100);
+      const tieneReceta = conReceta.has(p.id) || !!p.receta_producto_id;
+
+      if (tieneReceta) {
+        if (difiere) errores.push(`Código ${p.codigo} (${p.name}): tiene receta, el costo se sincroniza desde Recetas — se ignora el valor del CSV.`);
+        continue;
+      }
 
       rows.push({
         id:                  p.id,
@@ -127,7 +137,7 @@ export async function parsearImport(formData: FormData): Promise<ParseResult | {
         nombre:              p.name,
         costo_actual:        costoActual,
         costo_nuevo:         csv.costo,
-        cambia,
+        cambia:              difiere,
       });
     }
 
@@ -148,7 +158,18 @@ export async function aplicarImport(
   const db = createAdminClient() as any;
   const errores: string[] = [];
 
-  for (const c of changes) {
+  // Defensa adicional: nunca pisar el costo de un producto con receta, aunque llegue en el POST.
+  const [{ data: productosConReceta }, { data: recetasIds }] = await Promise.all([
+    db.from("products").select("id").in("id", changes.map((c) => c.id)).not("receta_producto_id", "is", null),
+    db.from("recipes").select("product_id").in("product_id", changes.map((c) => c.id)),
+  ]);
+  const bloqueados = new Set([
+    ...((productosConReceta ?? []) as any[]).map((p) => p.id),
+    ...((recetasIds ?? []) as any[]).map((r) => r.product_id),
+  ]);
+  const changesFiltrados = changes.filter((c) => !bloqueados.has(c.id));
+
+  for (const c of changesFiltrados) {
     const { error } = await db
       .from("products")
       .update({ costo: c.costo })

@@ -73,6 +73,20 @@ export function esCategoriaGasto(v: unknown): v is CategoriaGasto {
   return CATEGORIAS_GASTO.some(c => c.value === v);
 }
 
+// Agrupador de alto nivel (tarea 86 bitácora): separa materia prima / gastos de fábrica / estructura
+// para Módulo 1 (costeo) y Módulo 6 (exportes al contador). Factura y remito son siempre materia
+// prima (se asigna solo server-side); un gasto sin mercadería elige entre fábrica o estructura.
+export const GRUPOS_GASTO = [
+  { value: "gastos_fabrica", label: "Gastos de fábrica" },
+  { value: "estructura",     label: "Estructura" },
+] as const;
+
+export type GrupoGasto = (typeof GRUPOS_GASTO)[number]["value"];
+
+export function esGrupoGasto(v: unknown): v is GrupoGasto {
+  return GRUPOS_GASTO.some(g => g.value === v);
+}
+
 // "Factura", "Remito" o "Gasto (Luz)": cómo se nombra un comprobante en pantalla y en la orden de pago.
 export function etiquetaComprobante(tipo: string, categoria?: string | null): string {
   if (tipo === "factura") return "Factura";

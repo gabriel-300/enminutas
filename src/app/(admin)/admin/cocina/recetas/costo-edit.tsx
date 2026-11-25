@@ -1,86 +1,46 @@
 "use client";
 
 import { fmt } from "@/lib/format";
-import { useState, useTransition, useRef, useEffect } from "react";
-import { actualizarCostoProducto } from "./actions";
+import { useState, useTransition } from "react";
+import { sincronizarCostoProducto } from "./actions";
 
 type Props = {
   productId:        string;
   costoProductoCaja: number;
-  bolsasCaja:       number;
   desactualizado:   boolean;
 };
 
-export function CostoCajaEdit({ productId, costoProductoCaja, bolsasCaja, desactualizado }: Props) {
-  const [editing,   setEditing]   = useState(false);
-  const [valor,     setValor]     = useState(String(Math.round(costoProductoCaja)));
-  const [error,     setError]     = useState<string | null>(null);
-  const [isPending, start]        = useTransition();
-  const inputRef = useRef<HTMLInputElement>(null);
+// El costo del producto ya no se edita a mano (tarea 82): sale siempre de la receta. Si quedó
+// desactualizado (cambió el precio de algún insumo después de guardar la receta), un clic lo
+// vuelve a calcular desde ahí -- nunca se puede tipear un valor suelto.
+export function CostoCajaEdit({ productId, costoProductoCaja, desactualizado }: Props) {
+  const [isPending, start] = useTransition();
+  const [error, setError]  = useState<string | null>(null);
 
-  useEffect(() => {
-    if (editing) inputRef.current?.select();
-  }, [editing]);
-
-  function guardar() {
-    const nuevo = parseFloat(valor.replace(",", ".").replace(/\s/g, ""));
-    if (isNaN(nuevo) || nuevo <= 0) { setError("Valor inválido"); return; }
+  function recalcular() {
     setError(null);
     start(async () => {
-      const res = await actualizarCostoProducto(productId, nuevo, bolsasCaja);
-      if ("error" in res) { setError(res.error); return; }
-      setEditing(false);
+      const res = await sincronizarCostoProducto(productId);
+      if ("error" in res) setError(res.error);
     });
   }
 
-  function handleKey(e: React.KeyboardEvent) {
-    if (e.key === "Enter")  guardar();
-    if (e.key === "Escape") { setEditing(false); setValor(String(Math.round(costoProductoCaja))); setError(null); }
-  }
-
-  if (editing) {
-    return (
-      <div className="flex items-center gap-1 justify-end">
-        <span className="text-xs text-neutral-600 mr-0.5">$</span>
-        <input
-          ref={inputRef}
-          type="text"
-          inputMode="decimal"
-          value={valor}
-          onChange={e => setValor(e.target.value)}
-          onKeyDown={handleKey}
-          disabled={isPending}
-          className="w-24 px-2 py-0.5 text-sm text-right border border-tierra-700/40 rounded-lg focus:outline-none focus:ring-[3px] focus:ring-brand-500/30 focus:border-brand-700 tabular-nums disabled:opacity-50"
-        />
-        <button onClick={guardar} disabled={isPending}
-          className="text-xs font-medium text-tierra-700 hover:text-tierra-800 disabled:opacity-40 px-1">
-          {isPending ? "…" : "✓"}
-        </button>
-        <button onClick={() => { setEditing(false); setValor(String(Math.round(costoProductoCaja))); setError(null); }}
-          disabled={isPending}
-          className="text-xs text-neutral-600 hover:text-neutral-700 disabled:opacity-40">
-          ✕
-        </button>
-        {error && <span className="text-xs text-danger ml-1">{error}</span>}
-      </div>
-    );
+  if (!desactualizado) {
+    return <span className="font-medium tabular-nums text-neutral-800">{fmt(costoProductoCaja)}</span>;
   }
 
   return (
     <button
       type="button"
-      onClick={() => setEditing(true)}
-      title="Clic para editar el costo del producto"
-      className={`font-medium tabular-nums hover:underline cursor-pointer group ${
-        desactualizado ? "text-warning" : "text-neutral-800"
-      }`}
+      onClick={recalcular}
+      disabled={isPending}
+      title="El costo guardado difiere del costo real de la receta. Clic para recalcularlo."
+      className="font-medium tabular-nums text-warning hover:underline disabled:opacity-50"
     >
       {fmt(costoProductoCaja)}
-      {desactualizado && (
-        <span title="El costo guardado difiere del costo real de la receta."
-          className="ml-1 text-warning">⚠</span>
-      )}
-      <span className="ml-1 text-neutral-500 group-hover:text-tierra-700 text-xs">✏</span>
+      <span className="ml-1">⚠</span>
+      {isPending && <span className="ml-1 text-xs">recalculando…</span>}
+      {error && <span className="block text-xs text-danger normal-case">{error}</span>}
     </button>
   );
 }

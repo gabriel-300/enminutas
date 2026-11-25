@@ -1,9 +1,10 @@
 import Link from "next/link";
-import { ArrowRight, ClipboardList, Wallet } from "lucide-react";
+import { ArrowRight, ClipboardList, Landmark, Wallet } from "lucide-react";
 import { Card, CardHeader, KpiCard, PageHeader } from "@/components/ui";
 import { fmt } from "@/lib/format";
 import { fmtFechaSolo } from "@/lib/fecha";
 import { loadCajaDashboard } from "../_data/caja";
+import { getPosicionCaja } from "../../caja/actions";
 
 const METODOS: Record<string, string> = {
   transferencia: "Transferencia",
@@ -13,7 +14,7 @@ const METODOS: Record<string, string> = {
 };
 
 export async function CajaDashboard() {
-  const { ordenes } = await loadCajaDashboard();
+  const [{ ordenes }, posicion] = await Promise.all([loadCajaDashboard(), getPosicionCaja()]);
   const total = ordenes.reduce((s, o) => s + o.monto, 0);
 
   return (
@@ -39,6 +40,14 @@ export async function CajaDashboard() {
           icon={<Wallet />}
           tone={total > 0 ? "warning" : "default"}
           footer="suma de las órdenes aprobadas"
+        />
+        <KpiCard
+          href="/admin/caja"
+          label="Posición de caja"
+          value={fmt(posicion.posicion)}
+          icon={<Landmark />}
+          tone={posicion.posicion < 0 ? "danger" : "default"}
+          footer="banco + cobros − deuda − OP pendientes"
         />
       </div>
 

@@ -5,7 +5,7 @@ import { createAdminClient } from "@/lib/supabase/server";
 import { requireAdmin, requireRole } from "@/lib/auth";
 import { aprobadoresConfigurados, puedeAprobar } from "@/lib/aprobadores";
 import { revalidatePath } from "next/cache";
-import { esCategoriaGasto, fechaValida, imputarPago, normalizarCuit } from "@/lib/proveedores";
+import { esCategoriaGasto, esGrupoGasto, fechaValida, imputarPago, normalizarCuit } from "@/lib/proveedores";
 import { esCondicionIva, normalizarCbu, validarDesglose } from "@/lib/proveedores-ficha";
 import { resolverProveedor } from "@/lib/proveedores-db";
 import { compararRemitosConFactura } from "@/lib/remitos";
@@ -411,6 +411,7 @@ export type GastoInput = {
   proveedor:       string;
   cuit?:           string | null;
   categoria:       string;
+  grupo:           string;
   numero:          string;
   fecha:           string;        // YYYY-MM-DD
   vencimientoPago: string;        // YYYY-MM-DD
@@ -432,6 +433,7 @@ export async function registrarGasto(input: GastoInput): Promise<{ error: string
     if (!input.proveedor?.trim()) return { error: "El proveedor es obligatorio" };
     if (!input.numero?.trim())    return { error: "El número de comprobante es obligatorio" };
     if (!esCategoriaGasto(input.categoria)) return { error: "Elegí una categoría" };
+    if (!esGrupoGasto(input.grupo)) return { error: "Elegí si es gasto de fábrica o de estructura" };
     if (!Number.isFinite(total) || total <= 0) return { error: "El importe debe ser mayor a cero" };
     if (!fechaValida(input.fecha) || !fechaValida(input.vencimientoPago))
       return { error: "Fecha inválida" };
@@ -449,6 +451,7 @@ export async function registrarGasto(input: GastoInput): Promise<{ error: string
     const { data: gasto, error } = await db.from("recepciones").insert({
       tipo:                   "gasto",
       categoria_gasto:        input.categoria,
+      grupo_gasto:            input.grupo,
       numero:                 input.numero.trim(),
       proveedor:              prov.nombre,
       proveedor_id:           prov.id,

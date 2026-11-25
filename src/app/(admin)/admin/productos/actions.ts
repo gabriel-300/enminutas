@@ -116,6 +116,12 @@ export async function actualizarProducto(productId: string, formData: FormData):
   const extraImagesRaw = formData.get("extra_images") as string;
   try { payload.extra_images = JSON.parse(extraImagesRaw || "[]"); } catch { payload.extra_images = []; }
 
+  // Tarea 82: con receta (propia o heredada), el costo sale de ahí -- nunca se pisa a mano,
+  // ni aunque llegue en el POST (el campo está disabled en el form, pero no hay que confiar en eso).
+  const { data: current } = await (supabase as any).from("products").select("receta_producto_id").eq("id", productId).maybeSingle();
+  const { data: receta }  = await (supabase as any).from("recipes").select("id").eq("product_id", productId).maybeSingle();
+  if (receta || current?.receta_producto_id) delete payload.costo;
+
   const { error } = await (supabase as any)
     .from("products")
     .update(payload)

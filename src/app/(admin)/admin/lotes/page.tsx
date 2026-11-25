@@ -35,11 +35,16 @@ export default async function LotesPage() {
     .eq("activo", true)
     .order("fecha_vencimiento", { ascending: true });
 
-  const [{ data: productosData }, { data: depositosData }, numeroLoteSugerido] = await Promise.all([
-    db.from("products").select("id, name, unit_label").eq("is_active", true).order("name"),
+  const [{ data: productosData }, { data: depositosData }, numeroLoteSugerido, { data: recetasData }] = await Promise.all([
+    db.from("products").select("id, name, unit_label, receta_producto_id").eq("is_active", true).order("name"),
     db.from("depositos").select("id, nombre").eq("activo", true).order("nombre"),
     generarNumeroLote(db),
+    db.from("recipes").select("product_id"),
   ]);
+
+  // Tarea 92: un producto con receta no se carga como lote suelto acá, se carga desde Producción
+  // (que descuenta insumos y pone el costo real). Se excluyen del selector para no repetir el error.
+  const baseConReceta = new Set(((recetasData ?? []) as any[]).map(r => r.product_id));
 
   const lotes = ((lotesData ?? []) as any[]).map((l: any) => {
     const { estado, dias } = calcularEstado(l.fecha_vencimiento);
@@ -61,7 +66,8 @@ export default async function LotesPage() {
     };
   });
 
-  const productos  = (productosData  ?? []) as any[];
+  const productos  = ((productosData  ?? []) as any[])
+    .filter(p => !baseConReceta.has(p.id) && !p.receta_producto_id);
   const depositos  = (depositosData  ?? []) as any[];
 
   const vencidos = lotes.filter(l => l.estado === "vencido").length;

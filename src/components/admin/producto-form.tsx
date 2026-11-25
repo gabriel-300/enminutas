@@ -41,28 +41,30 @@ type Props = {
   action:         (formData: FormData) => Promise<{ error: string } | void>;
   submitLabel:    string;
   cancelHref:     string;
+  /** Tiene receta propia o hereda una (tarea 82): el costo sale de ahí, no se tipea a mano. */
+  tieneReceta?:   boolean;
 };
 
 function Field({
-  label, name, type = "text", defaultValue, placeholder, required, step, min, max, mono,
+  label, name, type = "text", defaultValue, placeholder, required, step, min, max, mono, disabled,
 }: {
   label: string; name: string; type?: string;
   defaultValue?: string | number; placeholder?: string;
-  required?: boolean; step?: string; min?: string; max?: string; mono?: boolean;
+  required?: boolean; step?: string; min?: string; max?: string; mono?: boolean; disabled?: boolean;
 }) {
   return (
     <div>
       <label className="block text-[13px] font-medium text-neutral-800 mb-1.5">{label}</label>
       <input
         type={type} name={name} defaultValue={defaultValue ?? ""} placeholder={placeholder}
-        required={required} step={step} min={min} max={max}
-        className={`w-full px-3 py-2 text-sm border border-neutral-400 rounded-lg focus:outline-none focus:ring-[3px] focus:ring-brand-500/30 focus:border-brand-700${mono ? " font-mono" : ""}`}
+        required={required} step={step} min={min} max={max} disabled={disabled}
+        className={`w-full px-3 py-2 text-sm border border-neutral-400 rounded-lg focus:outline-none focus:ring-[3px] focus:ring-brand-500/30 focus:border-brand-700 disabled:bg-neutral-50 disabled:text-neutral-600${mono ? " font-mono" : ""}`}
       />
     </div>
   );
 }
 
-export function ProductoForm({ categorias, lineas, defaultValues: dv = {}, action, submitLabel, cancelHref }: Props) {
+export function ProductoForm({ categorias, lineas, defaultValues: dv = {}, action, submitLabel, cancelHref, tieneReceta = false }: Props) {
   const [isPending, startTransition] = useTransition();
   const [formError, setFormError] = useState<string | null>(null);
 
@@ -172,7 +174,19 @@ export function ProductoForm({ categorias, lineas, defaultValues: dv = {}, actio
         <div>
           <p className="text-xs font-semibold text-neutral-600 mb-3">Estructura de caja</p>
           <div className="grid grid-cols-4 gap-3">
-            <Field label="Costo total / bolsa ($, con packaging) *" name="costo" type="number" defaultValue={dv.costo ?? ""} placeholder="1780" step="1" min="0" />
+            <div>
+              <Field
+                label="Costo total / bolsa ($, con packaging) *" name="costo" type="number"
+                defaultValue={dv.costo ?? ""} placeholder="1780" step="1" min="0"
+                disabled={tieneReceta}
+              />
+              {tieneReceta && (
+                <p className="text-xs text-neutral-600 mt-1">
+                  Calculado desde la receta. Para cambiarlo, editá la receta en{" "}
+                  <a href="/admin/cocina/recetas" className="underline">Recetas</a>.
+                </p>
+              )}
+            </div>
             <Field label="Bolsas / caja *" name="bolsas_caja" type="number" defaultValue={dv.bolsas_caja ?? ""} placeholder="10" min="1" />
             <Field label="u / bolsa *" name="u_bolsa" type="number" defaultValue={dv.u_bolsa ?? ""} placeholder="16" min="1" />
             <Field label="Kg / caja" name="kg_caja" type="number" defaultValue={dv.kg_caja ?? ""} placeholder="5" step="0.001" min="0" />
