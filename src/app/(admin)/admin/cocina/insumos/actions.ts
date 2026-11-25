@@ -3,8 +3,13 @@
 import { requireRole } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
+import {
+  registrarCambioPrecioInsumo, productosAfectadosPorInsumo, getHistorialPrecioInsumo,
+  type ProductoAfectado, type HistorialPrecioInsumo,
+} from "@/lib/insumos-historial";
 
 type Result = { error: string } | { ok: true };
+type ResultConAviso = { error: string } | { ok: true; productosAfectados: ProductoAfectado[] };
 
 function revalidateAll() {
   revalidatePath("/admin/cocina/insumos");
@@ -36,16 +41,18 @@ export async function crearInsumo(formData: FormData): Promise<Result> {
 }
 
 export async function actualizarPrecioInsumo(id: string, precio: number): Promise<Result> {
-  await requireRole("admin", "produccion");
+  const user = await requireRole("admin", "produccion");
   const db = createAdminClient() as any;
+  const { data: cur } = await db.from("insumos").select("precio_unitario").eq("id", id).single();
   const { error } = await db.from("insumos").update({ precio_unitario: precio }).eq("id", id);
   if (error) return { error: error.message };
+  await registrarCambioPrecioInsumo(db, id, Number(cur?.precio_unitario ?? 0), precio, "manual", user.id);
   revalidateAll();
   return { ok: true };
 }
 
-export async function actualizarInsumo(id: string, formData: FormData): Promise<Result> {
-  await requireRole("admin", "produccion");
+export async function actualizarInsumo(id: string, formData: FormData): Promise<ResultConAviso> {
+  const user = await requireRole("admin", "produccion");
   const nombre    = (formData.get("nombre") as string)?.trim();
   const unidad    = (formData.get("unidad") as string)?.trim() || "gr";
   const precio    = parseFloat((formData.get("precio_unitario") as string)?.replace(",", ".")) || 0;
@@ -56,6 +63,8 @@ export async function actualizarInsumo(id: string, formData: FormData): Promise<
   if (!nombre) return { error: "El nombre es requerido" };
 
   const db = createAdminClient() as any;
+  const { data: cur } = await db.from("insumos").select("precio_unitario").eq("id", id).single();
+  const precioAnterior = Number(cur?.precio_unitario ?? 0);
 
   // Activo / inactivo: un insumo inactivo no aparece en la lista, las alertas ni los selectores, pero conserva su historial.
   // Si el formulario no trae el campo, no se toca. No se puede desactivar uno que esté en recetas: seguiría sumando al costo oculto.
@@ -74,8 +83,19 @@ export async function actualizarInsumo(id: string, formData: FormData): Promise<
     if (error.code === "23505") return { error: `Ya existe un insumo llamado "${nombre}".` };
     return { error: error.message };
   }
+
+  // Tarea 83: guarda precio anterior/nuevo y avisa qué productos cambian de costo por este insumo.
+  const productosAfectados = precio !== precioAnterior ? await productosAfectadosPorInsumo(db, id, precio) : [];
+  await registrarCambioPrecioInsumo(db, id, precioAnterior, precio, "manual", user.id);
+
   revalidateAll();
-  return { ok: true };
+  return { ok: true, productosAfectados };
+}
+
+export async function getHistorialInsumo(id: string): Promise<HistorialPrecioInsumo[]> {
+  await requireRole("admin", "produccion");
+  const db = createAdminClient() as any;
+  return getHistorialPrecioInsumo(db, id);
 }
 
 export async function eliminarInsumo(id: string): Promise<Result> {
@@ -255,10 +275,11 @@ export type ImportResult = {
   actualizados: number;
   noEncontrados: string[];
   errores: string[];
+  productosAfectados: ProductoAfectado[];
 } | { error: string };
 
 export async function importarPreciosCSV(csvText: string): Promise<ImportResult> {
-  await requireRole("admin", "produccion");
+  const user = await requireRole("admin", "produccion");
   if (!csvText?.trim()) return { error: "El archivo está vacío." };
 
   const lines = csvText.trim().split(/\r?\n/).filter(Boolean);
@@ -282,30 +303,36 @@ export async function importarPreciosCSV(csvText: string): Promise<ImportResult>
 
   const db = createAdminClient() as any;
 
-  const { data: todos } = await db.from("insumos").select("id, nombre");
-  const mapaInsumos: Record<string, string> = {};
-  for (const ins of (todos ?? []) as { id: string; nombre: string }[]) {
-    mapaInsumos[ins.nombre.toLowerCase().trim()] = ins.id;
+  const { data: todos } = await db.from("insumos").select("id, nombre, precio_unitario");
+  const mapaInsumos: Record<string, { id: string; precioActual: number }> = {};
+  for (const ins of (todos ?? []) as { id: string; nombre: string; precio_unitario: number }[]) {
+    mapaInsumos[ins.nombre.toLowerCase().trim()] = { id: ins.id, precioActual: Number(ins.precio_unitario) };
   }
 
   let actualizados = 0;
   const noEncontrados: string[] = [];
   const errores: string[] = [];
+  const productosAfectados: ProductoAfectado[] = [];
 
   for (const row of rows) {
-    const id = mapaInsumos[row.nombre.toLowerCase().trim()];
-    if (!id) {
+    const match = mapaInsumos[row.nombre.toLowerCase().trim()];
+    if (!match) {
       noEncontrados.push(row.nombre);
       continue;
     }
+    const { id, precioActual } = match;
     const { error } = await db.from("insumos").update({ precio_unitario: row.precio }).eq("id", id);
     if (error) {
       errores.push(`${row.nombre}: ${error.message}`);
-    } else {
-      actualizados++;
+      continue;
+    }
+    actualizados++;
+    if (row.precio !== precioActual) {
+      productosAfectados.push(...await productosAfectadosPorInsumo(db, id, row.precio));
+      await registrarCambioPrecioInsumo(db, id, precioActual, row.precio, "csv", user.id);
     }
   }
 
   revalidateAll();
-  return { ok: true, actualizados, noEncontrados, errores };
+  return { ok: true, actualizados, noEncontrados, errores, productosAfectados };
 }

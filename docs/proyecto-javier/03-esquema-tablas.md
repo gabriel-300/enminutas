@@ -1,6 +1,6 @@
 # Esquema de tablas — base En Minutas (schema public)
 
-Generado el 2026-09-26 desde la base real (47 tablas) y actualizado a mano el 2026-11-24 contra las migraciones aplicadas desde entonces (no hay acceso a la base en vivo desde esta sesión): agrega `ordenes_pago`, `product_packaging` y `ajustes_internos`, y columnas nuevas en `proveedores`, `recepciones` y `orders`. Actualizado de nuevo el 2026-11-25 (esta vez con acceso en vivo a la base): agrega `ajustes_stock_lotes` y `caja_saldo_banco`, y la columna `grupo_gasto` en `recepciones`. Las tablas/columnas agregadas en estas pasadas no tienen conteo de filas salvo que se indique; el resto de los conteos sigue siendo la foto del 26/9. Formato: `columna tipo`; `PK` = clave primaria; `->tabla` = clave foránea; `{a|b}` = valores permitidos del enum; `CHECK[...]` = restricción.
+Generado el 2026-09-26 desde la base real (47 tablas) y actualizado a mano el 2026-11-24 contra las migraciones aplicadas desde entonces (no hay acceso a la base en vivo desde esta sesión): agrega `ordenes_pago`, `product_packaging` y `ajustes_internos`, y columnas nuevas en `proveedores`, `recepciones` y `orders`. Actualizado de nuevo el 2026-11-25 (esta vez con acceso en vivo a la base): agrega `ajustes_stock_lotes`, `caja_saldo_banco` e `insumos_precio_historial`, y la columna `grupo_gasto` en `recepciones`. Las tablas/columnas agregadas en estas pasadas no tienen conteo de filas salvo que se indique; el resto de los conteos sigue siendo la foto del 26/9. Formato: `columna tipo`; `PK` = clave primaria; `->tabla` = clave foránea; `{a|b}` = valores permitidos del enum; `CHECK[...]` = restricción.
 Las filas entre paréntesis son la cantidad de registros a esa fecha. Tablas en 0 filas = funciones aún sin uso. Ver reglas y trampas en el documento de conocimiento del negocio.
 Ojo: `->auth.users` apunta al schema `auth`, que no es accesible.
 Recomendado: la próxima vez que entres, pedile a Claude "corré la consulta de information_schema y regenerá este archivo" (está en `00-guia-de-armado.md`) para tener conteos reales y detectar cualquier otro cambio.
@@ -132,6 +132,10 @@ id uuid PK, cliente_id uuid ->profiles, monto numeric CHECK[monto > 0::numeric],
 
 ### insumos_movimientos (310 filas)
 id uuid PK, insumo_id uuid ->insumos, tipo text CHECK[tipo = ANY 'ingreso', 'egreso', 'ajuste'], cantidad numeric, motivo text, referencia_id uuid, notas text, created_by uuid ->profiles, created_at timestamptz
+
+### insumos_precio_historial (desde 25/11/2026)
+id uuid PK, insumo_id uuid ->insumos, precio_anterior numeric NOT NULL, precio_nuevo numeric NOT NULL, origen text CHECK[manual|csv|recepcion], referencia_id uuid (recepcion_id si origen='recepcion'), creado_por uuid ->auth.users, created_at timestamptz
+Antes el precio de un insumo se pisaba sin dejar rastro. Se loguea desde actualizarInsumo, importarPreciosCSV y registrarRecepcion (las tres vías que lo cambian). productosAfectadosPorInsumo() avisa qué productos con ese insumo en su receta cambian de costo por caja.
 
 ### produccion (24 filas)
 id uuid PK, producto_id uuid ->products, receta_id uuid ->recipes, cantidad_cajas numeric CHECK[cantidad_cajas > 0::numeric], fecha date, notas text, created_by uuid ->profiles, created_at timestamptz, cantidad_lotes numeric

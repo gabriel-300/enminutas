@@ -1395,6 +1395,47 @@ export type Database = {
           },
         ]
       }
+      insumos_precio_historial: {
+        Row: {
+          creado_por: string
+          created_at: string
+          id: string
+          insumo_id: string
+          origen: string
+          precio_anterior: number
+          precio_nuevo: number
+          referencia_id: string | null
+        }
+        Insert: {
+          creado_por: string
+          created_at?: string
+          id?: string
+          insumo_id: string
+          origen: string
+          precio_anterior: number
+          precio_nuevo: number
+          referencia_id?: string | null
+        }
+        Update: {
+          creado_por?: string
+          created_at?: string
+          id?: string
+          insumo_id?: string
+          origen?: string
+          precio_anterior?: number
+          precio_nuevo?: number
+          referencia_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "insumos_precio_historial_insumo_id_fkey"
+            columns: ["insumo_id"]
+            isOneToOne: false
+            referencedRelation: "insumos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       lineas_producto: {
         Row: {
           canal_exclusivo_id: string | null

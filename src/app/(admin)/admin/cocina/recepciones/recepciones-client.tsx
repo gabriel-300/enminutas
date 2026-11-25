@@ -257,7 +257,11 @@ export function RecepcionesClient({ insumos, historial, proveedores }: Props) {
         tipo, numero, proveedor, fecha, notas || null, otrosNum, items, imagenUrl, cuit || null, vencPago,
       );
       if ("error" in res) { setError(res.error); return; }
-      setOk(`${tipo === "factura" ? "Factura" : "Remito"} ${numero} registrado. Stock y precios actualizados.`);
+      const aviso = res.productosAfectados.length > 0
+        ? ` ⚠ Cambió el costo de ${res.productosAfectados.length} producto${res.productosAfectados.length !== 1 ? "s" : ""}: ` +
+          res.productosAfectados.map(p => `${p.name} (${p.deltaPct >= 0 ? "+" : ""}${p.deltaPct.toFixed(1)}%)`).join(", ")
+        : "";
+      setOk(`${tipo === "factura" ? "Factura" : "Remito"} ${numero} registrado. Stock y precios actualizados.${aviso}`);
       resetForm();
       setFormOpen(false);
     });

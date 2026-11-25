@@ -1,13 +1,31 @@
 "use client";
 
 import { useState, useTransition, useRef, Fragment } from "react";
-import { Pencil, Trash2, Check, X, Upload, Plus, PackagePlus, Tag, ChevronDown, SlidersHorizontal } from "lucide-react";
+import { Pencil, Trash2, Check, X, Upload, Plus, PackagePlus, Tag, ChevronDown, SlidersHorizontal, History } from "lucide-react";
 import {
   crearInsumo, actualizarInsumo, eliminarInsumo, importarPreciosCSV,
-  ingresarStock, ajustarStock, actualizarStockControl,
+  ingresarStock, ajustarStock, actualizarStockControl, getHistorialInsumo,
   crearCategoria, actualizarCategoria, eliminarCategoria,
   type ImportResult, type Categoria,
 } from "./actions";
+import type { ProductoAfectado, HistorialPrecioInsumo } from "@/lib/insumos-historial";
+
+const ORIGEN_LABEL: Record<string, string> = { manual: "edición manual", csv: "importación CSV", recepcion: "compra" };
+const fmtPct = (n: number) => `${n >= 0 ? "+" : ""}${n.toFixed(1)}%`;
+
+function AvisoProductosAfectados({ productos }: { productos: ProductoAfectado[] }) {
+  if (productos.length === 0) return null;
+  return (
+    <div className="mt-2 rounded-lg bg-warning-bg border border-warning-border px-3 py-2 text-xs text-warning">
+      <p className="font-medium mb-1">⚠ Cambia el costo de {productos.length} producto{productos.length !== 1 ? "s" : ""}:</p>
+      <ul className="space-y-0.5">
+        {productos.map(p => (
+          <li key={p.id}>{p.name}: {fmtPrecio(p.costoCajaAntes)} → {fmtPrecio(p.costoCajaDespues)} ({fmtPct(p.deltaPct)})</li>
+        ))}
+      </ul>
+    </div>
+  );
+}
 
 export type Insumo = {
   id: string; nombre: string; unidad: string;
@@ -400,6 +418,9 @@ function InsumoRow({ ins, cats, onError }: { ins: Insumo; cats: Categoria[]; onE
   const [sMax, setSMax]         = useState(String(ins.stock_maximo));
   const [activo, setActivo]     = useState(ins.activo);
   const [isPending, start]      = useTransition();
+  const [aviso, setAviso]           = useState<ProductoAfectado[] | null>(null);
+  const [historial, setHistorial]   = useState<HistorialPrecioInsumo[] | null>(null);
+  const [cargandoHist, setCargandoHist] = useState(false);
 
   const estado = stockEstado(ins);
 
@@ -412,6 +433,7 @@ function InsumoRow({ ins, cats, onError }: { ins: Insumo; cats: Categoria[]; onE
     start(async () => {
       const res = await actualizarInsumo(ins.id, fd);
       if ("error" in res) { onError(res.error); resetState(); return; }
+      setAviso(res.productosAfectados.length > 0 ? res.productosAfectados : null);
       const rsc = await actualizarStockControl(
         ins.id,
         parseFloat(sMin.replace(",", ".")) || 0,
@@ -421,6 +443,12 @@ function InsumoRow({ ins, cats, onError }: { ins: Insumo; cats: Categoria[]; onE
       if ("error" in rsc) { onError(rsc.error); }
       setEditing(false);
     });
+  }
+
+  function toggleHistorial() {
+    if (historial !== null) { setHistorial(null); return; }
+    setCargandoHist(true);
+    getHistorialInsumo(ins.id).then(h => { setHistorial(h); setCargandoHist(false); });
   }
 
   function resetState() {
@@ -577,6 +605,11 @@ function InsumoRow({ ins, cats, onError }: { ins: Insumo; cats: Categoria[]; onE
               className="p-1.5 rounded-lg text-neutral-500 hover:text-neutral-600 hover:bg-neutral-100 transition-colors">
               <Pencil className="size-4" />
             </button>
+            <button onClick={toggleHistorial} disabled={isPending}
+              title="Historial de precio"
+              className="p-1.5 rounded-lg text-neutral-500 hover:text-neutral-600 hover:bg-neutral-100 transition-colors">
+              <History className="size-4" />
+            </button>
             <button onClick={handleEliminar} disabled={isPending}
               className="p-1.5 rounded-lg text-neutral-500 hover:text-danger hover:bg-danger-bg transition-colors">
               <Trash2 className="size-4" />
@@ -589,6 +622,54 @@ function InsumoRow({ ins, cats, onError }: { ins: Insumo; cats: Categoria[]; onE
       )}
       {ajuste && (
         <AjusteStockForm ins={ins} onClose={() => setAjuste(false)} onError={onError} />
+      )}
+      {aviso && (
+        <tr>
+          <td colSpan={8} className="px-3 pb-2">
+            <AvisoProductosAfectados productos={aviso} />
+          </td>
+        </tr>
+      )}
+      {historial !== null && (
+        <tr>
+          <td colSpan={8} className="px-3 pb-3">
+            {cargandoHist ? (
+              <p className="text-xs text-neutral-600">Cargando…</p>
+            ) : historial.length === 0 ? (
+              <p className="text-xs text-neutral-600">Sin cambios de precio registrados todavía.</p>
+            ) : (
+              <div className="rounded-lg border border-neutral-200 overflow-hidden">
+                <table className="w-full text-xs">
+                  <thead className="bg-neutral-50 text-neutral-600">
+                    <tr>
+                      <th className="px-3 py-1.5 text-left">Fecha</th>
+                      <th className="px-3 py-1.5 text-right">Anterior</th>
+                      <th className="px-3 py-1.5 text-right">Nuevo</th>
+                      <th className="px-3 py-1.5 text-right">%</th>
+                      <th className="px-3 py-1.5 text-left">Origen</th>
+                      <th className="px-3 py-1.5 text-left">Quién</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-neutral-100">
+                    {historial.map(h => {
+                      const pct = h.precioAnterior > 0 ? ((h.precioNuevo - h.precioAnterior) / h.precioAnterior) * 100 : 0;
+                      return (
+                        <tr key={h.id}>
+                          <td className="px-3 py-1.5 text-neutral-600">{new Date(h.createdAt).toLocaleString("es-AR")}</td>
+                          <td className="px-3 py-1.5 text-right tabular-nums">{fmtPrecio(h.precioAnterior)}</td>
+                          <td className="px-3 py-1.5 text-right tabular-nums font-medium">{fmtPrecio(h.precioNuevo)}</td>
+                          <td className="px-3 py-1.5 text-right tabular-nums">{fmtPct(pct)}</td>
+                          <td className="px-3 py-1.5 text-neutral-600">{ORIGEN_LABEL[h.origen] ?? h.origen}</td>
+                          <td className="px-3 py-1.5 text-neutral-600">{h.creadoPorNombre ?? "—"}</td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </td>
+        </tr>
       )}
     </>
   );
@@ -762,6 +843,7 @@ function ImportadorCSV({ insumos }: { insumos: Insumo[] }) {
                   </ul>
                 </div>
               )}
+              <AvisoProductosAfectados productos={result.productosAfectados} />
             </>
           )}
         </div>

@@ -6,8 +6,9 @@ import { revalidatePath } from "next/cache";
 import { leerComprobanteConGroq, validarComprobante } from "@/lib/groq";
 import { fechaValida, normalizarCuit } from "@/lib/proveedores";
 import { resolverProveedor } from "@/lib/proveedores-db";
+import { registrarCambioPrecioInsumo, productosAfectadosPorInsumo, type ProductoAfectado } from "@/lib/insumos-historial";
 
-type Result = { error: string } | { ok: true; id: string };
+type Result = { error: string } | { ok: true; id: string; productosAfectados: ProductoAfectado[] };
 
 function revalidateAll() {
   revalidatePath("/admin/cocina/recepciones");
@@ -265,6 +266,7 @@ export async function registrarRecepcion(
   if (errRec) return { error: errRec.message };
 
   // 2. Insertar ítems + actualizar stock y precio
+  const productosAfectados: ProductoAfectado[] = [];
   for (const item of items) {
     await db.from("recepciones_items").insert({
       recepcion_id:      rec.id,
@@ -279,15 +281,22 @@ export async function registrarRecepcion(
     // Sumar al stock actual
     const { data: cur } = await db
       .from("insumos")
-      .select("stock_actual")
+      .select("stock_actual, precio_unitario")
       .eq("id", item.insumo_id)
       .single();
     const nuevoStock = Number(cur?.stock_actual ?? 0) + item.cantidad;
+    const precioAnterior = Number(cur?.precio_unitario ?? 0);
 
     await db.from("insumos").update({
       stock_actual:    nuevoStock,
       precio_unitario: item.precio_unitario,  // almacenamos precio NETO
     }).eq("id", item.insumo_id);
+
+    // Tarea 83: el precio de un insumo ya no se pisa sin dejar rastro al entrar una compra.
+    if (item.precio_unitario !== precioAnterior) {
+      productosAfectados.push(...await productosAfectadosPorInsumo(db, item.insumo_id, item.precio_unitario));
+      await registrarCambioPrecioInsumo(db, item.insumo_id, precioAnterior, item.precio_unitario, "recepcion", user.id, rec.id);
+    }
 
     // Registrar en kardex
     await db.from("insumos_movimientos").insert({
@@ -302,7 +311,7 @@ export async function registrarRecepcion(
   }
 
   revalidateAll();
-  return { ok: true, id: rec.id };
+  return { ok: true, id: rec.id, productosAfectados };
 }
 
 export type RecepcionItem = {
